@@ -5,8 +5,8 @@
 // @include     https://eproc.jfsc.jus.br/eprocV2/*
 // @include     https://eproc.jfrs.jus.br/eprocV2/*
 // @include     https://eproc.trf4.jus.br/eproc2trf4/*
-// @version     1
-// @grant       GM_addStyle
+// @version     2
+// @grant       none
 // ==/UserScript==
 
 var $ = window.jQuery;
