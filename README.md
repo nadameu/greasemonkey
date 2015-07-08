@@ -18,4 +18,4 @@ Após instalados, os scripts serão atualizados automaticamente sempre que houve
 Scripts
 -------
 
-* [RENAJUD](https://github.com/nadameu/renajud/raw/master/renajud.user.js): Facilita a utilização do sistema RENAJUD por usuários da Justiça Federal da 4ª Região.
+* [RENAJUD](https://github.com/nadameu/greasemonkey/raw/master/renajud.user.js): Facilita a utilização do sistema RENAJUD por usuários da Justiça Federal da 4ª Região.
