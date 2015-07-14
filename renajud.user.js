@@ -2,7 +2,7 @@
 // @name        Renajud
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @version     1
+// @version     2
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -283,6 +283,9 @@ function privilegedCode() {
   }
   
   function preencherNumeroProcesso(numero) {
+    if (numero === '') {
+      return;
+    }
     var campo = $('input[id="form-incluir-restricao:campo-numero-processo"]');
     campo.val(numero);
     campo.trigger('blur');
