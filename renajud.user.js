@@ -2,7 +2,7 @@
 // @name        Renajud
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @version     2
+// @version     3
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -348,10 +348,18 @@ function privilegedCode() {
             break;
 
           case 'j_idt49':
-            console.log('Usuário clicou em "Restringir"...');
-            var municipio = localStorage.getItem('municipio');
-            if (municipio !== null) {
-              preencherMunicipio(municipio);
+            if ($('div[id="form-incluir-restricao:campo-municipio"]').size()) {
+              console.log('Usuário está na tela de restrição (preenchimento de dados do processo)...');
+              $('#alteracoesGreasemonkey').hide();
+              var municipio = localStorage.getItem('municipio');
+              if (municipio !== null) {
+                preencherMunicipio(municipio);
+              }
+            } else if ($('button[id="form-incluir-restricao:button-confirmar"]').size()) {
+              console.log('Usuário está na tela de confirmação de inserção da restrição...');
+            } else {
+              console.log('Usuário retornou à tela principal...');
+              $('#alteracoesGreasemonkey').show();
             }
             break;
 
