@@ -2,7 +2,7 @@
 // @name        Renajud
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @version     3
+// @version     4
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -15,7 +15,10 @@ jQueryWait().done(function() {
 });
 
 function adicionarEstilos() {
-  GM_addStyle('@media print { div#alteracoesGreasemonkey { display: none; } }');
+  GM_addStyle([
+    '@media print { div#alteracoesGreasemonkey { display: none; } }',
+    '@media screen { div#impressaoGreasemonkey { display: none; } }'
+  ].join('\n'));
 }
 
 function criarCampoNumeroProcesso() {
@@ -23,6 +26,21 @@ function criarCampoNumeroProcesso() {
 
   var div = document.createElement('div');
   div.id = 'alteracoesGreasemonkey';
+
+  var select = document.createElement('select');
+  ['PR', 'RS', 'SC'].forEach(function(estado) {
+    var option = document.createElement('option');
+    option.value = estado;
+    option.textContent = estado;
+    select.appendChild(option);
+  });
+  select.addEventListener('change', function(e) {
+    localStorage.setItem('estado', e.target.value);
+  }, false);
+  select.value = localStorage.getItem('estado');
+  div.appendChild(select);
+
+  div.appendChild(document.createTextNode(' '));
 
   var input = document.createElement('input');
   input.placeholder = 'Número do processo';
@@ -41,12 +59,16 @@ function criarCampoNumeroProcesso() {
 
   painel.parentNode.insertBefore(div, painel);
 
+  var divImpressao = document.createElement('div');
+  divImpressao.id = 'impressaoGreasemonkey';
+  document.body.appendChild(divImpressao);
+
   return input;
 }
 
 function getInfo(numproc) {
   var promise = new Promise();
-  var estado = 'PR';
+  var estado = getEstado();
   var options = {
     method: 'POST',
     url: 'http://www.trf4.jus.br/trf4/processos/acompanhamento/ws_consulta_processual.php',
@@ -68,6 +90,13 @@ function getInfo(numproc) {
   promise.notify('Buscando...');
   GM_xmlhttpRequest(options);
   return promise;
+}
+
+function getEstado() {
+  var div = document.getElementById('alteracoesGreasemonkey');
+  var select = div.getElementsByTagName('select')[0];
+  var estado = select.value;
+  return estado;
 }
 
 function analisarRespostaNumeroProcesso(xhr) {
@@ -134,6 +163,7 @@ function privilegedCode() {
         obterVeiculoReu(documento)
         .done(function(qtd) {
           if (qtd === 0) {
+            $('#alteracoesGreasemonkey div').html('Imprimindo tela de réu sem veículos...');
             imprimirTelaELimpar().done(function() {
               fila.avancar();
             });
@@ -144,7 +174,7 @@ function privilegedCode() {
             });
           }
         })
-        .fail(function(msg) { alert(msg); })
+        .fail(function(msg) { alert(msg); });
       });
     });
     fila.avancar();
@@ -158,7 +188,6 @@ function privilegedCode() {
     var veiculos = 0;
     var fila = new Fila(function() {
       limparCampoPesquisa().done(function() {
-        imprimirTela();
         imprimirDetalhesVeiculos(veiculos); 
       });
     });
@@ -201,18 +230,28 @@ function privilegedCode() {
   }
 
   function imprimirDetalhesVeiculos(qtd) {
-    var fila = new Fila(function() { return; /* Fim */ });
+    var fila = new Fila(function() {
+      $('#alteracoesGreasemonkey div').html('Imprimindo detalhes dos veículos...');
+      window.setTimeout(function() {
+        imprimirTela();
+        $('#alteracoesGreasemonkey div').html('Concluído.');
+      }, 1000);
+    });
     var veiculos = new Array();
     for (var i = 0; i < qtd; i++) {
       veiculos.push(i);
     }
+    var divImpressao = $('#impressaoGreasemonkey');
+    $('#alteracoesGreasemonkey div').html('Obtendo detalhes dos veículos...');
     veiculos.forEach(function(i) {
       var prefixo = 'form-incluir-restricao:lista-veiculo:' + i;
       fila.push(function() {
         var promise = window.pesquisaAtual = jQuery.Deferred();
         $('button[id="' + prefixo + ':j_idt76"]').click();
         promise.done(function() {
-          $('button[id="' + prefixo + ':j_idt187"]').click();
+          var obj = $('[id="' + prefixo + ':panel-group-dados-veiculo"]');
+          obj.css({pageBreakBefore: 'always'});
+          divImpressao.append(obj);
           $('button[id="' + prefixo + ':j_idt188"]').click();
           fila.avancar();
         });
@@ -221,7 +260,9 @@ function privilegedCode() {
         var promise = window.pesquisaAtual = jQuery.Deferred();
         $('button[id="' + prefixo + ':link-detalhes-veiculo-restricoes"]').click();
         promise.done(function() {
-          $('button[id="' + prefixo + ':j_idt440"]').click();
+          var obj = $('[id="' + prefixo + ':panel-detalhes-veiculo-restricoes"]');
+          obj.css({pageBreakBefore: 'always'});
+          divImpressao.append(obj);
           $('button[id="' + prefixo + ':j_idt441"]').click();
           $('button[id="' + prefixo + ':link-detalhes-veiculo-restricoes"]').parents('tr').find('.ui-chkbox-box').click();
           fila.avancar();
@@ -236,6 +277,7 @@ function privilegedCode() {
     var promise = limparCampoPesquisa().done(function() {
       limparLista(secondPromise);
     });
+    limparImpressao();
     return secondPromise;
   }
 
@@ -261,6 +303,10 @@ function privilegedCode() {
     }
     return promise;
   }
+  
+  function limparImpressao() {
+    $('#impressaoGreasemonkey').html('');
+  }
 
   function pesquisarDocumento(documento) {
     var botaopesquisar = $('[id="form-incluir-restricao:botao-pesquisar"]');
@@ -269,7 +315,7 @@ function privilegedCode() {
     documentobox.val(documento);
     botaopesquisar.click();
   }
-  
+
   function preencherMunicipio(codigo) {
     preencherSelectOneMenu('form-incluir-restricao:campo-municipio', codigo);
   }
@@ -277,11 +323,11 @@ function privilegedCode() {
   function preencherOrgao(codigo) {
     preencherSelectOneMenu('form-incluir-restricao:campo-orgao', codigo);
   }
-  
+
   function preencherMagistrado(codigo) {
     preencherSelectOneMenu('form-incluir-restricao:campo-magistrado', codigo);
   }
-  
+
   function preencherNumeroProcesso(numero) {
     if (numero === '') {
       return;
@@ -290,7 +336,7 @@ function privilegedCode() {
     campo.val(numero);
     campo.trigger('blur');
   }
-  
+
   function preencherSelectOneMenu(idCampo, valor) {
     var idSelect = idCampo + '_input', idPainel = idCampo + '_panel';
     var select = $('select[id="' + idSelect + '"]');
@@ -304,7 +350,7 @@ function privilegedCode() {
     menu.click();
     opcao.click();
   }
-  
+
   function observarAlteracaoMagistrado(fn) {
     var opcoes = $('div[id="form-incluir-restricao:campo-magistrado_panel"] li[data-label]');
     var select = $('select[id="form-incluir-restricao:campo-magistrado_input"]');
@@ -350,6 +396,7 @@ function privilegedCode() {
           case 'j_idt49':
             if ($('div[id="form-incluir-restricao:campo-municipio"]').size()) {
               console.log('Usuário está na tela de restrição (preenchimento de dados do processo)...');
+              limparImpressao();
               $('#alteracoesGreasemonkey').hide();
               var municipio = localStorage.getItem('municipio');
               if (municipio !== null) {
@@ -392,7 +439,7 @@ function privilegedCode() {
               var processo = $('#alteracoesGreasemonkey input').val();
               preencherNumeroProcesso(processo);
             });
-            
+
             break;
 
           case 'campo-numero-processo':
