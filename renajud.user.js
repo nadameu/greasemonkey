@@ -2,7 +2,7 @@
 // @name        Renajud
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @version     4
+// @version     5
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -160,6 +160,7 @@ function privilegedCode() {
     var fila = new Fila(function() { obterVeiculosReusComVeiculo(reusComVeiculo); });
     reus.forEach(function(documento) {
       fila.push(function() {
+        $('#alteracoesGreasemonkey div').html('Obtendo lista de veículos do réu...');
         obterVeiculoReu(documento)
         .done(function(qtd) {
           if (qtd === 0) {
