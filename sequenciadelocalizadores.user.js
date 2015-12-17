@@ -2,7 +2,7 @@
 // @name        Sequência de localizadores
 // @namespace   http://nadameu.com.br/seq_localiza
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=processo_localizador_historico_listar\&/
-// @version     3
+// @version     4
 // @grant       none
 // ==/UserScript==
 
@@ -157,21 +157,6 @@ var Tabela = function(orgaos) {
             itens.push(item);
           });
         });
-      });
-      itens.sort(function(a, b) {
-        if (a.tipoAdicional === 'Exc' && b.tipoAdicional === '') {
-          return -1;
-        } else if (a.tipoAdicional === '' && b.tipoAdicional === 'Exc') {
-          return +1;
-        }
-        
-        if (a.tipo === 'Pri' && b.tipo !== 'Pri') {
-          return -1;
-        } else if (a.tipo !== 'Pri' && b.tipo === 'Pri') {
-          return +1;
-        }
-        
-        return a.nome < b.nome ? -1 : +1;
       });
       let codigoHTMLItens = [];
       itens.forEach(function(item) {
