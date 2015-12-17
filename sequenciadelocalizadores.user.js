@@ -1,11 +1,8 @@
 // ==UserScript==
 // @name        Sequência de localizadores
 // @namespace   http://nadameu.com.br/seq_localiza
-// @include     https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_localizador_historico_listar&*
-// @include     https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_localizador_historico_listar&*
-// @include     https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=processo_localizador_historico_listar&*
-// @include     https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_localizador_historico_listar&*
-// @version     1
+// @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=processo_localizador_historico_listar\&/
+// @version     2
 // @grant       none
 // ==/UserScript==
 
