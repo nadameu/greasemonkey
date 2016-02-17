@@ -2,7 +2,7 @@
 // @name        Renajud
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @version     5
+// @version     6
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -318,15 +318,17 @@ function privilegedCode() {
   }
 
   function preencherMunicipio(codigo) {
-    preencherSelectOneMenu('form-incluir-restricao:campo-municipio', codigo);
+    return preencherSelectOneMenu('form-incluir-restricao:campo-municipio', codigo);
   }
 
   function preencherOrgao(codigo) {
-    preencherSelectOneMenu('form-incluir-restricao:campo-orgao', codigo);
+    return preencherSelectOneMenu('form-incluir-restricao:campo-orgao', codigo);
   }
 
   function preencherMagistrado(codigo) {
-    preencherSelectOneMenu('form-incluir-restricao:campo-magistrado', codigo);
+    var ret = preencherSelectOneMenu('form-incluir-restricao:campo-magistrado', codigo);
+    document.getElementById('preencher-magistrado-automaticamente').checked = true;
+    return ret;
   }
 
   function preencherNumeroProcesso(numero) {
@@ -348,8 +350,17 @@ function privilegedCode() {
       console.error('Campo não encontrado: "' + idCampo + '"', menu, opcao);
       return;
     }
+    var valorAntigo = select.val();
     menu.click();
     opcao.click();
+    if (valor === valorAntigo) {
+      return false;
+    }
+    return true;
+  }
+  
+  function corrigirCampoMagistrado() {
+    $('select[id="form-incluir-restricao:campo-orgao_input"] option[value=""]').attr('value', '');
   }
 
   function observarAlteracaoMagistrado(fn) {
@@ -360,6 +371,21 @@ function privilegedCode() {
         var valor = select.val();
         return fn(valor);
       });
+    });
+  }
+  
+  function criarCampoPreencherMagistradoAutomaticamente() {
+    var menu = $('div[id="form-incluir-restricao:campo-magistrado"]');
+    var celula = menu.parent('td');
+    celula.after('<td><label><input type="checkbox" id="preencher-magistrado-automaticamente"/> Usar este valor como padrão para todos os processos</label></td>');
+    return document.getElementById('preencher-magistrado-automaticamente');
+  }
+  
+  function observarAlteracaoPreencherMagistradoAutomaticamente(fn) {
+    var preencherMagistradoAutomaticamente = $('#preencher-magistrado-automaticamente');
+    preencherMagistradoAutomaticamente.on('click', function() {
+      var valor = preencherMagistradoAutomaticamente.get(0).checked;
+      return fn(valor);
     });
   }
 
@@ -399,10 +425,35 @@ function privilegedCode() {
               console.log('Usuário está na tela de restrição (preenchimento de dados do processo)...');
               limparImpressao();
               $('#alteracoesGreasemonkey').hide();
+              corrigirCampoMagistrado();
+              criarCampoPreencherMagistradoAutomaticamente();
               var municipio = localStorage.getItem('municipio');
               if (municipio !== null) {
-                preencherMunicipio(municipio);
+                if (! preencherMunicipio(municipio)) {
+                  console.log('Campo "Comarca/Município" já estava preenchido');
+                  var orgao = localStorage.getItem('orgao');
+                  if (orgao !== null) {
+                    if (! preencherOrgao(orgao)) {
+                      console.log('Campo "Órgão Judiciário" já estava preenchido');
+                      var magistrado = localStorage.getItem('magistrado');
+                      if (magistrado !== null) {
+                        preencherMagistrado(magistrado);
+                        var processo = $('#alteracoesGreasemonkey input').val();
+                        preencherNumeroProcesso(processo);
+                      }
+                    }
+                  }
+                }
               }
+              observarAlteracaoPreencherMagistradoAutomaticamente(function(marcado) {
+                var select = $('select[id="form-incluir-restricao:campo-magistrado_input"]');
+                var magistrado = select.val();
+                if (marcado && magistrado !== 'Selecione o magistrado') {
+                  localStorage.setItem('magistrado', magistrado);
+                } else {
+                  localStorage.removeItem('magistrado');
+                }
+              });
             } else if ($('button[id="form-incluir-restricao:button-confirmar"]').size()) {
               console.log('Usuário está na tela de confirmação de inserção da restrição...');
             } else {
@@ -414,8 +465,12 @@ function privilegedCode() {
           case 'campo-municipio':
             console.log('Campo "Município" alterado.');
             var codigoMunicipio = $('select[id="form-incluir-restricao:campo-municipio_input"]').val();
-            localStorage.setItem('municipio', codigoMunicipio);
-
+            if (codigoMunicipio !== '') {
+              localStorage.setItem('municipio', codigoMunicipio);
+            } else {
+              localStorage.removeItem('municipio');
+            }
+            
             var orgao = localStorage.getItem('orgao');
             if (orgao !== null) {
               preencherOrgao(orgao);
@@ -425,7 +480,11 @@ function privilegedCode() {
           case 'campo-orgao':
             console.log('Campo "Órgão" alterado.');
             var codigoOrgao = $('select[id="form-incluir-restricao:campo-orgao_input"]').val();
-            localStorage.setItem('orgao', codigoOrgao);
+            if (codigoOrgao !== '') {
+              localStorage.setItem('orgao', codigoOrgao);
+            } else {
+              localStorage.removeItem('orgao');
+            }
 
             var magistrado = localStorage.getItem('magistrado');
             if (magistrado !== null) {
@@ -436,7 +495,11 @@ function privilegedCode() {
 
             observarAlteracaoMagistrado(function(novoValor) {
               console.log('Campo "Magistrado" alterado.');
-              localStorage.setItem('magistrado', novoValor);
+              if (document.getElementById('preencher-magistrado-automaticamente').checked && novoValor !== 'Selecione o magistrado') {
+                localStorage.setItem('magistrado', novoValor);
+              } else {
+                localStorage.removeItem('magistrado');
+              }
               var processo = $('#alteracoesGreasemonkey input').val();
               preencherNumeroProcesso(processo);
             });
