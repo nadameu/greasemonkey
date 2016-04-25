@@ -3,15 +3,19 @@
 // @namespace   http://nadameu.com.br/smweb
 // @include     https://smweb.trf4.jus.br/smweb/Ch/PesquisarModelosAR.aspx?modelo=*
 // @include     https://smweb.trf4.jus.br/smweb/Mandado/EditarModeloMandado.aspx?cod=*
-// @version     2
+// @include     https://smweb.trf4.jus.br/smweb/Ch/EditarDocumentoAR.aspx
+// @version     3
 // @grant       none
 // ==/UserScript==
 
-$('#ctl00_ContentPlaceHolder1_btnVoltar').parent().each(function() {
+var config = $('#ctl00_ContentPlaceHolder1_FCKeditor1___Config, #ctl00_ctl00_ContentPlaceHolder1_Corpo_editor___Config')
+config.val(config.val().replace('FontNames=Bookman Old Style&', 'FontNames=Arial;Bookman Old Style;Helvetica&') + '&EnterMode=p');
+
+$('#ctl00_ContentPlaceHolder1_btnVoltar, #ctl00_ctl00_ContentPlaceHolder1_Titulo_btnVoltar').parent().each(function() {
   $(this).append('<button id="btnCarta">Carta</button>');
   $('#btnCarta').on('click', function(e) {
     e.preventDefault();
-    var ed = FCKeditorAPI.Instances.ctl00_ContentPlaceHolder1_FCKeditor1;
+    var ed = FCKeditorAPI.Instances.ctl00_ContentPlaceHolder1_FCKeditor1 || FCKeditorAPI.Instances.ctl00_ctl00_ContentPlaceHolder1_Corpo_editor;
     var doc = ed.EditingArea.Document;
     Paragrafo.setFonte('Helvetica');
     Paragrafo.addEstilo('titulo', 'center', 12, ['strong']);
@@ -21,8 +25,7 @@ $('#ctl00_ContentPlaceHolder1_btnVoltar').parent().each(function() {
     Paragrafo.addEstilo('texto', 'justify', 12);
     Paragrafo.addEstilo('assinatura', 'center', 12, ['strong', 'em']);
     Paragrafo.addEstilo('observacao', 'center', 12, ['em']);
-    Linha.setEstilo('linha');
-    $('head', doc).append('<style>div.texto { border: 1px dashed blue; }</style>')
+    Linha.setEstilo('texto');
     $(doc.body).prepend([
       Paragrafo('titulo', 'CARTA DE #INTIMAÇÃO#'),
       Linha(),
@@ -30,7 +33,7 @@ $('#ctl00_ContentPlaceHolder1_btnVoltar').parent().each(function() {
       Paragrafo('cabecalho', '<strong>#AUTOR#:</strong> @+autores@'),
       Paragrafo('cabecalho', '<strong>#RÉU#:</strong> @+reus@'),
       Linha(),
-      Paragrafo('tratamento', '#Senhor(a)#'),
+      Paragrafo('tratamento', '#Senhor(a)#:'),
       Linha(),
       Paragrafo('texto', '#Parágrafo 1#'),
       Paragrafo('texto', '#Parágrafo 2#'),
