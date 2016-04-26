@@ -4,21 +4,25 @@
 // @include     https://smweb.trf4.jus.br/smweb/Ch/PesquisarModelosAR.aspx?modelo=*
 // @include     https://smweb.trf4.jus.br/smweb/Mandado/EditarModeloMandado.aspx?cod=*
 // @include     https://smweb.trf4.jus.br/smweb/Ch/EditarDocumentoAR.aspx
-// @version     3
+// @include     https://smweb.trf4.jus.br/smweb/Mandado/CorpoMandado.aspx?sdid=*
+// @include     https://smweb.trf4.jus.br/smweb/Mandado/EditarMandadosEmBloco.aspx?idm=*
+// @include     https://smweb.trf4.jus.br/smweb/Mandado/EditarMandado.aspx?idm=*
+// @version     4
 // @grant       none
 // ==/UserScript==
 
-var config = $('#ctl00_ContentPlaceHolder1_FCKeditor1___Config, #ctl00_ctl00_ContentPlaceHolder1_Corpo_editor___Config')
-config.val(config.val().replace('FontNames=Bookman Old Style&', 'FontNames=Arial;Bookman Old Style;Helvetica&') + '&EnterMode=p');
+var config = $('#ctl00_ContentPlaceHolder1_FCKeditor1___Config, #ctl00_ctl00_ContentPlaceHolder1_Corpo_editor___Config, #ctl00_conteudo_editor___Config')
+config.val(config.val().replace('FontNames=Bookman Old Style&', 'FontNames=Arial;Bookman Old Style;Helvetica&').replace('&FormatSource=false&', '&FormatSource=true&') + '&EnterMode=div&FirefoxSpellChecker=true');
 
-$('#ctl00_ContentPlaceHolder1_btnVoltar, #ctl00_ctl00_ContentPlaceHolder1_Titulo_btnVoltar').parent().each(function() {
+$('#ctl00_ContentPlaceHolder1_btnVoltar, #ctl00_ctl00_ContentPlaceHolder1_Titulo_btnVoltar, #ctl00_footer_btnFechar').parent().each(function() {
   $(this).append('<button id="btnCarta">Carta</button>');
   $('#btnCarta').on('click', function(e) {
     e.preventDefault();
-    var ed = FCKeditorAPI.Instances.ctl00_ContentPlaceHolder1_FCKeditor1 || FCKeditorAPI.Instances.ctl00_ctl00_ContentPlaceHolder1_Corpo_editor;
+    var ed = FCKeditorAPI.Instances.ctl00_ContentPlaceHolder1_FCKeditor1 || FCKeditorAPI.Instances.ctl00_ctl00_ContentPlaceHolder1_Corpo_editor || FCKeditorAPI.Instances.ctl00_conteudo_editor;
     var doc = ed.EditingArea.Document;
     Paragrafo.setFonte('Helvetica');
     Paragrafo.addEstilo('titulo', 'center', 12, ['strong']);
+    Paragrafo.addEstilo('data', 'right', 12, ['strong']);
     Paragrafo.addEstilo('cabecalho', 'left', 12);
     Paragrafo.addEstilo('tratamento', 'center', 12);
     Paragrafo.addEstilo('linha', 'justify', 12);
@@ -33,7 +37,7 @@ $('#ctl00_ContentPlaceHolder1_btnVoltar, #ctl00_ctl00_ContentPlaceHolder1_Titulo
       Paragrafo('cabecalho', '<strong>#AUTOR#:</strong> @+autores@'),
       Paragrafo('cabecalho', '<strong>#RÉU#:</strong> @+reus@'),
       Linha(),
-      Paragrafo('tratamento', '#Senhor(a)#:'),
+      Paragrafo('tratamento', '#Prezado(a) Senhor(a)#:'),
       Linha(),
       Paragrafo('texto', '#Parágrafo 1#'),
       Paragrafo('texto', '#Parágrafo 2#'),
@@ -45,6 +49,8 @@ $('#ctl00_ContentPlaceHolder1_btnVoltar, #ctl00_ctl00_ContentPlaceHolder1_Titulo
       Paragrafo('texto', 'Fica #Vossa Senhoria# ciente, ainda, de que este Juízo funciona na Rua Professor Becker, 2730, 1&ordm; andar, Santa Cruz, CEP 85015-230, Guarapuava/PR, telefone (42)&nbsp;3630-2250.'),
       Linha(),
       Paragrafo('texto', 'Guarapuava/PR, @-data@.'),
+      Linha(),
+      Linha(),
       Linha(),
       Paragrafo('observacao', 'assinado digitalmente'),
       Paragrafo('assinatura', '@+diretor@'),
