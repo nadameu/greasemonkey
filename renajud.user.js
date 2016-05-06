@@ -2,7 +2,7 @@
 // @name        Renajud
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @version     6
+// @version     7
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -10,14 +10,14 @@
 
 jQueryWait().done(function() {
   adicionarEstilos();
-  var campo = criarCampoNumeroProcesso();
+  criarCampoNumeroProcesso();
   insertPrivilegedCode();
 });
 
 function adicionarEstilos() {
   GM_addStyle([
-    '@media print { div#alteracoesGreasemonkey { display: none; } }',
-    '@media screen { div#impressaoGreasemonkey { display: none; } }'
+    '@media print { div#alteracoesGreasemonkey, .noprint { display: none; } }',
+    '@media screen { div#impressaoGreasemonkey, .noscreen { display: none; } }'
   ].join('\n'));
 }
 
@@ -72,21 +72,21 @@ function getInfo(numproc) {
   var options = {
     method: 'POST',
     url: 'http://www.trf4.jus.br/trf4/processos/acompanhamento/ws_consulta_processual.php',
-    data: '<?xml version="1.0" encoding="UTF-8"?>'
-    + '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="urn:consulta_processual" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">'
-    + '<SOAP-ENV:Body>'
-    + '<ns1:ws_consulta_processo>'
-    + '<num_proc xsi:type="xsd:string">' + numproc + '</num_proc>'
-    + '<uf xsi:type="xsd:string">' + estado + '</uf>'
-    + '<todas_fases xsi:type="xsd:string">N</todas_fases>'
-    + '<todas_partes xsi:type="xsd:string">S</todas_partes>'
-    + '<todos_valores>N</todos_valores>'
-    + '</ns1:ws_consulta_processo>'
-    + '</SOAP-ENV:Body>'
-    + '</SOAP-ENV:Envelope>',
+    data: '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="urn:consulta_processual" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">' +
+      '<SOAP-ENV:Body>' +
+      '<ns1:ws_consulta_processo>' +
+      '<num_proc xsi:type="xsd:string">' + numproc + '</num_proc>' +
+      '<uf xsi:type="xsd:string">' + estado + '</uf>' +
+      '<todas_fases xsi:type="xsd:string">N</todas_fases>' +
+      '<todas_partes xsi:type="xsd:string">S</todas_partes>' +
+      '<todos_valores>N</todos_valores>' +
+      '</ns1:ws_consulta_processo>' +
+      '</SOAP-ENV:Body>' +
+      '</SOAP-ENV:Envelope>',
     onload: function(xhr) { promise.notify(numproc); return promise.resolve(xhr); },
     onerror: function(xhr) { promise.reject(); }
-  }
+  };
   promise.notify('Buscando...');
   GM_xmlhttpRequest(options);
   return promise;
@@ -153,26 +153,37 @@ function privilegedCode() {
     limparCampos().done(function() {
       obterVeiculosReus(reus);
     });
-  }
+  };
 
   function obterVeiculosReus(reus) {
-    var reusComVeiculo = [];
-    var fila = new Fila(function() { obterVeiculosReusComVeiculo(reusComVeiculo); });
-    reus.forEach(function(documento) {
+    var veiculos = 0;
+    var fila = new Fila(function() {
+      if (veiculos === 0) {
+        $('#alteracoesGreasemonkey div').html('Nenhum veículo encontrado.');
+        return;
+      }
+      imprimirDetalhesVeiculos(veiculos);
+    });
+    reus.forEach(function(documento, i) {
       fila.push(function() {
         $('#alteracoesGreasemonkey div').html('Obtendo lista de veículos do réu...');
         obterVeiculoReu(documento)
-        .done(function(qtd) {
+        .done(function(totalVeiculos) {
+          var qtd = totalVeiculos - veiculos;
+          veiculos = totalVeiculos;
           if (qtd === 0) {
             $('#alteracoesGreasemonkey div').html('Imprimindo tela de réu sem veículos...');
-            imprimirTelaELimpar().done(function() {
-              fila.avancar();
-            });
+            if (i < (reus.length - 1)) {
+              imprimirTelaSemVeiculos().done(function() {
+                fila.avancar();
+              });
+            } else {
+              imprimirTelaSemVeiculosELimparPesquisa().done(function() {
+                fila.avancar();
+              });
+            }
           } else {
-            reusComVeiculo.push(documento);
-            limparCampos().done(function() {
-              fila.avancar();
-            });
+            fila.avancar();
           }
         })
         .fail(function(msg) { alert(msg); });
@@ -181,34 +192,10 @@ function privilegedCode() {
     fila.avancar();
   }
 
-  function obterVeiculosReusComVeiculo(reusComVeiculo) {
-    if (reusComVeiculo.length === 0) {
-      $('#alteracoesGreasemonkey div').html('Nenhum veículo encontrado.');
-      return;
-    }
-    var veiculos = 0;
-    var fila = new Fila(function() {
-      limparCampoPesquisa().done(function() {
-        imprimirDetalhesVeiculos(veiculos); 
-      });
-    });
-    reusComVeiculo.forEach(function(documento) {
-      fila.push(function() {
-        obterVeiculoReu(documento)
-        .done(function(qtd) {
-          veiculos = qtd;
-          fila.avancar();
-        })
-        .fail(function(msg) { alert(msg); })
-      });
-    });
-    fila.avancar();
-  }
-
-  function imprimirTelaELimpar() {
+  function imprimirTelaSemVeiculosELimparPesquisa() {
     var promise = jQuery.Deferred();
-    imprimirTela();
-    limparCampos().done(function() {
+    imprimirTelaSemVeiculos();
+    limparCampoPesquisa().done(function() {
       promise.resolve();
     });
     return promise;
@@ -217,6 +204,13 @@ function privilegedCode() {
   function imprimirTela() {
     ocultarMensagemAguarde();
     window.print();
+  }
+
+  function imprimirTelaSemVeiculos() {
+    var veiculos = $('[id="form-incluir-restricao:panel-lista-veiculo"]');
+    veiculos.hide();
+    imprimirTela();
+    veiculos.show();
   }
 
   function ocultarMensagemAguarde() {
@@ -238,9 +232,9 @@ function privilegedCode() {
         $('#alteracoesGreasemonkey div').html('Concluído.');
       }, 1000);
     });
-    var veiculos = new Array();
-    for (var i = 0; i < qtd; i++) {
-      veiculos.push(i);
+    var veiculos = new Array(qtd);
+    for (var i = 0; i < qtd; ++i) {
+      veiculos[i] = i;
     }
     var divImpressao = $('#impressaoGreasemonkey');
     $('#alteracoesGreasemonkey div').html('Obtendo detalhes dos veículos...');
@@ -261,11 +255,13 @@ function privilegedCode() {
         var promise = window.pesquisaAtual = jQuery.Deferred();
         $('button[id="' + prefixo + ':link-detalhes-veiculo-restricoes"]').click();
         promise.done(function() {
-          var obj = $('[id="' + prefixo + ':panel-detalhes-veiculo-restricoes"]');
-          obj.css({pageBreakBefore: 'always'});
-          divImpressao.append(obj);
+          var restricoes = $('[id="' + prefixo + ':j_idt238_list"] > li').toArray().map(li => li.textContent.trim());
+          var celula = $('[id="form-incluir-restricao:lista-veiculo_data"] > tr:nth-child(' + (i+1) + ') > td:nth-child(8)');
+          celula.html('<div class="noscreen">' + celula.html() + '</div>');
+          celula.append(restricoes.map(restricao => '<div class="noprint">' + restricao + '</div>'));
+          divImpressao.append($('[id="' + prefixo + ':j_idt232"]'));
+          divImpressao.append($('[id="' + prefixo + ':panel-mostrar-detalhes"]'));
           $('button[id="' + prefixo + ':j_idt441"]').click();
-          $('button[id="' + prefixo + ':link-detalhes-veiculo-restricoes"]').parents('tr').find('.ui-chkbox-box').click();
           fila.avancar();
         });
       });
@@ -274,12 +270,12 @@ function privilegedCode() {
   }
 
   function limparCampos() {
-    var secondPromise = jQuery.Deferred();
-    var promise = limparCampoPesquisa().done(function() {
-      limparLista(secondPromise);
+    var promise = jQuery.Deferred();
+    limparCampoPesquisa().done(function() {
+      limparLista(promise);
     });
     limparImpressao();
-    return secondPromise;
+    return promise;
   }
 
   function limparCampoPesquisa(promise) {
@@ -311,7 +307,6 @@ function privilegedCode() {
 
   function pesquisarDocumento(documento) {
     var botaopesquisar = $('[id="form-incluir-restricao:botao-pesquisar"]');
-    var botaoimprimir = $('#brBotoes a[title="Imprimir"]');
     var documentobox = $('[id="form-incluir-restricao:campo-cpf-cnpj"]');
     documentobox.val(documento);
     botaopesquisar.click();
@@ -409,8 +404,9 @@ function privilegedCode() {
     });
 
     var xml = window.xmlRetornado = xhr.responseXML.documentElement;
-
     var partes = campos['javax.faces.source'].split(':');
+
+    var orgao, magistrado, processo;
 
     switch (partes[0]) {
       case 'form-incluir-restricao':
@@ -431,14 +427,14 @@ function privilegedCode() {
               if (municipio !== null) {
                 if (! preencherMunicipio(municipio)) {
                   console.log('Campo "Comarca/Município" já estava preenchido');
-                  var orgao = localStorage.getItem('orgao');
+                  orgao = localStorage.getItem('orgao');
                   if (orgao !== null) {
                     if (! preencherOrgao(orgao)) {
                       console.log('Campo "Órgão Judiciário" já estava preenchido');
-                      var magistrado = localStorage.getItem('magistrado');
+                      magistrado = localStorage.getItem('magistrado');
                       if (magistrado !== null) {
                         preencherMagistrado(magistrado);
-                        var processo = $('#alteracoesGreasemonkey input').val();
+                        processo = $('#alteracoesGreasemonkey input').val();
                         preencherNumeroProcesso(processo);
                       }
                     }
@@ -447,7 +443,7 @@ function privilegedCode() {
               }
               observarAlteracaoPreencherMagistradoAutomaticamente(function(marcado) {
                 var select = $('select[id="form-incluir-restricao:campo-magistrado_input"]');
-                var magistrado = select.val();
+                magistrado = select.val();
                 if (marcado && magistrado !== 'Selecione o magistrado') {
                   localStorage.setItem('magistrado', magistrado);
                 } else {
@@ -471,7 +467,7 @@ function privilegedCode() {
               localStorage.removeItem('municipio');
             }
             
-            var orgao = localStorage.getItem('orgao');
+            orgao = localStorage.getItem('orgao');
             if (orgao !== null) {
               preencherOrgao(orgao);
             }
@@ -486,10 +482,10 @@ function privilegedCode() {
               localStorage.removeItem('orgao');
             }
 
-            var magistrado = localStorage.getItem('magistrado');
+            magistrado = localStorage.getItem('magistrado');
             if (magistrado !== null) {
               preencherMagistrado(magistrado);
-              var processo = $('#alteracoesGreasemonkey input').val();
+              processo = $('#alteracoesGreasemonkey input').val();
               preencherNumeroProcesso(processo);
             }
 
