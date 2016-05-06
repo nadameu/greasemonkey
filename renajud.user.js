@@ -2,7 +2,7 @@
 // @name        Renajud
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @version     7
+// @version     8
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -174,9 +174,8 @@ function privilegedCode() {
           if (qtd === 0) {
             $('#alteracoesGreasemonkey div').html('Imprimindo tela de réu sem veículos...');
             if (i < (reus.length - 1)) {
-              imprimirTelaSemVeiculos().done(function() {
-                fila.avancar();
-              });
+              imprimirTelaSemVeiculos();
+              fila.avancar();
             } else {
               imprimirTelaSemVeiculosELimparPesquisa().done(function() {
                 fila.avancar();
