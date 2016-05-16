@@ -2,7 +2,7 @@
 // @name        Renajud
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @version     8
+// @version     9
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -250,20 +250,23 @@ function privilegedCode() {
           fila.avancar();
         });
       });
-      fila.push(function() {
-        var promise = window.pesquisaAtual = jQuery.Deferred();
-        $('button[id="' + prefixo + ':link-detalhes-veiculo-restricoes"]').click();
-        promise.done(function() {
-          var restricoes = $('[id="' + prefixo + ':j_idt238_list"] > li').toArray().map(li => li.textContent.trim());
-          var celula = $('[id="form-incluir-restricao:lista-veiculo_data"] > tr:nth-child(' + (i+1) + ') > td:nth-child(8)');
-          celula.html('<div class="noscreen">' + celula.html() + '</div>');
-          celula.append(restricoes.map(restricao => '<div class="noprint">' + restricao + '</div>'));
-          divImpressao.append($('[id="' + prefixo + ':j_idt232"]'));
-          divImpressao.append($('[id="' + prefixo + ':panel-mostrar-detalhes"]'));
-          $('button[id="' + prefixo + ':j_idt441"]').click();
-          fila.avancar();
+      var celula = $('[id="form-incluir-restricao:lista-veiculo_data"] > tr:nth-child(' + (i+1) + ') > td:nth-child(8)');
+      if (celula.text() === 'Sim') {
+        fila.push(function() {
+          var promise = window.pesquisaAtual = jQuery.Deferred();
+          $('button[id="' + prefixo + ':link-detalhes-veiculo-restricoes"]').click();
+          promise.done(function() {
+            var restricoes = $('[id="' + prefixo + ':j_idt238_list"] > li').toArray().map(li => li.textContent.trim());
+            var celula = $('[id="form-incluir-restricao:lista-veiculo_data"] > tr:nth-child(' + (i+1) + ') > td:nth-child(8)');
+            celula.html('<div class="noscreen">' + celula.html() + '</div>');
+            celula.append(restricoes.map(restricao => '<div class="noprint">' + restricao + '</div>'));
+            divImpressao.append($('[id="' + prefixo + ':j_idt232"]'));
+            divImpressao.append($('[id="' + prefixo + ':panel-mostrar-detalhes"]'));
+            $('button[id="' + prefixo + ':j_idt441"]').click();
+            fila.avancar();
+          });
         });
-      });
+      }
     });
     fila.avancar();
   }
