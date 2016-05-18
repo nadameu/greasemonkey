@@ -2,7 +2,7 @@
 // @name        Renajud
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @version     9
+// @version     10
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -162,7 +162,9 @@ function privilegedCode() {
         $('#alteracoesGreasemonkey div').html('Nenhum veículo encontrado.');
         return;
       }
-      imprimirDetalhesVeiculos(veiculos);
+      limparCampoPesquisa().done(function() {
+        imprimirDetalhesVeiculos(veiculos);
+      });
     });
     reus.forEach(function(documento, i) {
       fila.push(function() {
