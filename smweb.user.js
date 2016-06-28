@@ -7,7 +7,7 @@
 // @include     https://smweb.trf4.jus.br/smweb/Mandado/CorpoMandado.aspx?sdid=*
 // @include     https://smweb.trf4.jus.br/smweb/Mandado/EditarMandadosEmBloco.aspx?idm=*
 // @include     https://smweb.trf4.jus.br/smweb/Mandado/EditarMandado.aspx?idm=*
-// @version     4
+// @version     5
 // @grant       none
 // ==/UserScript==
 
@@ -15,7 +15,7 @@ var config = $('#ctl00_ContentPlaceHolder1_FCKeditor1___Config, #ctl00_ctl00_Con
 config.val(config.val().replace('FontNames=Bookman Old Style&', 'FontNames=Arial;Bookman Old Style;Helvetica&').replace('&FormatSource=false&', '&FormatSource=true&') + '&EnterMode=div&FirefoxSpellChecker=true');
 
 $('#ctl00_ContentPlaceHolder1_btnVoltar, #ctl00_ctl00_ContentPlaceHolder1_Titulo_btnVoltar, #ctl00_footer_btnFechar').parent().each(function() {
-  $(this).append('<button id="btnCarta">Carta</button>');
+  $(this).append('<button id="btnCarta" class="smbotao" style="background-color: firebrick;">Carta</button>');
   $('#btnCarta').on('click', function(e) {
     e.preventDefault();
     var ed = FCKeditorAPI.Instances.ctl00_ContentPlaceHolder1_FCKeditor1 || FCKeditorAPI.Instances.ctl00_ctl00_ContentPlaceHolder1_Corpo_editor || FCKeditorAPI.Instances.ctl00_conteudo_editor;
@@ -39,9 +39,11 @@ $('#ctl00_ContentPlaceHolder1_btnVoltar, #ctl00_ctl00_ContentPlaceHolder1_Titulo
       Linha(),
       Paragrafo('tratamento', '#Prezado(a) Senhor(a)#:'),
       Linha(),
-      Paragrafo('texto', '#Parágrafo 1#'),
-      Paragrafo('texto', '#Parágrafo 2#'),
-      Paragrafo('texto', '#Parágrafo 3#'),
+      '<hr id="textoinicio" />',
+      Paragrafo('texto', '#1. Substitua este texto pelo conteúdo do documento a ser enviado;#'),
+      Paragrafo('texto', '#2. Acrescente uma linha em branco entre cada parágrafo;#'),
+      Paragrafo('texto', '#3. Verifique se todos os campos na cor laranja estão corretos.#'),
+      '<hr id="textofim" />',
       Linha(),
       Paragrafo('texto', '##e-Proc (chave só deve ser fornecida para as partes)## O inteiro teor do processo poderá ser consultado no endereço <em>http://eproc.jfpr.jus.br/</em>, opção &ldquo;Consulta Pública&rdquo;, &ldquo;Consulta Processo por Chave&rdquo;, informando o número do processo @processo@ e a chave @chaveprocessov2@.', 'Documento será recebido pela parte (e-Proc)'),
       Paragrafo('texto', '##Outros## O teor dos atos judiciais poderá ser consultado no endereço <em>http://www.jfpr.jus.br/</em>, opção &ldquo;Consulta Processual&rdquo;, informando o número do processo @processo@.', 'Documento será recebido por terceiros (e-Proc) ou é processo físico'),
@@ -57,6 +59,72 @@ $('#ctl00_ContentPlaceHolder1_btnVoltar, #ctl00_ctl00_ContentPlaceHolder1_Titulo
       Paragrafo('assinatura', 'Diretor de Secretaria'),
       '<hr id="fim" />Tudo após esta linha será apagado.<br /><br /><br />'
     ].join('\n').replace(/#(#*[^#]+#*)#/g, '<span style="color: OrangeRed;">$1</span>'));
+  });
+  $(this).append('<button id="btnConfirmar" class="smbotao" style="background-color: firebrick;">Confirmar</button>');
+  $('#btnConfirmar').on('click', function(e) {
+    e.preventDefault();
+    var ed = FCKeditorAPI.Instances.ctl00_ContentPlaceHolder1_FCKeditor1 || FCKeditorAPI.Instances.ctl00_ctl00_ContentPlaceHolder1_Corpo_editor || FCKeditorAPI.Instances.ctl00_conteudo_editor;
+    var doc = ed.EditingArea.Document;
+    var editando = false, apagar = false, texto = '';
+    $(doc.body.childNodes).each(function() {
+      if (this.id === 'textofim') {
+        editando = false;
+        texto = texto.replace(/&nbsp;/g, ' ');
+        console.log(texto);
+        texto = texto.replace(/<br ?\/?><\/div>/g, '\n');
+        texto = texto.replace(/<\/?([a-z]+)[^>]*>/g, function(match, tag) {
+          switch (tag.toLowerCase()) {
+            case 'div':
+              if (match === '</div>') return '\n';
+            case 'span':
+              return '';
+              break;
+
+            case 'br':
+              return '\n';
+              break;
+
+            default:
+              return match;
+              break;
+          }
+        });
+        console.log('texto', texto.trim());
+        var partes = texto.trim().split('\n');
+        console.log('splitted', partes);
+        partes = partes.map(x => x.trim())
+        console.log('trimmed', partes);
+        partes = partes.join('\n');
+        console.log('joined', partes);
+        partes = partes.split(/\n\n+/g);
+        console.log(partes);
+        texto = partes.map(function(parte) {
+          return Paragrafo('texto', parte);
+        })
+        console.log(texto);
+        texto = texto.join(Linha());
+        this.insertAdjacentHTML('beforebegin', texto);
+        texto = '';
+        doc.body.removeChild(this);
+      }
+      if (this.id === 'fim') {
+        apagar = true;
+      }
+      if (editando) {
+        if (this.nodeType === Node.TEXT_NODE) {
+          texto += this.nodeValue.replace(/\n/g, ' ');
+        } else if (this.nodeType === Node.ELEMENT_NODE) {
+          texto += this.outerHTML.replace(/\n/g, ' ');
+        }
+        doc.body.removeChild(this);
+      } else if (apagar) {
+        doc.body.removeChild(this);
+      }
+      if (this.id === 'textoinicio') {
+        doc.body.removeChild(this);
+        editando = true;
+      }
+    });
   });
 });
 
