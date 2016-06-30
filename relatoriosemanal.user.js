@@ -3,7 +3,7 @@
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_consultar\&/
-// @version     2
+// @version     3
 // @grant       none
 // ==/UserScript==
 
@@ -122,7 +122,7 @@ if (acao === 'relatorio_geral_listar') {
                 row.insertCell().textContent = '???';
                 row.cells[i + 1].setAttribute('x:fmla', '=NOW() - H' + (r + 2));
                 row.cells[i + 1].setAttribute('x:str', '????');
-                row.cells[i + 1].setAttribute('style', 'mso-number-format: 0;');
+                row.cells[i + 1].setAttribute('style', 'mso-number-format: "0\\\\ \\0022dia(s)\\0022";');
               }
             })
             return tb;
