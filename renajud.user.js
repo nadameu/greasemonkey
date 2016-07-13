@@ -2,7 +2,7 @@
 // @name        Renajud
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @version     10
+// @version     11
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -287,7 +287,7 @@ function privilegedCode() {
       promise = jQuery.Deferred();
     }
     window.pesquisaAtual = promise;
-    $('[id="form-incluir-restricao:j_idt56"]').click();
+    $('[id="form-incluir-restricao:j_idt55"]').click();
     return promise;
   }
 
@@ -415,7 +415,7 @@ function privilegedCode() {
     switch (partes[0]) {
       case 'form-incluir-restricao':
         switch (partes[1]) {
-          case 'j_idt56':
+          case 'j_idt55':
           case 'j_idt444':
             pesquisaAtual.resolve();
             break;
