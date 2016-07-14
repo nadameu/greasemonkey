@@ -43,30 +43,77 @@ define('main', ['GUI', 'Pagina', 'EventDispatcher', 'ServicoWSDL'], function(GUI
 
 	Pagina.addOnDataLoadedListener(EventDispatcher.dispatch);
 	GUI.addOnNumprocChangeListener(function(numproc) {
-		ServicoWSDL.obterDocumentosReus(numproc)
+		GUI.Logger.clear();
+		GUI.areaImpressao.innerHTML = '';
+		Pagina.limpar()
+		.then(function() {
+			GUI.Logger.write('Obtendo dados do processo... ');
+			return ServicoWSDL.obterDocumentosReus(numproc);
+		})
+		.then(function(documentos) {
+			GUI.Logger.write('ok.\n');
+			return Promise.resolve(documentos);
+		})
 		.then(function(documentos) {
 			var qtdVeiculosJaVistos = 0;
-			return documentos.reduce(function(promise, documento) {
+			return documentos.reduce(function(promise, documento, indiceDocumento, documentos) {
 				return promise
-				.then(Pagina.obterVeiculosDocumento.bind(null, documento))
+				.then(function() {
+					GUI.Logger.write('Obtendo veículos do réu ' + documento + '... ');
+					return Pagina.obterVeiculosDocumento(documento);
+				})
 				.then(function(qtdVeiculos) {
-					if (qtdVeiculos > qtdVeiculosJaVistos) {
+					var qtdVeiculosReu = qtdVeiculos - qtdVeiculosJaVistos;
+					qtdVeiculosJaVistos = qtdVeiculos;
+					GUI.Logger.write(qtdVeiculosReu + ' ' + (qtdVeiculosReu < 2 ? 'veículo' : 'veículos') + '.\n');
+					if (qtdVeiculosReu > 0) {
+						return Promise.resolve(qtdVeiculos);
 					} else {
-						return Pagina.imprimirSemVeiculos();
+						GUI.Logger.write('Imprimindo tela de réu sem veículos... ');
+						Pagina.imprimirSemVeiculos();
+						GUI.Logger.write('ok.\n');
+						if (indiceDocumento < documentos.length - 1) {
+							return Pagina.limparPesquisa().then(function() {
+								return Promise.resolve(qtdVeiculos);
+							});
+						} else {
+							return Promise.resolve(qtdVeiculos);
+						}
 					}
-					return Promise.resolve(qtdVeiculos);
 				});
 			}, Promise.resolve());
 		})
 		.then(function(qtdVeiculos) {
-			console.log(qtdVeiculos);
-			var arrVeiculos = new Array(qtdVeiculos);
-			for (var i = 0; i < qtdVeiculos; ++i) { arrVeiculos[i] = i; }
-			return arrVeiculos.reduce(function(promise, i) {
-				return promise.then(Pagina.obterDetalhesVeiculo.bind(null, i));
-			}, Promise.resolve());
+			console.info('Quantidade de veículos:', qtdVeiculos);
+			var promise = Promise.resolve();
+			if (qtdVeiculos > 0) {
+				promise = promise.then(Pagina.limparPesquisa);
+			}
+			return promise.then(function() {
+				var arrVeiculos = new Array(qtdVeiculos);
+				for (var i = 0; i < qtdVeiculos; ++i) { arrVeiculos[i] = i; }
+				return arrVeiculos.reduce(function(promise, i) {
+					return promise
+					.then(function() {
+						GUI.Logger.write('Obtendo detalhes do veículo ' + (i + 1) + '... ');
+						return Pagina.obterDetalhesVeiculo(i);
+					})
+					.then(function() {
+						GUI.Logger.write('ok.\n');
+						return Promise.resolve();
+					});
+				}, Promise.resolve());
+			});
 		})
-		.catch(err => console.error(err));
+		.then(function() {
+			console.log(arguments);
+		})
+		.catch(function(err) {
+			console.error(err);
+			window.alert(err.message);
+			GUI.Logger.clear();
+			Pagina.limpar();
+		});
 	});
 });
 
@@ -75,8 +122,8 @@ define('GUI', [], function() {
 
 	var style = document.createElement('style');
 	style.innerHTML = [
-		'@media print { div#alteracoesGreasemonkey { display: none; } }',
-		'@media screen { div#impressaoGreasemonkey { display: none; } }'
+		'@media print { div#alteracoesGreasemonkey, .noprint { display: none; } }',
+		'@media screen { div#impressaoGreasemonkey, .noscreen { display: none; } }'
 	].join('\n');
 	document.getElementsByTagName('head')[0].appendChild(style);
 
@@ -85,8 +132,9 @@ define('GUI', [], function() {
 	var alteracoesGreasemonkey = document.getElementById('alteracoesGreasemonkey');
 
 	document.body.insertAdjacentHTML('beforeend', '<div id="impressaoGreasemonkey"></div>');
+	var impressaoGreasemonkey = document.getElementById('impressaoGreasemonkey');
 
-	var estadoElement = document.querySelector('#alteracoesGreasemonkey select');
+	var estadoElement = alteracoesGreasemonkey.querySelector('select');
 	var estadoSalvo = localStorage.getItem('estado');
 	estadoElement.insertAdjacentHTML('afterbegin', ['PR', 'RS', 'SC'].map(estado => '<option' + (estado === estadoSalvo ? ' selected' : '') + '>' + estado + '</option>').join(''));
 	estadoElement.addEventListener('change', function(e) {
@@ -95,29 +143,41 @@ define('GUI', [], function() {
 	}, false);
 
 	var listeners = [];
-	var numprocElement = document.querySelector('#alteracoesGreasemonkey input');
+	var numprocElement = alteracoesGreasemonkey.querySelector('input');
 	numprocElement.addEventListener('change', function(evt) {
 		var numproc = GUI.numproc.replace(/\D+/g, '');
 		GUI.numproc = numproc;
-		listeners.map(fn => fn(numproc));
+		listeners.forEach(fn => fn(numproc));
 	}, false);
+
+	var logElement = alteracoesGreasemonkey.querySelector('div');
 
 	var GUI = {
 		addOnNumprocChangeListener(fn) {
+			console.debug('GUI.addOnNumprocChangeListener(fn)', fn);
 			listeners.push(fn);
 		},
 		get estado() { return estadoElement.value; },
 		get numproc() { return numprocElement.value; },
 		set numproc(val) { numprocElement.value = val; },
+		get areaImpressao() { return impressaoGreasemonkey; },
 		hide() {
+			console.debug('GUI.hide()');
 			alteracoesGreasemonkey.style.display = 'none';
 		},
 		show() {
+			console.debug('GUI.show()');
 			alteracoesGreasemonkey.style.display = '';
 		},
 		Logger: {
-			clear() {},
-			write() {}
+			clear() {
+				console.debug('GUI.Logger.clear()');
+				logElement.innerHTML = '';
+			},
+			write(text) {
+				console.debug('GUI.Logger.write(text)', text);
+				logElement.innerHTML += text.replace(/\n/g, '<br/>');
+			}
 		}
 	};
 	return GUI;
@@ -129,7 +189,6 @@ define('ServicoWSDL', ['GUI'], function(GUI) {
 	var dadosSalvos = new Map();
 
 	function analisarRespostaNumeroProcesso(xhr) {
-		console.debug('analisarRespostaNumeroProcesso(xhr)', xhr);
 		var promise = new Promise(function(resolve, reject) {
 			var parser = new DOMParser();
 			var xml = parser.parseFromString(xhr.responseText, 'application/xml');
@@ -148,7 +207,7 @@ define('ServicoWSDL', ['GUI'], function(GUI) {
 				var docs = [...processo.querySelectorAll('Partes Parte CPF_CGC')]
 				.filter(doc => doc.parentNode.querySelectorAll('Reu').length > 0)
 				.map(doc => doc.textContent);
-				dadosSalvos.set(GUI.numproc, docs);
+				dadosSalvos.set(GUI.estado + GUI.numproc, docs);
 				resolve(docs);
 			}
 		});
@@ -157,11 +216,13 @@ define('ServicoWSDL', ['GUI'], function(GUI) {
 
 	var ServicoWSDL = {
 		obterDocumentosReus(numproc) {
-			if (dadosSalvos.has(numproc)) {
-				return Promise.resolve(dadosSalvos.get(numproc));
+			console.debug('ServicoWSDL.obterDocumentosReus(numproc)', numproc);
+			var estado = GUI.estado;
+			var id = estado + numproc
+			if (dadosSalvos.has(id)) {
+				return Promise.resolve(dadosSalvos.get(id));
 			}
 			var promise = new Promise(function(resolve, reject) {
-				var estado = GUI.estado;
 				var options = {
 					method: 'POST',
 					url: 'http://www.trf4.jus.br/trf4/processos/acompanhamento/ws_consulta_processual.php',
@@ -191,16 +252,19 @@ define('ServicoWSDL', ['GUI'], function(GUI) {
 				GM_xmlhttpRequest(options);
 			});
 			return promise.then(analisarRespostaNumeroProcesso);
-			console.log(numproc);
+			console.info(numproc);
 		},
 	};
 	return ServicoWSDL;
 });
 
-define('Pagina', ['EventDispatcher'], function(EventDispatcher) {
+define('Pagina', ['EventDispatcher', 'GUI'], function(EventDispatcher, GUI) {
 	'use strict';
 
 	function privilegedCode() {
+		jQuery.fx.off = true;
+
+		var origin = [location.protocol, document.domain].join('//');
 		$(window.document).ajaxComplete(function(ev, xhr, options) {
 			var extension = $('extension', xhr.responseXML).text();
 			if (extension !== '') {
@@ -212,7 +276,7 @@ define('Pagina', ['EventDispatcher'], function(EventDispatcher) {
 				type: 'ajaxComplete',
 				source: options.source,
 				extension: extension
-			}), [location.protocol, document.domain].join('//'));
+			}), origin);
 		});
 	}
 
@@ -228,33 +292,112 @@ define('Pagina', ['EventDispatcher'], function(EventDispatcher) {
     }
     var msg = JSON.parse(evt.data);
     if (msg.type === 'ajaxComplete') {
-      console.debug('Mensagem recebida', msg);
-			listeners.map(listener => listener(msg));
-    } else {
-      console.debug('Tipo desconhecido', msg.type);
+			listeners.forEach(listener => listener(msg));
+    } else if (msg.type === 'hideBlocker') {
+			// Ignorar, enviado pelo script
+		} else {
+      console.error('Tipo desconhecido', msg.type);
     }
-  });
+  }, false);
 
 	var Pagina = {
 		addOnDataLoadedListener(fn) {
+			console.debug('Pagina.addOnDataLoadedListener(fn)', fn);
 			listeners.push(fn);
 		},
-		imprimir() {},
-		imprimirSemVeiculos() {},
-		limpar() {},
-		limparPesquisa() {},
+		imprimir() {
+			console.debug('Pagina.imprimir()');
+			console.info('window.print()');
+		},
+		imprimirSemVeiculos() {
+			console.debug('Pagina.imprimirSemVeiculos()');
+			var veiculos = document.getElementById('form-incluir-restricao:panel-lista-veiculo');
+			veiculos.style.display = 'none';
+			Pagina.imprimir();
+			veiculos.style.display = '';
+		},
+		limpar() {
+			console.debug('Pagina.limpar()');
+			var promise = new Promise(function(resolve, reject) {
+				var idBotaoLimpar = 'form-incluir-restricao:j_idt443';
+				var botaoLimpar = document.getElementById(idBotaoLimpar);
+				if (botaoLimpar === null) {
+					resolve();
+				} else {
+					EventDispatcher.expectOnce(idBotaoLimpar, function() {
+						resolve();
+					});
+					botaoLimpar.click();
+				}
+      });
+      return promise.then(Pagina.limparPesquisa);
+		},
+		limparPesquisa() {
+			console.debug('Pagina.limparPesquisa()');
+			var promise = new Promise(function(resolve, reject) {
+				var idBotaoLimparPesquisa = 'form-incluir-restricao:j_idt55';
+				var botaoLimparPesquisa = document.getElementById(idBotaoLimparPesquisa);
+				EventDispatcher.expectOnce(idBotaoLimparPesquisa, function() {
+					resolve();
+				});
+				botaoLimparPesquisa.click();
+      });
+      return promise;
+		},
 		obterVeiculosDocumento(documento) {
+			console.debug('Pagina.obterVeiculosDocumento(documento)', documento);
 			var promise = new Promise(function(resolve, reject) {
 				var idBotaoPesquisar = 'form-incluir-restricao:botao-pesquisar';
 				var botaoPesquisar = document.getElementById(idBotaoPesquisar);
 				var campoDocumento = document.getElementById('form-incluir-restricao:campo-cpf-cnpj');
-				EventDispatcher.expectOnce(idBotaoPesquisar, ext => resolve(ext.totalRecords));
+				EventDispatcher.expectOnce(idBotaoPesquisar, function(ext) {
+					if (ext === null) {
+						resolve(0);
+					} else {
+						resolve(ext.totalRecords);
+					}
+				});
         campoDocumento.value = documento;
         botaoPesquisar.click();
       });
       return promise;
 		},
-		obterDetalhesVeiculo(ord) {}
+		obterDetalhesVeiculo(ord) {
+			console.debug('Pagina.obterDetalhesVeiculo(ord)', ord);
+			var idTBody = 'form-incluir-restricao:lista-veiculo_data', tBody = document.getElementById(idTBody);
+			var linha = tBody.rows[ord];
+			var celulaRestricoes = linha.cells[7];
+			var prefixo = 'form-incluir-restricao:lista-veiculo:' + ord;
+			var idAbrirDetalhes = prefixo + ':j_idt75', abrirDetalhes = document.getElementById(idAbrirDetalhes);
+			var idAbrirRestricoes = prefixo + ':link-detalhes-veiculo-restricoes', abrirRestricoes = document.getElementById(idAbrirRestricoes);
+			var promise = new Promise(function(resolve, reject) {
+				EventDispatcher.expectOnce(idAbrirDetalhes, resolve);
+				abrirDetalhes.click();
+			})
+			.then(function() {
+				var idDetalhes = prefixo + ':panel-group-dados-veiculo', detalhes = document.getElementById(idDetalhes);
+				detalhes.style.pageBreakBefore = 'always';
+				GUI.areaImpressao.appendChild(detalhes);
+				var idFecharDetalhes = prefixo + ':j_idt187', fecharDetalhes = document.getElementById(idFecharDetalhes);
+				fecharDetalhes.click();
+				if (celulaRestricoes.textContent === 'Não') {
+					return Promise.resolve();
+				} else {
+					return new Promise(function(resolve, reject) {
+						EventDispatcher.expectOnce(idAbrirRestricoes, resolve);
+						abrirRestricoes.click();
+					}).then(function() {
+						var idPainelRestricoes = prefixo + ':j_idt231', painelRestricoes = document.getElementById(idPainelRestricoes);
+						var idListaRestricoes = prefixo + ':j_idt237_list', listaRestricoes = document.getElementById(idListaRestricoes);
+						var idPainelRestricoesRenajud = prefixo + ':panel-mostrar-detalhes', painelRestricoesRenajud = document.getElementById(idPainelRestricoesRenajud);
+						var idFecharRestricoes = prefixo + ':j_idt440', fecharRestricoes = document.getElementById(idFecharRestricoes);
+						fecharRestricoes.click();
+						return Promise.resolve();
+					});
+				}
+			});
+			return promise;
+		}
 	};
 	return Pagina;
 });
@@ -274,14 +417,17 @@ define('EventDispatcher', [], function() {
 
 	var EventDispatcher = {
 		dispatch(evt) {
-			getOrCreate(expect, evt.source).map(fn => fn(evt.extension));
-			getOrCreate(expectOnce, evt.source).map(fn => fn(evt.extension));
+			console.debug('EventDispatcher.dispatch(evt)', evt);
+			getOrCreate(expect, evt.source).forEach(fn => fn(evt.extension));
+			getOrCreate(expectOnce, evt.source).forEach(fn => fn(evt.extension));
 			expectOnce.delete(evt.source);
 		},
 		expect(source, fn) {
+			console.debug('EventDispatcher.expect(source, fn)', source, fn);
 			getOrCreate(expect, source).push(fn);
 		},
 		expectOnce(source, fn) {
+			console.debug('EventDispatcher.expectOnce(source, fn)', source, fn);
 			getOrCreate(expectOnce, source).push(fn);
 		}
 	};
