@@ -245,7 +245,7 @@ define('ServicoWSDL', ['GUI'], function(GUI) {
 		obterDocumentosReus(numproc) {
 			console.debug('ServicoWSDL.obterDocumentosReus(numproc)', numproc);
 			var estado = GUI.estado;
-			var id = estado + numproc
+			var id = estado + numproc;
 			if (dadosSalvos.has(id)) {
 				return Promise.resolve(dadosSalvos.get(id));
 			}
