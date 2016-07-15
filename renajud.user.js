@@ -38,83 +38,91 @@ var { define, require } = (function() {
 	return { define: define, require: require };
 })();
 
-define('main', ['GUI', 'Pagina', 'EventDispatcher', 'ServicoWSDL'], function(GUI, Pagina, EventDispatcher, ServicoWSDL) {
+define('async', [], function() {
+	'use strict';
+
+	function async(gen) {
+		function getNext(value = null) {
+			yielded = it.next(value);
+			yielded.done || yielded.value.then(function(result) {
+				getNext(result);
+			}, function(err) {
+				throw err;
+			});
+		}
+		var it = gen(), yielded;
+		getNext();
+	}
+	return async;
+
+});
+
+define('main', ['GUI', 'Pagina', 'EventDispatcher', 'ServicoWSDL', 'async'], function(GUI, Pagina, EventDispatcher, ServicoWSDL, async) {
 	'use strict';
 
 	Pagina.addOnDataLoadedListener(EventDispatcher.dispatch);
 	GUI.addOnNumprocChangeListener(function(numproc) {
-		GUI.Logger.clear();
-		GUI.areaImpressao.innerHTML = '';
-		Pagina.limpar()
-		.then(function() {
-			GUI.Logger.write('Obtendo dados do processo... ');
-			return ServicoWSDL.obterDocumentosReus(numproc);
-		})
-		.then(function(documentos) {
-			GUI.Logger.write('ok.\n');
-			return Promise.resolve(documentos);
-		})
-		.then(function(documentos) {
-			var qtdVeiculosJaVistos = 0;
-			return documentos.reduce(function(promise, documento, indiceDocumento, documentos) {
-				return promise
-				.then(function() {
-					GUI.Logger.write('Obtendo veículos do réu ' + documento + '... ');
-					return Pagina.obterVeiculosDocumento(documento);
-				})
-				.then(function(qtdVeiculos) {
-					var qtdVeiculosReu = qtdVeiculos - qtdVeiculosJaVistos;
+		async(function*() {
+			try {
+				GUI.Logger.clear();
+				GUI.areaImpressao.limpar();
+				yield Pagina.limpar();
+				GUI.Logger.write('Obtendo dados do processo...');
+				var documentos = yield ServicoWSDL.obterDocumentosReus(numproc);
+				GUI.Logger.write('..................... ok.\n');
+				var qtdVeiculosJaVistos = 0;
+				for (var indiceDocumento = 0, documento; documento = documentos[indiceDocumento]; indiceDocumento++) {
+					GUI.Logger.write('Obtendo veículos do réu ' + documento + '.'.repeat(14 - documento.length) + '...');
+					let qtdVeiculos = yield Pagina.obterVeiculosDocumento(documento);
+					let qtdVeiculosReu = qtdVeiculos - qtdVeiculosJaVistos;
 					qtdVeiculosJaVistos = qtdVeiculos;
-					GUI.Logger.write(qtdVeiculosReu + ' ' + (qtdVeiculosReu < 2 ? 'veículo' : 'veículos') + '.\n');
+					GUI.Logger.write('.'.repeat(3 - qtdVeiculosReu.toString().length) + '(' + qtdVeiculosReu + ')... ok.\n');
 					if (qtdVeiculosReu > 0) {
-						return Promise.resolve(qtdVeiculos);
+						// não faz nada
 					} else {
-						GUI.Logger.write('Imprimindo tela de réu sem veículos... ');
+						GUI.Logger.write('Imprimindo tela de réu sem veículos...');
 						Pagina.imprimirSemVeiculos();
-						GUI.Logger.write('ok.\n');
+						GUI.Logger.write('........... ok.\n');
 						if (indiceDocumento < documentos.length - 1) {
-							return Pagina.limparPesquisa().then(function() {
-								return Promise.resolve(qtdVeiculos);
-							});
-						} else {
-							return Promise.resolve(qtdVeiculos);
+							yield Pagina.limparPesquisa();
 						}
 					}
-				});
-			}, Promise.resolve());
-		})
-		.then(function(qtdVeiculos) {
-			console.info('Quantidade de veículos:', qtdVeiculos);
-			var promise = Promise.resolve();
-			if (qtdVeiculos > 0) {
-				promise = promise.then(Pagina.limparPesquisa);
+				}
+				var qtdVeiculos = qtdVeiculosJaVistos;
+				if (qtdVeiculos > 0) {
+					yield Pagina.limparPesquisa();
+					for (var i = 0; i < qtdVeiculos; ++i) {
+						let placa = Pagina.obterPlacaVeiculo(i);
+						GUI.Logger.write('Obtendo detalhes do veículo ' + placa.substr(0, 3) + '-' + placa.substr(3) + '...');
+						let detalhes = yield Pagina.abrirDetalhesVeiculo(i);
+						detalhes.style.pageBreakBefore = 'always';
+						GUI.areaImpressao.adicionar(detalhes);
+						Pagina.fecharDetalhesVeiculo(i);
+						if (Pagina.veiculoPossuiRestricoes(i)) {
+							let detalhesRestricoes = yield Pagina.abrirRestricoesVeiculo(i);
+							let restricoes = [...detalhesRestricoes.lista.childNodes].map(li => li.textContent.trim());
+							GUI.definirRestricoesVeiculo(i, restricoes);
+							GUI.areaImpressao.adicionar(document.createElement('br'));
+							GUI.areaImpressao.adicionar(detalhesRestricoes.painel);
+							if (detalhesRestricoes.renajud) {
+								GUI.areaImpressao.adicionar(document.createElement('br'));
+								[...detalhesRestricoes.renajud.childNodes].forEach(elemento => GUI.areaImpressao.adicionar(elemento));
+							}
+							Pagina.fecharRestricoesVeiculo(i);
+						}
+						GUI.Logger.write('.......... ok.\n');
+					}
+					Pagina.imprimir();
+				}
+			} catch (err) {
+				console.error(err);
+				window.alert(err.message);
+				GUI.Logger.clear();
+				Pagina.limpar();
 			}
-			return promise.then(function() {
-				var arrVeiculos = new Array(qtdVeiculos);
-				for (var i = 0; i < qtdVeiculos; ++i) { arrVeiculos[i] = i; }
-				return arrVeiculos.reduce(function(promise, i) {
-					return promise
-					.then(function() {
-						GUI.Logger.write('Obtendo detalhes do veículo ' + (i + 1) + '... ');
-						return Pagina.obterDetalhesVeiculo(i);
-					})
-					.then(function() {
-						GUI.Logger.write('ok.\n');
-						return Promise.resolve();
-					});
-				}, Promise.resolve());
-			});
-		})
-		.then(function() {
-			console.log(arguments);
-		})
-		.catch(function(err) {
-			console.error(err);
-			window.alert(err.message);
-			GUI.Logger.clear();
-			Pagina.limpar();
 		});
 	});
+
 });
 
 define('GUI', [], function() {
@@ -123,7 +131,9 @@ define('GUI', [], function() {
 	var style = document.createElement('style');
 	style.innerHTML = [
 		'@media print { div#alteracoesGreasemonkey, .noprint { display: none; } }',
-		'@media screen { div#impressaoGreasemonkey, .noscreen { display: none; } }'
+		'@media screen { div#impressaoGreasemonkey, .noscreen { display: none; } }',
+		'div#alteracoesGreasemonkey div { font-family: monospace; }',
+		'div#impressaoGreasemonkey table { page-break-inside: avoid; }'
 	].join('\n');
 	document.getElementsByTagName('head')[0].appendChild(style);
 
@@ -153,14 +163,31 @@ define('GUI', [], function() {
 	var logElement = alteracoesGreasemonkey.querySelector('div');
 
 	var GUI = {
+		get estado() { return estadoElement.value; },
+		get numproc() { return numprocElement.value; },
+		set numproc(val) { numprocElement.value = val; },
 		addOnNumprocChangeListener(fn) {
 			console.debug('GUI.addOnNumprocChangeListener(fn)', fn);
 			listeners.push(fn);
 		},
-		get estado() { return estadoElement.value; },
-		get numproc() { return numprocElement.value; },
-		set numproc(val) { numprocElement.value = val; },
-		get areaImpressao() { return impressaoGreasemonkey; },
+		definirRestricoesVeiculo(ord, restricoes) {
+			console.debug('GUI.definirRestricoeVeiculo(ord, restricoes)', ord, restricoes);
+			require(['Pagina'], function(Pagina) {
+				var celulaRestricao = Pagina.obterCelulaRestricaoVeiculo(ord);
+				celulaRestricao.innerHTML = '<div class="noscreen">' + celulaRestricao.innerHTML + '</div>\n';
+				celulaRestricao.insertAdjacentHTML('beforeend', restricoes.map(texto => '<div class="noprint">' + texto + '</div>').join('\n'));
+			});
+		},
+		areaImpressao: {
+			adicionar(elemento) {
+				console.debug('GUI.areaImpressao.adicionar(elemento)', elemento);
+				impressaoGreasemonkey.appendChild(elemento);
+			},
+			limpar() {
+				console.debug('GUI.areaImpressao.limpar()');
+				impressaoGreasemonkey.innerHTML = '';
+			}
+		},
 		hide() {
 			console.debug('GUI.hide()');
 			alteracoesGreasemonkey.style.display = 'none';
@@ -252,7 +279,6 @@ define('ServicoWSDL', ['GUI'], function(GUI) {
 				GM_xmlhttpRequest(options);
 			});
 			return promise.then(analisarRespostaNumeroProcesso);
-			console.info(numproc);
 		},
 	};
 	return ServicoWSDL;
@@ -293,8 +319,6 @@ define('Pagina', ['EventDispatcher', 'GUI'], function(EventDispatcher, GUI) {
     var msg = JSON.parse(evt.data);
     if (msg.type === 'ajaxComplete') {
 			listeners.forEach(listener => listener(msg));
-    } else if (msg.type === 'hideBlocker') {
-			// Ignorar, enviado pelo script
 		} else {
       console.error('Tipo desconhecido', msg.type);
     }
@@ -305,9 +329,50 @@ define('Pagina', ['EventDispatcher', 'GUI'], function(EventDispatcher, GUI) {
 			console.debug('Pagina.addOnDataLoadedListener(fn)', fn);
 			listeners.push(fn);
 		},
+		abrirDetalhesVeiculo(ord) {
+			console.debug('Pagina.abrirDetalhesVeiculo(ord)', ord);
+			var prefixo = Pagina.obterPrefixoVeiculo(ord);
+			var idAbrirDetalhes = prefixo + ':j_idt75', abrirDetalhes = document.getElementById(idAbrirDetalhes);
+			return new Promise(function(resolve, reject) {
+				EventDispatcher.expectOnce(idAbrirDetalhes, resolve);
+				abrirDetalhes.click();
+			})
+			.then(() => document.getElementById(prefixo + ':panel-group-dados-veiculo'));
+		},
+		abrirRestricoesVeiculo(ord) {
+			console.debug('Pagina.abrirDetalhesVeiculo(ord)', ord);
+			var prefixo = Pagina.obterPrefixoVeiculo(ord);
+			var idAbrirRestricoes = prefixo + ':link-detalhes-veiculo-restricoes', abrirRestricoes = document.getElementById(idAbrirRestricoes);
+			return new Promise(function(resolve, reject) {
+				EventDispatcher.expectOnce(idAbrirRestricoes, resolve);
+				abrirRestricoes.click();
+			})
+			.then(function() {
+				var painelRestricoes = document.getElementById(prefixo + ':j_idt231');
+				var listaRestricoes = document.getElementById(prefixo + ':j_idt237_list');
+				var painelRestricoesRenajud = document.getElementById(prefixo + ':j_idt239');
+				return {
+					painel: painelRestricoes,
+					lista: listaRestricoes,
+					renajud: painelRestricoesRenajud
+				};
+			});
+		},
+		fecharDetalhesVeiculo(ord) {
+			console.debug('Pagina.fecharDetalhesVeiculo(ord)', ord);
+			var prefixo = Pagina.obterPrefixoVeiculo(ord);
+			var fecharDetalhes = document.getElementById(prefixo + ':j_idt187');
+			fecharDetalhes.click();
+		},
+		fecharRestricoesVeiculo(ord) {
+			console.debug('Pagina.fecharRestricoesVeiculo(ord)', ord);
+			var prefixo = Pagina.obterPrefixoVeiculo(ord);
+			var fecharRestricoes = document.getElementById(prefixo + ':j_idt440');
+			fecharRestricoes.click();
+		},
 		imprimir() {
 			console.debug('Pagina.imprimir()');
-			console.info('window.print()');
+			window.print();
 		},
 		imprimirSemVeiculos() {
 			console.debug('Pagina.imprimirSemVeiculos()');
@@ -344,6 +409,26 @@ define('Pagina', ['EventDispatcher', 'GUI'], function(EventDispatcher, GUI) {
       });
       return promise;
 		},
+		obterCelulaRestricaoVeiculo(ord) {
+			console.debug('Pagina.obterCelulaRestricaoVeiculo(ord)', ord);
+			var linha = Pagina.obterLinhaVeiculo(ord);
+			return linha.cells[7];
+		},
+		obterLinhaVeiculo(ord) {
+			console.debug('Pagina.obterLinhaVeiculo(ord)', ord);
+			var tBody = document.getElementById('form-incluir-restricao:lista-veiculo_data');
+			return tBody.rows[ord];
+		},
+		obterPlacaVeiculo(ord) {
+			console.debug('Pagina.obterPlacaVeiculo(ord)', ord);
+			var linha = Pagina.obterLinhaVeiculo(ord);
+			var celulaPlaca = linha.cells[1];
+			return celulaPlaca.textContent;
+		},
+		obterPrefixoVeiculo(ord) {
+			console.debug('Pagina.obterPrefixoVeiculo(ord)', ord);
+			return 'form-incluir-restricao:lista-veiculo:' + ord;
+		},
 		obterVeiculosDocumento(documento) {
 			console.debug('Pagina.obterVeiculosDocumento(documento)', documento);
 			var promise = new Promise(function(resolve, reject) {
@@ -362,41 +447,10 @@ define('Pagina', ['EventDispatcher', 'GUI'], function(EventDispatcher, GUI) {
       });
       return promise;
 		},
-		obterDetalhesVeiculo(ord) {
-			console.debug('Pagina.obterDetalhesVeiculo(ord)', ord);
-			var idTBody = 'form-incluir-restricao:lista-veiculo_data', tBody = document.getElementById(idTBody);
-			var linha = tBody.rows[ord];
-			var celulaRestricoes = linha.cells[7];
-			var prefixo = 'form-incluir-restricao:lista-veiculo:' + ord;
-			var idAbrirDetalhes = prefixo + ':j_idt75', abrirDetalhes = document.getElementById(idAbrirDetalhes);
-			var idAbrirRestricoes = prefixo + ':link-detalhes-veiculo-restricoes', abrirRestricoes = document.getElementById(idAbrirRestricoes);
-			var promise = new Promise(function(resolve, reject) {
-				EventDispatcher.expectOnce(idAbrirDetalhes, resolve);
-				abrirDetalhes.click();
-			})
-			.then(function() {
-				var idDetalhes = prefixo + ':panel-group-dados-veiculo', detalhes = document.getElementById(idDetalhes);
-				detalhes.style.pageBreakBefore = 'always';
-				GUI.areaImpressao.appendChild(detalhes);
-				var idFecharDetalhes = prefixo + ':j_idt187', fecharDetalhes = document.getElementById(idFecharDetalhes);
-				fecharDetalhes.click();
-				if (celulaRestricoes.textContent === 'Não') {
-					return Promise.resolve();
-				} else {
-					return new Promise(function(resolve, reject) {
-						EventDispatcher.expectOnce(idAbrirRestricoes, resolve);
-						abrirRestricoes.click();
-					}).then(function() {
-						var idPainelRestricoes = prefixo + ':j_idt231', painelRestricoes = document.getElementById(idPainelRestricoes);
-						var idListaRestricoes = prefixo + ':j_idt237_list', listaRestricoes = document.getElementById(idListaRestricoes);
-						var idPainelRestricoesRenajud = prefixo + ':panel-mostrar-detalhes', painelRestricoesRenajud = document.getElementById(idPainelRestricoesRenajud);
-						var idFecharRestricoes = prefixo + ':j_idt440', fecharRestricoes = document.getElementById(idFecharRestricoes);
-						fecharRestricoes.click();
-						return Promise.resolve();
-					});
-				}
-			});
-			return promise;
+		veiculoPossuiRestricoes(ord) {
+			console.debug('Pagina.veiculoPossuiRestricoes(ord)', ord);
+			var celulaRestricoes = Pagina.obterCelulaRestricaoVeiculo(ord);
+			return !!(celulaRestricoes.textContent === 'Sim');
 		}
 	};
 	return Pagina;
