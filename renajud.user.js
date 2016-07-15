@@ -47,7 +47,7 @@ define('async', [], function() {
 			yielded.done || yielded.value.then(function(result) {
 				getNext(result);
 			}, function(err) {
-				throw err;
+				it.throw(err);
 			});
 		}
 		var it = gen(), yielded;
