@@ -2,7 +2,7 @@
 // @name        Renajud
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @version     11
+// @version     12
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
