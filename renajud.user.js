@@ -40,7 +40,8 @@ function main() {
 				GUI.Logger.write('..................... ok.\n');
 
 				var qtdVeiculos = 0;
-				for (let indiceDocumento = 0, len = documentos.length, ultimo = len - 1, documento; indiceDocumento < len; ++indiceDocumento) {
+				let len = documentos.length, ultimo = len - 1, documento;
+				for (let indiceDocumento = 0; indiceDocumento < len; ++indiceDocumento) {
 					documento = documentos[indiceDocumento];
 
 					GUI.Logger.write('Obtendo veículos do réu ' + documento + '.'.repeat(14 - documento.length) + '...');
@@ -88,8 +89,12 @@ function main() {
 						GUI.Logger.write('.......... ok.\n');
 
 					}
+					GUI.Logger.write('Imprimindo detalhes dos veículos...');
 					Pagina.imprimir();
+					GUI.Logger.write('.............. ok.\n');
 				}
+
+				GUI.Logger.write('Terminado. Selecione os veículos a restringir.\n');
 
 			} catch (err) {
 				console.error(err);
@@ -99,13 +104,132 @@ function main() {
 			}
 		});
 	});
+
+	function preencherSelectOneMenu(idCampo, valor) {
+		console.debug('preencherSelectOneMenu(idCampo, valor)', idCampo, valor);
+    var idSelect = idCampo + '_input', idPainel = idCampo + '_panel';
+    var select = document.getElementById(idSelect);
+    var opcao = select.querySelectorAll('option[value="' + valor + '"]');
+		if (opcao.length === 0) {
+			throw new Error('Opção não encontrada (campo "' + idCampo + '"):', valor);
+		}
+		var texto = opcao[0].innerHTML;
+    var menu = document.getElementById(idCampo).getElementsByClassName('ui-selectonemenu-trigger');
+    var opcao = [...document.getElementById(idPainel).getElementsByTagName('li')].filter(li => li.dataset.label === texto);
+    if (menu.length === 0) {
+      throw new Error('Campo não encontrado: "' + idCampo + '"', select, texto, menu, opcao);
+      return;
+    }
+    menu[0].click();
+    opcao[0].click();
+  }
+
+	function preencherTudo() {
+		console.debug('preencherTudo()');
+		if (Pagina.obterMunicipio() !== PreferenciasUsuario.municipio) {
+			preencherSelectOneMenu('form-incluir-restricao:campo-municipio', PreferenciasUsuario.municipio);
+		} else if (Pagina.obterMunicipio() !== '' && Pagina.obterOrgao() !== PreferenciasUsuario.orgao) {
+			try {
+				preencherSelectOneMenu('form-incluir-restricao:campo-orgao', PreferenciasUsuario.orgao);
+			} catch (err) {
+				PreferenciasUsuario.orgao = '';
+			}
+		} else if (Pagina.obterOrgao() !== '' && Pagina.obterMagistrado() !== PreferenciasUsuario.magistrado && PreferenciasUsuario.preencherMagistrado) {
+			preencherSelectOneMenu('form-incluir-restricao:campo-magistrado', PreferenciasUsuario.magistrado);
+		} else if (Pagina.obterMagistrado() !== '') {
+			document.getElementById('form-incluir-restricao:campo-numero-processo').value = GUI.numproc;
+		} else {
+			console.info('Tudo preenchido.');
+		}
+	}
+
+	AjaxListener.listen('form-incluir-restricao:j_idt49', function(ext) {
+		if (ext.currentStep === 'inclui-restricao') {
+			GUI.hide();
+			document.getElementById('form-incluir-restricao:campo-magistrado_input').childNodes[0].value = '';
+			GUI.criarOpcaoPreencherMagistrado();
+			AjaxListener.listen('form-incluir-restricao:campo-municipio', function() {
+				PreferenciasUsuario.municipio = Pagina.obterMunicipio();
+				preencherTudo();
+			});
+			AjaxListener.listen('form-incluir-restricao:campo-orgao', function() {
+				PreferenciasUsuario.orgao = Pagina.obterOrgao();
+				preencherTudo();
+			});
+			Pagina.addOnMagistradoChangeListener(function(valor) {
+				PreferenciasUsuario.magistrado = valor;
+				preencherTudo();
+			});
+			preencherTudo();
+		} else if (ext.currentStep === 'pesquisa-veiculo') {
+			GUI.show();
+		} else if (ext.currentStep === 'confirma-restricao') {
+			// Não faz nada
+		}
+	});
 }
+
+var PreferenciasUsuario = (function() {
+	'use strict';
+
+	function padrao(nome, valor) {
+		let valorSalvo = localStorage.getItem(nome);
+		if (valorSalvo === null) {
+			valorSalvo = valor;
+		}
+		return valorSalvo;
+	}
+
+	function salvar(nome, valor) {
+		localStorage.setItem(nome, valor);
+	}
+
+	var PreferenciasUsuario = {
+		get estado() {
+			return padrao('estado', 'PR');
+		},
+		set estado(valor) {
+			salvar('estado', valor);
+		},
+		get magistrado() {
+			return padrao('magistrado', '');
+		},
+		set magistrado(valor) {
+			salvar('magistrado', valor);
+		},
+		get orgao() {
+			return padrao('orgao', '');
+		},
+		set orgao(valor) {
+			salvar('orgao', valor);
+		},
+		get preencherMagistrado() {
+			let valorSalvo = localStorage.getItem('preencher-magistrado');
+			if (valorSalvo === null || valorSalvo === 'N') {
+				valorSalvo = false;
+			} else {
+				valorSalvo = true;
+			}
+			return valorSalvo;
+		},
+		set preencherMagistrado(valor) {
+			salvar('preencher-magistrado', valor ? 'S' : 'N');
+		},
+		get municipio() {
+			return padrao('municipio', '');
+		},
+		set municipio(valor) {
+			salvar('municipio', valor);
+		}
+	};
+	return PreferenciasUsuario;
+})();
 
 var AjaxListener = (function() {
 	'use strict';
 
-	var callbacks = new Set();
-	var resolves = new Set();
+	var callbacks = new Map();
+	var resolves = new Map();
 
 	function getOrCreate(collection, id) {
 		if (! collection.has(id)) {
@@ -123,9 +247,9 @@ var AjaxListener = (function() {
 
 	var addResolve = addItem.bind(null, resolves);
 	function getResolves(source) {
-		var resolves = getOrCreate(resolves, source);
+		var sourceResolves = getOrCreate(resolves, source);
 		resolves.delete(source);
-		return resolves;
+		return sourceResolves;
 	}
 
 	function privilegedCode() {
@@ -168,6 +292,7 @@ var AjaxListener = (function() {
 			if (eventDetails.type === 'ajaxComplete') {
 				getResolves(eventDetails.source).forEach(resolve => resolve(eventDetails.extension));
 				getCallbacks(eventDetails.source).forEach(callback => callback(eventDetails.extension));
+				console.debug('ajaxComplete()', eventDetails);
 			} else {
 				throw new Error('Tipo desconhecido: ' + eventDetails.type);
 			}
@@ -206,18 +331,18 @@ var GUI = (function() {
 	document.getElementsByTagName('head')[0].appendChild(style);
 
 	var painel = document.getElementById('panel-inserir-restricao');
-	painel.insertAdjacentHTML('beforebegin', '<div id="alteracoesGreasemonkey"><select></select> <input placeholder="Número do processo" autofocus/><div></div></div>');
+	painel.insertAdjacentHTML('beforebegin', '<div id="alteracoesGreasemonkey"><select></select> <input placeholder="Número do processo" size="25" maxlength="25" autofocus/><div></div></div>');
 	var alteracoesGreasemonkey = document.getElementById('alteracoesGreasemonkey');
 
 	document.body.insertAdjacentHTML('beforeend', '<div id="impressaoGreasemonkey"></div>');
 	var impressaoGreasemonkey = document.getElementById('impressaoGreasemonkey');
 
 	var estadoElement = alteracoesGreasemonkey.querySelector('select');
-	var estadoSalvo = localStorage.getItem('estado');
+	var estadoSalvo = PreferenciasUsuario.estado;
 	estadoElement.insertAdjacentHTML('afterbegin', ['PR', 'RS', 'SC'].map(estado => '<option' + (estado === estadoSalvo ? ' selected' : '') + '>' + estado + '</option>').join(''));
 	estadoElement.addEventListener('change', function(e) {
 		estadoSalvo = e.target.value;
-		localStorage.setItem('estado', estadoSalvo);
+		PreferenciasUsuario.estado = estadoSalvo;
 	}, false);
 
 	var listeners = [];
@@ -237,6 +362,20 @@ var GUI = (function() {
 		addOnNumprocChangeListener(fn) {
 			console.debug('GUI.addOnNumprocChangeListener(fn)', fn);
 			listeners.push(fn);
+		},
+		criarOpcaoPreencherMagistrado() {
+			console.debug('GUI.criarOpcaoPreencherMagistrado()');
+			var menu = document.getElementById('form-incluir-restricao:campo-magistrado');
+			var celula = menu.parentNode;
+			while (celula && celula.tagName.toUpperCase() !== 'TD') {
+				celula = celula.parentNode;
+			}
+			celula.insertAdjacentHTML('afterend', '<td><label><input type="checkbox" id="preencher-magistrado-automaticamente"/> Usar este valor como padrão para todos os processos</label></td>');
+			var checkbox = document.getElementById('preencher-magistrado-automaticamente');
+			checkbox.checked = PreferenciasUsuario.preencherMagistrado;
+			checkbox.addEventListener('change', function(evt) {
+				PreferenciasUsuario.preencherMagistrado = evt.target.checked;
+			}, false);
 		},
 		definirRestricoesVeiculo(ord, restricoes) {
 			console.debug('GUI.definirRestricoeVeiculo(ord, restricoes)', ord, restricoes);
@@ -279,11 +418,22 @@ var GUI = (function() {
 var Pagina = (function() {
 	'use strict';
 
+	function addSelectOneMenuListner(prefixo, fn) {
+		var painelOpcoes = document.getElementById(prefixo + '_panel');
+		var select = document.getElementById(prefixo + '_input');
+		painelOpcoes.addEventListener('click', function(evt) {
+			var elementoClicado = evt.target;
+			if (elementoClicado.tagName.toUpperCase() === 'LI' && elementoClicado.dataset.hasOwnProperty('label')) {
+				return fn(select.value);
+			}
+		}, false);
+	}
+
 	var Pagina = {
 		abrirDetalhesVeiculo(ord) {
 			console.debug('Pagina.abrirDetalhesVeiculo(ord)', ord);
 			var prefixo = Pagina.obterPrefixoVeiculo(ord);
-			var idAbrirDetalhes = prefixo + ':j_idt75', abrirDetalhes = document.getElementById(idAbrirDetalhes);
+			var idAbrirDetalhes = prefixo + ':j_idt78', abrirDetalhes = document.getElementById(idAbrirDetalhes);
 			var promise = AjaxListener.listenOnce(idAbrirDetalhes).then(function() {
 				return document.getElementById(prefixo + ':panel-group-dados-veiculo');
 			});
@@ -295,9 +445,9 @@ var Pagina = (function() {
 			var prefixo = Pagina.obterPrefixoVeiculo(ord);
 			var idAbrirRestricoes = prefixo + ':link-detalhes-veiculo-restricoes', abrirRestricoes = document.getElementById(idAbrirRestricoes);
 			var promise = AjaxListener.listenOnce(idAbrirRestricoes).then(function() {
-				var painelRestricoes = document.getElementById(prefixo + ':j_idt231');
-				var listaRestricoes = document.getElementById(prefixo + ':j_idt237_list');
-				var painelRestricoesRenajud = document.getElementById(prefixo + ':j_idt239');
+				var painelRestricoes = document.getElementById(prefixo + ':j_idt240');
+				var listaRestricoes = document.getElementById(prefixo + ':j_idt246_list');
+				var painelRestricoesRenajud = document.getElementById(prefixo + ':j_idt248');
 				return {
 					painel: painelRestricoes,
 					lista: listaRestricoes,
@@ -307,16 +457,25 @@ var Pagina = (function() {
 			abrirRestricoes.click();
 			return promise;
 		},
+		addOnMagistradoChangeListener(fn) {
+			addSelectOneMenuListner('form-incluir-restricao:campo-magistrado', fn);
+		},
+		addOnMunicipioChangeListener(fn) {
+			addSelectOneMenuListner('form-incluir-restricao:campo-municipio', fn);
+		},
+		addOnOrgaoChangeListener(fn) {
+			addSelectOneMenuListner('form-incluir-restricao:campo-orgao', fn);
+		},
 		fecharDetalhesVeiculo(ord) {
 			console.debug('Pagina.fecharDetalhesVeiculo(ord)', ord);
 			var prefixo = Pagina.obterPrefixoVeiculo(ord);
-			var fecharDetalhes = document.getElementById(prefixo + ':j_idt187');
+			var fecharDetalhes = document.getElementById(prefixo + ':j_idt194');
 			fecharDetalhes.click();
 		},
 		fecharRestricoesVeiculo(ord) {
 			console.debug('Pagina.fecharRestricoesVeiculo(ord)', ord);
 			var prefixo = Pagina.obterPrefixoVeiculo(ord);
-			var fecharRestricoes = document.getElementById(prefixo + ':j_idt440');
+			var fecharRestricoes = document.getElementById(prefixo + ':j_idt456');
 			fecharRestricoes.click();
 		},
 		imprimir() {
@@ -333,7 +492,7 @@ var Pagina = (function() {
 		limpar() {
 			console.debug('Pagina.limpar()');
 			var promise = Promise.resolve();
-			var idBotaoLimpar = 'form-incluir-restricao:j_idt443';
+			var idBotaoLimpar = 'form-incluir-restricao:j_idt459';
 			var botaoLimpar = document.getElementById(idBotaoLimpar);
 			if (botaoLimpar !== null) {
 				promise = AjaxListener.listenOnce(idBotaoLimpar);
@@ -344,7 +503,7 @@ var Pagina = (function() {
 		},
 		limparPesquisa() {
 			console.debug('Pagina.limparPesquisa()');
-			var idBotaoLimparPesquisa = 'form-incluir-restricao:j_idt55';
+			var idBotaoLimparPesquisa = 'form-incluir-restricao:j_idt57';
 			var botaoLimparPesquisa = document.getElementById(idBotaoLimparPesquisa);
 			var promise = AjaxListener.listenOnce(idBotaoLimparPesquisa);
 			botaoLimparPesquisa.click();
@@ -359,6 +518,15 @@ var Pagina = (function() {
 			console.debug('Pagina.obterLinhaVeiculo(ord)', ord);
 			var tBody = document.getElementById('form-incluir-restricao:lista-veiculo_data');
 			return tBody.rows[ord];
+		},
+		obterMagistrado() {
+			return document.getElementById('form-incluir-restricao:campo-magistrado_input').value;
+		},
+		obterMunicipio() {
+			return document.getElementById('form-incluir-restricao:campo-municipio_input').value;
+		},
+		obterOrgao() {
+			return document.getElementById('form-incluir-restricao:campo-orgao_input').value;
 		},
 		obterPlacaVeiculo(ord) {
 			console.debug('Pagina.obterPlacaVeiculo(ord)', ord);
