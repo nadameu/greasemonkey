@@ -2,7 +2,7 @@
 // @name        Renajud
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @version     12
+// @version     13
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -92,10 +92,10 @@ function main() {
 					GUI.Logger.write('Imprimindo detalhes dos veículos...');
 					Pagina.imprimir();
 					GUI.Logger.write('.............. ok.\n');
+					GUI.Logger.write('Terminado. Selecione os veículos a restringir.\n');
+				} else {
+					GUI.Logger.write('Terminado. Nenhum veículo encontrado.\n');
 				}
-
-				GUI.Logger.write('Terminado. Selecione os veículos a restringir.\n');
-
 			} catch (err) {
 				console.error(err);
 				window.alert(err.message);
@@ -107,22 +107,22 @@ function main() {
 
 	function preencherSelectOneMenu(idCampo, valor) {
 		console.debug('preencherSelectOneMenu(idCampo, valor)', idCampo, valor);
-    var idSelect = idCampo + '_input', idPainel = idCampo + '_panel';
-    var select = document.getElementById(idSelect);
-    var opcao = select.querySelectorAll('option[value="' + valor + '"]');
+		var idSelect = idCampo + '_input', idPainel = idCampo + '_panel';
+		var select = document.getElementById(idSelect);
+		var opcao = select.querySelectorAll('option[value="' + valor + '"]');
 		if (opcao.length === 0) {
 			throw new Error('Opção não encontrada (campo "' + idCampo + '"):', valor);
 		}
 		var texto = opcao[0].innerHTML;
-    var menu = document.getElementById(idCampo).getElementsByClassName('ui-selectonemenu-trigger');
-    var opcao = [...document.getElementById(idPainel).getElementsByTagName('li')].filter(li => li.dataset.label === texto);
-    if (menu.length === 0) {
-      throw new Error('Campo não encontrado: "' + idCampo + '"', select, texto, menu, opcao);
-      return;
-    }
-    menu[0].click();
-    opcao[0].click();
-  }
+		var menu = document.getElementById(idCampo).getElementsByClassName('ui-selectonemenu-trigger');
+		var opcao = [...document.getElementById(idPainel).getElementsByTagName('li')].filter(li => li.dataset.label === texto);
+		if (menu.length === 0) {
+			throw new Error('Campo não encontrado: "' + idCampo + '"', select, texto, menu, opcao);
+			return;
+		}
+		menu[0].click();
+		opcao[0].click();
+	}
 
 	function preencherTudo() {
 		console.debug('preencherTudo()');
@@ -143,7 +143,9 @@ function main() {
 		}
 	}
 
-	AjaxListener.listen('form-incluir-restricao:j_idt49', function(ext) {
+	var form = document.getElementById('form-incluir-restricao');
+	var firstDiv = form.getElementsByTagName('div') [0], id = firstDiv.id;
+	AjaxListener.listen(id, function (ext) {
 		if (ext.currentStep === 'inclui-restricao') {
 			GUI.hide();
 			document.getElementById('form-incluir-restricao:campo-magistrado_input').childNodes[0].value = '';
@@ -433,7 +435,8 @@ var Pagina = (function() {
 		abrirDetalhesVeiculo(ord) {
 			console.debug('Pagina.abrirDetalhesVeiculo(ord)', ord);
 			var prefixo = Pagina.obterPrefixoVeiculo(ord);
-			var idAbrirDetalhes = prefixo + ':j_idt78', abrirDetalhes = document.getElementById(idAbrirDetalhes);
+			var idDivDetalhes = prefixo + ':detalhe-veiculo', divDetalhes = document.getElementById(idDivDetalhes);
+			var abrirDetalhes = divDetalhes.previousElementSibling, idAbrirDetalhes = abrirDetalhes.id;
 			var promise = AjaxListener.listenOnce(idAbrirDetalhes).then(function() {
 				return document.getElementById(prefixo + ':panel-group-dados-veiculo');
 			});
@@ -445,9 +448,11 @@ var Pagina = (function() {
 			var prefixo = Pagina.obterPrefixoVeiculo(ord);
 			var idAbrirRestricoes = prefixo + ':link-detalhes-veiculo-restricoes', abrirRestricoes = document.getElementById(idAbrirRestricoes);
 			var promise = AjaxListener.listenOnce(idAbrirRestricoes).then(function() {
-				var painelRestricoes = document.getElementById(prefixo + ':j_idt240');
-				var listaRestricoes = document.getElementById(prefixo + ':j_idt246_list');
-				var painelRestricoesRenajud = document.getElementById(prefixo + ':j_idt248');
+				var idDialogo = prefixo + ':dlg-detalhes-veiculo-restricoes', dialogo = document.getElementById(idDialogo);
+				var fieldsets = dialogo.getElementsByTagName('fieldset');
+				var painelRestricoes = fieldsets[1];
+				var listaRestricoes = painelRestricoes.getElementsByTagName('ul')[0];
+				var painelRestricoesRenajud = fieldsets[2];
 				return {
 					painel: painelRestricoes,
 					lista: listaRestricoes,
@@ -469,13 +474,15 @@ var Pagina = (function() {
 		fecharDetalhesVeiculo(ord) {
 			console.debug('Pagina.fecharDetalhesVeiculo(ord)', ord);
 			var prefixo = Pagina.obterPrefixoVeiculo(ord);
-			var fecharDetalhes = document.getElementById(prefixo + ':j_idt194');
+			var idDivDetalhes = prefixo + ':detalhe-veiculo', divDetalhes = document.getElementById(idDivDetalhes);
+			var fecharDetalhes = divDetalhes.getElementsByTagName('button')[1];
 			fecharDetalhes.click();
 		},
 		fecharRestricoesVeiculo(ord) {
 			console.debug('Pagina.fecharRestricoesVeiculo(ord)', ord);
 			var prefixo = Pagina.obterPrefixoVeiculo(ord);
-			var fecharRestricoes = document.getElementById(prefixo + ':j_idt456');
+			var idDivDetalhesRestricoes = prefixo + ':dlg-detalhes-veiculo-restricoes', divDetalhesRestricoes = document.getElementById(idDivDetalhesRestricoes);
+			var fecharRestricoes = divDetalhesRestricoes.getElementsByTagName('button') [1];
 			fecharRestricoes.click();
 		},
 		imprimir() {
@@ -492,9 +499,10 @@ var Pagina = (function() {
 		limpar() {
 			console.debug('Pagina.limpar()');
 			var promise = Promise.resolve();
-			var idBotaoLimpar = 'form-incluir-restricao:j_idt459';
-			var botaoLimpar = document.getElementById(idBotaoLimpar);
-			if (botaoLimpar !== null) {
+			var form = document.getElementById('form-incluir-restricao:panel-lista-veiculo');
+			var botoes = form.getElementsByTagName('button');
+			if (botoes.length === 2) {
+				var botaoLimpar = botoes[1], idBotaoLimpar = botaoLimpar.id;
 				promise = AjaxListener.listenOnce(idBotaoLimpar);
 				botaoLimpar.click();
 			}
@@ -503,8 +511,8 @@ var Pagina = (function() {
 		},
 		limparPesquisa() {
 			console.debug('Pagina.limparPesquisa()');
-			var idBotaoLimparPesquisa = 'form-incluir-restricao:j_idt57';
-			var botaoLimparPesquisa = document.getElementById(idBotaoLimparPesquisa);
+			var idBotaoPesquisar = 'form-incluir-restricao:botao-pesquisar', botaoPesquisar = document.getElementById(idBotaoPesquisar);
+			var botaoLimparPesquisa = botaoPesquisar.nextElementSibling, idBotaoLimparPesquisa = botaoLimparPesquisa.id;
 			var promise = AjaxListener.listenOnce(idBotaoLimparPesquisa);
 			botaoLimparPesquisa.click();
 			return promise;
