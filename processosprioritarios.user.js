@@ -86,10 +86,10 @@ if (/\?acao=usuario_tipo_monitoramento_localizador_listar\&/.test(location.searc
         processosLocalizador.forEach(function(processo) {
           let hoje = new Date();
           let ultimoEvento = parseDataHora(processo.cells[8].innerHTML);
-          console.info(hoje,ultimoEvento);
-          if (ultimoEvento.getTime() < (hoje.getTime() - 60*864e5)) {
+          let prioridade = processo.cells[9].textContent;
+          if (prioridade === 'Sim') {
             vermelho++;
-          } else if (ultimoEvento.getTime() < (hoje.getTime() - 30*864e5)) {
+          } else if (ultimoEvento.getTime() < (hoje.getTime() - 60*864e5)) {
             amarelo++;
           } else {
             verde++;
