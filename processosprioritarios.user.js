@@ -6,109 +6,306 @@
 // @version     1
 // @grant       none
 // ==/UserScript==
-if (/\?acao=usuario_tipo_monitoramento_localizador_listar\&/.test(location.search)) {
-  $('#divInfraAreaTelaD').prepend('<button id="teste">Teste</button>');
-  $('#teste').on('click', function() {
 
-    infraExibirAviso(false, '<center>Carregando dados dos processos...<br/><progress id="gmProgresso" value="0" max="1"></progress><output id="gmOutput"></output></center>');
-    var progresso = $('#gmProgresso'), output = $('#gmOutput');
-
-    var data = { paginacao: '100' };
-    var camposPost = [
-      'optchkcClasse',
-      'optDataAutuacao',
-      'optchkcUltimoEvento',
-      'optNdiasSituacao',
-      'optPrioridadeAtendimento',
-      'chkStatusProcesso'
-    ];
-    camposPost.forEach((campo) => data[campo] = 'S');
-
-    var links = $('#divInfraAreaTabela table a[href]');
-    progresso[0].max = Array.prototype.reduce.call(links, (val, link) => val + Number(link.textContent), 0);
-    output.text('0 / ' + progresso[0].max);
-    var promises = [], processos = [];
-
-    var cookiesAntigos = parseCookies(document.cookie);
-
-    function trataHtml(camposGet, link) {
-      return function(ret, result, xhr) {
-        let doc = $.parseHTML(ret);
-        let nomeLocalizador = $(doc).find('#selLocalizador option[value="' + camposGet.selLocalizador + '"]').text();
-        let pagina = Number($(doc).find('#hdnInfraPaginaAtual').val());
-        progresso[0].value += Number($(doc).find('#hdnInfraNroItens').val());
-        output.text(progresso[0].value + ' / ' + progresso[0].max);
-        var linhas = $(doc).find('#divInfraAreaTabela > table > tbody > tr[class^="infraTr"]');
-        console.info(nomeLocalizador + ', página ' + pagina, linhas.length, 'processos');
-        linhas.each(function(indiceLinha, linha) {
-          linha.dataset.localizador = nomeLocalizador;
-          linha.dataset.idLocalizador = camposGet.selLocalizador;
-          processos.push(linha);
-        });
-        let proxima = $(doc).find('#lnkInfraProximaPaginaSuperior');
-        if (proxima.size()) {
-          console.info('Buscando próxima página');
-          $(doc).find('#hdnInfraPaginaAtual')[0].value++;
-          let form = proxima.parents('form');
-          form.find('#selLocalizador').val(camposGet.selLocalizador);
-          return $.post(link.href, form.serialize(), 'html').then(trataHtml(camposGet, link));
-        }
-      };
+var PrivateVarsFactory = {
+  create() {
+    var _privateVars = new WeakMap();
+    return function(obj) {
+      if (! _privateVars.has(obj)) {
+        _privateVars.set(obj, {});
+      }
+      return _privateVars.get(obj);
     }
+  }
+};
 
-    links.each(function(indiceLink, link) {
-      var camposGet = {}, pares = link.search.split(/^\?/)[1].split('&');
-      pares.forEach(function(par) {
-        var [nome, valor] = par.split('=');
-        nome = decodeURIComponent(nome);
-        valor = decodeURIComponent(valor);
-        camposGet[nome] = valor;
+var GUI = (function() {
+
+  var instance = null, construindo = false;
+  var progresso = null, saida = null;
+
+  function GUI() {
+    if (! construindo) {
+      throw new Error('Classe deve ser instanciada usando o método .getInstance().');
+    }
+  }
+  GUI.prototype = {
+    constructor: GUI,
+    atualizarVisualizacao(localizador, ...prioridades) {
+      var linha = localizador.accept(this).linha;
+      var baloes = prioridades.map(function(prioridade, indicePrioridade) {
+        return '<span class="gmProcessos gmPrioridade' + indicePrioridade + (prioridade > 0 ? '' : ' gmVazio') + '">' + prioridade + '</span>';
       });
-      $(link).parents('tr')[0].dataset.idLocalizador = camposGet.selLocalizador;
-      promises[promises.length] = $.post(link.href, data, 'html').then(trataHtml(camposGet, link));
+      linha.cells[0].innerHTML = localizador.nome + '<div style="float: right;">' + baloes.join('') + '</div>';
+    },
+    avisoCarregando: {
+      acrescentar(qtd) {
+        if (! progresso || ! saida) {
+          throw new Error('Aviso ainda não foi exibido.');
+        }
+        var atual = progresso.value, total = progresso.max;
+        this.atualizar(atual + qtd, total);
+      },
+      atualizar(atual, total) {
+        if (! progresso || ! saida) {
+          this.exibir();
+        }
+        progresso.max = total;
+        progresso.value = atual;
+        saida.textContent = atual + ' / ' + total;
+      },
+      exibir() {
+        infraExibirAviso(false, [
+          '<center>',
+          'Carregando dados dos processos...<br/>',
+          '<progress id="gmProgresso" value="0" max="1"></progress><br/>',
+          '<output id="gmSaida"></output>',
+          '</center>'
+        ].join(''));
+        progresso = document.getElementById('gmProgresso');
+        saida = document.getElementById('gmSaida');
+      },
+      ocultar() {
+        infraOcultarAviso();
+        progresso = null;
+        saida = null;
+      }
+    },
+    criarBotaoAcao() {
+      var area = document.getElementById('divInfraAreaTelaD');
+      var button = document.createElement('button');
+      button.textContent = 'Teste';
+      area.insertBefore(button, area.firstChild);
+      return button;
+    },
+    visitLocalizador(pvtVars) {
+      return pvtVars;
+    }
+  };
+  GUI.getInstance = function() {
+    if (! instance) {
+      construindo = true;
+      instance = new GUI;
+      construindo = false;
+    }
+    return instance;
+  };
+  return GUI;
+})();
+
+var LocalizadoresFactory = (function() {
+
+  var _private = PrivateVarsFactory.create();
+
+  function trataHTML(evt) {
+    var parser = new DOMParser;
+    var doc = parser.parseFromString(evt.target.response, 'text/html');
+    var pagina = Number(doc.getElementById('hdnInfraPaginaAtual').value);
+    console.info(this.nome, pagina);
+    var quantidadeProcessosCarregados = Number(doc.getElementById('hdnInfraNroItens').value);
+    var gui = GUI.getInstance();
+    gui.avisoCarregando.acrescentar(quantidadeProcessosCarregados);
+    var linhas = [...doc.querySelectorAll('#divInfraAreaTabela > table > tbody > tr[class^="infraTr"]')];
+    linhas.forEach(function(linha, indiceLinha) {
+      this.processos.push(ProcessoFactory.fromLinha(linha));
+    }, this);
+    var proxima = doc.getElementById('lnkInfraProximaPaginaSuperior');
+    if (proxima) {
+      console.info('Buscando próxima página',this.nome);
+      return this.obterPagina(pagina + 1, doc);
+    } else {
+      this.link.textContent = this.processos.length;
+      if (this.processos.length > 0) {
+        var celulaLocalizadores = _private(this.processos[0]).linha.cells[6];
+        var localizadores = [...celulaLocalizadores.querySelectorAll('input[type="hidden"]')]
+        .filter((localizador) => localizador.value === this.idLocalizador);
+        console.info(localizadores);
+      }
+      return this;
+    }
+  };
+
+  function Localizador() {
+    this.processos = [];
+  }
+  Localizador.prototype = {
+    constructor: Localizador,
+    processos: null,
+    accept(obj) {
+      if (obj instanceof GUI) {
+        return obj.visitLocalizador(_private(this));
+      }
+      return false;
+    },
+    get idLocalizador() {
+      if (this.link.href) {
+        var camposGet = parsePares(link.search.split(/^\?/)[1].split('&'));
+        return camposGet.selLocalizador;
+      } else {
+        return null;
+      }
+    },
+    get link() {
+      return _private(this).linha.querySelector('a');
+    },
+    get nome() {
+      return _private(this).linha.cells[0].textContent;
+    },
+    obterPagina(pagina, doc) {
+      var link = this.link;
+      var camposGet = parsePares(link.search.split(/^\?/)[1].split('&'));
+      return new Promise(function(resolve, reject) {
+        var url, data;
+        if (pagina === 0) {
+          url = link.href;
+          data = new FormData();
+          var camposPost = [
+            'optchkcClasse',
+            'optDataAutuacao',
+            'optchkcUltimoEvento',
+            'optNdiasSituacao',
+            'optPrioridadeAtendimento',
+            'chkStatusProcesso'
+          ];
+          camposPost.forEach((campo) => data.append(campo, 'S'));
+          data.append('paginacao', '100');
+        } else {
+          doc.getElementById('selLocalizador').value = camposGet.selLocalizador;
+          var paginaAtual = doc.getElementById('hdnInfraPaginaAtual');
+          paginaAtual.value = pagina;
+          var form = paginaAtual.parentElement;
+          while (form.tagName.toLowerCase() !== 'form') {
+            form = form.parentElement;
+          }
+          url = form.action;
+          data = new FormData(form);
+        }
+        var xml = new XMLHttpRequest;
+        xml.open('POST', url);
+        xml.responseType = 'text/html';
+        xml.onerror = reject;
+        xml.onload = resolve;
+        xml.send(data);
+      })
+      .then(trataHTML.bind(this))
+      .catch(console.error.bind(console));
+    },
+    obterProcessos() {
+      var link = this.link;
+      if (! link.href) {
+        return Promise.resolve(this);
+      } else {
+        return this.obterPagina(0);
+      }
+    },
+    get sigla() {},
+    get quantidadeProcessos() {
+      return Number(_private(this).linha.querySelector('a').textContent);
+    }
+  };
+
+  var LocalizadorFactory = {
+    fromLinha(linha) {
+      var localizador = new Localizador;
+      _private(localizador).linha = linha;
+      return localizador;
+    }
+  };
+
+  function Localizadores() {
+  }
+  Localizadores.prototype = definirPropriedades(Object.create(Array.prototype), {
+    constructor: Localizadores,
+    get quantidadeProcessos() {
+      var qtd = 0;
+      for (let localizador of this) {
+        qtd += localizador.quantidadeProcessos;
+      }
+      return qtd;
+    }
+  });
+
+  var LocalizadoresFactory = {
+    fromTabela(tabela) {
+      var localizadores = new Localizadores;
+      var linhas = [...tabela.querySelectorAll('tr[class^="infraTr"]')];
+      linhas.forEach(function(linha) {
+        localizadores.push(LocalizadorFactory.fromLinha(linha));
+      });
+      return localizadores;
+    }
+  };
+  return LocalizadoresFactory;
+})();
+
+var ProcessoFactory = (function() {
+
+  var _private = PrivateVarsFactory.create();
+
+  function Processo() {
+  }
+  Processo.prototype = {
+    constructor: Processo,
+    get idLocalizador() {
+      return _private(this).linha.dataset.idLocalizador;
+    },
+    get prioridade() {
+      return _private(this).linha.cells[10].textContent === 'Sim';
+    },
+    get ultimoEvento() {
+      return parseDataHora(_private(this).linha.cells[8].innerHTML);
+    }
+  };
+
+  var ProcessoFactory = {
+    fromLinha(linha) {
+      var processo = new Processo;
+      _private(processo).linha = linha;
+      return processo;
+    }
+  };
+  return ProcessoFactory;
+})();
+
+if (/\?acao=usuario_tipo_monitoramento_localizador_listar\&/.test(location.search)) {
+  var gui = GUI.getInstance();
+  var botao = gui.criarBotaoAcao();
+  $(botao).on('click', function() {
+
+    var tabela = document.getElementById('divInfraAreaTabela').querySelector('table');
+    var localizadores = LocalizadoresFactory.fromTabela(tabela);
+    gui.avisoCarregando.atualizar(0, localizadores.quantidadeProcessos);
+
+    var promises = [];
+    localizadores.forEach(function(localizador) {
+      promises.push(localizador.obterProcessos());
     });
     Promise.all(promises).then(function() {
-      console.info('all done', processos.length);
-      infraOcultarAviso();
-      var cookiesAtuais = parseCookies(document.cookie);
-      var expira = new Date();
-      expira.setFullYear(expira.getFullYear() + 1);
-      for (let n in cookiesAtuais) {
-        if (cookiesAtuais[n] !== cookiesAntigos[n]) {
-          document.cookie = encodeURIComponent(n) + '=' + encodeURIComponent(cookiesAntigos[n]) + ';expires=' + expira.toUTCString();
-        }
-      }
-      links.each(function(indiceLink, link) {
-        let linha = $(link).parents('tr')[0];
-        let idLocalizador = linha.dataset.idLocalizador;
-        let processosLocalizador = processos.filter((processo) => processo.dataset.idLocalizador === idLocalizador);
-        let vermelho = 0, amarelo = 0, verde = 0;
-        processosLocalizador.forEach(function(processo) {
-          let hoje = new Date();
-          let ultimoEvento = parseDataHora(processo.cells[8].innerHTML);
-          let prioridade = processo.cells[9].textContent;
-          if (prioridade === 'Sim') {
+      gui.avisoCarregando.ocultar();
+      var hoje = new Date();
+      localizadores.forEach(function(localizador) {
+        var vermelho = 0, laranja = 0, amarelo = 0, verde = 0;
+        localizador.processos.forEach(function(processo) {
+          var ultimoEvento = processo.ultimoEvento.getTime();
+          if (processo.prioridade) {
             vermelho++;
-          } else if (ultimoEvento.getTime() < (hoje.getTime() - 60*864e5)) {
+          } else if (ultimoEvento < (hoje.getTime() - 60*864e5)) {
+            laranja++;
+          } else if (ultimoEvento < (hoje.getTime() - 30*864e5)) {
             amarelo++;
           } else {
             verde++;
           }
         });
-        linha.cells[1].innerHTML = [
-          '<span class="gmProcessos gmPrioridade1' + (vermelho > 0 ? '' : ' gmVazio') + '">' + vermelho + '</span>',
-          '<span class="gmProcessos gmPrioridade2' + (amarelo > 0 ? '' : ' gmVazio') + '">' + amarelo + '</span>',
-          '<span class="gmProcessos gmPrioridade3' + (verde > 0 ? '' : ' gmVazio') + '">' + verde + '</span>'
-        ].join('');
-        console.info(linha.cells[0].textContent, processosLocalizador.length);
+        gui.atualizarVisualizacao(localizador, vermelho, laranja, amarelo, verde);
       });
-      console.info(processos);
     });
   });
   var estilos = $('<style></style>');
   estilos.html([
     '.gmProcessos { display: inline-block; margin: 0 2px; padding: 0 5px; font-weight: bold; border-radius: 25%; color: black; }',
-    '.gmProcessos.gmPrioridade1 { background-color: #ff8a8a; }',
+    '.gmProcessos.gmPrioridade0 { background-color: #ff8a8a; }',
+    '.gmProcessos.gmPrioridade1 { background-color: #f84; }',
     '.gmProcessos.gmPrioridade2 { background-color: #ff8; }',
     '.gmProcessos.gmPrioridade3 { background-color: #8aff8a; }',
     '.gmProcessos.gmVazio { opacity: 0.5; color: #888; }'
@@ -117,20 +314,33 @@ if (/\?acao=usuario_tipo_monitoramento_localizador_listar\&/.test(location.searc
 } else if (/\?acao=localizador_processos_lista\&/.test(location.search)) {
 }
 
-function parseCookies(texto) {
-  let obj = {};
-  let pairs = texto.split('; ');
-  pairs.forEach(function(pair) {
-    let [key, val] = pair.split('=');
-    key = decodeURIComponent(key);
-    val = decodeURIComponent(val);
-    obj[key] = val;
+function definirPropriedades(target, ...sources) {
+  sources.forEach(source => {
+    Object.defineProperties(target, Object.getOwnPropertyNames(source).reduce((descriptors, key) => {
+      descriptors[key] = Object.getOwnPropertyDescriptor(source, key);
+      return descriptors;
+    }, {}));
   });
-  return obj;
+  return target;
+}
+
+function parseCookies(texto) {
+  var pares = texto.split(/\s*;\s*/);
+  return parsePares(pares);
 }
 
 function parseDataHora(texto) {
   let [d,m,y,h,i,s] = texto.split(/\W/g);
-  console.info(texto, d,m,y,h,i,s);
   return new Date(y, m - 1, d, h, i, s);
+}
+
+function parsePares(pares) {
+  var obj = {};
+  pares.forEach(function(par) {
+    var partes = par.split('=');
+    nome = decodeURIComponent(partes.splice(0, 1));
+    valor = decodeURIComponent(partes.join('='));
+    obj[nome] = valor;
+  });
+  return obj;
 }
