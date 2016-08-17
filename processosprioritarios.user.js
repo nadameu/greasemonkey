@@ -16,13 +16,29 @@ var GUI = (function() {
     if (! construindo) {
       throw new Error('Classe deve ser instanciada usando o método .getInstance().');
     }
+    var estilos = document.createElement('style');
+    estilos.innerHTML = [
+      '.gmProcessos { display: inline-block; margin: 0 0.25ex; padding: 0 0.5ex; font-weight: bold; min-width: 2.5ex; line-height: 1.5em; border-radius: 1ex; text-align: center; color: black; }',
+      '.gmProcessos.gmPrioridade0 { background-color: #ff8a8a; }',
+      '.gmProcessos.gmPrioridade1 { background-color: #f84; }',
+      '.gmProcessos.gmPrioridade2 { background-color: #ff8; }',
+      '.gmProcessos.gmPrioridade3 { background-color: #8aff8a; }',
+      '.gmProcessos.gmVazio { opacity: 0.5; color: #888; }'
+    ].join('\n');
+    document.querySelector('head').appendChild(estilos);
   }
   GUI.prototype = {
     constructor: GUI,
     atualizarVisualizacao(localizador, ...prioridades) {
       var linha = localizador.linha;
-      var baloes = prioridades.map(function(prioridade, indicePrioridade) {
-        return '<span class="gmProcessos gmPrioridade' + indicePrioridade + (prioridade > 0 ? '' : ' gmVazio') + '">' + prioridade + '</span>';
+      var avisos = [
+        'Processos prioritários',
+        'Processos parados há mais de 60 dias',
+        'Processos parados há mais de 30 dias',
+        'Processos movimentados nos últimos 30 dias'
+      ];
+      var baloes = prioridades.map(function(processos, indicePrioridade) {
+        return '<span class="gmProcessos gmPrioridade' + indicePrioridade + (processos > 0 ? '' : ' gmVazio') + '" onmouseover="infraTooltipMostrar(&quot;' + avisos[indicePrioridade] + '&quot;);" onmouseout="infraTooltipOcultar();">' + processos + '</span>';
       });
       linha.cells[0].innerHTML = [
         localizador.sigla,
@@ -412,16 +428,6 @@ if (/\?acao=usuario_tipo_monitoramento_localizador_listar\&/.test(location.searc
       });
     });
   });
-  var estilos = document.createElement('style');
-  estilos.innerHTML = [
-    '.gmProcessos { display: inline-block; margin: 0 2px; padding: 0 5px; font-weight: bold; border-radius: 25%; color: black; }',
-    '.gmProcessos.gmPrioridade0 { background-color: #ff8a8a; }',
-    '.gmProcessos.gmPrioridade1 { background-color: #f84; }',
-    '.gmProcessos.gmPrioridade2 { background-color: #ff8; }',
-    '.gmProcessos.gmPrioridade3 { background-color: #8aff8a; }',
-    '.gmProcessos.gmVazio { opacity: 0.5; color: #888; }'
-  ].join('\n');
-  document.querySelector('head').appendChild(estilos);
 } else if (/\?acao=localizador_processos_lista\&/.test(location.search)) {
 }
 
