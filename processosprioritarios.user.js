@@ -3,7 +3,7 @@
 // @namespace   http://nadameu.com.br/processos-prioritarios
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=usuario_tipo_monitoramento_localizador_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_processos_lista\&/
-// @version     1
+// @version     2
 // @grant       none
 // ==/UserScript==
 
@@ -18,12 +18,13 @@ var GUI = (function() {
     }
     var estilos = document.createElement('style');
     estilos.innerHTML = [
+      'tr.infraTrEscura { background-color: #f0f0f0; }',
       '.gmProcessos { display: inline-block; margin: 0 0.25ex; padding: 0 0.5ex; font-weight: bold; min-width: 2.5ex; line-height: 1.5em; border-radius: 1ex; text-align: center; color: black; }',
       '.gmProcessos.gmPrioridade0 { background-color: #ff8a8a; }',
       '.gmProcessos.gmPrioridade1 { background-color: #f84; }',
       '.gmProcessos.gmPrioridade2 { background-color: #ff8; }',
       '.gmProcessos.gmPrioridade3 { background-color: #8aff8a; }',
-      '.gmProcessos.gmVazio { opacity: 0.5; color: #888; }'
+      '.gmProcessos.gmVazio { opacity: 0.25; background-color: inherit; color: #888; }'
     ].join('\n');
     document.querySelector('head').appendChild(estilos);
   }
