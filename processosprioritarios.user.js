@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version     3
+// @version     4
 // @grant       none
 // ==/UserScript==
 
@@ -426,15 +426,13 @@ var ProcessoFactory = (function() {
   return ProcessoFactory;
 })();
 
-if (/\?acao=usuario_tipo_monitoramento_localizador_listar\&/.test(location.search)) {
+function adicionarBotaoComVinculo(localizadores) {
   var gui = GUI.getInstance();
   var botao = gui.criarBotaoAcao();
   botao.addEventListener('click', function() {
 
     gui.removerBotaoAcao();
 
-    var tabela = document.getElementById('divInfraAreaTabela').querySelector('table');
-    var localizadores = LocalizadoresFactory.fromTabela(tabela);
     gui.avisoCarregando.atualizar(0, localizadores.quantidadeProcessos);
 
     localizadores.obterProcessos().then(function() {
@@ -458,39 +456,17 @@ if (/\?acao=usuario_tipo_monitoramento_localizador_listar\&/.test(location.searc
       });
     });
   }, false);
+}
+
+if (/\?acao=usuario_tipo_monitoramento_localizador_listar\&/.test(location.search)) {
+  var tabela = document.getElementById('divInfraAreaTabela').querySelector('table');
+  var localizadores = LocalizadoresFactory.fromTabela(tabela);
+  adicionarBotaoComVinculo(localizadores);
 } else if (/\?acao=localizador_processos_lista\&/.test(location.search)) {
 } else if (/\&acao_origem=principal\&/.test(location.search)) {
-  var gui = GUI.getInstance();
-  var botao = gui.criarBotaoAcao();
-  botao.addEventListener('click', function() {
-
-    gui.removerBotaoAcao();
-
-    var tabela = document.getElementById('fldLocalizadores').querySelector('table');
-    var localizadores = LocalizadoresFactory.fromTabelaPainel(tabela);
-    gui.avisoCarregando.atualizar(0, localizadores.quantidadeProcessos);
-
-    localizadores.obterProcessos().then(function() {
-      gui.avisoCarregando.ocultar();
-      var hoje = new Date();
-      localizadores.forEach(function(localizador) {
-        var vermelho = 0, laranja = 0, amarelo = 0, verde = 0;
-        localizador.processos.forEach(function(processo) {
-          var ultimoEvento = processo.dataUltimoEvento.getTime();
-          if (processo.prioridade) {
-            vermelho++;
-          } else if (ultimoEvento < (hoje.getTime() - 60*864e5)) {
-            laranja++;
-          } else if (ultimoEvento < (hoje.getTime() - 30*864e5)) {
-            amarelo++;
-          } else {
-            verde++;
-          }
-        });
-        gui.atualizarVisualizacao(localizador, vermelho, laranja, amarelo, verde);
-      });
-    });
-  }, false);
+  var tabela = document.getElementById('fldLocalizadores').querySelector('table');
+  var localizadores = LocalizadoresFactory.fromTabelaPainel(tabela);
+  adicionarBotaoComVinculo(localizadores);
 }
 
 function definirPropriedades(target, ...sources) {
