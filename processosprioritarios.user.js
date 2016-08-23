@@ -3,7 +3,9 @@
 // @namespace   http://nadameu.com.br/processos-prioritarios
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=usuario_tipo_monitoramento_localizador_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_processos_lista\&/
-// @version     2
+// @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
+// @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
+// @version     3
 // @grant       none
 // ==/UserScript==
 
@@ -41,13 +43,19 @@ var GUI = (function() {
       var baloes = prioridades.map(function(processos, indicePrioridade) {
         return '<span class="gmProcessos gmPrioridade' + indicePrioridade + (processos > 0 ? '' : ' gmVazio') + '" onmouseover="infraTooltipMostrar(&quot;' + avisos[indicePrioridade] + '&quot;);" onmouseout="infraTooltipOcultar();">' + processos + '</span>';
       });
-      linha.cells[0].innerHTML = [
-        localizador.sigla,
-        (localizador.nome !== localizador.sigla ? ' (' + localizador.nome + ')' : ''),
-        '<div style="float: right;">',
-        baloes.join(''),
-        '</div>'
-      ].join('');
+      var conteudo = [];
+      if (localizador.sigla) {
+        conteudo.push(localizador.sigla);
+        if (localizador.nome !== localizador.sigla) {
+          conteudo.push(' (' + localizador.nome + ')');
+        }
+      } else {
+        conteudo.push(localizador.nome);
+      }
+      conteudo.push('<div style="float: right;">');
+      conteudo.push(baloes.join(''));
+      conteudo.push('</div>');
+      linha.cells[0].innerHTML = conteudo.join('');
     },
     avisoCarregando: {
       acrescentar(qtd) {
@@ -223,6 +231,17 @@ var LocalizadoresFactory = (function() {
         localizador.id = camposGet.selLocalizador;
       }
       return localizador;
+    },
+    fromLinhaPainel(linha) {
+      var localizador = new Localizador();
+      localizador.linha = linha;
+      localizador.nome = linha.cells[0].textContent.match(/^Processos com Localizador\s+"(.*)"$/)[1];
+      var link = localizador.link = linha.querySelector('a,u');
+      if (link && link.href) {
+        var camposGet = parsePares(link.search.split(/^\?/)[1].split('&'));
+        localizador.id = camposGet.selLocalizador;
+      }
+      return localizador;
     }
   };
 
@@ -257,6 +276,15 @@ var LocalizadoresFactory = (function() {
       var linhas = [...tabela.querySelectorAll('tr[class^="infraTr"]')];
       linhas.forEach(function(linha) {
         localizadores.push(LocalizadorFactory.fromLinha(linha));
+      });
+      return localizadores;
+    },
+    fromTabelaPainel(tabela) {
+      var localizadores = new Localizadores();
+      localizadores.tabela = tabela;
+      var linhas = [...tabela.querySelectorAll('tr[class^="infraTr"]')];
+      linhas.forEach(function(linha) {
+        localizadores.push(LocalizadorFactory.fromLinhaPainel(linha));
       });
       return localizadores;
     }
@@ -428,8 +456,40 @@ if (/\?acao=usuario_tipo_monitoramento_localizador_listar\&/.test(location.searc
         gui.atualizarVisualizacao(localizador, vermelho, laranja, amarelo, verde);
       });
     });
-  });
+  }, false);
 } else if (/\?acao=localizador_processos_lista\&/.test(location.search)) {
+} else if (/\&acao_origem=principal\&/.test(location.search)) {
+  var gui = GUI.getInstance();
+  var botao = gui.criarBotaoAcao();
+  botao.addEventListener('click', function() {
+
+    gui.removerBotaoAcao();
+
+    var tabela = document.getElementById('fldLocalizadores').querySelector('table');
+    var localizadores = LocalizadoresFactory.fromTabelaPainel(tabela);
+    gui.avisoCarregando.atualizar(0, localizadores.quantidadeProcessos);
+
+    localizadores.obterProcessos().then(function() {
+      gui.avisoCarregando.ocultar();
+      var hoje = new Date();
+      localizadores.forEach(function(localizador) {
+        var vermelho = 0, laranja = 0, amarelo = 0, verde = 0;
+        localizador.processos.forEach(function(processo) {
+          var ultimoEvento = processo.dataUltimoEvento.getTime();
+          if (processo.prioridade) {
+            vermelho++;
+          } else if (ultimoEvento < (hoje.getTime() - 60*864e5)) {
+            laranja++;
+          } else if (ultimoEvento < (hoje.getTime() - 30*864e5)) {
+            amarelo++;
+          } else {
+            verde++;
+          }
+        });
+        gui.atualizarVisualizacao(localizador, vermelho, laranja, amarelo, verde);
+      });
+    });
+  }, false);
 }
 
 function definirPropriedades(target, ...sources) {
