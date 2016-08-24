@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php?menu=8&submenu=3*
-// @version     2
+// @version     3
 // @grant       none
 // ==/UserScript==
 
@@ -37,7 +37,7 @@ function parseData(texto) {
 }
 
 var Aviso = (function() {
-  var carregando = false, instance;
+  var carregando = false;
   var progresso, saida;
   function Aviso() {
     if (! carregando) throw new Error('Esta classe deve ser instanciada utilizando o método estático getInstance()!');
@@ -77,16 +77,55 @@ var Aviso = (function() {
     }
   }
   Aviso.getInstance = function() {
-    if (! instance) {
-      carregando = true;
-      instance = new Aviso();
-      carregando = false;
-    }
+    carregando = true;
+    var instance = new Aviso();
+    carregando = false;
+    Aviso.getInstance = () => instance;
     return instance;
   }
 
   return Aviso;
 })();
+
+var DB = {
+  abrir() {
+    return new Promise(function(resolve, reject) {
+      var req = window.indexedDB.open('relatorioSemanal');
+      req.onsuccess = function(evt) {
+        var db = evt.target.result;
+        resolve(db);
+      };
+      req.onerror = function(evt) {
+        reject(evt.target.error);
+      };
+      req.onupgradeneeded = function(evt) {
+        var db = evt.target.result;
+
+        var processos = db.createObjectStore('processos', {keyPath: 'numproc'});
+        processos.createIndex('classe', 'classe', {unique: false});
+        processos.createIndex('situacao', 'situacao', {unique: false});
+//        processos.createIndex('data', 'data', {unique: false});
+        processos.createIndex('localizador', 'localizador', {unique: false});
+
+//        let localizadores = db.createObjectStore('localizadores', {keyPath: 'localizador'});
+
+//        let situacoes = db.createObjectStore('situacoes', {keyPath: 'situacao'});
+      };
+    });
+  },
+  apagar() {
+    return new Promise(function(resolve, reject) {
+      var req = window.indexedDB.deleteDatabase('relatorioSemanal');
+      req.onsuccess = function(evt) {
+        var res = evt.target.result;
+        resolve(res);
+      };
+      req.onerror = function(evt) {
+        reject(evt.target.error);
+      };
+    })
+  }
+};
 
 function LinkDados() {}
 LinkDados.prototype = {
@@ -216,13 +255,13 @@ var XLSFactory = {
       Object.getOwnPropertyNames(campos).forEach(function(campo, indiceCampo) {
         row.insertCell().textContent = processo[campo];
         if (campo === 'numprocFormatado' ||
-           campo === 'classe' ||
-           campo === 'situacao' ||
-           campo === 'localizador') {
+            campo === 'classe' ||
+            campo === 'situacao' ||
+            campo === 'localizador') {
           row.cells[indiceCampo].setAttribute('x:str', processo[campo]);
         } else if (campo === 'autuacao' ||
-                  campo === 'dataEstatistica' ||
-                  campo === 'dataUltimaFase') {
+                   campo === 'dataEstatistica' ||
+                   campo === 'dataUltimaFase') {
           row.cells[indiceCampo].textContent = processo[campo].toLocaleFormat('%Y-%m-%d');
         }
       });
@@ -242,7 +281,7 @@ switch (sessionStorage.passo) {
     estatistica.onchange();
     document.getElementById('chkNaoAgrupaSubSecao').checked = true;
     document.getElementById('chkAgrupaCompetencia').checked = true;
-//    selecionarCompetencias('41');
+    //    selecionarCompetencias('41');
     sessionStorage.passo = 'analisar';
     document.getElementById('btnVisualizar').click();
     break;
@@ -259,34 +298,61 @@ switch (sessionStorage.passo) {
     var linhas = [...tabela.tBodies[0].querySelectorAll('tr.TrSubniveis.TrSubniveis2')];
     var competencias = {};
     var promises = [];
-    linhas.forEach(function(linha) {
-      var codigoDescricao = linha.cells[0].textContent.trim();
-      var [codigo, descricao] = codigoDescricao.split(/\s+-\s+/);
-      competencias[codigo] = descricao;
-      for (let linhaDados = linha.nextElementSibling; /^infraTr(?:Clara|Escura)$/.test(linhaDados.className); linhaDados = linhaDados.nextElementSibling) {
-        [,,,,'desp','sent','tramita'].forEach(function(situacao, indiceCelula) {
-          var celula = linhaDados.cells[indiceCelula];
-          var link = LinkDadosFactory.fromCelula(celula);
-          promises.push(link.abrirPagina(codigo, situacao).then(function(processos) {
-            aviso.acrescentar(Number(celula.textContent));
-            return processos;
-          }));
-        });
-      }
-    });
-    console.info(competencias);
-    Promise.all(promises).then(function(subgrupos) {
-      aviso.ocultar();
-      console.info('all done!');
-      var processos = subgrupos.reduce(function(arr, subgrupo) {
-        return arr.concat(subgrupo);
-      }, []);
-      var botao = criarBotao('Fazer download da planilha Excel');
-      botao.adicionarEvento(function() {
-        var xls = XLSFactory.fromProcessos(processos);
-        xls.download();
+    DB.apagar().catch().then(function() {
+      linhas.forEach(function(linha) {
+        var codigoDescricao = linha.cells[0].textContent.trim();
+        var [codigo, descricao] = codigoDescricao.split(/\s+-\s+/);
+        competencias[codigo] = descricao;
+        for (let linhaDados = linha.nextElementSibling; /^infraTr(?:Clara|Escura)$/.test(linhaDados.className); linhaDados = linhaDados.nextElementSibling) {
+          [,,,,'desp','sent','tramita'].forEach(function(situacao, indiceCelula) {
+            var celula = linhaDados.cells[indiceCelula];
+            var link = LinkDadosFactory.fromCelula(celula);
+            promises.push(link.abrirPagina(codigo, situacao).then(function(processos) {
+              aviso.acrescentar(Number(celula.textContent));
+              return DB.abrir().then(function(db) {
+                var objectStore = db.transaction(['processos'], 'readwrite').objectStore('processos');
+                var promises2 = [];
+                processos.forEach(function(processo) {
+                  promises2.push(new Promise(function(resolve, reject) {
+                    var transaction = objectStore.add(processo);
+                    transaction.onsuccess = resolve;
+                  }));
+                });
+                return Promise.all(promises2);
+              });
+            }));
+          });
+        }
       });
-    })
+    }).then(function() {
+      console.info(competencias);
+      Promise.all(promises).then(function() {
+        aviso.ocultar();
+        console.info('all done X!');
+        DB.abrir().then(function(db) {
+          return new Promise(function(resolve, reject) {
+            var processos = [];
+            var objectStore = db.transaction(['processos'], 'readonly').objectStore('processos');
+            objectStore.openCursor().onsuccess = function(evt) {
+              var cursor = evt.target.result;
+              if (cursor) {
+                processos.push(cursor.value);
+                cursor.continue();
+              } else {
+                console.info('all done!');
+                resolve(processos);
+              }
+            };
+          });
+        }).then(function(processos) {
+          var botao = criarBotao('Fazer download da planilha Excel');
+          botao.adicionarEvento(function() {
+            var xls = XLSFactory.fromProcessos(processos);
+            xls.download();
+          });
+        });
+      });
+    });
     delete sessionStorage.passo;
     break;
 
