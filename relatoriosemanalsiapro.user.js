@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php?menu=8&submenu=3*
-// @version     4
+// @version     5
 // @grant       none
 // ==/UserScript==
 
@@ -87,10 +87,9 @@ var DB = {
         var processos = db.createObjectStore('processos', {keyPath: 'numproc'});
         processos.createIndex('classe', 'classe', {unique: false});
         processos.createIndex('situacao', 'situacao', {unique: false});
-        //        processos.createIndex('data', 'data', {unique: false});
         processos.createIndex('localizador', 'localizador', {unique: false});
 
-        //        let localizadores = db.createObjectStore('localizadores', {keyPath: 'localizador'});
+        var classes = db.createObjectStore('classes', {keyPath: 'codigo'});
 
         //        let situacoes = db.createObjectStore('situacoes', {keyPath: 'situacao'});
       };
@@ -228,10 +227,10 @@ Processo.prototype = {
     } else if (this.competencia >= '21' && this.competencia <= '30') {
       return COMPETENCIAS_CORREGEDORIA.CRIMINAL;
     } else if ((this.competencia === '41' || this.competencia === '43') &&
-        (this.classe === 'EXECUÇÃO FISCAL' ||
-         this.classe === 'CARTA DE ORDEM' ||
-         this.classe === 'CARTA PRECATÓRIA' ||
-         this.classe === 'CARTA ROGATÓRIA')) {
+               (this.classe === 'EXECUÇÃO FISCAL' ||
+                this.classe === 'CARTA DE ORDEM' ||
+                this.classe === 'CARTA PRECATÓRIA' ||
+                this.classe === 'CARTA ROGATÓRIA')) {
       return COMPETENCIAS_CORREGEDORIA.EF;
     } else {
       return COMPETENCIAS_CORREGEDORIA.CIVEL;
@@ -285,6 +284,23 @@ XLS.prototype = {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  },
+  exibir() {
+    var blob = new Blob([
+      '<html><head>',
+      '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>',
+      '<style>',
+      [
+        'table { border-collapse: collapse; font-family: Helvetica, sans-serif; font-size: 10pt; }',
+        'td { white-space: nowrap; border: 1px solid black; }'
+      ].join('\n'),
+      '</style>',
+      '</head><body>',
+      this.tabela.outerHTML,
+      '</body></html>'
+    ], {type: 'text/html'});
+    var url = URL.createObjectURL(blob);
+    window.open(url, 'resultado');
   }
 };
 
@@ -337,9 +353,73 @@ var XLSFactory = {
   }
 };
 
-switch (sessionStorage.passo) {
-  case 'setup':
-    console.info('setup');
+var passo = sessionStorage.passo;
+console.info(passo);
+switch (passo) {
+  case 'obterClasses':
+    document.getElementById('rdoDadosS').checked = true;
+    document.getElementById('rdoDadosEv1').checked = false;
+    document.getElementById('rdoDadosEv2').checked = true;
+    var estatistica = document.getElementById('selEstatistica');
+    estatistica.value = ' 23';
+    estatistica.onchange();
+    document.getElementById('chkNaoAgrupaSubSecao').checked = true;
+    document.getElementById('chkAgrupaClasse').checked = true;
+    sessionStorage.passo = 'analisarClasses';
+    document.getElementById('btnVisualizar').click();
+    break;
+
+  case 'analisarClasses':
+    var tabela = document.getElementById('tblResConsulta');
+    var linhas = [...tabela.tBodies[0].querySelectorAll('tr.TrSubniveis.TrSubniveis2')];
+    var classes = linhas.reduce(function(map, linha) {
+      var codigoNome = linha.cells[0].textContent.trim().split(' - ');
+      var codigo = Number(codigoNome.splice(0, 1));
+      var nome = codigoNome.join(' - ');
+      if (nome === 'CLASSE NÃO CADASTRADO') {
+        console.info('classe não cadastrada', codigo);
+        return map;
+      } else {
+        return map.set(codigo, nome);
+      }
+    }, new Map());
+    console.info('Abrindo banco de dados');
+    var promises = [];
+    DB.abrir().then(function(db) {
+      console.info('ok');
+      for (let codigoNome of classes) {
+        promises.push(new Promise(function(resolve, reject) {
+          var codigo = codigoNome[0];
+	        var nome = codigoNome[1];
+          var objectStore = db.transaction(['classes']).objectStore('classes');
+          var transaction = objectStore.get(codigo);
+          transaction.onsuccess = function(evt) {
+            if (evt.target.result) {
+              console.debug('Já existe: ', nome, evt.target.result.nome);
+              resolve();
+            } else {
+              var objectStore = db.transaction(['classes'], 'readwrite').objectStore('classes');
+              var transaction2 = objectStore.add({codigo: codigo, nome: nome});
+              transaction2.onsuccess = function() {
+                resolve();
+              };
+              transaction2.onerror = function(evt) {
+                console.error(evt.target.error);
+              };
+            }
+          };
+        }));
+      }
+      Promise.all(promises).then(function() {
+        console.debug('all done (classes)');
+      });
+    });
+    sessionStorage.passo = 'obterProcessosPorCompetencia';
+    infraExibirAviso(false, 'Aguarde, salvando os dados...');
+    location.href = '?menu=8&submenu=3';
+    break;
+
+  case 'obterProcessosPorCompetencia':
     document.getElementById('rdoDadosS').checked = true;
     document.getElementById('rdoDadosEv1').checked = false;
     document.getElementById('rdoDadosEv2').checked = true;
@@ -348,12 +428,11 @@ switch (sessionStorage.passo) {
     estatistica.onchange();
     document.getElementById('chkNaoAgrupaSubSecao').checked = true;
     document.getElementById('chkAgrupaCompetencia').checked = true;
-    sessionStorage.passo = 'analisar';
+    sessionStorage.passo = 'analisarProcessos';
     document.getElementById('btnVisualizar').click();
     break;
 
-  case 'analisar':
-    console.info('analisar');
+  case 'analisarProcessos':
     var tabela = document.getElementById('tblResConsulta');
     var linhaTotal = tabela.tBodies[0].lastElementChild;
     var numProcessos = [4,5,6].reduce(function(soma, indiceCelula) {
@@ -393,17 +472,18 @@ switch (sessionStorage.passo) {
       console.info(competencias);
       Promise.all(promises).then(function() {
         aviso.ocultar();
-        console.info('all done X!');
+        delete sessionStorage.passo;
+        infraExibirAviso(false, 'Aguarde, salvando os dados...');
+        location.href = '?menu=8&submenu=3';
       });
     });
-    delete sessionStorage.passo;
-    criarBotaoExcel();
     break;
 
   default:
     console.info('início');
     criarBotaoObterDados();
     criarBotaoExcel();
+    criarBotaoHTML();
     break;
 }
 
@@ -412,7 +492,7 @@ function criarBotaoObterDados() {
   var botaoDados = gui.criarBotao('Obter dados atualizados dos processos');
   botaoDados.adicionarEvento(function() {
     infraExibirAviso(false, 'Aguarde, preparando o formulário...');
-    sessionStorage.passo = 'setup';
+    sessionStorage.passo = 'obterClasses';
     location.href = '?menu=8&submenu=3';
   });
 }
@@ -421,24 +501,41 @@ function criarBotaoExcel() {
   var gui = GUI.getInstance();
   var botaoExcel = gui.criarBotao('Gerar planilha Excel');
   botaoExcel.adicionarEvento(function() {
-    DB.abrir().then(function(db) {
-      return new Promise(function(resolve, reject) {
-        var processos = [];
-        var objectStore = db.transaction(['processos'], 'readonly').objectStore('processos');
-        objectStore.openCursor().onsuccess = function(evt) {
-          var cursor = evt.target.result;
-          if (cursor) {
-            processos.push(ProcessoFactory.fromRegistroDB(cursor.value));
-            cursor.continue();
-          } else {
-            console.info('all done!');
-            resolve(processos);
-          }
-        };
-      });
-    }).then(function(processos) {
+    infraExibirAviso(false, 'Aguarde, gerando arquivo...');
+    DB.abrir().then(obterProcessosDB).then(function(processos) {
+      infraOcultarAviso();
       var xls = XLSFactory.fromProcessos(processos);
       xls.download();
     });
+  });
+}
+
+function criarBotaoHTML() {
+  var gui = GUI.getInstance();
+  var botaoHTML = gui.criarBotao('Gerar página com resultados');
+  botaoHTML.adicionarEvento(function() {
+    infraExibirAviso(false, 'Aguarde, gerando arquivo...');
+    DB.abrir().then(obterProcessosDB).then(function(processos) {
+      infraOcultarAviso();
+      var xls = XLSFactory.fromProcessos(processos);
+      xls.exibir();
+    });
+  });
+}
+
+function obterProcessosDB(db) {
+  return new Promise(function(resolve, reject) {
+    var processos = [];
+    var objectStore = db.transaction(['processos'], 'readonly').objectStore('processos');
+    objectStore.openCursor().onsuccess = function(evt) {
+      var cursor = evt.target.result;
+      if (cursor) {
+        processos.push(ProcessoFactory.fromRegistroDB(cursor.value));
+        cursor.continue();
+      } else {
+        console.info('all done!');
+        resolve(processos);
+      }
+    };
   });
 }
