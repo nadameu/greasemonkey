@@ -2,33 +2,16 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php?menu=8&submenu=3*
-// @version     3
+// @version     4
 // @grant       none
 // ==/UserScript==
 
-function criarBotao(texto) {
-  var botao = document.createElement('button');
-  botao.textContent = texto;
-  var areaTelaD = document.getElementById('divInfraAreaTelaD');
-  areaTelaD.insertBefore(botao, areaTelaD.firstChild);
-  return {
-    adicionarEvento: botao.addEventListener.bind(botao, 'click'),
-    remover() {
-      areaTelaD.removeChild(botao);
-    }
-  };
-}
-
-function selecionarCompetencias(...competencias) {
-  var options = [...document.getElementById('selCompetencia').getElementsByTagName('option')];
-  options.forEach(function(option) {
-    if (competencias.indexOf(option.value) > -1) {
-      option.selected = true;
-    } else {
-      option.selected = false;
-    }
-  });
-}
+const COMPETENCIAS_CORREGEDORIA = {
+  CIVEL: 0,
+  CRIMINAL: 1,
+  EF: 2,
+  JEF: 3
+};
 
 function parseData(texto) {
   var [d,m,y] = texto.split('/');
@@ -104,12 +87,12 @@ var DB = {
         var processos = db.createObjectStore('processos', {keyPath: 'numproc'});
         processos.createIndex('classe', 'classe', {unique: false});
         processos.createIndex('situacao', 'situacao', {unique: false});
-//        processos.createIndex('data', 'data', {unique: false});
+        //        processos.createIndex('data', 'data', {unique: false});
         processos.createIndex('localizador', 'localizador', {unique: false});
 
-//        let localizadores = db.createObjectStore('localizadores', {keyPath: 'localizador'});
+        //        let localizadores = db.createObjectStore('localizadores', {keyPath: 'localizador'});
 
-//        let situacoes = db.createObjectStore('situacoes', {keyPath: 'situacao'});
+        //        let situacoes = db.createObjectStore('situacoes', {keyPath: 'situacao'});
       };
     });
   },
@@ -126,6 +109,54 @@ var DB = {
     })
   }
 };
+
+var GUI = (function() {
+  var carregando = false;
+  var divBotoes, numBotoes = 0;
+  var elementos = new WeakMap();
+
+  function Botao(texto) {
+    var botao = document.createElement('button');
+    botao.textContent = texto;
+    elementos.set(this, botao);
+  }
+  Botao.prototype = {
+    constructor: Botao,
+    adicionarEvento(fn) {
+      return elementos.get(this).addEventListener('click', fn, false);
+    },
+    remover() {
+      divBotoes.removeChild(elementos.get(this));
+    }
+  };
+
+  function GUI() {
+    if (! carregando) throw new Error('Esta classe deve ser instanciada utilizando o método estático getInstance()!');
+    divBotoes = document.createElement('div');
+    var areaTelaD = document.getElementById('divInfraAreaTelaD');
+    areaTelaD.insertBefore(divBotoes, areaTelaD.firstChild);
+  }
+  GUI.prototype = {
+    constructor: GUI,
+    criarBotao(texto) {
+      var botao = new Botao(texto);
+      numBotoes++;
+      if (numBotoes > 1) {
+        divBotoes.appendChild(document.createTextNode(' '));
+      }
+      divBotoes.appendChild(elementos.get(botao));
+      return botao;
+    }
+  };
+  GUI.getInstance = function() {
+    carregando = true;
+    var instance = new GUI();
+    carregando = false;
+    GUI.getInstance = () => instance;
+    return instance;
+  };
+  return GUI;
+})();
 
 function LinkDados() {}
 LinkDados.prototype = {
@@ -184,12 +215,28 @@ Processo.prototype = {
   competencia: null,
   dataEstatistica: null,
   dataUltimaFase: null,
+  descricaoCompetencia: null,
   localizador: null,
   magistrado: null,
   numproc: null,
   numprocFormatado: null,
   orgao: null,
-  situacao: null
+  situacao: null,
+  get competenciaCorregedoria() {
+    if (this.competencia >= '09' && this.competencia <= '20') {
+      return COMPETENCIAS_CORREGEDORIA.JEF;
+    } else if (this.competencia >= '21' && this.competencia <= '30') {
+      return COMPETENCIAS_CORREGEDORIA.CRIMINAL;
+    } else if ((this.competencia === '41' || this.competencia === '43') &&
+        (this.classe === 'EXECUÇÃO FISCAL' ||
+         this.classe === 'CARTA DE ORDEM' ||
+         this.classe === 'CARTA PRECATÓRIA' ||
+         this.classe === 'CARTA ROGATÓRIA')) {
+      return COMPETENCIAS_CORREGEDORIA.EF;
+    } else {
+      return COMPETENCIAS_CORREGEDORIA.CIVEL;
+    }
+  }
 };
 
 var ProcessoFactory = {
@@ -203,7 +250,15 @@ var ProcessoFactory = {
     });
     processo.dataEstatistica = parseData(linha.cells[7].textContent);
     processo.dataUltimaFase = parseData(linha.cells[8].textContent);
-    processo.competencia = competencia;
+    processo.competencia = competencia.codigo;
+    processo.descricaoCompetencia = competencia.descricao;
+    return processo;
+  },
+  fromRegistroDB(registroDB) {
+    var processo = new Processo();
+    for (let campo in registroDB) {
+      processo[campo] = registroDB[campo];
+    }
     return processo;
   }
 };
@@ -238,8 +293,9 @@ var XLSFactory = {
     const campos = {
       'numprocFormatado': 'Processo',
       'autuacao': 'Data autuação',
-      'competencia': 'Competência',
+      'descricaoCompetencia': 'Competência',
       'classe': 'Classe',
+      'competenciaCorregedoria': 'Competência Corregedoria',
       'situacao': 'Situação',
       'localizador': 'Localizador',
       'dataEstatistica': 'Data Estat.',
@@ -253,16 +309,27 @@ var XLSFactory = {
     processos.forEach(function(processo) {
       var row = tBody.insertRow();
       Object.getOwnPropertyNames(campos).forEach(function(campo, indiceCampo) {
-        row.insertCell().textContent = processo[campo];
+        var celula = row.insertCell();
         if (campo === 'numprocFormatado' ||
+            campo === 'descricaoCompetencia' ||
             campo === 'classe' ||
             campo === 'situacao' ||
             campo === 'localizador') {
-          row.cells[indiceCampo].setAttribute('x:str', processo[campo]);
+          celula.textContent = processo[campo]
+          celula.setAttribute('x:str', processo[campo]);
         } else if (campo === 'autuacao' ||
                    campo === 'dataEstatistica' ||
                    campo === 'dataUltimaFase') {
-          row.cells[indiceCampo].textContent = processo[campo].toLocaleFormat('%Y-%m-%d');
+          celula.textContent = processo[campo].toLocaleFormat('%Y-%m-%d');
+        } else if (campo === 'competenciaCorregedoria') {
+          celula.textContent = [
+            'Cível',
+            'Criminal',
+            'Execução Fiscal',
+            'Juizado'
+          ][ processo[campo] ];
+        } else {
+          celula.textContent = processo[campo];
         }
       });
     });
@@ -281,7 +348,6 @@ switch (sessionStorage.passo) {
     estatistica.onchange();
     document.getElementById('chkNaoAgrupaSubSecao').checked = true;
     document.getElementById('chkAgrupaCompetencia').checked = true;
-    //    selecionarCompetencias('41');
     sessionStorage.passo = 'analisar';
     document.getElementById('btnVisualizar').click();
     break;
@@ -298,7 +364,7 @@ switch (sessionStorage.passo) {
     var linhas = [...tabela.tBodies[0].querySelectorAll('tr.TrSubniveis.TrSubniveis2')];
     var competencias = {};
     var promises = [];
-    DB.apagar().catch().then(function() {
+    DB.apagar().catch().then(DB.abrir).then(function(db) {
       linhas.forEach(function(linha) {
         var codigoDescricao = linha.cells[0].textContent.trim();
         var [codigo, descricao] = codigoDescricao.split(/\s+-\s+/);
@@ -306,20 +372,19 @@ switch (sessionStorage.passo) {
         for (let linhaDados = linha.nextElementSibling; /^infraTr(?:Clara|Escura)$/.test(linhaDados.className); linhaDados = linhaDados.nextElementSibling) {
           [,,,,'desp','sent','tramita'].forEach(function(situacao, indiceCelula) {
             var celula = linhaDados.cells[indiceCelula];
+            var numProcessosCelula = Number(celula.textContent);
             var link = LinkDadosFactory.fromCelula(celula);
-            promises.push(link.abrirPagina(codigo, situacao).then(function(processos) {
-              aviso.acrescentar(Number(celula.textContent));
-              return DB.abrir().then(function(db) {
-                var objectStore = db.transaction(['processos'], 'readwrite').objectStore('processos');
-                var promises2 = [];
-                processos.forEach(function(processo) {
-                  promises2.push(new Promise(function(resolve, reject) {
-                    var transaction = objectStore.add(processo);
-                    transaction.onsuccess = resolve;
-                  }));
-                });
-                return Promise.all(promises2);
+            promises.push(link.abrirPagina({codigo: codigo, descricao: descricao}, situacao).then(function(processos) {
+              aviso.acrescentar(numProcessosCelula);
+              var objectStore = db.transaction(['processos'], 'readwrite').objectStore('processos');
+              var promises2 = [];
+              processos.forEach(function(processo) {
+                promises2.push(new Promise(function(resolve, reject) {
+                  var transaction = objectStore.add(processo);
+                  transaction.onsuccess = function() { console.info('added record.'); resolve() };
+                }));
               });
+              return Promise.all(promises2);
             }));
           });
         }
@@ -329,40 +394,51 @@ switch (sessionStorage.passo) {
       Promise.all(promises).then(function() {
         aviso.ocultar();
         console.info('all done X!');
-        DB.abrir().then(function(db) {
-          return new Promise(function(resolve, reject) {
-            var processos = [];
-            var objectStore = db.transaction(['processos'], 'readonly').objectStore('processos');
-            objectStore.openCursor().onsuccess = function(evt) {
-              var cursor = evt.target.result;
-              if (cursor) {
-                processos.push(cursor.value);
-                cursor.continue();
-              } else {
-                console.info('all done!');
-                resolve(processos);
-              }
-            };
-          });
-        }).then(function(processos) {
-          var botao = criarBotao('Fazer download da planilha Excel');
-          botao.adicionarEvento(function() {
-            var xls = XLSFactory.fromProcessos(processos);
-            xls.download();
-          });
-        });
       });
     });
     delete sessionStorage.passo;
+    criarBotaoExcel();
     break;
 
   default:
     console.info('início');
-    var botao = criarBotao('Gerar relatório semanal');
-    botao.adicionarEvento(function() {
-      infraExibirAviso(false, 'Aguarde, preparando o formulário...');
-      sessionStorage.passo = 'setup';
-      location.href = '?menu=8&submenu=3';
-    });
+    criarBotaoObterDados();
+    criarBotaoExcel();
     break;
+}
+
+function criarBotaoObterDados() {
+  var gui = GUI.getInstance();
+  var botaoDados = gui.criarBotao('Obter dados atualizados dos processos');
+  botaoDados.adicionarEvento(function() {
+    infraExibirAviso(false, 'Aguarde, preparando o formulário...');
+    sessionStorage.passo = 'setup';
+    location.href = '?menu=8&submenu=3';
+  });
+}
+
+function criarBotaoExcel() {
+  var gui = GUI.getInstance();
+  var botaoExcel = gui.criarBotao('Gerar planilha Excel');
+  botaoExcel.adicionarEvento(function() {
+    DB.abrir().then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var processos = [];
+        var objectStore = db.transaction(['processos'], 'readonly').objectStore('processos');
+        objectStore.openCursor().onsuccess = function(evt) {
+          var cursor = evt.target.result;
+          if (cursor) {
+            processos.push(ProcessoFactory.fromRegistroDB(cursor.value));
+            cursor.continue();
+          } else {
+            console.info('all done!');
+            resolve(processos);
+          }
+        };
+      });
+    }).then(function(processos) {
+      var xls = XLSFactory.fromProcessos(processos);
+      xls.download();
+    });
+  });
 }
