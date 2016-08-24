@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php?menu=8&submenu=3*
-// @version     5
+// @version     6
 // @grant       none
 // ==/UserScript==
 
@@ -91,21 +91,9 @@ var DB = {
 
         var classes = db.createObjectStore('classes', {keyPath: 'codigo'});
 
-        //        let situacoes = db.createObjectStore('situacoes', {keyPath: 'situacao'});
+        var competencias = db.createObjectStore('competencias', {keyPath: 'codigo'});
       };
     });
-  },
-  apagar() {
-    return new Promise(function(resolve, reject) {
-      var req = window.indexedDB.deleteDatabase('relatorioSemanal');
-      req.onsuccess = function(evt) {
-        var res = evt.target.result;
-        resolve(res);
-      };
-      req.onerror = function(evt) {
-        reject(evt.target.error);
-      };
-    })
   }
 };
 
@@ -366,7 +354,10 @@ switch (passo) {
     document.getElementById('chkNaoAgrupaSubSecao').checked = true;
     document.getElementById('chkAgrupaClasse').checked = true;
     sessionStorage.passo = 'analisarClasses';
+    infraExibirAviso(false, 'Buscando dados de classes processuais...');
     document.getElementById('btnVisualizar').click();
+    document.getElementById('divAguarde').style.display = 'none';
+    document.getElementById('divPanoDeFundo').style.display = 'none';
     break;
 
   case 'analisarClasses':
@@ -383,40 +374,25 @@ switch (passo) {
         return map.set(codigo, nome);
       }
     }, new Map());
-    console.info('Abrindo banco de dados');
-    var promises = [];
+    infraExibirAviso(false, 'Salvando dados de classes processuais...');
     DB.abrir().then(function(db) {
-      console.info('ok');
-      for (let codigoNome of classes) {
-        promises.push(new Promise(function(resolve, reject) {
-          var codigo = codigoNome[0];
-	        var nome = codigoNome[1];
-          var objectStore = db.transaction(['classes']).objectStore('classes');
-          var transaction = objectStore.get(codigo);
-          transaction.onsuccess = function(evt) {
-            if (evt.target.result) {
-              console.debug('Já existe: ', nome, evt.target.result.nome);
-              resolve();
-            } else {
-              var objectStore = db.transaction(['classes'], 'readwrite').objectStore('classes');
-              var transaction2 = objectStore.add({codigo: codigo, nome: nome});
-              transaction2.onsuccess = function() {
-                resolve();
-              };
-              transaction2.onerror = function(evt) {
-                console.error(evt.target.error);
-              };
-            }
-          };
-        }));
-      }
-      Promise.all(promises).then(function() {
-        console.debug('all done (classes)');
+      return new Promise(function(resolve, reject) {
+        var objectStore = db.transaction(['classes'], 'readwrite').objectStore('classes');
+        objectStore.clear();
+        for (let codigoNome of classes) {
+          let codigo = codigoNome[0];
+          let nome = codigoNome[1];
+          let req = objectStore.add({codigo: codigo, nome: nome});
+        }
+        objectStore.transaction.addEventListener('complete', resolve);
+        objectStore.transaction.addEventListener('error', reject);
       });
+    }).then(function() {
+      infraOcultarAviso();
+      sessionStorage.passo = 'obterProcessosPorCompetencia';
+      infraExibirAviso(false, 'Preparando busca de dados processuais...');
+      location.href = '?menu=8&submenu=3';
     });
-    sessionStorage.passo = 'obterProcessosPorCompetencia';
-    infraExibirAviso(false, 'Aguarde, salvando os dados...');
-    location.href = '?menu=8&submenu=3';
     break;
 
   case 'obterProcessosPorCompetencia':
@@ -429,25 +405,54 @@ switch (passo) {
     document.getElementById('chkNaoAgrupaSubSecao').checked = true;
     document.getElementById('chkAgrupaCompetencia').checked = true;
     sessionStorage.passo = 'analisarProcessos';
+    infraExibirAviso(false, 'Buscando dados processuais...');
     document.getElementById('btnVisualizar').click();
+    document.getElementById('divAguarde').style.display = 'none';
+    document.getElementById('divPanoDeFundo').style.display = 'none';
     break;
 
   case 'analisarProcessos':
     var tabela = document.getElementById('tblResConsulta');
-    var linhaTotal = tabela.tBodies[0].lastElementChild;
-    var numProcessos = [4,5,6].reduce(function(soma, indiceCelula) {
-      return soma + Number(linhaTotal.cells[indiceCelula].textContent);
-    }, 0);
-    var aviso = Aviso.getInstance();
-    aviso.atualizar(0, numProcessos);
     var linhas = [...tabela.tBodies[0].querySelectorAll('tr.TrSubniveis.TrSubniveis2')];
-    var competencias = {};
-    var promises = [];
-    DB.apagar().catch().then(DB.abrir).then(function(db) {
+    var competencias = linhas.reduce(function(map, linha) {
+      var codigoNome = linha.cells[0].textContent.trim().split(' - ');
+      var codigo = Number(codigoNome.splice(0, 1));
+      var nome = codigoNome.join(' - ');
+      return map.set(codigo, nome);
+    }, new Map());
+    DB.abrir().then(function(db) {
+      var promises = [];
+
+      promises.push(new Promise(function(resolve, reject) {
+        var objectStore = db.transaction(['competencias'], 'readwrite').objectStore('competencias');
+        objectStore.clear();
+        for (let codigoNome of competencias) {
+          let codigo = codigoNome[0];
+          let nome = codigoNome[1];
+          objectStore.add({codigo: codigo, nome: nome});
+        }
+        objectStore.transaction.addEventListener('complete', resolve);
+        objectStore.transaction.addEventListener('error', reject);
+      }));
+
+      var linhaTotal = tabela.tBodies[0].lastElementChild;
+      var numProcessos = [4,5,6].reduce(function(soma, indiceCelula) {
+        return soma + Number(linhaTotal.cells[indiceCelula].textContent);
+      }, 0);
+      var aviso = Aviso.getInstance();
+      aviso.atualizar(0, numProcessos);
+
+      promise = new Promise((a,b) => { resolve = a; reject = b; });
+      transaction = db.transaction(['processos'], 'readwrite');
+      transaction.oncomplete = resolve;
+      objectStore = transaction.objectStore('processos');
+      objectStore.clear();
+      promises.push(promise);
+
       linhas.forEach(function(linha) {
-        var codigoDescricao = linha.cells[0].textContent.trim();
-        var [codigo, descricao] = codigoDescricao.split(/\s+-\s+/);
-        competencias[codigo] = descricao;
+        var codigoDescricao = linha.cells[0].textContent.trim().split(' - ');
+        var codigo = Number(codigoDescricao.splice(0, 1));
+        var descricao = codigoDescricao.join(' - ');
         for (let linhaDados = linha.nextElementSibling; /^infraTr(?:Clara|Escura)$/.test(linhaDados.className); linhaDados = linhaDados.nextElementSibling) {
           [,,,,'desp','sent','tramita'].forEach(function(situacao, indiceCelula) {
             var celula = linhaDados.cells[indiceCelula];
@@ -455,27 +460,29 @@ switch (passo) {
             var link = LinkDadosFactory.fromCelula(celula);
             promises.push(link.abrirPagina({codigo: codigo, descricao: descricao}, situacao).then(function(processos) {
               aviso.acrescentar(numProcessosCelula);
-              var objectStore = db.transaction(['processos'], 'readwrite').objectStore('processos');
               var promises2 = [];
+              var transaction = db.transaction(['processos'], 'readwrite');
+              //transaction.oncomplete = resolve;
+              var objectStore = transaction.objectStore('processos');
               processos.forEach(function(processo) {
-                promises2.push(new Promise(function(resolve, reject) {
-                  var transaction = objectStore.add(processo);
-                  transaction.onsuccess = function() { console.info('added record.'); resolve() };
-                }));
+                var resolve, reject, promise = new Promise((a,b) => { resolve = a; reject = b; });
+                var req = objectStore.add(processo);
+                req.onsuccess = resolve;
+                promises2.push(promise);
               });
               return Promise.all(promises2);
             }));
           });
         }
       });
+      return Promise.all(promises);
     }).then(function() {
       console.info(competencias);
-      Promise.all(promises).then(function() {
-        aviso.ocultar();
-        delete sessionStorage.passo;
-        infraExibirAviso(false, 'Aguarde, salvando os dados...');
-        location.href = '?menu=8&submenu=3';
-      });
+      var aviso = Aviso.getInstance();
+      aviso.ocultar();
+      delete sessionStorage.passo;
+      infraExibirAviso(false, 'Aguarde, salvando os dados...');
+      location.href = '?menu=8&submenu=3';
     });
     break;
 
@@ -491,7 +498,7 @@ function criarBotaoObterDados() {
   var gui = GUI.getInstance();
   var botaoDados = gui.criarBotao('Obter dados atualizados dos processos');
   botaoDados.adicionarEvento(function() {
-    infraExibirAviso(false, 'Aguarde, preparando o formulário...');
+    infraExibirAviso(false, 'Preparando o formulário...');
     sessionStorage.passo = 'obterClasses';
     location.href = '?menu=8&submenu=3';
   });
@@ -501,7 +508,7 @@ function criarBotaoExcel() {
   var gui = GUI.getInstance();
   var botaoExcel = gui.criarBotao('Gerar planilha Excel');
   botaoExcel.adicionarEvento(function() {
-    infraExibirAviso(false, 'Aguarde, gerando arquivo...');
+    infraExibirAviso(false, 'Gerando arquivo...');
     DB.abrir().then(obterProcessosDB).then(function(processos) {
       infraOcultarAviso();
       var xls = XLSFactory.fromProcessos(processos);
@@ -514,7 +521,7 @@ function criarBotaoHTML() {
   var gui = GUI.getInstance();
   var botaoHTML = gui.criarBotao('Gerar página com resultados');
   botaoHTML.adicionarEvento(function() {
-    infraExibirAviso(false, 'Aguarde, gerando arquivo...');
+    infraExibirAviso(false, 'Gerando arquivo...');
     DB.abrir().then(obterProcessosDB).then(function(processos) {
       infraOcultarAviso();
       var xls = XLSFactory.fromProcessos(processos);
@@ -524,18 +531,18 @@ function criarBotaoHTML() {
 }
 
 function obterProcessosDB(db) {
-  return new Promise(function(resolve, reject) {
-    var processos = [];
-    var objectStore = db.transaction(['processos'], 'readonly').objectStore('processos');
-    objectStore.openCursor().onsuccess = function(evt) {
-      var cursor = evt.target.result;
-      if (cursor) {
-        processos.push(ProcessoFactory.fromRegistroDB(cursor.value));
-        cursor.continue();
-      } else {
-        console.info('all done!');
-        resolve(processos);
-      }
-    };
-  });
+  var resolve, reject, promise = new Promise((a,b) => { resolve = a; reject = b; });
+  var processos = [];
+  var objectStore = db.transaction(['processos'], 'readonly').objectStore('processos');
+  objectStore.openCursor().onsuccess = function(evt) {
+    var cursor = evt.target.result;
+    if (cursor) {
+      processos.push(ProcessoFactory.fromRegistroDB(cursor.value));
+      cursor.continue();
+    } else {
+      console.info('all done!');
+      resolve(processos);
+    }
+  };
+  return promise;
 }
