@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php?menu=8&submenu=3*
-// @version     7
+// @version     8
 // @grant       none
 // ==/UserScript==
 
@@ -88,10 +88,13 @@ var DB = {
         processos.createIndex('classe', 'classe', {unique: false});
         processos.createIndex('situacao', 'situacao', {unique: false});
         processos.createIndex('localizador', 'localizador', {unique: false});
+        processos.createIndex('competencia', 'competencia', {unique: false});
 
         var classes = db.createObjectStore('classes', {keyPath: 'codigo'});
 
         var competencias = db.createObjectStore('competencias', {keyPath: 'codigo'});
+
+        var gruposCompetencia = db.createObjectStore('gruposCompetencia', {autoIncrement: true});
       });
     });
   }
@@ -376,25 +379,10 @@ switch (passo) {
     }, new Map());
     infraExibirAviso(false, 'Salvando dados de classes processuais...');
     DB.abrir().then(function(db) {
-      return new Promise(function(resolve, reject) {
-        var objectStore = db.transaction(['classes'], 'readwrite').objectStore('classes');
-        var req = objectStore.clear();
-        req.addEventListener('success', function() {});
-        objectStore.transaction.addEventListener('complete', resolve.bind(null, db));
-        objectStore.transaction.addEventListener('error', reject);
+      var itensClasse = [...classes].map(function([codigo, nome]) {
+        return {codigo: codigo, nome: nome};
       });
-    }).then(function(db) {
-      return new Promise(function(resolve, reject) {
-        var objectStore = db.transaction(['classes'], 'readwrite').objectStore('classes');
-        for (let codigoNome of classes) {
-          let codigo = codigoNome[0];
-          let nome = codigoNome[1];
-          let req = objectStore.add({codigo: codigo, nome: nome});
-          req.addEventListener('success', function() {});
-        }
-        objectStore.transaction.addEventListener('complete', resolve);
-        objectStore.transaction.addEventListener('error', reject);
-      });
+      return redefinirObjectStore(db, 'classes', itensClasse);
     }).then(function() {
       infraOcultarAviso();
       sessionStorage.passo = 'obterProcessosPorCompetencia';
@@ -430,25 +418,11 @@ switch (passo) {
     }, new Map());
     DB.abrir().then(function(db) {
       var promises = [];
-      promises.push(new Promise(function(resolve, reject) {
-        var objectStore = db.transaction(['competencias'], 'readwrite').objectStore('competencias');
-        var req = objectStore.clear();
-        req.addEventListener('success', function() {});
-        objectStore.transaction.addEventListener('complete', resolve.bind(null, db));
-        objectStore.transaction.addEventListener('error', reject);
-      }).then(function(db) {
-        return new Promise(function(resolve, reject) {
-          var objectStore = db.transaction(['competencias'], 'readwrite').objectStore('competencias');
-          for (let codigoNome of competencias) {
-            let codigo = codigoNome[0];
-            let nome = codigoNome[1];
-            let req = objectStore.add({codigo: codigo, nome: nome});
-            req.addEventListener('success', function() {});
-          }
-          objectStore.transaction.addEventListener('complete', resolve.bind(null, db));
-          objectStore.transaction.addEventListener('error', reject);
-        });
-      }));
+
+      var itensCompetencia = [...competencias].map(function([codigo, nome]) {
+        return {codigo: codigo, nome: nome};
+      });
+      promises.push(redefinirObjectStore(db, 'competencias', itensCompetencia));
 
       var linhaTotal = tabela.tBodies[0].lastElementChild;
       var numProcessos = [4,5,6].reduce(function(soma, indiceCelula) {
@@ -457,13 +431,7 @@ switch (passo) {
       var aviso = Aviso.getInstance();
       aviso.atualizar(0, numProcessos);
 
-      promises.push(new Promise(function(resolve,reject) {
-        var objectStore = db.transaction(['processos'], 'readwrite').objectStore('processos');
-        var req = objectStore.clear();
-        req.addEventListener('success', function() {});
-        objectStore.transaction.addEventListener('complete', resolve.bind(null, db));
-        objectStore.transaction.addEventListener('error', reject);
-      }).then(function(db) {
+      promises.push(limparObjectStore('processos').then(function(db) {
         var promisesProcessos = [];
         linhas.forEach(function(linha) {
           var codigoDescricao = linha.cells[0].textContent.trim().split(' - ');
@@ -512,6 +480,37 @@ switch (passo) {
     break;
 }
 
+function limparObjectStore(db, nomeOS) {
+  return executarTransacao(db, nomeOS, (objectStore) => objectStore.clear());
+}
+
+function redefinirObjectStore(db, nomeOS, items) {
+  return limparObjectStore(db, nomeOS).then(executarTransacao(db, nomeOS, items.map((item) => (objectStore) => objectStore.add(item))));
+}
+
+function executarTransacao(db, nomeOS, fn) {
+  return new Promise(function(resolve, reject) {
+    var objectStore = db.transaction([nomeOS], 'readwrite').objectStore(nomeOS);
+    if (! (fn instanceof Array)) {
+      fn = [fn];
+    }
+    var transacoesPendentes = 0;
+    fn.forEach(function(fnItem) {
+      var req = fnItem(objectStore);
+      transacoesPendentes++;
+      req.addEventListener('success', function() { transacoesPendentes--; });
+    });
+    objectStore.transaction.addEventListener('complete', function() {
+      if (transacoesPendentes === 0) {
+        resolve(db);
+      } else {
+        throw new Error('Há ' + transacoesPendentes + ' transações pendentes.');
+      }
+    });
+    objectStore.transaction.addEventListener('error', reject);
+  });
+}
+
 function criarBotaoObterDados() {
   var gui = GUI.getInstance();
   var botaoDados = gui.criarBotao('Obter dados atualizados dos processos');
@@ -548,67 +547,97 @@ function criarBotaoHTML() {
   });
 }
 
-function criarBotaoGruposCompetencia() {
+function criarBotaoAbrirJanela(id, titulo, fn) {
   var gui = GUI.getInstance();
-  var botao = gui.criarBotao('Configurar grupos de competência');
-  botao.adicionarEvento(function() {
-    var blob = new Blob([
-      '<!doctype html>',
-      '<html><head>',
-      '<meta charset="utf-8">',
-      '<title>Configurar grupos de competência</title>',
-      '</head><body>',
-      '<div id="result"></div>',
-      '<script>',
-      'window.opener.postMessage("gruposCompetencia", "http://sap.trf4.gov.br/");',
-      '</script>',
-      '</body></html>'
-    ], {mimeType: 'text/html'});
-    var url = URL.createObjectURL(blob);
-    function mensagemRecebida(evt) {
-      if (evt.data === 'gruposCompetencia') {
+  var botao = gui.criarBotao(titulo);
+  botao.adicionarEvento(abrirJanela.bind(null, id, titulo, fn));
+}
+
+function abrirJanela(id, titulo, fn) {
+  var blob = new Blob([
+    '<!doctype html>',
+    '<html><head>',
+    '<meta charset="utf-8">',
+    '<title>' + titulo + '</title>',
+    '</head><body>',
+    '<script>',
+    'window.opener.postMessage("' + id + '", "http://sap.trf4.gov.br/");',
+    '</script>',
+    '</body></html>'
+  ], {mimeType: 'text/html'});
+  var url = URL.createObjectURL(blob);
+  var analisarMensagem = (function(id) {
+    return function(evt) {
+      if (evt.data === id) {
+        window.removeEventListener('message', analisarMensagem, false);
         var win = evt.source, doc = win.document;
-        win.addEventListener('beforeunload', window.removeEventListener.bind(window, 'message', mensagemRecebida, false), false);
-        var res = doc.getElementById('result');
-        DB.abrir().then(function(db) {
-          var objectStore = db.transaction(['competencias']).objectStore('competencias');
-          var req = objectStore.openCursor();
-          req.addEventListener('success', function(evt) {
-            var cursor = evt.target.result;
-            if (cursor) {
-              var dl = document.createElement('dl');
-              var dt = document.createElement('dt');
-              dt.textContent = cursor.value.codigo;
-              var dd = document.createElement('dd');
-              dd.textContent = cursor.value.nome;
-              dl.appendChild(dt);
-              dl.appendChild(dd);
-              res.appendChild(dl);
+        fn(win, doc);
+      }
+    }
+  })(id);
+  window.addEventListener('message', analisarMensagem, false);
+  window.infraAbrirJanela(url, '_blank', 640, 480, 'scrollbars=yes');
+}
+
+function criarBotaoGruposCompetencia() {
+  return criarBotaoAbrirJanela('gruposCompetencia', 'Configurar grupos de competência', function(win, doc) {
+    var res = doc.body;
+    DB.abrir().then(function(db) {
+      var transaction = db.transaction(['competencias', 'processos']);
+
+      var title = doc.createElement('h1');
+      title.textContent = 'Competências';
+      res.appendChild(title);
+      var objectStore = transaction.objectStore('competencias');
+      var req = objectStore.openCursor();
+      req.addEventListener('success', function(evt) {
+        var cursor = evt.target.result;
+        if (cursor) {
+          var codigo = cursor.value.codigo;
+          var nome = cursor.value.nome;
+          var objectStore = transaction.objectStore('processos');
+          var index = objectStore.index('competencia');
+          var processos = 0;
+          index.openCursor(IDBKeyRange.only(codigo)).addEventListener('success', function(evt) {
+            var cursorProcessos = evt.target.result;
+            if (cursorProcessos) {
+              processos++;
+              cursorProcessos.continue();
+            } else {
+              if (codigo < 10) {
+                codigo = '0' + codigo;
+              }
+              var input = doc.createElement('input');
+              input.type = 'checkbox';
+              var label = doc.createElement('label');
+              label.appendChild(input);
+              label.appendChild(doc.createTextNode(' ' + codigo + ' - ' + nome + ' - ' + processos + ' processo(s)'));
+              res.appendChild(label);
+              res.appendChild(doc.createElement('br'));
               cursor.continue();
             }
           }, false);
-        });
-      }
-      console.info('ok');
-    }
-    window.addEventListener('message', mensagemRecebida, false);
-    infraAbrirJanela(url, '_blank', 640, 480, 'scrollbars=yes');
+        } else {
+          console.info('done');
+        }
+      }, false);
+    });
   });
 }
 
 function obterProcessosDB(db) {
-  var resolve, reject, promise = new Promise((a,b) => { resolve = a; reject = b; });
-  var processos = [];
-  var objectStore = db.transaction(['processos'], 'readonly').objectStore('processos');
-  objectStore.openCursor().onsuccess = function(evt) {
-    var cursor = evt.target.result;
-    if (cursor) {
-      processos.push(ProcessoFactory.fromRegistroDB(cursor.value));
-      cursor.continue();
-    } else {
-      console.info('all done!');
-      resolve(processos);
-    }
-  };
-  return promise;
+  return new Promise(function(resolve, reject) {
+    var processos = [];
+    var objectStore = db.transaction(['processos']).objectStore('processos');
+    objectStore.openCursor().addEventListener('success', function(evt) {
+      var cursor = evt.target.result;
+      if (cursor) {
+        processos.push(ProcessoFactory.fromRegistroDB(cursor.value));
+        cursor.continue();
+      } else {
+        console.info('all done!');
+        resolve(processos);
+      }
+    }, false);
+  });
 }
