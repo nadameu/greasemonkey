@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php?menu=8&submenu=3*
-// @version     9
+// @version     10
 // @grant       none
 // ==/UserScript==
 
@@ -516,7 +516,7 @@ switch (passo) {
     criarBotaoObterDados();
     criarBotaoExcel();
     criarBotaoHTML();
-    criarBotaoGruposCompetencia();
+    criarBotaoLocalizadoresSituacoes();
     break;
 }
 
@@ -585,49 +585,59 @@ function abrirJanela(id, titulo, fn) {
     };
   })(id);
   window.addEventListener('message', analisarMensagem, false);
-  window.infraAbrirJanela(url, '_blank', 640, 480, 'scrollbars=yes');
+  window.infraAbrirJanela(url, '_blank', Math.floor(screen.availWidth * .75), Math.floor(screen.availHeight * .75), 'scrollbars=yes');
 }
 
-function criarBotaoGruposCompetencia() {
-  return criarBotaoAbrirJanela('gruposCompetencia', 'Configurar grupos de competência', function(win, doc) {
-    var res = doc.body;
+function criarBotaoLocalizadoresSituacoes() {
+  return criarBotaoAbrirJanela('localizadoresSituacoes', 'Localizadores/Situações', function(win, doc) {
     DB.abrir().then(function(db) {
-      var transaction = db.transaction(['competencias', 'processos']);
+      var transaction = db.transaction(['processos']);
 
       var title = doc.createElement('h1');
-      title.textContent = 'Competências';
-      res.appendChild(title);
-      var objectStore = transaction.objectStore('competencias');
-      var req = objectStore.openCursor();
-      req.addEventListener('success', function(evt) {
+      title.textContent = 'Localizadores/Situações';
+      doc.body.appendChild(title);
+
+      var localizadores = new Map();
+      var objectStore = transaction.objectStore('processos');
+      var index = objectStore.index('localizador');
+      index.openCursor().addEventListener('success', function(evt) {
         var cursor = evt.target.result;
         if (cursor) {
-          var codigo = cursor.value.codigo;
-          var nome = cursor.value.nome;
-          var objectStore = transaction.objectStore('processos');
-          var index = objectStore.index('competencia');
-          var processos = 0;
-          index.openCursor(IDBKeyRange.only(codigo)).addEventListener('success', function(evt) {
-            var cursorProcessos = evt.target.result;
-            if (cursorProcessos) {
-              processos++;
-              cursorProcessos.continue();
-            } else {
-              if (codigo < 10) {
-                codigo = '0' + codigo;
-              }
-              var input = doc.createElement('input');
-              input.type = 'checkbox';
-              var label = doc.createElement('label');
-              label.appendChild(input);
-              label.appendChild(doc.createTextNode(' ' + codigo + ' - ' + nome + ' - ' + processos + ' processo(s)'));
-              res.appendChild(label);
-              res.appendChild(doc.createElement('br'));
-              cursor.continue();
-            }
-          }, false);
+          var nomeLocalizador = cursor.value.localizador;
+          if (! localizadores.has(nomeLocalizador)) {
+            localizadores.set(nomeLocalizador, {
+              nome: nomeLocalizador,
+              processos: []
+            });
+          }
+          var localizador = localizadores.get(nomeLocalizador);
+          var processo = ProcessoFactory.fromRegistroDB(cursor.value);
+          localizador.processos.push(processo);
+          cursor.continue();
         } else {
-          console.info('done');
+          localizadores = [...localizadores.values()];
+          localizadores.sort((a, b) => b.processos.length - a.processos.length);
+          var tabela = document.createElement('table');
+          tabela.border = 1;
+          tabela.cellSpacing = 0;
+          tabela.cellPadding = 2;
+          tabela.style.borderCollapse = 'collapse';
+          var linhaH = tabela.createTHead().insertRow();
+          linhaH.insertAdjacentHTML('beforeend', '<th rowspan="2">Localizador</th>');
+          linhaH.insertAdjacentHTML('beforeend', '<th colspan="3">Situação</th>');
+          linhaH = tabela.tHead.insertRow();
+          var situacoes = ['MOVIMENTO', 'MOVIMENTO-AGUARDA DESPACHO', 'MOVIMENTO-AGUARDA SENTENÇA'];
+          situacoes.forEach(function(texto) {
+            linhaH.insertAdjacentHTML('beforeend', '<th>' + texto + '</th>');
+          });
+          localizadores.forEach(function({nome: nome, processos: processos}) {
+            var linha = tabela.insertRow();
+            linha.insertCell().textContent = nome;
+            situacoes.forEach(function(situacao) {
+              linha.insertCell().textContent = processos.filter((processo) => processo.situacao === situacao).length;
+            });
+          });
+          doc.body.appendChild(tabela);
         }
       }, false);
     });
