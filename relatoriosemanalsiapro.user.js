@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php?menu=8&submenu=3*
-// @version     10
+// @version     11
 // @grant       none
 // ==/UserScript==
 
@@ -44,8 +44,8 @@ var Aviso = (function() {
     },
     exibir() {
       window.infraExibirAviso(false, [
-        '<center>',
-        'Carregando dados dos processos...<br/>',
+        '<center style="font-weight: bold;">',
+        'Buscando dados de processos...<br/>',
         '<progress id="gmProgresso" value="0" max="1"></progress><br/>',
         '<output id="gmSaida"></output>',
         '</center>'
@@ -398,7 +398,7 @@ var XLSFactory = {
 var passo = sessionStorage.passo;
 console.info(passo);
 switch (passo) {
-  case 'obterClasses':
+  case 'obterDados':
     document.getElementById('rdoDadosS').checked = true;
     document.getElementById('rdoDadosEv1').checked = false;
     document.getElementById('rdoDadosEv2').checked = true;
@@ -407,109 +407,130 @@ switch (passo) {
     estatistica.onchange();
     document.getElementById('chkNaoAgrupaSubSecao').checked = true;
     document.getElementById('chkAgrupaClasse').checked = true;
-    sessionStorage.passo = 'analisarClasses';
-    window.infraExibirAviso(false, 'Buscando dados de classes processuais...');
-    document.getElementById('btnVisualizar').click();
-    document.getElementById('divAguarde').style.display = 'none';
-    document.getElementById('divPanoDeFundo').style.display = 'none';
-    break;
 
-  case 'analisarClasses':
-    window.infraExibirAviso(false, 'Salvando dados de classes processuais...');
-    var tabela = document.getElementById('tblResConsulta');
-    var linhas = [...tabela.tBodies[0].querySelectorAll('tr.TrSubniveis.TrSubniveis2')];
-    var classes = linhas.reduce(function(map, linha) {
-      var codigoNome = linha.cells[0].textContent.trim().split(' - ');
-      var codigo = Number(codigoNome.splice(0, 1));
-      var nome = codigoNome.join(' - ');
-      if (nome === 'CLASSE NÃO CADASTRADO') {
-        console.info('classe não cadastrada', codigo);
-        return map;
-      } else {
-        return map.set(codigo, nome);
-      }
-    }, new Map());
-    var itensClasse = [...classes].map(function([codigo, nome]) {
-      return {codigo: codigo, nome: nome};
+    var form = document.forms[0];
+    var data = new FormData(form);
+    data.append('acao', 'gerar_relatorio');
+    var promise = new Promise(function(resolve, reject) {
+      window.infraExibirAviso(false, 'Buscando dados de classes processuais...');
+      var xml = new XMLHttpRequest();
+      xml.open(form.method, form.action);
+      xml.addEventListener('load', function(evt) {
+        window.infraOcultarAviso();
+        var xml = evt.target;
+        var html = xml.responseText;
+        var parser = new DOMParser();
+        var doc = parser.parseFromString(html, 'text/html');
+        resolve(doc);
+      }, false);
+      xml.addEventListener('error', reject, false);
+      xml.send(data);
     });
-    DB.redefinirObjectStore('classes', itensClasse).then(function() {
-      window.infraOcultarAviso();
-      sessionStorage.passo = 'obterProcessosPorCompetencia';
-      window.infraExibirAviso(false, 'Preparando busca de dados processuais...');
-      location.href = '?menu=8&submenu=3';
-    });
-    break;
 
-  case 'obterProcessosPorCompetencia':
-    document.getElementById('rdoDadosS').checked = true;
-    document.getElementById('rdoDadosEv1').checked = false;
-    document.getElementById('rdoDadosEv2').checked = true;
-    var estatistica = document.getElementById('selEstatistica');
-    estatistica.value = ' 23';
-    estatistica.onchange();
-    document.getElementById('chkNaoAgrupaSubSecao').checked = true;
-    document.getElementById('chkAgrupaCompetencia').checked = true;
-    sessionStorage.passo = 'analisarProcessos';
-    window.infraExibirAviso(false, 'Buscando dados processuais...');
-    document.getElementById('btnVisualizar').click();
-    document.getElementById('divAguarde').style.display = 'none';
-    document.getElementById('divPanoDeFundo').style.display = 'none';
-    break;
-
-  case 'analisarProcessos':
-    var tabela = document.getElementById('tblResConsulta');
-    var linhas = [...tabela.tBodies[0].querySelectorAll('tr.TrSubniveis.TrSubniveis2')];
-    var competencias = linhas.reduce(function(map, linha) {
-      var codigoNome = linha.cells[0].textContent.trim().split(' - ');
-      var codigo = Number(codigoNome.splice(0, 1));
-      var nome = codigoNome.join(' - ');
-      return map.set(codigo, nome);
-    }, new Map());
-
-    var promises = [];
-
-    var itensCompetencia = [...competencias].map(function([codigo, nome]) {
-      return {codigo: codigo, nome: nome};
-    });
-    promises.push(DB.redefinirObjectStore('competencias', itensCompetencia));
-
-    var linhaTotal = tabela.tBodies[0].lastElementChild;
-    var numProcessos = [4,5,6].reduce(function(soma, indiceCelula) {
-      return soma + Number(linhaTotal.cells[indiceCelula].textContent);
-    }, 0);
-    var aviso = Aviso.getInstance();
-    aviso.atualizar(0, numProcessos);
-
-    promises.push(DB.limparObjectStore('processos').then(function(db) {
-      var promisesProcessos = [];
-      linhas.forEach(function(linha) {
-        var codigoDescricao = linha.cells[0].textContent.trim().split(' - ');
-        var codigo = Number(codigoDescricao.splice(0, 1));
-        var descricao = codigoDescricao.join(' - ');
-        for (let linhaDados = linha.nextElementSibling; /^infraTr(?:Clara|Escura)$/.test(linhaDados.className); linhaDados = linhaDados.nextElementSibling) {
-          [,,,,'desp','sent','tramita'].forEach(function(situacao, indiceCelula) {
-            var celula = linhaDados.cells[indiceCelula];
-            var numProcessosCelula = Number(celula.textContent);
-            var link = LinkDadosFactory.fromCelula(celula);
-            promisesProcessos.push(link.abrirPagina({codigo: codigo, descricao: descricao}, situacao).then(function(processos) {
-              aviso.acrescentar(numProcessosCelula);
-              return DB.adicionarItems('processos', processos);
-            }));
-          });
+    promise = promise.then(function(doc) {
+      window.infraExibirAviso(false, 'Salvando dados de classes processuais...');
+      var tabela = doc.getElementById('tblResConsulta');
+      var linhas = [...tabela.tBodies[0].querySelectorAll('tr.TrSubniveis.TrSubniveis2')];
+      var classes = linhas.reduce(function(map, linha) {
+        var codigoNome = linha.cells[0].textContent.trim().split(' - ');
+        var codigo = Number(codigoNome.splice(0, 1));
+        var nome = codigoNome.join(' - ');
+        if (nome === 'CLASSE NÃO CADASTRADO') {
+          console.info('classe não cadastrada', codigo);
+          return map;
+        } else {
+          return map.set(codigo, nome);
         }
+      }, new Map());
+      var itensClasse = [...classes].map(function([codigo, nome]) {
+        return {codigo: codigo, nome: nome};
       });
-      return Promise.all(promisesProcessos);
-    }));
-
-    Promise.all(promises).then(function() {
-      console.info(competencias);
-      var aviso = Aviso.getInstance();
-      aviso.ocultar();
-      delete sessionStorage.passo;
-      window.infraExibirAviso(false, 'Aguarde, salvando os dados...');
-      location.href = '?menu=8&submenu=3';
+      return DB.redefinirObjectStore('classes', itensClasse);
     });
-    break;
+
+    promise = promise.then(function() {
+      window.infraOcultarAviso();
+      document.getElementById('chkAgrupaClasse').checked = false;
+      document.getElementById('chkAgrupaCompetencia').checked = true;
+
+      var form = document.forms[0];
+      var data = new FormData(form);
+      data.append('acao', 'gerar_relatorio');
+      return new Promise(function(resolve, reject) {
+        window.infraExibirAviso(false, 'Buscando dados de competências...');
+        var xml = new XMLHttpRequest();
+        xml.open(form.method, form.action);
+        xml.addEventListener('load', function(evt) {
+          window.infraOcultarAviso();
+          var xml = evt.target;
+          var html = xml.responseText;
+          var parser = new DOMParser();
+          var doc = parser.parseFromString(html, 'text/html');
+          resolve(doc);
+        }, false);
+        xml.addEventListener('error', reject, false);
+        xml.send(data);
+      });
+    });
+
+    promise = promise.then(function(doc) {
+      window.infraExibirAviso(false, 'Salvando dados de competências...');
+      var tabela = doc.getElementById('tblResConsulta');
+      var linhas = [...tabela.tBodies[0].querySelectorAll('tr.TrSubniveis.TrSubniveis2')];
+      var competencias = linhas.reduce(function(map, linha) {
+        var codigoNome = linha.cells[0].textContent.trim().split(' - ');
+        var codigo = Number(codigoNome.splice(0, 1));
+        var nome = codigoNome.join(' - ');
+        return map.set(codigo, nome);
+      }, new Map());
+
+      var itensCompetencia = [...competencias].map(function([codigo, nome]) {
+        return {codigo: codigo, nome: nome};
+      });
+      return DB.redefinirObjectStore('competencias', itensCompetencia).then(function() {
+        window.infraOcultarAviso();
+        return [tabela, linhas];
+      });
+    });
+
+    promise = promise.then(function([tabela, linhas]) {
+      var linhaTotal = tabela.tBodies[0].lastElementChild;
+      var numProcessos = [4,5,6].reduce(function(soma, indiceCelula) {
+        return soma + Number(linhaTotal.cells[indiceCelula].textContent);
+      }, 0);
+      var aviso = Aviso.getInstance();
+      aviso.atualizar(0, numProcessos);
+
+      var promises = [];
+
+      promises.push(DB.limparObjectStore('processos').then(function(db) {
+        var promisesProcessos = [];
+        linhas.forEach(function(linha) {
+          var codigoDescricao = linha.cells[0].textContent.trim().split(' - ');
+          var codigo = Number(codigoDescricao.splice(0, 1));
+          var descricao = codigoDescricao.join(' - ');
+          for (let linhaDados = linha.nextElementSibling; /^infraTr(?:Clara|Escura)$/.test(linhaDados.className); linhaDados = linhaDados.nextElementSibling) {
+            [,,,,'desp','sent','tramita'].forEach(function(situacao, indiceCelula) {
+              var celula = linhaDados.cells[indiceCelula];
+              var numProcessosCelula = Number(celula.textContent);
+              var link = LinkDadosFactory.fromCelula(celula);
+              promisesProcessos.push(link.abrirPagina({codigo: codigo, descricao: descricao}, situacao).then(function(processos) {
+                aviso.acrescentar(numProcessosCelula);
+                return DB.adicionarItems('processos', processos);
+              }));
+            });
+          }
+        });
+        return Promise.all(promisesProcessos);
+      }));
+
+      return Promise.all(promises).then(function() {
+        var aviso = Aviso.getInstance();
+        aviso.ocultar();
+        delete sessionStorage.passo;
+      });
+    });
+    // break omitido propositalmente
 
   default:
     console.info('início');
@@ -525,7 +546,7 @@ function criarBotaoObterDados() {
   var botaoDados = gui.criarBotao('Obter dados atualizados dos processos');
   botaoDados.adicionarEvento(function() {
     window.infraExibirAviso(false, 'Preparando o formulário...');
-    sessionStorage.passo = 'obterClasses';
+    sessionStorage.passo = 'obterDados';
     location.href = '?menu=8&submenu=3';
   });
 }
