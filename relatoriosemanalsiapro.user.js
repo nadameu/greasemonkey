@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php?menu=8&submenu=3*
-// @version     8
+// @version     9
 // @grant       none
 // ==/UserScript==
 
@@ -58,14 +58,14 @@ var Aviso = (function() {
       progresso = null;
       saida = null;
     }
-  }
+  };
   Aviso.getInstance = function() {
     carregando = true;
     var instance = new Aviso();
     carregando = false;
     Aviso.getInstance = () => instance;
     return instance;
-  }
+  };
 
   return Aviso;
 })();
@@ -97,6 +97,57 @@ var DB = {
         var gruposCompetencia = db.createObjectStore('gruposCompetencia', {autoIncrement: true});
       });
     });
+  },
+  adicionarItems(nomeOS, items, db = null) {
+    var promise = DB.verificarDB(db);
+    return promise.then(DB.executarTransacao.bind(null, nomeOS, items.map((item) => (objectStore) => objectStore.add(item))));
+  },
+  limparObjectStore(nomeOS, db = null) {
+    var promise = DB.verificarDB(db);
+    return promise.then(DB.executarTransacao.bind(null, nomeOS, (objectStore) => objectStore.clear()));
+  },
+  redefinirObjectStore(nomeOS, items, db = null) {
+    var promise = DB.verificarDB(db);
+    promise = promise.then(DB.limparObjectStore.bind(null, nomeOS, db));
+    promise = promise.then(DB.adicionarItems.bind(null, nomeOS, items));
+    return promise;
+  },
+  executarTransacao(nomeOS, fn, db = null) {
+    var promise = DB.verificarDB(db);
+    return promise.then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var objectStore = db.transaction([nomeOS], 'readwrite').objectStore(nomeOS);
+        if (! (fn instanceof Array)) {
+          fn = [fn];
+        }
+        var transacoesPendentes = 0;
+        fn.forEach(function(fnItem) {
+          var req = fnItem(objectStore);
+          transacoesPendentes++;
+          req.addEventListener('success', function() { transacoesPendentes--; console.debug('req success'); });
+        });
+        objectStore.transaction.addEventListener('complete', function() {
+          if (transacoesPendentes === 0) {
+            resolve(db);
+          } else {
+            var err = new Error('Há ' + transacoesPendentes + ' transações pendentes.');
+            reject(err);
+            throw err;
+          }
+        });
+        objectStore.transaction.addEventListener('abort', console.debug.bind(console, 'aborted'));
+        objectStore.transaction.addEventListener('error', reject);
+      });
+    });
+  },
+  verificarDB(db = null) {
+    var promise;
+    if (db === null) {
+      promise = DB.abrir();
+    } else {
+      promise = Promise.resolve(db);
+    }
+    return promise;
   }
 };
 
@@ -158,7 +209,7 @@ LinkDados.prototype = {
       'desp': 'MOVIMENTO-AGUARDA DESPACHO',
       'sent': 'MOVIMENTO-AGUARDA SENTENÇA',
       'tramita': 'MOVIMENTO'
-    }
+    };
     var self = this;
     return new Promise(function(resolve, reject) {
       var xml = new XMLHttpRequest();
@@ -182,9 +233,9 @@ LinkDados.prototype = {
 var LinkDadosFactory = {
   fromCelula(celula) {
     var linkDados = new LinkDados();
-    var celula = celula.querySelector('a');
-    if (celula) {
-      var onclick = celula.getAttribute('onclick');
+    var link = celula.querySelector('a');
+    if (link) {
+      var onclick = link.getAttribute('onclick');
       var parametros = [];
       var re = /'([^']*)'/g, match;
       while (match = re.exec(onclick)) {
@@ -195,7 +246,7 @@ var LinkDadosFactory = {
     }
     return linkDados;
   }
-}
+};
 
 function Processo() {}
 Processo.prototype = {
@@ -322,7 +373,7 @@ var XLSFactory = {
             campo === 'classe' ||
             campo === 'situacao' ||
             campo === 'localizador') {
-          celula.textContent = processo[campo]
+          celula.textContent = processo[campo];
           celula.setAttribute('x:str', processo[campo]);
         } else if (campo === 'autuacao' ||
                    campo === 'dataEstatistica' ||
@@ -357,13 +408,14 @@ switch (passo) {
     document.getElementById('chkNaoAgrupaSubSecao').checked = true;
     document.getElementById('chkAgrupaClasse').checked = true;
     sessionStorage.passo = 'analisarClasses';
-    infraExibirAviso(false, 'Buscando dados de classes processuais...');
+    window.infraExibirAviso(false, 'Buscando dados de classes processuais...');
     document.getElementById('btnVisualizar').click();
     document.getElementById('divAguarde').style.display = 'none';
     document.getElementById('divPanoDeFundo').style.display = 'none';
     break;
 
   case 'analisarClasses':
+    window.infraExibirAviso(false, 'Salvando dados de classes processuais...');
     var tabela = document.getElementById('tblResConsulta');
     var linhas = [...tabela.tBodies[0].querySelectorAll('tr.TrSubniveis.TrSubniveis2')];
     var classes = linhas.reduce(function(map, linha) {
@@ -377,16 +429,13 @@ switch (passo) {
         return map.set(codigo, nome);
       }
     }, new Map());
-    infraExibirAviso(false, 'Salvando dados de classes processuais...');
-    DB.abrir().then(function(db) {
-      var itensClasse = [...classes].map(function([codigo, nome]) {
-        return {codigo: codigo, nome: nome};
-      });
-      return redefinirObjectStore(db, 'classes', itensClasse);
-    }).then(function() {
-      infraOcultarAviso();
+    var itensClasse = [...classes].map(function([codigo, nome]) {
+      return {codigo: codigo, nome: nome};
+    });
+    DB.redefinirObjectStore('classes', itensClasse).then(function() {
+      window.infraOcultarAviso();
       sessionStorage.passo = 'obterProcessosPorCompetencia';
-      infraExibirAviso(false, 'Preparando busca de dados processuais...');
+      window.infraExibirAviso(false, 'Preparando busca de dados processuais...');
       location.href = '?menu=8&submenu=3';
     });
     break;
@@ -401,7 +450,7 @@ switch (passo) {
     document.getElementById('chkNaoAgrupaSubSecao').checked = true;
     document.getElementById('chkAgrupaCompetencia').checked = true;
     sessionStorage.passo = 'analisarProcessos';
-    infraExibirAviso(false, 'Buscando dados processuais...');
+    window.infraExibirAviso(false, 'Buscando dados processuais...');
     document.getElementById('btnVisualizar').click();
     document.getElementById('divAguarde').style.display = 'none';
     document.getElementById('divPanoDeFundo').style.display = 'none';
@@ -416,57 +465,48 @@ switch (passo) {
       var nome = codigoNome.join(' - ');
       return map.set(codigo, nome);
     }, new Map());
-    DB.abrir().then(function(db) {
-      var promises = [];
 
-      var itensCompetencia = [...competencias].map(function([codigo, nome]) {
-        return {codigo: codigo, nome: nome};
+    var promises = [];
+
+    var itensCompetencia = [...competencias].map(function([codigo, nome]) {
+      return {codigo: codigo, nome: nome};
+    });
+    promises.push(DB.redefinirObjectStore('competencias', itensCompetencia));
+
+    var linhaTotal = tabela.tBodies[0].lastElementChild;
+    var numProcessos = [4,5,6].reduce(function(soma, indiceCelula) {
+      return soma + Number(linhaTotal.cells[indiceCelula].textContent);
+    }, 0);
+    var aviso = Aviso.getInstance();
+    aviso.atualizar(0, numProcessos);
+
+    promises.push(DB.limparObjectStore('processos').then(function(db) {
+      var promisesProcessos = [];
+      linhas.forEach(function(linha) {
+        var codigoDescricao = linha.cells[0].textContent.trim().split(' - ');
+        var codigo = Number(codigoDescricao.splice(0, 1));
+        var descricao = codigoDescricao.join(' - ');
+        for (let linhaDados = linha.nextElementSibling; /^infraTr(?:Clara|Escura)$/.test(linhaDados.className); linhaDados = linhaDados.nextElementSibling) {
+          [,,,,'desp','sent','tramita'].forEach(function(situacao, indiceCelula) {
+            var celula = linhaDados.cells[indiceCelula];
+            var numProcessosCelula = Number(celula.textContent);
+            var link = LinkDadosFactory.fromCelula(celula);
+            promisesProcessos.push(link.abrirPagina({codigo: codigo, descricao: descricao}, situacao).then(function(processos) {
+              aviso.acrescentar(numProcessosCelula);
+              return DB.adicionarItems('processos', processos);
+            }));
+          });
+        }
       });
-      promises.push(redefinirObjectStore(db, 'competencias', itensCompetencia));
+      return Promise.all(promisesProcessos);
+    }));
 
-      var linhaTotal = tabela.tBodies[0].lastElementChild;
-      var numProcessos = [4,5,6].reduce(function(soma, indiceCelula) {
-        return soma + Number(linhaTotal.cells[indiceCelula].textContent);
-      }, 0);
-      var aviso = Aviso.getInstance();
-      aviso.atualizar(0, numProcessos);
-
-      promises.push(limparObjectStore('processos').then(function(db) {
-        var promisesProcessos = [];
-        linhas.forEach(function(linha) {
-          var codigoDescricao = linha.cells[0].textContent.trim().split(' - ');
-          var codigo = Number(codigoDescricao.splice(0, 1));
-          var descricao = codigoDescricao.join(' - ');
-          for (let linhaDados = linha.nextElementSibling; /^infraTr(?:Clara|Escura)$/.test(linhaDados.className); linhaDados = linhaDados.nextElementSibling) {
-            [,,,,'desp','sent','tramita'].forEach(function(situacao, indiceCelula) {
-              var celula = linhaDados.cells[indiceCelula];
-              var numProcessosCelula = Number(celula.textContent);
-              var link = LinkDadosFactory.fromCelula(celula);
-              promisesProcessos.push(link.abrirPagina({codigo: codigo, descricao: descricao}, situacao).then(function(processos) {
-                return new Promise(function(resolve, reject) {
-                  aviso.acrescentar(numProcessosCelula);
-                  var objectStore = db.transaction(['processos'], 'readwrite').objectStore('processos');
-                  processos.forEach(function(processo) {
-                    var req = objectStore.add(processo);
-                    req.addEventListener('success', function() {});
-                  });
-                  objectStore.transaction.addEventListener('complete', resolve);
-                  objectStore.transaction.addEventListener('error', reject);
-                });
-              }));
-            });
-          }
-        });
-        return Promise.all(promisesProcessos);
-      }));
-
-      return Promise.all(promises);
-    }).then(function() {
+    Promise.all(promises).then(function() {
       console.info(competencias);
       var aviso = Aviso.getInstance();
       aviso.ocultar();
       delete sessionStorage.passo;
-      infraExibirAviso(false, 'Aguarde, salvando os dados...');
+      window.infraExibirAviso(false, 'Aguarde, salvando os dados...');
       location.href = '?menu=8&submenu=3';
     });
     break;
@@ -480,42 +520,11 @@ switch (passo) {
     break;
 }
 
-function limparObjectStore(db, nomeOS) {
-  return executarTransacao(db, nomeOS, (objectStore) => objectStore.clear());
-}
-
-function redefinirObjectStore(db, nomeOS, items) {
-  return limparObjectStore(db, nomeOS).then(executarTransacao(db, nomeOS, items.map((item) => (objectStore) => objectStore.add(item))));
-}
-
-function executarTransacao(db, nomeOS, fn) {
-  return new Promise(function(resolve, reject) {
-    var objectStore = db.transaction([nomeOS], 'readwrite').objectStore(nomeOS);
-    if (! (fn instanceof Array)) {
-      fn = [fn];
-    }
-    var transacoesPendentes = 0;
-    fn.forEach(function(fnItem) {
-      var req = fnItem(objectStore);
-      transacoesPendentes++;
-      req.addEventListener('success', function() { transacoesPendentes--; });
-    });
-    objectStore.transaction.addEventListener('complete', function() {
-      if (transacoesPendentes === 0) {
-        resolve(db);
-      } else {
-        throw new Error('Há ' + transacoesPendentes + ' transações pendentes.');
-      }
-    });
-    objectStore.transaction.addEventListener('error', reject);
-  });
-}
-
 function criarBotaoObterDados() {
   var gui = GUI.getInstance();
   var botaoDados = gui.criarBotao('Obter dados atualizados dos processos');
   botaoDados.adicionarEvento(function() {
-    infraExibirAviso(false, 'Preparando o formulário...');
+    window.infraExibirAviso(false, 'Preparando o formulário...');
     sessionStorage.passo = 'obterClasses';
     location.href = '?menu=8&submenu=3';
   });
@@ -525,9 +534,9 @@ function criarBotaoExcel() {
   var gui = GUI.getInstance();
   var botaoExcel = gui.criarBotao('Gerar planilha Excel');
   botaoExcel.adicionarEvento(function() {
-    infraExibirAviso(false, 'Gerando arquivo...');
+    window.infraExibirAviso(false, 'Gerando arquivo...');
     DB.abrir().then(obterProcessosDB).then(function(processos) {
-      infraOcultarAviso();
+      window.infraOcultarAviso();
       var xls = XLSFactory.fromProcessos(processos);
       xls.download();
     });
@@ -538,9 +547,9 @@ function criarBotaoHTML() {
   var gui = GUI.getInstance();
   var botaoHTML = gui.criarBotao('Gerar página com resultados');
   botaoHTML.adicionarEvento(function() {
-    infraExibirAviso(false, 'Gerando arquivo...');
+    window.infraExibirAviso(false, 'Gerando arquivo...');
     DB.abrir().then(obterProcessosDB).then(function(processos) {
-      infraOcultarAviso();
+      window.infraOcultarAviso();
       var xls = XLSFactory.fromProcessos(processos);
       xls.exibir();
     });
@@ -573,7 +582,7 @@ function abrirJanela(id, titulo, fn) {
         var win = evt.source, doc = win.document;
         fn(win, doc);
       }
-    }
+    };
   })(id);
   window.addEventListener('message', analisarMensagem, false);
   window.infraAbrirJanela(url, '_blank', 640, 480, 'scrollbars=yes');
