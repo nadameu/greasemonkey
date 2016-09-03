@@ -73,7 +73,7 @@ var Aviso = (function() {
 var DB = {
   abrir() {
     return new Promise(function(resolve, reject) {
-      var req = window.indexedDB.open('relatorioSemanal');
+      var req = window.indexedDB.open('relatorioSemanal', 2);
       req.addEventListener('success', function(evt) {
         var db = evt.target.result;
         resolve(db);
@@ -84,17 +84,30 @@ var DB = {
       req.addEventListener('upgradeneeded', function(evt) {
         var db = evt.target.result;
 
-        var processos = db.createObjectStore('processos', {keyPath: 'numproc'});
-        processos.createIndex('classe', 'classe', {unique: false});
-        processos.createIndex('situacao', 'situacao', {unique: false});
-        processos.createIndex('localizador', 'localizador', {unique: false});
-        processos.createIndex('competencia', 'competencia', {unique: false});
+        switch (evt.oldVersion) {
 
-        var classes = db.createObjectStore('classes', {keyPath: 'codigo'});
+          case 0:
+            var processos = db.createObjectStore('processos', {keyPath: 'numproc'});
+            processos.createIndex('classe', 'classe', {unique: false});
+            processos.createIndex('situacao', 'situacao', {unique: false});
+            processos.createIndex('localizador', 'localizador', {unique: false});
+            processos.createIndex('competencia', 'competencia', {unique: false});
 
-        var competencias = db.createObjectStore('competencias', {keyPath: 'codigo'});
+            var classes = db.createObjectStore('classes', {keyPath: 'codigo'});
 
-        var gruposCompetencia = db.createObjectStore('gruposCompetencia', {autoIncrement: true});
+            var competencias = db.createObjectStore('competencias', {keyPath: 'codigo'});
+
+            var gruposCompetencia = db.createObjectStore('gruposCompetencia', {autoIncrement: true});
+            // break intencionalmente omitido
+
+          case 1:
+            var setores = db.createObjectStore('setores', {autoIncrement: true});
+
+            var localizadorSetor = db.createObjectStore('localizadorSetor', {keyPath: 'localizador'});
+            localizadorSetor.createIndex('setor', 'setor', {unique: false});
+            // break intencionalmente omitido
+
+        }
       });
     });
   },
@@ -106,9 +119,46 @@ var DB = {
     var promise = DB.verificarDB(db);
     return promise.then(DB.executarTransacao.bind(null, nomeOS, (objectStore) => objectStore.clear()));
   },
+  obterTodos(nomeOS, db = null) {
+    var promise = DB.verificarDB(db);
+    return promise.then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var objectStore = db.transaction([nomeOS]).objectStore(nomeOS);
+        var collection = [];
+        objectStore.openCursor().addEventListener('success', function(evt) {
+          var cursor = evt.target.result;
+          if (cursor) {
+            collection.push(cursor.value);
+            cursor.continue();
+          } else {
+            resolve(collection);
+          }
+        }, false);
+      });
+    });
+  },
+  obterTodosPorIndice(nomeOS, indice, db = null) {
+    var promise = DB.verificarDB(db);
+    return promise.then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var objectStore = db.transaction([nomeOS]).objectStore(nomeOS);
+        var index = objectStore.index(indice);
+        var collection = [];
+        index.openCursor(null, 'nextunique').addEventListener('success', function(evt) {
+          var cursor = evt.target.result;
+          if (cursor) {
+            collection.push(cursor.value[indice]);
+            cursor.continue();
+          } else {
+            resolve(collection);
+          }
+        }, false);
+      });
+    });
+  },
   redefinirObjectStore(nomeOS, items, db = null) {
     var promise = DB.verificarDB(db);
-    promise = promise.then(DB.limparObjectStore.bind(null, nomeOS, db));
+    promise = promise.then(DB.limparObjectStore.bind(null, nomeOS));
     promise = promise.then(DB.adicionarItems.bind(null, nomeOS, items));
     return promise;
   },
@@ -124,18 +174,18 @@ var DB = {
         fn.forEach(function(fnItem) {
           var req = fnItem(objectStore);
           transacoesPendentes++;
-          req.addEventListener('success', function() { transacoesPendentes--; console.debug('req success'); });
+          req.addEventListener('success', function() { transacoesPendentes--; });
         });
         objectStore.transaction.addEventListener('complete', function() {
           if (transacoesPendentes === 0) {
             resolve(db);
           } else {
-            var err = new Error('Há ' + transacoesPendentes + ' transações pendentes.');
+            var err = new Error('Há ' + transacoesPendentes + ' transações pendentes.', nomeOS);
             reject(err);
             throw err;
           }
         });
-        objectStore.transaction.addEventListener('abort', console.debug.bind(console, 'aborted'));
+        objectStore.transaction.addEventListener('abort', console.debug.bind(console, 'aborted', nomeOS));
         objectStore.transaction.addEventListener('error', reject);
       });
     });
@@ -398,6 +448,16 @@ var XLSFactory = {
 var passo = sessionStorage.passo;
 console.info(passo);
 switch (passo) {
+  case 'obterDadosMesAnterior':
+    var inicio = document.getElementById('selMesAnoIni');
+    var fim = document.getElementById('selMesAnoFim');
+    var mesAnterior = inicio.getElementsByTagName('option')[1];
+    inicio.value = mesAnterior.value;
+    inicio.onchange();
+    fim.value = mesAnterior.value;
+    fim.onchange();
+    // break intencionalmente omitido
+
   case 'obterDados':
     document.getElementById('rdoDadosS').checked = true;
     document.getElementById('rdoDadosEv1').checked = false;
@@ -430,7 +490,21 @@ switch (passo) {
     promise = promise.then(function(doc) {
       window.infraExibirAviso(false, 'Salvando dados de classes processuais...');
       var tabela = doc.getElementById('tblResConsulta');
+      if (! tabela) {
+        window.infraOcultarAviso();
+        if (sessionStorage.passo === 'obterDados') {
+          window.infraExibirAviso(false, 'Não foi possível obter os dados, tentando mês anterior...');
+          sessionStorage.passo = 'obterDadosMesAnterior';
+          location.href = '?menu=8&submenu=3';
+          return Promise.reject('Tentando mês anterior');
+        } else {
+          window.alert('Não foi possível obter os dados do relatório.\n\nTente gerar um relatório manualmente para verificar eventuais mensagens de erro.');
+          return Promise.reject('Relatório não obtido.');
+        }
+      }
+      console.info('Tabela existe.');
       var linhas = [...tabela.tBodies[0].querySelectorAll('tr.TrSubniveis.TrSubniveis2')];
+      console.info('Cheguei aqui');
       var classes = linhas.reduce(function(map, linha) {
         var codigoNome = linha.cells[0].textContent.trim().split(' - ');
         var codigo = Number(codigoNome.splice(0, 1));
@@ -445,6 +519,7 @@ switch (passo) {
       var itensClasse = [...classes].map(function([codigo, nome]) {
         return {codigo: codigo, nome: nome};
       });
+      console.info('shit')
       return DB.redefinirObjectStore('classes', itensClasse);
     });
 
@@ -524,13 +599,15 @@ switch (passo) {
         return Promise.all(promisesProcessos);
       }));
 
-      return Promise.all(promises).then(function() {
+      return Promise.all(promises).catch(function(evt) {
+        console.error(evt.target.error);
+      }).then(function() {
         var aviso = Aviso.getInstance();
         aviso.ocultar();
         delete sessionStorage.passo;
       });
     });
-    // break omitido propositalmente
+    // break intencionalmente omitido
 
   default:
     console.info('início');
@@ -538,6 +615,8 @@ switch (passo) {
     criarBotaoExcel();
     criarBotaoHTML();
     criarBotaoLocalizadoresSituacoes();
+    criarBotaoLocalizadorSetor();
+    criarBotaoSetores();
     break;
 }
 
@@ -556,7 +635,8 @@ function criarBotaoExcel() {
   var botaoExcel = gui.criarBotao('Gerar planilha Excel');
   botaoExcel.adicionarEvento(function() {
     window.infraExibirAviso(false, 'Gerando arquivo...');
-    DB.abrir().then(obterProcessosDB).then(function(processos) {
+    DB.obterTodos('processos').then(function(processos) {
+      processos = processos.map((processo) => ProcessoFactory.fromRegistroDB(processo));
       window.infraOcultarAviso();
       var xls = XLSFactory.fromProcessos(processos);
       xls.download();
@@ -569,7 +649,8 @@ function criarBotaoHTML() {
   var botaoHTML = gui.criarBotao('Gerar página com resultados');
   botaoHTML.adicionarEvento(function() {
     window.infraExibirAviso(false, 'Gerando arquivo...');
-    DB.abrir().then(obterProcessosDB).then(function(processos) {
+    DB.obterTodos('processos').then(function(processos) {
+      processos = processos.map((processo) => ProcessoFactory.fromRegistroDB(processo));
       window.infraOcultarAviso();
       var xls = XLSFactory.fromProcessos(processos);
       xls.exibir();
@@ -609,75 +690,91 @@ function abrirJanela(id, titulo, fn) {
   window.infraAbrirJanela(url, '_blank', Math.floor(screen.availWidth * .75), Math.floor(screen.availHeight * .75), 'scrollbars=yes');
 }
 
-function criarBotaoLocalizadoresSituacoes() {
-  return criarBotaoAbrirJanela('localizadoresSituacoes', 'Localizadores/Situações', function(win, doc) {
-    DB.abrir().then(function(db) {
-      var transaction = db.transaction(['processos']);
-
-      var title = doc.createElement('h1');
-      title.textContent = 'Localizadores/Situações';
-      doc.body.appendChild(title);
-
-      var localizadores = new Map();
-      var objectStore = transaction.objectStore('processos');
-      var index = objectStore.index('localizador');
-      index.openCursor().addEventListener('success', function(evt) {
-        var cursor = evt.target.result;
-        if (cursor) {
-          var nomeLocalizador = cursor.value.localizador;
-          if (! localizadores.has(nomeLocalizador)) {
-            localizadores.set(nomeLocalizador, {
-              nome: nomeLocalizador,
-              processos: []
-            });
-          }
-          var localizador = localizadores.get(nomeLocalizador);
-          var processo = ProcessoFactory.fromRegistroDB(cursor.value);
-          localizador.processos.push(processo);
-          cursor.continue();
-        } else {
-          localizadores = [...localizadores.values()];
-          localizadores.sort((a, b) => b.processos.length - a.processos.length);
-          var tabela = document.createElement('table');
-          tabela.border = 1;
-          tabela.cellSpacing = 0;
-          tabela.cellPadding = 2;
-          tabela.style.borderCollapse = 'collapse';
-          var linhaH = tabela.createTHead().insertRow();
-          linhaH.insertAdjacentHTML('beforeend', '<th rowspan="2">Localizador</th>');
-          linhaH.insertAdjacentHTML('beforeend', '<th colspan="3">Situação</th>');
-          linhaH = tabela.tHead.insertRow();
-          var situacoes = ['MOVIMENTO', 'MOVIMENTO-AGUARDA DESPACHO', 'MOVIMENTO-AGUARDA SENTENÇA'];
-          situacoes.forEach(function(texto) {
-            linhaH.insertAdjacentHTML('beforeend', '<th>' + texto + '</th>');
-          });
-          localizadores.forEach(function({nome: nome, processos: processos}) {
-            var linha = tabela.insertRow();
-            linha.insertCell().textContent = nome;
-            situacoes.forEach(function(situacao) {
-              linha.insertCell().textContent = processos.filter((processo) => processo.situacao === situacao).length;
-            });
-          });
-          doc.body.appendChild(tabela);
-        }
-      }, false);
+function criarBotaoLocalizadorSetor() {
+  return criarBotaoAbrirJanela('localizadorSetor', 'Localizador/Setor', function(win, doc) {
+    doc.body.innerHTML = [
+      '<h1>Localizador/Setor</h1>',
+      '<table border="1" cellspacing="0" cellpadding="2" style="border-collapse: collapse;">',
+      '<thead>',
+      '<tr><th>Localizador</th><th>Setor</th></tr>',
+      '</thead>',
+      '<tbody>',
+      '</tbody>',
+      '</table>'
+    ].join('');
+    DB.obterTodosPorIndice('processos', 'localizador').then(function(localizadores) {
+      var tabela = doc.getElementsByTagName('table')[0];
+      localizadores.forEach(function(localizador) {
+        var linha = tabela.insertRow();
+        linha.insertCell().textContent = localizador;
+      });
     });
   });
 }
 
-function obterProcessosDB(db) {
-  return new Promise(function(resolve, reject) {
-    var processos = [];
-    var objectStore = db.transaction(['processos']).objectStore('processos');
-    objectStore.openCursor().addEventListener('success', function(evt) {
-      var cursor = evt.target.result;
-      if (cursor) {
-        processos.push(ProcessoFactory.fromRegistroDB(cursor.value));
-        cursor.continue();
-      } else {
-        console.info('all done!');
-        resolve(processos);
-      }
-    }, false);
+function criarBotaoLocalizadoresSituacoes() {
+  return criarBotaoAbrirJanela('localizadoresSituacoes', 'Localizadores/Situações', function(win, doc) {
+    doc.body.innerHTML = [
+      '<h1>Localizadores/Situações</h1>',
+      '<table border="1" cellspacing="0" cellpadding="2" style="border-collapse: collapse;">',
+      '<thead>',
+      '<tr><th rowspan="2">Localizador</th><th colspan="3">Situação</th></tr>',
+      '<tr><th>MOVIMENTO</th><th>AG. DESPACHO</th><th>AG. SENTENÇA</th></tr>',
+      '</thead>',
+      '<tbody>',
+      '</tbody>',
+      '</table>'
+    ].join('');
+
+    DB.obterTodos('processos').then(function(processos) {
+      var localizadores = new Map();
+      processos = processos.map((processo) => ProcessoFactory.fromRegistroDB(processo));
+      processos.forEach(function(processo) {
+        var nomeLocalizador = processo.localizador;
+        if (! localizadores.has(nomeLocalizador)) {
+          localizadores.set(nomeLocalizador, {
+            nome: nomeLocalizador,
+            processos: []
+          });
+        }
+        var localizador = localizadores.get(nomeLocalizador);
+        localizador.processos.push(processo);
+      });
+      localizadores = [...localizadores.values()];
+      localizadores.sort((a, b) => b.processos.length - a.processos.length);
+      return localizadores;
+    }).then(function(localizadores) {
+      var tabela = doc.getElementsByTagName('table')[0];
+      var situacoes = ['MOVIMENTO', 'MOVIMENTO-AGUARDA DESPACHO', 'MOVIMENTO-AGUARDA SENTENÇA'];
+      localizadores.forEach(function({nome: nome, processos: processos}) {
+        var linha = tabela.insertRow();
+        linha.insertCell().textContent = nome;
+        situacoes.forEach(function(situacao) {
+          linha.insertCell().textContent = processos.filter((processo) => processo.situacao === situacao).length;
+        });
+      });
+    });
+  });
+}
+
+function criarBotaoSetores() {
+  return criarBotaoAbrirJanela('setores', 'Setores', function(win, doc) {
+    doc.body.innerHTML = [
+      '<h1>Localizadores/Situações</h1>',
+      '<table border="1" cellspacing="0" cellpadding="2" style="border-collapse: collapse;">',
+      '<thead>',
+      '<tr><th>Setor</th></tr>',
+      '</thead>',
+      '<tbody>',
+      '</tbody>',
+      '</table>'
+    ].join('');
+
+    DB.obterTodos('setores').then(function(setores) {
+      setores.forEach(function(setor) {
+        var linha = tabela.insertRow();
+        linha.insertCell().textContent = setor.nome;
+      });
+    });
   });
 }
