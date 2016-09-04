@@ -70,6 +70,12 @@ var Aviso = (function() {
   return Aviso;
 })();
 
+var Classes = new Map();
+
+var ClassesPorNome = new Map();
+
+var Competencias = new Map();
+
 var DB = {
   abrir() {
     return new Promise(function(resolve, reject) {
@@ -114,6 +120,34 @@ var DB = {
   adicionarItems(nomeOS, items, db = null) {
     var promise = DB.verificarDB(db);
     return promise.then(DB.executarTransacao.bind(null, nomeOS, items.map((item) => (objectStore) => objectStore.add(item))));
+  },
+  executarTransacao(nomeOS, fn, db = null) {
+    var promise = DB.verificarDB(db);
+    return promise.then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var objectStore = db.transaction([nomeOS], 'readwrite').objectStore(nomeOS);
+        if (! (fn instanceof Array)) {
+          fn = [fn];
+        }
+        var transacoesPendentes = 0;
+        fn.forEach(function(fnItem) {
+          var req = fnItem(objectStore);
+          transacoesPendentes++;
+          req.addEventListener('success', function() { transacoesPendentes--; });
+        });
+        objectStore.transaction.addEventListener('complete', function() {
+          if (transacoesPendentes === 0) {
+            resolve(db);
+          } else {
+            var err = new Error('Há ' + transacoesPendentes + ' transações pendentes.', nomeOS);
+            reject(err);
+            throw err;
+          }
+        });
+        objectStore.transaction.addEventListener('abort', console.debug.bind(console, 'aborted', nomeOS));
+        objectStore.transaction.addEventListener('error', reject);
+      });
+    });
   },
   limparObjectStore(nomeOS, db = null) {
     var promise = DB.verificarDB(db);
@@ -161,34 +195,6 @@ var DB = {
     promise = promise.then(DB.limparObjectStore.bind(null, nomeOS));
     promise = promise.then(DB.adicionarItems.bind(null, nomeOS, items));
     return promise;
-  },
-  executarTransacao(nomeOS, fn, db = null) {
-    var promise = DB.verificarDB(db);
-    return promise.then(function(db) {
-      return new Promise(function(resolve, reject) {
-        var objectStore = db.transaction([nomeOS], 'readwrite').objectStore(nomeOS);
-        if (! (fn instanceof Array)) {
-          fn = [fn];
-        }
-        var transacoesPendentes = 0;
-        fn.forEach(function(fnItem) {
-          var req = fnItem(objectStore);
-          transacoesPendentes++;
-          req.addEventListener('success', function() { transacoesPendentes--; });
-        });
-        objectStore.transaction.addEventListener('complete', function() {
-          if (transacoesPendentes === 0) {
-            resolve(db);
-          } else {
-            var err = new Error('Há ' + transacoesPendentes + ' transações pendentes.', nomeOS);
-            reject(err);
-            throw err;
-          }
-        });
-        objectStore.transaction.addEventListener('abort', console.debug.bind(console, 'aborted', nomeOS));
-        objectStore.transaction.addEventListener('error', reject);
-      });
-    });
   },
   verificarDB(db = null) {
     var promise;
@@ -306,6 +312,7 @@ Processo.prototype = {
   competencia: null,
   dataEstatistica: null,
   dataUltimaFase: null,
+  descricaoClasse: null,
   descricaoCompetencia: null,
   localizador: null,
   magistrado: null,
@@ -314,15 +321,13 @@ Processo.prototype = {
   orgao: null,
   situacao: null,
   get competenciaCorregedoria() {
-    if (this.competencia >= '09' && this.competencia <= '20') {
+    if (this.competencia >= 9 && this.competencia <= 20) {
       return COMPETENCIAS_CORREGEDORIA.JEF;
-    } else if (this.competencia >= '21' && this.competencia <= '30') {
+    } else if (this.competencia >= 21 && this.competencia <= 30) {
       return COMPETENCIAS_CORREGEDORIA.CRIMINAL;
-    } else if ((this.competencia === '41' || this.competencia === '43') &&
-               (this.classe === 'EXECUÇÃO FISCAL' ||
-                this.classe === 'CARTA DE ORDEM' ||
-                this.classe === 'CARTA PRECATÓRIA' ||
-                this.classe === 'CARTA ROGATÓRIA')) {
+    } else if ((this.competencia === 41 || this.competencia === 43) &&
+               (this.classe === 99 ||
+                this.classe === 60)) {
       return COMPETENCIAS_CORREGEDORIA.EF;
     } else {
       return COMPETENCIAS_CORREGEDORIA.CIVEL;
@@ -336,13 +341,15 @@ var ProcessoFactory = {
     var numprocFormatado = processo.numprocFormatado = linha.cells[0].querySelector('a').textContent;
     processo.numproc = numprocFormatado.replace(/[.-]/g, '');
     processo.autuacao = parseData(linha.cells[1].textContent);
-    [,,'classe','situacao','orgao','localizador','magistrado'].forEach(function(campo, indiceCelula) {
+    processo.classe = ClassesPorNome.get(linha.cells[2].textContent) || 0;
+    [,,'descricaoClasse','situacao','orgao','localizador','magistrado'].forEach(function(campo, indiceCelula) {
       processo[campo] = linha.cells[indiceCelula].textContent;
     });
+    if (processo.classe === 0) console.info(processo.classe, processo.descricaoClasse);
     processo.dataEstatistica = parseData(linha.cells[7].textContent);
     processo.dataUltimaFase = parseData(linha.cells[8].textContent);
-    processo.competencia = competencia.codigo;
-    processo.descricaoCompetencia = competencia.descricao;
+    processo.competencia = competencia;
+    processo.descricaoCompetencia = Competencias.get(competencia);
     return processo;
   },
   fromRegistroDB(registroDB) {
@@ -402,7 +409,7 @@ var XLSFactory = {
       'numprocFormatado': 'Processo',
       'autuacao': 'Data autuação',
       'descricaoCompetencia': 'Competência',
-      'classe': 'Classe',
+      'descricaoClasse': 'Classe',
       'competenciaCorregedoria': 'Competência Corregedoria',
       'situacao': 'Situação',
       'localizador': 'Localizador',
@@ -446,7 +453,7 @@ var XLSFactory = {
 };
 
 var passo = sessionStorage.passo;
-console.info(passo);
+console.info(passo || 'inicio');
 switch (passo) {
   case 'obterDadosMesAnterior':
     var inicio = document.getElementById('selMesAnoIni');
@@ -502,25 +509,22 @@ switch (passo) {
           return Promise.reject('Relatório não obtido.');
         }
       }
-      console.info('Tabela existe.');
       var linhas = [...tabela.tBodies[0].querySelectorAll('tr.TrSubniveis.TrSubniveis2')];
-      console.info('Cheguei aqui');
-      var classes = linhas.reduce(function(map, linha) {
+      linhas.forEach(function(linha) {
         var codigoNome = linha.cells[0].textContent.trim().split(' - ');
         var codigo = Number(codigoNome.splice(0, 1));
         var nome = codigoNome.join(' - ');
         if (nome === 'CLASSE NÃO CADASTRADO') {
           console.info('classe não cadastrada', codigo);
-          return map;
         } else {
-          return map.set(codigo, nome);
+          Classes.set(codigo, nome);
+          ClassesPorNome.set(nome, codigo);
         }
       }, new Map());
-      var itensClasse = [...classes].map(function([codigo, nome]) {
+      var classesItens = [...Classes].map(function([codigo, nome]) {
         return {codigo: codigo, nome: nome};
       });
-      console.info('shit')
-      return DB.redefinirObjectStore('classes', itensClasse);
+      return DB.redefinirObjectStore('classes', classesItens);
     });
 
     promise = promise.then(function() {
@@ -552,17 +556,17 @@ switch (passo) {
       window.infraExibirAviso(false, 'Salvando dados de competências...');
       var tabela = doc.getElementById('tblResConsulta');
       var linhas = [...tabela.tBodies[0].querySelectorAll('tr.TrSubniveis.TrSubniveis2')];
-      var competencias = linhas.reduce(function(map, linha) {
+      Competencias = linhas.reduce(function(map, linha) {
         var codigoNome = linha.cells[0].textContent.trim().split(' - ');
         var codigo = Number(codigoNome.splice(0, 1));
         var nome = codigoNome.join(' - ');
         return map.set(codigo, nome);
       }, new Map());
 
-      var itensCompetencia = [...competencias].map(function([codigo, nome]) {
+      var competenciasItens = [...Competencias].map(function([codigo, nome]) {
         return {codigo: codigo, nome: nome};
       });
-      return DB.redefinirObjectStore('competencias', itensCompetencia).then(function() {
+      return DB.redefinirObjectStore('competencias', competenciasItens).then(function() {
         window.infraOcultarAviso();
         return [tabela, linhas];
       });
@@ -581,15 +585,13 @@ switch (passo) {
       promises.push(DB.limparObjectStore('processos').then(function(db) {
         var promisesProcessos = [];
         linhas.forEach(function(linha) {
-          var codigoDescricao = linha.cells[0].textContent.trim().split(' - ');
-          var codigo = Number(codigoDescricao.splice(0, 1));
-          var descricao = codigoDescricao.join(' - ');
+          var competencia = Number(linha.cells[0].textContent.trim().split(' - ')[0]);
           for (let linhaDados = linha.nextElementSibling; /^infraTr(?:Clara|Escura)$/.test(linhaDados.className); linhaDados = linhaDados.nextElementSibling) {
             [,,,,'desp','sent','tramita'].forEach(function(situacao, indiceCelula) {
               var celula = linhaDados.cells[indiceCelula];
               var numProcessosCelula = Number(celula.textContent);
               var link = LinkDadosFactory.fromCelula(celula);
-              promisesProcessos.push(link.abrirPagina({codigo: codigo, descricao: descricao}, situacao).then(function(processos) {
+              promisesProcessos.push(link.abrirPagina(competencia, situacao).then(function(processos) {
                 aviso.acrescentar(numProcessosCelula);
                 return DB.adicionarItems('processos', processos);
               }));
@@ -610,7 +612,6 @@ switch (passo) {
     // break intencionalmente omitido
 
   default:
-    console.info('início');
     criarBotaoObterDados();
     criarBotaoExcel();
     criarBotaoHTML();
@@ -772,6 +773,7 @@ function criarBotaoSetores() {
 
     DB.obterTodos('setores').then(function(setores) {
       setores.forEach(function(setor) {
+        var tabela = doc.getElementsByTagName('table')[0];
         var linha = tabela.insertRow();
         linha.insertCell().textContent = setor.nome;
       });
