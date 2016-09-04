@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
-// @include     http://sap.trf4.gov.br/estatistica/controlador.php?menu=8&submenu=3*
+// @include     http://sap.trf4.gov.br/estatistica/controlador.php*
 // @version     11
 // @grant       none
 // ==/UserScript==
@@ -107,13 +107,29 @@ var DB = {
             // break intencionalmente omitido
 
           case 1:
-            var setores = db.createObjectStore('setores', {autoIncrement: true});
+            var setores = db.createObjectStore('setores', {keyPath: 'id', autoIncrement: true});
+            setores.createIndex('nome', 'nome', {unique: true});
 
             var localizadorSetor = db.createObjectStore('localizadorSetor', {keyPath: 'localizador'});
             localizadorSetor.createIndex('setor', 'setor', {unique: false});
             // break intencionalmente omitido
 
         }
+      });
+    });
+  },
+  adicionarItem(nomeOS, item, key, db = null) {
+    var promise = DB.verificarDB(db);
+    return promise.then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var objectStore = db.transaction([nomeOS], 'readwrite').objectStore(nomeOS);
+        var req = objectStore.add(item, key);
+        req.addEventListener('success', function(evt) { key = evt.target.result; }, false);
+        objectStore.transaction.addEventListener('complete', function() {
+          resolve(key);
+        }, false);
+        objectStore.transaction.addEventListener('abort', console.debug.bind(console, 'aborted', nomeOS));
+        objectStore.transaction.addEventListener('error', reject);
       });
     });
   },
@@ -171,7 +187,26 @@ var DB = {
       });
     });
   },
-  obterTodosPorIndice(nomeOS, indice, db = null) {
+  obterTodosOrdenadosPorIndice(nomeOS, indice, db = null) {
+    var promise = DB.verificarDB(db);
+    return promise.then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var objectStore = db.transaction([nomeOS]).objectStore(nomeOS);
+        var index = objectStore.index(indice);
+        var collection = [];
+        index.openCursor().addEventListener('success', function(evt) {
+          var cursor = evt.target.result;
+          if (cursor) {
+            collection.push(cursor.value);
+            cursor.continue();
+          } else {
+            resolve(collection);
+          }
+        }, false);
+      });
+    });
+  },
+  obterValoresIndice(nomeOS, indice, db = null) {
     var promise = DB.verificarDB(db);
     return promise.then(function(db) {
       return new Promise(function(resolve, reject) {
@@ -266,20 +301,10 @@ LinkDados.prototype = {
       'sent': 'MOVIMENTO-AGUARDA SENTENÇA',
       'tramita': 'MOVIMENTO'
     };
-    var self = this;
-    return new Promise(function(resolve, reject) {
-      var xml = new XMLHttpRequest();
-      xml.open('GET', self.url);
-      xml.onload = resolve;
-      xml.onerror = reject;
-      xml.send(null);
-    }).then(function(evt) {
-      var xml = evt.target;
-      var html = xml.responseText;
-      var parser = new DOMParser();
-      var doc = parser.parseFromString(html, 'text/html');
+    return XHR.obterDoc('GET', this.url).then(function(doc) {
       var tabela = doc.getElementById('tblSubResConsulta');
-      var linhas = [...tabela.tBodies[0].rows].filter((linha) => /^infraTr(?:Clara|Escura)$/.test(linha.className));
+      var re = /^infraTr(?:Clara|Escura)$/;
+      var linhas = [...tabela.tBodies[0].rows].filter((linha) => re.test(linha.className));
       var processos = linhas.map(ProcessoFactory.fromLinha.bind(null, competencia)).filter((processo) => processo.situacao === situacoesValidas[situacao]);
       return processos;
     });
@@ -358,6 +383,24 @@ var ProcessoFactory = {
       processo[campo] = registroDB[campo];
     }
     return processo;
+  }
+};
+
+var XHR = {
+  obterDoc(method, url, data = null) {
+    return new Promise(function(resolve, reject) {
+      var xml = new XMLHttpRequest();
+      xml.open(method, url);
+      xml.addEventListener('load', resolve, false);
+      xml.addEventListener('error', reject, false);
+      xml.send(data);
+    }).then(function(evt) {
+      var xml = evt.target;
+      var html = xml.responseText;
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(html, 'text/html');
+      return doc;
+    });
   }
 };
 
@@ -478,20 +521,10 @@ switch (passo) {
     var form = document.forms[0];
     var data = new FormData(form);
     data.append('acao', 'gerar_relatorio');
-    var promise = new Promise(function(resolve, reject) {
-      window.infraExibirAviso(false, 'Buscando dados de classes processuais...');
-      var xml = new XMLHttpRequest();
-      xml.open(form.method, form.action);
-      xml.addEventListener('load', function(evt) {
-        window.infraOcultarAviso();
-        var xml = evt.target;
-        var html = xml.responseText;
-        var parser = new DOMParser();
-        var doc = parser.parseFromString(html, 'text/html');
-        resolve(doc);
-      }, false);
-      xml.addEventListener('error', reject, false);
-      xml.send(data);
+    window.infraExibirAviso(false, 'Buscando dados de classes processuais...');
+    var promise = XHR.obterDoc(form.method, form.action, data).then(function(doc) {
+      window.infraOcultarAviso();
+      return doc;
     });
 
     promise = promise.then(function(doc) {
@@ -535,20 +568,10 @@ switch (passo) {
       var form = document.forms[0];
       var data = new FormData(form);
       data.append('acao', 'gerar_relatorio');
-      return new Promise(function(resolve, reject) {
-        window.infraExibirAviso(false, 'Buscando dados de competências...');
-        var xml = new XMLHttpRequest();
-        xml.open(form.method, form.action);
-        xml.addEventListener('load', function(evt) {
-          window.infraOcultarAviso();
-          var xml = evt.target;
-          var html = xml.responseText;
-          var parser = new DOMParser();
-          var doc = parser.parseFromString(html, 'text/html');
-          resolve(doc);
-        }, false);
-        xml.addEventListener('error', reject, false);
-        xml.send(data);
+      window.infraExibirAviso(false, 'Buscando dados de competências...');
+      return XHR.obterDoc(form.method, form.action, data).then(function(doc) {
+        window.infraOcultarAviso();
+        return doc;
       });
     });
 
@@ -663,6 +686,7 @@ function criarBotaoAbrirJanela(id, titulo, fn) {
   var gui = GUI.getInstance();
   var botao = gui.criarBotao(titulo);
   botao.adicionarEvento(abrirJanela.bind(null, id, titulo, fn));
+  window.addEventListener('message', analisarMensagem.bind(null, id, fn), false);
 }
 
 function abrirJanela(id, titulo, fn) {
@@ -678,36 +702,92 @@ function abrirJanela(id, titulo, fn) {
     '</body></html>'
   ], {mimeType: 'text/html'});
   var url = URL.createObjectURL(blob);
-  var analisarMensagem = (function(id) {
-    return function(evt) {
-      if (evt.data === id) {
-        window.removeEventListener('message', analisarMensagem, false);
-        var win = evt.source, doc = win.document;
-        fn(win, doc);
-      }
-    };
-  })(id);
-  window.addEventListener('message', analisarMensagem, false);
   window.infraAbrirJanela(url, '_blank', Math.floor(screen.availWidth * .75), Math.floor(screen.availHeight * .75), 'scrollbars=yes');
+}
+
+function analisarMensagem(id, fn, evt) {
+  if (evt.data === id) {
+    console.info('mensagem', id);
+    var win = evt.source, doc = win.document;
+    fn(win, doc);
+  }
 }
 
 function criarBotaoLocalizadorSetor() {
   return criarBotaoAbrirJanela('localizadorSetor', 'Localizador/Setor', function(win, doc) {
+    var style = doc.createElement('style');
+    style.innerHTML = [
+      'body, table { font-family: Helvetica, sans-serif; font-size: 12pt; }',
+      'h1 { font-size: 1.5em; line-height: 1.5em; }',
+      'h2 { font-size: 1.25em; line-height: 1.5em; height: 3em; text-align: center; }',
+      'h3 { font-size: 1.1em; line-height: 1.5em; }'
+    ].join('\n');
+    doc.getElementsByTagName('head')[0].appendChild(style);
     doc.body.innerHTML = [
       '<h1>Localizador/Setor</h1>',
-      '<table border="1" cellspacing="0" cellpadding="2" style="border-collapse: collapse;">',
-      '<thead>',
-      '<tr><th>Localizador</th><th>Setor</th></tr>',
-      '</thead>',
-      '<tbody>',
-      '</tbody>',
-      '</table>'
+      '<div>',
+      '<div style="float: left; width: 25%;">',
+      '<h2>Localizadores multissetoriais</h2>',
+      '<ul></ul>',
+      '</div>',
+      '<div style="float: left; width: 25%;">',
+      '<h2>Localizadores</h2>',
+      '<select id="localizadores" multiple style="height: 25em; width: 90%;"></select>',
+      '</div>',
+      '<div id="setores" style="float: left; width: 50%;">',
+      '<h2>Setores</h2>',
+      '<div id="setor-novo"><input id="novo-nome" type="text" placeholder="Novo setor"/><button id="salvar">Salvar</button><button id="cancelar">Cancelar</button></div>',
+      '</div>',
+      '</div>'
     ].join('');
-    DB.obterTodosPorIndice('processos', 'localizador').then(function(localizadores) {
-      var tabela = doc.getElementsByTagName('table')[0];
+
+    var novoSetor = doc.getElementById('novo-nome');
+    var salvar = doc.getElementById('salvar');
+    salvar.addEventListener('click', function(evt) {
+      var nomeNovoSetor = novoSetor.value.trim();
+      DB.adicionarItem('setores', {nome: nomeNovoSetor}).then(function(key) {
+        win.location.reload();
+      }).catch(function(evt) {
+        if (evt.target.error.name === 'ConstraintError') {
+          win.alert('Já existe um setor chamado "' + nomeNovoSetor + '"!');
+          novoSetor.select();
+          novoSetor.focus();
+        } else {
+          throw evt;
+        }
+      });
+    }, false);
+    var cancelar = doc.getElementById('cancelar');
+    cancelar.addEventListener('click', function() { novoSetor.value = ''; }, false);
+
+    var setores = new Map();
+    var promise = DB.obterTodosOrdenadosPorIndice('setores', 'nome').then(function(setoresDB) {
+      setores = setoresDB.reduce(function(map, setor) { return map.set(setor.nome, setor); }, new Map());
+
+      var setoresDiv = doc.getElementById('setores');
+      var novoDiv = doc.getElementById('setor-novo');
+      [...setores.values()].forEach(function(setor) {
+        var div = doc.createElement('div');
+        div.id = 'setor-' + setor.id;
+        div.innerHTML = [
+          '<h3>' + setor.nome + '</h3>',
+          '<select multiple style="height: 3em; width: 90%;"></select>'
+        ].join('');
+        setoresDiv.insertBefore(div, novoDiv);
+      });
+    });
+
+    var localizadorSetor;
+    promise = promise.then(DB.obterTodos.bind(null, 'localizadorSetor')).then(function(localizadorSetor) {});
+
+    var localizadores;
+    promise = promise.then(DB.obterValoresIndice.bind(null, 'processos', 'localizador')).then(function(localizadores) {
+      var select = doc.getElementById('localizadores');
       localizadores.forEach(function(localizador) {
-        var linha = tabela.insertRow();
-        linha.insertCell().textContent = localizador;
+        var option = doc.createElement('option');
+        option.value = localizador;
+        option.textContent = localizador;
+        select.appendChild(option);
       });
     });
   });
