@@ -79,7 +79,7 @@ var Competencias = new Map();
 var DB = {
   abrir() {
     return new Promise(function(resolve, reject) {
-      var req = window.indexedDB.open('relatorioSemanal', 2);
+      var req = window.indexedDB.open('relatorioSemanal', 4);
       req.addEventListener('success', function(evt) {
         var db = evt.target.result;
         resolve(db);
@@ -98,6 +98,7 @@ var DB = {
             processos.createIndex('situacao', 'situacao', {unique: false});
             processos.createIndex('localizador', 'localizador', {unique: false});
             processos.createIndex('competencia', 'competencia', {unique: false});
+            processos.createIndex('juizo', 'juizo', {unique: false});
 
             var classes = db.createObjectStore('classes', {keyPath: 'codigo'});
 
@@ -114,6 +115,14 @@ var DB = {
             localizadorSetor.createIndex('setor', 'setor', {unique: false});
             // break intencionalmente omitido
 
+          case 2:
+            var jlocs = db.createObjectStore('jlocs', {keyPath: 'id', autoIncrement: true});
+            jlocs.createIndex('jloc', ['juizo', 'localizador', 'competencia', 'classe'], {unique: true});
+            // break intencionalmente omitido
+
+          case 3:
+            jlocs.createIndex('localizador', 'localizador');
+            // break intencionalmente omitido
         }
       });
     });
@@ -133,7 +142,7 @@ var DB = {
       });
     });
   },
-  adicionarItems(nomeOS, items, db = null) {
+  adicionarItens(nomeOS, items, db = null) {
     var promise = DB.verificarDB(db);
     return promise.then(DB.executarTransacao.bind(null, nomeOS, items.map((item) => (objectStore) => objectStore.add(item))));
   },
@@ -168,6 +177,43 @@ var DB = {
   limparObjectStore(nomeOS, db = null) {
     var promise = DB.verificarDB(db);
     return promise.then(DB.executarTransacao.bind(null, nomeOS, (objectStore) => objectStore.clear()));
+  },
+  obter(nomeOS, range, db = null) {
+    var promise = DB.verificarDB(db);
+    return promise.then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var objectStore = db.transaction([nomeOS]).objectStore(nomeOS);
+        var collection = [];
+        objectStore.openCursor(range).addEventListener('success', function(evt) {
+          var cursor = evt.target.result;
+          if (cursor) {
+            collection.push(cursor.value);
+            cursor.continue();
+          } else {
+            resolve(collection);
+          }
+        }, false);
+      });
+    });
+  },
+  obterPorIndice(nomeOS, indice, range, db = null) {
+    var promise = DB.verificarDB(db);
+    return promise.then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var objectStore = db.transaction([nomeOS]).objectStore(nomeOS);
+        var index = objectStore.index(indice);
+        var collection = [];
+        index.openCursor(range).addEventListener('success', function(evt) {
+          var cursor = evt.target.result;
+          if (cursor) {
+            collection.push(cursor.value);
+            cursor.continue();
+          } else {
+            resolve(collection);
+          }
+        }, false);
+      });
+    });
   },
   obterTodos(nomeOS, db = null) {
     var promise = DB.verificarDB(db);
@@ -228,7 +274,7 @@ var DB = {
   redefinirObjectStore(nomeOS, items, db = null) {
     var promise = DB.verificarDB(db);
     promise = promise.then(DB.limparObjectStore.bind(null, nomeOS));
-    promise = promise.then(DB.adicionarItems.bind(null, nomeOS, items));
+    promise = promise.then(DB.adicionarItens.bind(null, nomeOS, items));
     return promise;
   },
   verificarDB(db = null) {
@@ -447,7 +493,7 @@ XLS.prototype = {
 };
 
 var XLSFactory = {
-  fromProcessos(processos) {
+  fromProcessosSetoresJLOCS(processos, setores, jlocs) {
     const campos = {
       'numprocFormatado': 'Processo',
       'autuacao': 'Data autuação',
@@ -457,7 +503,8 @@ var XLSFactory = {
       'situacao': 'Situação',
       'localizador': 'Localizador',
       'dataEstatistica': 'Data Estat.',
-      'dataUltimaFase': 'Data Últ. Fase'
+      'dataUltimaFase': 'Data Últ. Fase',
+      'setor': 'Setor'
     };
     var xls = new XLS();
     var table = xls.tabela = document.createElement('table');
@@ -486,6 +533,20 @@ var XLSFactory = {
             'Execução Fiscal',
             'Juizado'
           ][ processo[campo] ];
+        } else if (campo === 'setor') {
+          var regrasLocalizador = jlocs.get(processo.localizador);
+          if (! regrasLocalizador) {
+            // Avisar o usuário sobre localizadores não cadastrados.
+          } else {
+            regrasLocalizador = regrasLocalizador.filter(function(regra) {
+              return (regra.juizo === null || regra.juizo === processo.juizo) &&
+                (regra.competencia === null || regra.competencia === processo.competencia) &&
+                (regra.classe === null || regra.classe === processo.classe);
+            });
+            var idSetor = regrasLocalizador[0].setor;
+            var setor = setores.get(idSetor).nome;
+            celula.textContent = setor;
+          }
         } else {
           celula.textContent = processo[campo];
         }
@@ -616,7 +677,7 @@ switch (passo) {
               var link = LinkDadosFactory.fromCelula(celula);
               promisesProcessos.push(link.abrirPagina(competencia, situacao).then(function(processos) {
                 aviso.acrescentar(numProcessosCelula);
-                return DB.adicionarItems('processos', processos);
+                return DB.adicionarItens('processos', processos);
               }));
             });
           }
@@ -640,6 +701,7 @@ switch (passo) {
     criarBotaoHTML();
     criarBotaoLocalizadoresSituacoes();
     criarBotaoLocalizadorSetor();
+    criarBotaoJLOCS();
     criarBotaoSetores();
     break;
 }
@@ -661,9 +723,21 @@ function criarBotaoExcel() {
     window.infraExibirAviso(false, 'Gerando arquivo...');
     DB.obterTodos('processos').then(function(processos) {
       processos = processos.map((processo) => ProcessoFactory.fromRegistroDB(processo));
-      window.infraOcultarAviso();
-      var xls = XLSFactory.fromProcessos(processos);
-      xls.download();
+      DB.obterTodos('setores').then(function(setores) {
+        setores = setores.reduce((map, setor) => map.set(setor.id, setor), new Map());
+        DB.obterTodos('jlocs').then(function(jlocs) {
+          jlocs = jlocs.reduce(function(map, item) {
+            if (! map.has(item.localizador)) {
+              map.set(item.localizador, []);
+            }
+            map.get(item.localizador).push(item);
+            return map;
+          }, new Map());
+          window.infraOcultarAviso();
+          var xls = XLSFactory.fromProcessosSetoresJLOCS(processos, setores, jlocs);
+          xls.download();
+        });
+      });
     });
   });
 }
@@ -675,9 +749,21 @@ function criarBotaoHTML() {
     window.infraExibirAviso(false, 'Gerando arquivo...');
     DB.obterTodos('processos').then(function(processos) {
       processos = processos.map((processo) => ProcessoFactory.fromRegistroDB(processo));
-      window.infraOcultarAviso();
-      var xls = XLSFactory.fromProcessos(processos);
-      xls.exibir();
+      DB.obterTodos('setores').then(function(setores) {
+        setores = setores.reduce((map, setor) => map.set(setor.id, setor), new Map());
+        DB.obterTodos('jlocs').then(function(jlocs) {
+          jlocs = jlocs.reduce(function(map, item) {
+            if (! map.has(item.localizador)) {
+              map.set(item.localizador, []);
+            }
+            map.get(item.localizador).push(item);
+            return map;
+          }, new Map());
+          window.infraOcultarAviso();
+          var xls = XLSFactory.fromProcessosSetoresJLOCS(processos, setores, jlocs);
+          xls.exibir();
+        });
+      });
     });
   });
 }
@@ -728,57 +814,78 @@ function criarBotaoLocalizadorSetor() {
       '<div>',
       '<div style="float: left; width: 25%;">',
       '<h2>Localizadores multissetoriais</h2>',
-      '<ul></ul>',
+      '<select id="localizadores-0" multiple style="vertical-align: middle; height: 20em; width: 80%;"></select>',
+      '<div style="display: inline-block; vertical-align: middle;">',
+      '<button id="incluir-0">&larr;</button>',
+      '<br/>',
+      '<button id="excluir-0">&rarr;</button>',
+      '</div>',
       '</div>',
       '<div style="float: left; width: 25%;">',
       '<h2>Localizadores</h2>',
-      '<select id="localizadores" multiple style="height: 25em; width: 90%;"></select>',
+      '<select id="localizadores" multiple style="height: 50em; width: 90%;"></select>',
       '</div>',
       '<div id="setores" style="float: left; width: 50%;">',
       '<h2>Setores</h2>',
-      '<div id="setor-novo"><input id="novo-nome" type="text" placeholder="Novo setor"/><button id="salvar">Salvar</button><button id="cancelar">Cancelar</button></div>',
       '</div>',
       '</div>'
     ].join('');
-
-    var novoSetor = doc.getElementById('novo-nome');
-    var salvar = doc.getElementById('salvar');
-    salvar.addEventListener('click', function(evt) {
-      var nomeNovoSetor = novoSetor.value.trim();
-      DB.adicionarItem('setores', {nome: nomeNovoSetor}).then(function(key) {
-        win.location.reload();
-      }).catch(function(evt) {
-        if (evt.target.error.name === 'ConstraintError') {
-          win.alert('Já existe um setor chamado "' + nomeNovoSetor + '"!');
-          novoSetor.select();
-          novoSetor.focus();
-        } else {
-          throw evt;
-        }
-      });
-    }, false);
-    var cancelar = doc.getElementById('cancelar');
-    cancelar.addEventListener('click', function() { novoSetor.value = ''; }, false);
 
     var setores = new Map();
     var promise = DB.obterTodosOrdenadosPorIndice('setores', 'nome').then(function(setoresDB) {
       setores = setoresDB.reduce(function(map, setor) { return map.set(setor.nome, setor); }, new Map());
 
       var setoresDiv = doc.getElementById('setores');
-      var novoDiv = doc.getElementById('setor-novo');
       [...setores.values()].forEach(function(setor) {
         var div = doc.createElement('div');
         div.id = 'setor-' + setor.id;
         div.innerHTML = [
           '<h3>' + setor.nome + '</h3>',
-          '<select multiple style="height: 3em; width: 90%;"></select>'
+          '<div style="display: inline-block; vertical-align: middle;">',
+          '<button id="incluir-' + setor.id + '">&rarr;</button>',
+          '<br/>',
+          '<button id="excluir-' + setor.id + '">&larr;</button>',
+          '</div>',
+          '<select id="localizadores-' + setor.id + '" multiple style="vertical-align: middle; height: 10em; width: 90%;"></select>'
         ].join('');
-        setoresDiv.insertBefore(div, novoDiv);
+        setoresDiv.appendChild(div);
+        var incluir = doc.getElementById('incluir-' + setor.id);
+        var excluir = doc.getElementById('excluir-' + setor.id);
+        incluir.addEventListener('click', function() {
+          var localizadores = doc.getElementById('localizadores').getElementsByTagName('option');
+          localizadores = [...localizadores].filter((localizador) => localizador.selected);
+          DB.adicionarItens('jlocs', localizadores.map(function(localizador) {
+            return {juizo: null, localizador: localizador.value, competencia: null, classe: null, setor: setor.id};
+          })).then(function() {
+            win.location.reload();
+          });
+        }, false);
+        excluir.addEventListener('click', function() {
+          var localizadores = doc.getElementById('localizadores-' + setor.id).getElementsByTagName('option');
+          localizadores = [...localizadores].filter((localizador) => localizador.selected);
+          DB.executarTransacao('jlocs', localizadores.map((localizador) => (objectStore) => objectStore.delete(Number(localizador.value)))).then(function() {
+            win.location.reload();
+          });
+        }, false);
       });
     });
 
-    var localizadorSetor;
-    promise = promise.then(DB.obterTodos.bind(null, 'localizadorSetor')).then(function(localizadorSetor) {});
+    var localizadoresSetor = new Map();
+    var localizadoresMultissetoriais = new Set();
+    promise = promise.then(DB.obterTodosOrdenadosPorIndice.bind(null, 'jlocs', 'localizador')).then(function(jlocs) {
+      jlocs.forEach(function(item) {
+        var option = doc.createElement('option');
+        option.value = item.id;
+        option.textContent = item.localizador;
+        if (item.juizo === null && item.competencia === null && item.classe === null) {
+          localizadoresSetor.set(item.localizador, item.setor);
+          doc.getElementById('setor-' + item.setor).querySelector('select').appendChild(option);
+        } else {
+          localizadoresMultissetoriais.add(item.localizador);
+          doc.getElementById('setor-' + item.setor).querySelector('select').appendChild(option);
+        }
+      });
+    });
 
     var localizadores;
     promise = promise.then(DB.obterValoresIndice.bind(null, 'processos', 'localizador')).then(function(localizadores) {
@@ -787,7 +894,112 @@ function criarBotaoLocalizadorSetor() {
         var option = doc.createElement('option');
         option.value = localizador;
         option.textContent = localizador;
-        select.appendChild(option);
+        if (! localizadoresSetor.has(localizador)) {
+          select.appendChild(option);
+        }
+      });
+    });
+  });
+}
+
+function criarBotaoJLOCS() {
+  return criarBotaoAbrirJanela('jlocs', 'Localizador/Competência/Classe/Juízo/Setor', function(win, doc) {
+    var style = doc.createElement('style');
+    style.innerHTML = [
+      'body, table { font-family: Helvetica, sans-serif; font-size: 12pt; }',
+      'h1 { font-size: 1.5em; line-height: 1.5em; }',
+      'h2 { font-size: 1.25em; line-height: 1.5em; height: 3em; text-align: center; }',
+      'h3 { font-size: 1.1em; line-height: 1.5em; }'
+    ].join('\n');
+    doc.getElementsByTagName('head')[0].appendChild(style);
+    doc.body.innerHTML = [
+      '<h1>Localizador/Competência/Classe/Juízo/Setor</h1>',
+      '<div>',
+      '<div style="float: left; width: 25%;">',
+      '<h2>Localizadores multissetoriais</h2>',
+      '<select id="localizadores-0" multiple style="vertical-align: middle; height: 20em; width: 80%;"></select>',
+      '<div style="display: inline-block; vertical-align: middle;">',
+      '<button id="incluir-0">&larr;</button>',
+      '<br/>',
+      '<button id="excluir-0">&rarr;</button>',
+      '</div>',
+      '</div>',
+      '<div style="float: left; width: 25%;">',
+      '<h2>Localizadores</h2>',
+      '<select id="localizadores" multiple style="height: 50em; width: 90%;"></select>',
+      '</div>',
+      '<div id="setores" style="float: left; width: 50%;">',
+      '<h2>Setores</h2>',
+      '</div>',
+      '</div>'
+    ].join('');
+
+    var setores = new Map();
+    var promise = DB.obterTodosOrdenadosPorIndice('setores', 'nome').then(function(setoresDB) {
+      setores = setoresDB.reduce(function(map, setor) { return map.set(setor.nome, setor); }, new Map());
+
+      var setoresDiv = doc.getElementById('setores');
+      [...setores.values()].forEach(function(setor) {
+        var div = doc.createElement('div');
+        div.id = 'setor-' + setor.id;
+        div.innerHTML = [
+          '<h3>' + setor.nome + '</h3>',
+          '<div style="display: inline-block; vertical-align: middle;">',
+          '<button id="incluir-' + setor.id + '">&rarr;</button>',
+          '<br/>',
+          '<button id="excluir-' + setor.id + '">&larr;</button>',
+          '</div>',
+          '<select id="localizadores-' + setor.id + '" multiple style="vertical-align: middle; height: 10em; width: 90%;"></select>'
+        ].join('');
+        setoresDiv.appendChild(div);
+        var incluir = doc.getElementById('incluir-' + setor.id);
+        var excluir = doc.getElementById('excluir-' + setor.id);
+        incluir.addEventListener('click', function() {
+          var localizadores = doc.getElementById('localizadores').getElementsByTagName('option');
+          localizadores = [...localizadores].filter((localizador) => localizador.selected);
+          DB.adicionarItens('jlocs', localizadores.map(function(localizador) {
+            return {juizo: null, localizador: localizador.value, competencia: null, classe: null, setor: setor.id};
+          })).then(function() {
+            win.location.reload();
+          });
+        }, false);
+        excluir.addEventListener('click', function() {
+          var localizadores = doc.getElementById('localizadores-' + setor.id).getElementsByTagName('option');
+          localizadores = [...localizadores].filter((localizador) => localizador.selected);
+          DB.executarTransacao('jlocs', localizadores.map((localizador) => (objectStore) => objectStore.delete(Number(localizador.value)))).then(function() {
+            win.location.reload();
+          });
+        }, false);
+      });
+    });
+
+    var localizadoresSetor = new Map();
+    var localizadoresMultissetoriais = new Set();
+    promise = promise.then(DB.obterTodosOrdenadosPorIndice.bind(null, 'jlocs', 'localizador')).then(function(jlocs) {
+      jlocs.forEach(function(item) {
+        var option = doc.createElement('option');
+        option.value = item.id;
+        option.textContent = item.localizador;
+        if (item.juizo === null && item.competencia === null && item.classe === null) {
+          localizadoresSetor.set(item.localizador, item.setor);
+          doc.getElementById('setor-' + item.setor).querySelector('select').appendChild(option);
+        } else {
+          localizadoresMultissetoriais.add(item.localizador);
+          doc.getElementById('setor-' + item.setor).querySelector('select').appendChild(option);
+        }
+      });
+    });
+
+    var localizadores;
+    promise = promise.then(DB.obterValoresIndice.bind(null, 'processos', 'localizador')).then(function(localizadores) {
+      var select = doc.getElementById('localizadores');
+      localizadores.forEach(function(localizador) {
+        var option = doc.createElement('option');
+        option.value = localizador;
+        option.textContent = localizador;
+        if (! localizadoresSetor.has(localizador)) {
+          select.appendChild(option);
+        }
       });
     });
   });
@@ -841,21 +1053,101 @@ function criarBotaoLocalizadoresSituacoes() {
 function criarBotaoSetores() {
   return criarBotaoAbrirJanela('setores', 'Setores', function(win, doc) {
     doc.body.innerHTML = [
-      '<h1>Localizadores/Situações</h1>',
+      '<h1>Setores</h1>',
       '<table border="1" cellspacing="0" cellpadding="2" style="border-collapse: collapse;">',
       '<thead>',
-      '<tr><th>Setor</th></tr>',
+      '<tr><th>Setor</th><th>Ações</th></tr>',
       '</thead>',
       '<tbody>',
       '</tbody>',
+      '<tfoot>',
+      '<tr><td><input id="novo-nome" placeholder="Novo setor"/></td><td><button id="salvar">Salvar</button><button id="cancelar">Cancelar</button></td></tr>',
+      '</tfoot>',
       '</table>'
     ].join('');
 
-    DB.obterTodos('setores').then(function(setores) {
+    var novoSetor = doc.getElementById('novo-nome');
+    var salvar = doc.getElementById('salvar');
+    salvar.addEventListener('click', function(evt) {
+      var nomeNovoSetor = novoSetor.value.trim();
+      DB.adicionarItem('setores', {nome: nomeNovoSetor}).then(function(key) {
+        win.location.reload();
+      }).catch(function(evt) {
+        if (evt.target.error.name === 'ConstraintError') {
+          win.alert('Já existe um setor chamado "' + nomeNovoSetor + '"!');
+          novoSetor.select();
+          novoSetor.focus();
+        } else {
+          throw evt;
+        }
+      });
+    }, false);
+    var cancelar = doc.getElementById('cancelar');
+    cancelar.addEventListener('click', function() { novoSetor.value = ''; }, false);
+
+    DB.obterTodosOrdenadosPorIndice('setores', 'nome').then(function(setores) {
       setores.forEach(function(setor) {
         var tabela = doc.getElementsByTagName('table')[0];
-        var linha = tabela.insertRow();
+        var linha = tabela.tBodies[0].insertRow();
         linha.insertCell().textContent = setor.nome;
+        var celulaAcoes = linha.insertCell();
+
+        var editar = doc.createElement('button');
+        editar.textContent = 'Editar';
+        celulaAcoes.appendChild(editar);
+
+        var excluir = doc.createElement('button');
+        excluir.textContent = 'Excluir';
+        celulaAcoes.appendChild(excluir);
+
+        var salvar = doc.createElement('button');
+        salvar.textContent = 'Salvar';
+        salvar.style.display = 'none';
+        celulaAcoes.appendChild(salvar);
+
+        var cancelar = doc.createElement('button');
+        cancelar.textContent = 'Cancelar';
+        cancelar.style.display = 'none';
+        celulaAcoes.appendChild(cancelar);
+
+        editar.addEventListener('click', function() {
+          linha.cells[0].innerHTML = '<input/>';
+          var novoNome = linha.cells[0].querySelector('input');
+          novoNome.value = setor.nome;
+          editar.style.display = 'none';
+          excluir.style.display = 'none';
+          salvar.style.display = '';
+          cancelar.style.display = '';
+        }, false);
+        excluir.addEventListener('click', function() {
+          if (win.confirm('Deseja excluir o setor "' + setor.nome + '"?')) {
+            DB.executarTransacao('setores', (objectStore) => objectStore.delete(setor.id)).then(function() {
+              win.location.reload();
+            });
+          }
+        }, false);
+        salvar.addEventListener('click', function() {
+          var novoSetor = linha.cells[0].querySelector('input');
+          var nomeNovoSetor = novoSetor.value.trim();
+          DB.executarTransacao('setores', (objectStore) => objectStore.put({id: setor.id, nome: nomeNovoSetor})).then(function(key) {
+            win.location.reload();
+          }).catch(function(evt) {
+            if (evt.target.error.name === 'ConstraintError') {
+              win.alert('Já existe um setor chamado "' + nomeNovoSetor + '"!');
+              novoSetor.select();
+              novoSetor.focus();
+            } else {
+              throw evt;
+            }
+          });
+        }, false);
+        cancelar.addEventListener('click', function() {
+          linha.cells[0].textContent = setor.nome;
+          editar.style.display = '';
+          excluir.style.display = '';
+          salvar.style.display = 'none';
+          cancelar.style.display = 'none';
+        }, false);
       });
     });
   });
