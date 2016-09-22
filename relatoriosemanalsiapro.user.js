@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php*
-// @version     11
+// @version     12
 // @grant       none
 // ==/UserScript==
 
@@ -251,9 +251,16 @@ var DB = {
         index.openCursor(null, 'nextunique').addEventListener('success', function(evt) {
           var cursor = evt.target.result;
           if (cursor) {
-            collection.push(cursor.value[indice]);
+            collection.push(cursor.key);
             cursor.continue();
           } else {
+            var keyPath = evt.target.source.keyPath;
+            if (typeof keyPath === 'object') {
+              collection = collection.map((item) => keyPath.reduce((obj, campo, i) => {
+                obj[campo] = item[i];
+                return obj;
+              }, {}));
+            }
             resolve(collection);
           }
         }, false);
@@ -265,6 +272,21 @@ var DB = {
     promise = promise.then(DB.limparObjectStore.bind(null, nomeOS));
     promise = promise.then(DB.adicionarItens.bind(null, nomeOS, items));
     return promise;
+  },
+  substituirItem(nomeOS, item, key, db = null) {
+    var promise = DB.verificarDB(db);
+    return promise.then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var objectStore = db.transaction([nomeOS], 'readwrite').objectStore(nomeOS);
+        var req = objectStore.put(item, key);
+        req.addEventListener('success', function(evt) { key = evt.target.result; }, false);
+        objectStore.transaction.addEventListener('complete', function() {
+          resolve(key);
+        }, false);
+        objectStore.transaction.addEventListener('abort', console.debug.bind(console, 'aborted', nomeOS));
+        objectStore.transaction.addEventListener('error', reject);
+      });
+    });
   },
   verificarDB(db = null) {
     var promise;
@@ -706,6 +728,7 @@ function criarBotaoExcluir() {
       var req = indexedDB.deleteDatabase('relatorioSemanal');
       req.addEventListener('success', function() {
         window.infraOcultarAviso();
+        window.alert('Todos os dados foram excluídos.');
       }, false);
       req.addEventListener('error', function(evt) {
         console.error(evt);
@@ -914,246 +937,341 @@ function criarBotaoJLOCS() {
   return criarBotaoAbrirJanela('jlocs', 'Localizador/Competência/Classe/Juízo/Setor', function(win, doc) {
     var style = doc.createElement('style');
     style.innerHTML = [
+      'html, body { margin: 0; width: 100%; height: 100%; }',
       'body, table { font-family: Helvetica, sans-serif; font-size: 12pt; }',
-      'h1 { font-size: 1.5em; line-height: 1.5em; }',
-      'h2 { font-size: 1.25em; line-height: 1.5em; height: 3em; text-align: center; }',
-      'h3 { font-size: 1.1em; line-height: 1.5em; }'
+      'h1 { margin: 0.5em 0; font-size: 1.25em; line-height: 1.5em; text-align: center; }',
+      'h2 { font-size: 1.1em; line-height: 1.5em; }',
+      '.campos { position: absolute; width: 100%; height: 100%; }',
+      '.campo { float: left; margin: 0 0.5%; height:100%; }',
+      '.campo select { width: 100%; height: calc(100% - 7em); }',
+      '.campo label { line-height: 2em; }',
+      '.campo label input { vertical-align: middle; }',
+      '.setor { border-top: 1px solid black; padding-bottom: 1em; }',
+      '.setor h2 { display: inline-block; width: 70%; }',
+      '.setor button { width: 15%; }',
+      '.setor button.adicionar { width: 2em; height: 2em; vertical-align: top; }',
+      '.setor ul { display: inline-block; margin: 0 0 0 2ex; padding: 0; }',
+      '.setor li { list-style-type: none; font-size: .85em; }'
     ].join('\n');
     doc.getElementsByTagName('head')[0].appendChild(style);
     doc.body.innerHTML = [
-      '<h1>Localizador/Competência/Classe/Juízo/Setor</h1>',
-      '<div>',
-      '<div style="float: left; width: 19%; margin-right: 1%;">',
-      '<h2>Localizador</h2>',
-      '<select id="localizadores" multiple style="vertical-align: middle; height: 20em; width: 100%;"></select>',
+      '<div class="campos">',
+      '<div class="campo" style="width: 14%;">',
+      '<h1>Localizador</h2>',
+      '<select id="localizadores" multiple></select>',
       '</div>',
-      '<div style="float: left; width: 14%; margin-right: 1%;">',
-      '<h2>Competência</h2>',
-      '<select id="competencias" multiple style="vertical-align: middle; height: 20em; width: 100%;"></select>',
+      '<div class="campo" style="width: 14%;">',
+      '<h1>Competência</h2>',
+      '<select id="competencias" disabled multiple></select>',
+      '<br/>',
+      '<label><input id="competencias-ignorar" type="checkbox" checked/> Ignorar competência</label>',
       '</div>',
-      '<div style="float: left; width: 19%; margin-right: 1%;">',
-      '<h2>Classe</h2>',
-      '<select id="classes" multiple style="vertical-align: middle; height: 20em; width: 100%;"></select>',
+      '<div class="campo" style="width: 24%;">',
+      '<h1>Classe</h2>',
+      '<select id="classes" disabled multiple></select>',
+      '<br/>',
+      '<label><input id="classes-ignorar" type="checkbox" checked/> Ignorar classe</label>',
       '</div>',
-      '<div style="float: left; width: 9%; margin-right: 1%;">',
-      '<h2>Juízo</h2>',
-      '<select id="juizos" multiple style="vertical-align: middle; height: 20em; width: 100%;"></select>',
+      '<div class="campo" style="width: 9%;">',
+      '<h1>Juízo</h2>',
+      '<select id="juizos" disabled multiple></select>',
+      '<br/>',
+      '<label><input id="juizos-ignorar" type="checkbox" checked/> Ignorar juízo</label>',
       '</div>',
-      '<div style="float: left; width: 34%; margin-right: 1%;">',
-      '<h2>Setor</h2>',
-      '<select id="setores" multiple style="vertical-align: middle; height: 20em; width: 100%;"></select>',
+      '<div class="campo" style="width: 34%; overflow-y: scroll;">',
+      '<h1>Setor</h2>',
+      '<div id="novo-setor" class="setor">',
+      '<h2>[Novo setor]</h3>',
+      '<input id="novo-setor-nome" placeholder="Nome do novo setor" style="width: -moz-calc(70% - 6px); padding: 2px; border: 1px solid black;"/>',
+      '<button id="novo-setor-salvar">Salvar</button>',
+      '<button id="novo-setor-cancelar">Cancelar</button>',
+      '</div>',
       '</div>',
       '</div>'
     ].join('');
 
-    var por = {
-      juizo: new Map(),
-      localizador: new Map(),
-      competencia: new Map(),
-      classe: new Map()
-    };
-    var classes, competencias, jlocz;
-    var promises = [];
-    promises.push(DB.obterTodos('competencias').then((competencias) => competencias.reduce((map, competencia) => map.set(competencia.codigo, competencia.nome), new Map())));
-    promises.push(DB.obterTodos('classes').then((classes) => classes.reduce((map, classe) => map.set(classe.codigo, classe.nome), new Map())));
-    promises.push(DB.obterTodos('jlocs'));
-    Promise.all(promises).then(function([competencias, classes, jlocs]) {
-      DB.abrir().then(function(db) {
-        var objectStore = db.transaction(['processos']).objectStore('processos');
-        var index = objectStore.index('jloc');
-        jlocz = [];
-        index.openCursor(null, 'nextunique').addEventListener('success', function(evt) {
-          var cursor = evt.target.result;
-          if (cursor) {
-            jlocz.push({
-              juizo: cursor.value.juizo,
-              localizador: cursor.value.localizador,
-              competencia: cursor.value.competencia,
-              classe: cursor.value.classe
-            });
-            cursor.continue();
+    var competencias = DB.obterTodos('competencias').then((competencias) => new Map(competencias.map((obj) => [obj.codigo, obj.nome])));
+    var classes = DB.obterTodos('classes').then((classes) => new Map(classes.map((obj) => [obj.codigo, obj.nome])));
+    var jlocs = DB.obterTodos('jlocs');
+    var jlocz = DB.obterValoresIndice('processos', 'jloc');
+    var setores = DB.obterTodosOrdenadosPorIndice('setores', 'nome').then((setores) => new Map(setores.map((obj) => [obj.id, obj.nome])));
+
+    Promise.all([competencias, classes, jlocs, jlocz, setores]).then(function([competencias, classes, jlocs, jlocz, setores]) {
+
+      function adicionarOpcoes(elemento, mapa) {
+        for (let [valor, descricao] of mapa) {
+          var option = doc.createElement('option');
+          option.value = valor;
+          option.textContent = descricao;
+          elemento.appendChild(option);
+        }
+      }
+
+      function filtrarOpcoes(id, locSelecionados, compSelecionadas = [], classesSelecionadas = []) {
+        var paraMapa;
+        switch (id) {
+          case 'competencias':
+            paraMapa = jloczParaMapaCompetencias;
+            break;
+
+          case 'classes':
+            paraMapa = jloczParaMapaClasses;
+            break;
+
+          case 'juizos':
+            paraMapa = jloczParaMapaJuizos;
+            break;
+        }
+        var opcoes = jloczSemSetor;
+        if (locSelecionados.length > 0) {
+          opcoes = opcoes.filter((jloc) => locSelecionados.filter((localizador) => jloc.localizador === localizador).length > 0);
+        }
+        if (compSelecionadas.length > 0) {
+          opcoes = opcoes.filter((jloc) => compSelecionadas.filter((competencia) => jloc.competencia === competencia).length > 0);
+        }
+        if (classesSelecionadas.length > 0) {
+          opcoes = opcoes.filter((jloc) => classesSelecionadas.filter((classe) => jloc.classe === classe).length > 0);
+        }
+        opcoes = paraMapa(opcoes);
+        var elemento = doc.getElementById(id);
+        substituirOpcoes(elemento, opcoes);
+      }
+
+      function substituirOpcoes(elemento, mapa) {
+        elemento.innerHTML = '';
+        adicionarOpcoes(elemento, mapa);
+      }
+
+      function jloczParaMapaClasses(arr) {
+        return new Map(arr.map((obj) => Number(obj.classe)).sort((a,b)=>a-b).map((codigo) => [codigo, ('000000' + codigo).substr(-6) + ' - ' + classes.get(codigo)]));
+      }
+
+      function jloczParaMapaCompetencias(arr) {
+        return new Map(arr.map((obj) => Number(obj.competencia)).sort((a,b)=>a-b).map((codigo) => [codigo, ('00' + codigo).substr(-2) + ' - ' + competencias.get(codigo)]));
+      }
+
+      function jloczParaMapaJuizos(arr) {
+        return new Map(arr.map((obj) => obj.juizo).sort().map((juizo) => [juizo, juizo]));
+      }
+
+      function jloczParaMapaLocalizadores(arr) {
+        return new Map(arr.map((obj) => obj.localizador).sort().map((localizador) => [localizador, localizador]));
+      }
+
+      function obterValoresSelecionados(id) {
+        var select = doc.getElementById(id);
+        return [...select.getElementsByTagName('option')].filter((opt) => opt.selected).map((opt) => opt.value);
+      }
+
+      function obterValoresSelecionadosComoNumero(id) {
+        return obterValoresSelecionados(id).map((text) => Number(text));
+      }
+
+      function atualizarConformeSelecionados(id) {
+        var localizadoresSelecionados = [], competenciasSelecionadas = [], classesSelecionadas = [];
+        switch (id) {
+          case 'classes':
+            if (! doc.getElementById('classes-ignorar').checked) {
+              classesSelecionadas = obterValoresSelecionadosComoNumero('classes');
+            }
+            // break intencionalmente omitido
+
+          case 'competencias':
+            if (! doc.getElementById('competencias-ignorar').checked) {
+              competenciasSelecionadas = obterValoresSelecionadosComoNumero('competencias');
+            }
+            // break intencionalmente omitido
+
+          case 'localizadores':
+            localizadoresSelecionados = obterValoresSelecionados('localizadores');
+            // break intencionalmente omitido
+        }
+        switch (id) {
+          case 'localizadores':
+            filtrarOpcoes('competencias', localizadoresSelecionados);
+            // break intencionalmente omitido
+
+          case 'competencias':
+            filtrarOpcoes('classes', localizadoresSelecionados, competenciasSelecionadas);
+            // break intencionalmente omitido
+
+          case 'classes':
+            filtrarOpcoes('juizos', localizadoresSelecionados, competenciasSelecionadas, classesSelecionadas);
+            // break intencionalmente omitido
+        }
+      }
+
+      function observarAlteracaoSelecao(id) {
+        var fn = atualizarConformeSelecionados.bind(null, id);
+        doc.getElementById(id).addEventListener('change', fn, false);
+        return fn;
+      }
+
+      function observarAlteracaoIgnorar(id) {
+        var checkbox = doc.getElementById(id + '-ignorar');
+        var select = doc.getElementById(id);
+        checkbox.addEventListener('change', function() {
+          if (checkbox.checked) {
+            select.disabled = true;
+            [...select.getElementsByTagName('option')].forEach((opt) => opt.selected = false);
           } else {
-            var localizadoresElement = doc.getElementById('localizadores');
-            var localizadores = jlocz.reduce((set, obj) => set.add(obj.localizador), new Set());
-            [...localizadores.values()].sort().forEach(function(localizador) {
-              var option = doc.createElement('option');
-              option.value = localizador;
-              option.textContent = localizador;
-              localizadoresElement.appendChild(option);
-            });
-            localizadoresElement.addEventListener('change', function() {
-              var localizadoresSelecionados = [...localizadoresElement.getElementsByTagName('option')].filter((option) => option.selected).map((option) => option.value);
-              if (localizadoresSelecionados.length === 0) {
-                var competenciasLocalizadoresSelecionados = new Set(jlocz.map((obj) => obj.competencia));
-              } else {
-                var competenciasLocalizadoresSelecionados = new Set(localizadoresSelecionados.reduce((arr, localizador) => arr.concat(jlocz.filter((obj) => obj.localizador === localizador)), []).map((obj) => obj.competencia));
-              }
-              var competenciasElement = doc.getElementById('competencias');
-              competenciasElement.innerHTML = '';
-              [...competenciasLocalizadoresSelecionados.values()].sort((a,b)=>a-b).forEach(function(competencia) {
-                var option = doc.createElement('option');
-                var num = '' + competencia;
-                while (num.length < 2) num = '0' + num;
-                option.value = competencia;
-                option.textContent = num + ' - ' + competencias.get(competencia);
-                competenciasElement.appendChild(option);
-              });
-              var classesLocalizadoresSelecionados = localizadoresSelecionados.reduce(function(arr, localizador) {
-                Array.prototype.push.apply(arr, por.localizador.get(localizador));
-                return arr;
-              }, []).reduce((set, obj) => set.add(obj.classe), new Set());
-              var classesElement = doc.getElementById('classes');
-              classesElement.innerHTML = '';
-              [...classesLocalizadoresSelecionados.values()].sort((a,b)=>a-b).forEach(function(classe) {
-                var option = doc.createElement('option');
-                option.value = classe;
-                var num = '' + classe;
-                while (num.length < 6) num = '0' + num;
-                option.textContent = num + ' - ' + classes.get(classe);
-                classesElement.appendChild(option);
-              });
-              var juizosLocalizadoresSelecionados = localizadoresSelecionados.reduce(function(arr, localizador) {
-                Array.prototype.push.apply(arr, por.localizador.get(localizador));
-                return arr;
-              }, []).reduce((set, obj) => set.add(obj.juizo), new Set());
-              var juizosElement = doc.getElementById('juizos');
-              juizosElement.innerHTML = '';
-              [...juizosLocalizadoresSelecionados.values()].sort().forEach(function(juizo) {
-                var option = doc.createElement('option');
-                option.value = juizo;
-                option.textContent = juizo;
-                juizosElement.appendChild(option);
-              });
-            }, false);
-            var competenciasElement = doc.getElementById('competencias');
-            [...por.competencia.keys()].sort((a,b)=>a-b).forEach(function(competencia) {
-              var option = doc.createElement('option');
-              var num = '' + competencia;
-              while (num.length < 2) num = '0' + num;
-              option.value = competencia;
-              option.textContent = num + ' - ' + competencias.get(competencia);
-              competenciasElement.appendChild(option);
-            });
-            competenciasElement.addEventListener('change', function() {
-              var localizadoresSelecionados = [...localizadoresElement.getElementsByTagName('option')].filter((option) => option.selected).map((option) => option.value);
-              var competenciasSelecionadas = [...competenciasElement.getElementsByTagName('option')].filter((option) => option.selected).map((option) => option.value);
-              if (competenciasSelecionadas.length === 0) {
-                var classesCompetenciasSelecionadas = localizadoresSelecionados.reduce(function(arr, localizador) {
-                  Array.prototype.push.apply(arr, por.localizador.get(localizador));
-                  return arr;
-                }, []).reduce((set, obj) => set.add(obj.classe), new Set());
-              } else {
-                var classesCompetenciasSelecionadas = localizadoresSelecionados.reduce(function(arr, localizador) {
-                  Array.prototype.push.apply(arr, por.localizador.get(localizador));
-                  return arr;
-                }, []).filter(function(obj) {
-                  return competenciasSelecionadas.reduce(function(ret, competencia) {
-                    console.info(ret, competencia, obj);
-                    return ret || (obj.competencia === Number(competencia));
-                  }, false);
-                }).reduce((set, obj) => set.add(obj.classe), new Set());
-              }
-              var classesElement = doc.getElementById('classes');
-              classesElement.innerHTML = '';
-              [...classesCompetenciasSelecionadas.values()].sort((a,b)=>a-b).forEach(function(classe) {
-                var option = doc.createElement('option');
-                option.value = classe;
-                var num = '' + classe;
-                while (num.length < 6) num = '0' + num;
-                option.textContent = num + ' - ' + classes.get(classe);
-                classesElement.appendChild(option);
-              });
-            }, false);
-            var classesElement = doc.getElementById('classes');
-            [...por.classe.keys()].sort((a,b)=>a-b).forEach(function(classe) {
-              var option = doc.createElement('option');
-              option.value = classe;
-              var num = '' + classe;
-              while (num.length < 6) num = '0' + num;
-              option.textContent = num + ' - ' + classes.get(classe);
-              classesElement.appendChild(option);
-            });
-            var juizosElement = doc.getElementById('juizos');
-            [...por.juizo.keys()].sort().forEach(function(juizo) {
-              var option = doc.createElement('option');
-              option.value = juizo;
-              option.textContent = juizo;
-              juizosElement.appendChild(option);
-            });
+            select.disabled = false;
+          }
+          atualizarConformeSelecionados(id);
+        }, false);
+      }
+
+      var jloczSemSetor = jlocz.filter(function(jloc) {
+        return jlocs.findIndex(function(item) {
+          return (item.juizo === null || item.juizo === jloc.juizo) &&
+            (item.localizador === null || item.localizador === jloc.localizador) &&
+            (item.competencia === null || item.competencia === jloc.competencia) &&
+            (item.classe === null || item.classe === jloc.classe);
+        }) === -1;
+      });
+
+      var localizadoresElement = doc.getElementById('localizadores');
+      var localizadores = jloczParaMapaLocalizadores(jloczSemSetor);
+      adicionarOpcoes(localizadoresElement, localizadores);
+
+      var adicionarCompetenciasClassesJuizos = observarAlteracaoSelecao('localizadores');
+      adicionarCompetenciasClassesJuizos();
+
+      observarAlteracaoSelecao('competencias');
+      observarAlteracaoIgnorar('competencias');
+      observarAlteracaoSelecao('classes');
+      observarAlteracaoIgnorar('classes');
+      observarAlteracaoIgnorar('juizos');
+
+      var novoSetor = doc.getElementById('novo-setor');
+      var novoSetorNome = doc.getElementById('novo-setor-nome');
+      var novoSetorSalvar = doc.getElementById('novo-setor-salvar');
+      var novoSetorCancelar = doc.getElementById('novo-setor-cancelar');
+
+      novoSetorSalvar.addEventListener('click', function() {
+        function NomeNaoFornecido() {}
+        var nome = novoSetorNome.value.trim();
+        var verificarNome = new Promise(function(resolve, reject) {
+          if (nome === '') {
+            reject(new NomeNaoFornecido());
+          } else {
+            resolve(nome);
+          }
+        });
+        verificarNome
+        .then((nome) => DB.adicionarItem('setores', {nome: nome}))
+        .then(() => win.location.reload())
+        .catch(function(evt) {
+          if (evt instanceof NomeNaoFornecido) {
+            return 'O nome não pode estar em branco!';
+          } else if (evt.target && evt.target.error.name === 'ConstraintError') {
+            return 'Já existe um setor chamado "' + nome + '"!';
+          } else {
+            throw evt;
           }
         })
-      });
-    });
-/*
-    var setores = new Map();
-    var promise = DB.obterTodosOrdenadosPorIndice('setores', 'nome').then(function(setoresDB) {
-      setores = setoresDB.reduce(function(map, setor) { return map.set(setor.nome, setor); }, new Map());
+        .then(function(msg) {
+          win.alert(msg);
+          novoSetorNome.select();
+          novoSetorNome.focus();
+        });
+      }, false);
 
-      var setoresDiv = doc.getElementById('setores');
-      [...setores.values()].forEach(function(setor) {
-        var div = doc.createElement('div');
-        div.id = 'setor-' + setor.id;
-        div.innerHTML = [
-          '<h3>' + setor.nome + '</h3>',
-          '<div style="display: inline-block; vertical-align: middle;">',
-          '<button id="incluir-' + setor.id + '">&rarr;</button>',
-          '<br/>',
-          '<button id="excluir-' + setor.id + '">&larr;</button>',
-          '</div>',
-          '<select id="localizadores-' + setor.id + '" multiple style="vertical-align: middle; height: 10em; width: 90%;"></select>'
+      novoSetorCancelar.addEventListener('click', function() {
+        doc.getElementById('novo-setor-nome').value = '';
+      }, false);
+
+      [...setores].forEach(function([id, nome]) {
+        var html = [
+          '<div id="setor-' + id + '" class="setor">',
+          '<h2 id="setor-' + id + '-titulo">' + nome + '</h2>',
+          '<input id="setor-' + id + '-nome" value="' + nome + '" placeholder="Nome do setor" style="display: none; width: -moz-calc(70% - 6px); margin: 1em 0; padding: 2px; border: 1px solid #888; font-size: 1.1em; font-weight: 700;"/>',
+          '<button id="setor-' + id + '-editar">Editar</button>',
+          '<button id="setor-' + id + '-excluir">Excluir</button>',
+          '<button id="setor-' + id + '-salvar" style="display: none;">Salvar</button>',
+          '<button id="setor-' + id + '-cancelar" style="display: none;">Cancelar</button>',
+          '<button id="setor-' + id + '-adicionar" class="adicionar">&rarr;</button>',
+          '<ul id="setor-' + id + '-lista"></ul>',
+          '</div>'
         ].join('');
-        setoresDiv.appendChild(div);
-        var incluir = doc.getElementById('incluir-' + setor.id);
-        var excluir = doc.getElementById('excluir-' + setor.id);
-        incluir.addEventListener('click', function() {
-          var localizadores = doc.getElementById('localizadores').getElementsByTagName('option');
-          localizadores = [...localizadores].filter((localizador) => localizador.selected);
-          DB.adicionarItens('jlocs', localizadores.map(function(localizador) {
-            return {juizo: null, localizador: localizador.value, competencia: null, classe: null, setor: setor.id};
-          })).then(function() {
-            win.location.reload();
+
+        novoSetor.insertAdjacentHTML('beforebegin', html);
+
+        var setorElement = doc.getElementById('setor-' + id);
+        var tituloElement = doc.getElementById('setor-' + id + '-titulo');
+        var nomeElement = doc.getElementById('setor-' + id + '-nome');
+        var editarElement = doc.getElementById('setor-' + id + '-editar');
+        var excluirElement = doc.getElementById('setor-' + id + '-excluir');
+        var salvarElement = doc.getElementById('setor-' + id + '-salvar');
+        var cancelarElement = doc.getElementById('setor-' + id + '-cancelar');
+        var listaElement = doc.getElementById('setor-' + id + '-lista');
+
+        function toggleDisplay() {
+          ['titulo', 'nome', 'editar','excluir','salvar','cancelar'].forEach(function(nome) {
+            var elemento = doc.getElementById('setor-' + id + '-' + nome);
+            elemento.style.display = elemento.style.display ? '' : 'none';
+          });
+        }
+
+        editarElement.addEventListener('click', function() {
+          toggleDisplay();
+          nomeElement.select();
+          nomeElement.focus();
+        }, false);
+        excluirElement.addEventListener('click', function() {
+          if (win.confirm('Deseja excluir o setor "' + nome + '"?')) {
+            DB.executarTransacao('setores', (objectStore) => objectStore.delete(id)).then(function() {
+              win.location.reload();
+            });
+          }
+        }, false);
+        salvarElement.addEventListener('click', function() {
+          function NomeNaoFornecido() {}
+          var nome = nomeElement.value.trim();
+          var verificarNome = new Promise(function(resolve, reject) {
+            if (nome === '') {
+              reject(new NomeNaoFornecido());
+            } else {
+              resolve(nome);
+            }
+          });
+          verificarNome
+          .then((nome) => DB.substituirItem('setores', {id: id, nome: nome}))
+          .then(() => win.location.reload())
+          .catch(function(evt) {
+            if (evt instanceof NomeNaoFornecido) {
+              return 'O nome não pode estar em branco!';
+            } else if (evt.target && evt.target.error.name === 'ConstraintError') {
+              return 'Já existe um setor chamado "' + nome + '"!';
+            } else {
+              throw evt;
+            }
+          })
+          .then(function(msg) {
+            win.alert(msg);
+            nomeElement.select();
+            nomeElement.focus();
           });
         }, false);
-        excluir.addEventListener('click', function() {
-          var localizadores = doc.getElementById('localizadores-' + setor.id).getElementsByTagName('option');
-          localizadores = [...localizadores].filter((localizador) => localizador.selected);
-          DB.executarTransacao('jlocs', localizadores.map((localizador) => (objectStore) => objectStore.delete(Number(localizador.value)))).then(function() {
-            win.location.reload();
-          });
+
+        cancelarElement.addEventListener('click', function() {
+          nomeElement.value = nome;
+          toggleDisplay();
         }, false);
-      });
-    });
 
-    var localizadoresSetor = new Map();
-    var localizadoresMultissetoriais = new Set();
-    promise = promise.then(DB.obterTodosOrdenadosPorIndice.bind(null, 'jlocs', 'localizador')).then(function(jlocs) {
-      jlocs.forEach(function(item) {
-        var option = doc.createElement('option');
-        option.value = item.id;
-        option.textContent = item.localizador;
-        if (item.juizo === null && item.competencia === null && item.classe === null) {
-          localizadoresSetor.set(item.localizador, item.setor);
-          doc.getElementById('setor-' + item.setor).querySelector('select').appendChild(option);
-        } else {
-          localizadoresMultissetoriais.add(item.localizador);
-          doc.getElementById('setor-' + item.setor).querySelector('select').appendChild(option);
-        }
+        jlocs.filter((obj) => obj.setor === id).forEach(function(jloc) {
+          var elementos = [jloc.localizador];
+          if (jloc.competencia !== null) elementos.push(competencias.get(jloc.competencia));
+          if (jloc.classe !== null) elementos.push(classes.get(jloc.classea));
+          if (jloc.juizo !== null) elementos.push(jloc.juizo);
+          listaElement.insertAdjacentHTML('beforeend', [
+            '<li data-id="' + jloc.id + '">',
+            elementos.join(', '),
+            '</li>'
+          ].join(''));
+        });
       });
     });
-
-    var localizadores;
-    promise = promise.then(DB.obterValoresIndice.bind(null, 'processos', 'localizador')).then(function(localizadores) {
-      var select = doc.getElementById('localizadores');
-      localizadores.forEach(function(localizador) {
-        var option = doc.createElement('option');
-        option.value = localizador;
-        option.textContent = localizador;
-        if (! localizadoresSetor.has(localizador)) {
-          select.appendChild(option);
-        }
-      });
-    });
-  */
   });
 }
 
