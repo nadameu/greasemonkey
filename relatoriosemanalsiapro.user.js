@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php*
-// @version     12
+// @version     13
 // @grant       none
 // ==/UserScript==
 
@@ -547,13 +547,18 @@ var XLSFactory = {
         } else if (campo === 'setor') {
           var regrasLocalizador = jlocs.get(processo.localizador);
           if (! regrasLocalizador) {
-            // Avisar o usuário sobre localizadores não cadastrados.
+            window.alert('Verifique se os setores de todos os localizadores foram cadastrados.');
+            throw new Error();
           } else {
             regrasLocalizador = regrasLocalizador.filter(function(regra) {
               return (regra.juizo === null || regra.juizo === processo.juizo) &&
                 (regra.competencia === null || regra.competencia === processo.competencia) &&
                 (regra.classe === null || regra.classe === processo.classe);
             });
+            if (regrasLocalizador.length === 0) {
+              window.alert('Verifique se os setores de todos os localizadores foram cadastrados.');
+              throw new Error();
+            }
             var idSetor = regrasLocalizador[0].setor;
             var setor = setores.get(idSetor).nome;
             celula.textContent = setor;
@@ -710,8 +715,6 @@ switch (passo) {
   default:
     criarBotaoExcluir();
     criarBotaoObterDados();
-    criarBotaoSetores();
-    criarBotaoLocalizadorSetor();
     criarBotaoJLOCS();
     criarBotaoLocalizadoresSituacoes();
     criarBotaoExcel();
@@ -830,158 +833,57 @@ function analisarMensagem(id, fn, evt) {
   }
 }
 
-function criarBotaoLocalizadorSetor() {
-  return criarBotaoAbrirJanela('localizadorSetor', 'Localizador/Setor', function(win, doc) {
-    var style = doc.createElement('style');
-    style.innerHTML = [
-      'body, table { font-family: Helvetica, sans-serif; font-size: 12pt; }',
-      'h1 { font-size: 1.5em; line-height: 1.5em; }',
-      'h2 { font-size: 1.25em; line-height: 1.5em; height: 3em; text-align: center; }',
-      'h3 { font-size: 1.1em; line-height: 1.5em; }'
-    ].join('\n');
-    doc.getElementsByTagName('head')[0].appendChild(style);
-    doc.body.innerHTML = [
-      '<h1>Localizador/Setor</h1>',
-      '<div>',
-      '<div style="float: left; width: 25%;">',
-      '<h2>Localizadores multissetoriais</h2>',
-      '<select id="localizadores-0" multiple style="vertical-align: middle; height: 20em; width: 80%;"></select>',
-      '<div style="display: inline-block; vertical-align: middle;">',
-      '<button id="incluir-0">&larr;</button>',
-      '<br/>',
-      '<button id="excluir-0">&rarr;</button>',
-      '</div>',
-      '</div>',
-      '<div style="float: left; width: 25%;">',
-      '<h2>Localizadores</h2>',
-      '<select id="localizadores" multiple style="height: 50em; width: 90%;"></select>',
-      '</div>',
-      '<div id="setores" style="float: left; width: 50%;">',
-      '<h2>Setores</h2>',
-      '</div>',
-      '</div>'
-    ].join('');
-
-    var setores = new Map();
-    var promise = DB.obterTodosOrdenadosPorIndice('setores', 'nome').then(function(setoresDB) {
-      setores = setoresDB.reduce(function(map, setor) { return map.set(setor.nome, setor); }, new Map());
-
-      var setoresDiv = doc.getElementById('setores');
-      [...setores.values()].forEach(function(setor) {
-        var div = doc.createElement('div');
-        div.id = 'setor-' + setor.id;
-        div.innerHTML = [
-          '<h3>' + setor.nome + '</h3>',
-          '<div style="display: inline-block; vertical-align: middle;">',
-          '<button id="incluir-' + setor.id + '">&rarr;</button>',
-          '<br/>',
-          '<button id="excluir-' + setor.id + '">&larr;</button>',
-          '</div>',
-          '<select id="localizadores-' + setor.id + '" multiple style="vertical-align: middle; height: 10em; width: 90%;"></select>'
-        ].join('');
-        setoresDiv.appendChild(div);
-        var incluir = doc.getElementById('incluir-' + setor.id);
-        var excluir = doc.getElementById('excluir-' + setor.id);
-        incluir.addEventListener('click', function() {
-          var localizadores = doc.getElementById('localizadores').getElementsByTagName('option');
-          localizadores = [...localizadores].filter((localizador) => localizador.selected);
-          DB.adicionarItens('jlocs', localizadores.map(function(localizador) {
-            return {juizo: null, localizador: localizador.value, competencia: null, classe: null, setor: setor.id};
-          })).then(function() {
-            win.location.reload();
-          });
-        }, false);
-        excluir.addEventListener('click', function() {
-          var localizadores = doc.getElementById('localizadores-' + setor.id).getElementsByTagName('option');
-          localizadores = [...localizadores].filter((localizador) => localizador.selected);
-          DB.executarTransacao('jlocs', localizadores.map((localizador) => (objectStore) => objectStore.delete(Number(localizador.value)))).then(function() {
-            win.location.reload();
-          });
-        }, false);
-      });
-    });
-
-    var localizadoresSetor = new Map();
-    var localizadoresMultissetoriais = new Set();
-    promise = promise.then(DB.obterTodosOrdenadosPorIndice.bind(null, 'jlocs', 'localizador')).then(function(jlocs) {
-      jlocs.forEach(function(item) {
-        var option = doc.createElement('option');
-        option.value = item.id;
-        option.textContent = item.localizador;
-        if (item.juizo === null && item.competencia === null && item.classe === null) {
-          localizadoresSetor.set(item.localizador, item.setor);
-          doc.getElementById('setor-' + item.setor).querySelector('select').appendChild(option);
-        } else {
-          localizadoresMultissetoriais.add(item.localizador);
-          doc.getElementById('setor-' + item.setor).querySelector('select').appendChild(option);
-        }
-      });
-    });
-
-    var localizadores;
-    promise = promise.then(DB.obterValoresIndice.bind(null, 'processos', 'localizador')).then(function(localizadores) {
-      var select = doc.getElementById('localizadores');
-      localizadores.forEach(function(localizador) {
-        var option = doc.createElement('option');
-        option.value = localizador;
-        option.textContent = localizador;
-        if (! localizadoresSetor.has(localizador)) {
-          select.appendChild(option);
-        }
-      });
-    });
-  });
-}
-
 function criarBotaoJLOCS() {
-  return criarBotaoAbrirJanela('jlocs', 'Localizador/Competência/Classe/Juízo/Setor', function(win, doc) {
+  return criarBotaoAbrirJanela('jlocs', 'Setores', function(win, doc) {
     var style = doc.createElement('style');
     style.innerHTML = [
       'html, body { margin: 0; width: 100%; height: 100%; }',
       'body, table { font-family: Helvetica, sans-serif; font-size: 12pt; }',
-      'h1 { margin: 0.5em 0; font-size: 1.25em; line-height: 1.5em; text-align: center; }',
+      'h1 { margin: 0.5em 0; font-size: 1.25em; line-height: 1.5em; text-align: center; overflow: hidden; }',
       'h2 { font-size: 1.1em; line-height: 1.5em; }',
       '.campos { position: absolute; width: 100%; height: 100%; }',
       '.campo { float: left; margin: 0 0.5%; height:100%; }',
       '.campo select { width: 100%; height: calc(100% - 7em); }',
-      '.campo label { line-height: 2em; }',
+      '.campo label { display: inline-block; line-height: 2em; height: 2em; overflow: hidden; }',
       '.campo label input { vertical-align: middle; }',
       '.setor { border-top: 1px solid black; padding-bottom: 1em; }',
-      '.setor h2 { display: inline-block; width: 70%; }',
-      '.setor button { width: 15%; }',
-      '.setor button.adicionar { width: 2em; height: 2em; vertical-align: top; }',
-      '.setor ul { display: inline-block; margin: 0 0 0 2ex; padding: 0; }',
-      '.setor li { list-style-type: none; font-size: .85em; }'
+      '.setor h2 { display: inline-block; width: 70%; overflow: hidden; vertical-align: middle; }',
+      '.setor button { width: 15%; overflow: hidden; }',
+      '.setor button.adicionar { width: 2em; height: 2em; padding: 0; line-height: 1em; vertical-align: top; }',
+      '.setor ul { display: inline-block; margin: 0 0 0 0.5ex; padding: 0; width: -moz-calc(100% - 2em - 0.5ex); }',
+      '.setor li { list-style-type: none; font-size: .85em; border-bottom: 1px solid #ccc; }',
+      '.setor span.descricao { display: inline-block; width: -moz-calc(100% - 16px); vertical-align: middle; }',
+      '.setor span.excluir { display: inline-block; width: 16px; height: 16px; font-size: 14px; line-height: 14px; font-weight: bold; text-align: center; background: red; color: white; border-radius: 8px; cursor: default; }'
     ].join('\n');
     doc.getElementsByTagName('head')[0].appendChild(style);
     doc.body.innerHTML = [
       '<div class="campos">',
       '<div class="campo" style="width: 14%;">',
-      '<h1>Localizador</h2>',
+      '<h1>Localizador</h1>',
       '<select id="localizadores" multiple></select>',
       '</div>',
       '<div class="campo" style="width: 14%;">',
-      '<h1>Competência</h2>',
+      '<h1>Competência</h1>',
       '<select id="competencias" disabled multiple></select>',
       '<br/>',
       '<label><input id="competencias-ignorar" type="checkbox" checked/> Ignorar competência</label>',
       '</div>',
       '<div class="campo" style="width: 24%;">',
-      '<h1>Classe</h2>',
+      '<h1>Classe</h1>',
       '<select id="classes" disabled multiple></select>',
       '<br/>',
       '<label><input id="classes-ignorar" type="checkbox" checked/> Ignorar classe</label>',
       '</div>',
       '<div class="campo" style="width: 9%;">',
-      '<h1>Juízo</h2>',
+      '<h1>Juízo</h1>',
       '<select id="juizos" disabled multiple></select>',
       '<br/>',
       '<label><input id="juizos-ignorar" type="checkbox" checked/> Ignorar juízo</label>',
       '</div>',
       '<div class="campo" style="width: 34%; overflow-y: scroll;">',
-      '<h1>Setor</h2>',
+      '<h1>Setor</h1>',
       '<div id="novo-setor" class="setor">',
-      '<h2>[Novo setor]</h3>',
+      '<h2>[Novo setor]</h2>',
       '<input id="novo-setor-nome" placeholder="Nome do novo setor" style="width: -moz-calc(70% - 6px); padding: 2px; border: 1px solid black;"/>',
       '<button id="novo-setor-salvar">Salvar</button>',
       '<button id="novo-setor-cancelar">Cancelar</button>',
@@ -1063,8 +965,26 @@ function criarBotaoJLOCS() {
         return [...select.getElementsByTagName('option')].filter((opt) => opt.selected).map((opt) => opt.value);
       }
 
+      function obterValoresSelecionadosOuNull(id) {
+        var valores = obterValoresSelecionados(id);
+        if (valores.length === 0) {
+          return [null];
+        } else {
+          return valores;
+        }
+      }
+
       function obterValoresSelecionadosComoNumero(id) {
         return obterValoresSelecionados(id).map((text) => Number(text));
+      }
+
+      function obterValoresSelecionadosComoNumeroOuNull(id) {
+        var valores = obterValoresSelecionados(id).map((text) => Number(text));
+        if (valores.length === 0) {
+          return [null];
+        } else {
+          return valores;
+        }
       }
 
       function atualizarConformeSelecionados(id) {
@@ -1121,6 +1041,12 @@ function criarBotaoJLOCS() {
         }, false);
       }
 
+      function erroPreenchendoCampo(campo, msg) {
+        win.alert(msg);
+        campo.select();
+        campo.focus();
+      }
+
       var jloczSemSetor = jlocz.filter(function(jloc) {
         return jlocs.findIndex(function(item) {
           return (item.juizo === null || item.juizo === jloc.juizo) &&
@@ -1149,31 +1075,18 @@ function criarBotaoJLOCS() {
       var novoSetorCancelar = doc.getElementById('novo-setor-cancelar');
 
       novoSetorSalvar.addEventListener('click', function() {
-        function NomeNaoFornecido() {}
         var nome = novoSetorNome.value.trim();
-        var verificarNome = new Promise(function(resolve, reject) {
-          if (nome === '') {
-            reject(new NomeNaoFornecido());
-          } else {
-            resolve(nome);
-          }
-        });
-        verificarNome
-        .then((nome) => DB.adicionarItem('setores', {nome: nome}))
+        if (nome === '') {
+          return erroPreenchendoCampo(novoSetorNome, 'O nome não pode estar em branco!');
+        }
+        DB.adicionarItem('setores', {nome: nome})
         .then(() => win.location.reload())
         .catch(function(evt) {
-          if (evt instanceof NomeNaoFornecido) {
-            return 'O nome não pode estar em branco!';
-          } else if (evt.target && evt.target.error.name === 'ConstraintError') {
-            return 'Já existe um setor chamado "' + nome + '"!';
+          if (evt.target && evt.target.error.name === 'ConstraintError') {
+            return erroPreenchendoCampo(novoSetorNome, 'Já existe um setor chamado "' + nome + '"!');
           } else {
             throw evt;
           }
-        })
-        .then(function(msg) {
-          win.alert(msg);
-          novoSetorNome.select();
-          novoSetorNome.focus();
         });
       }, false);
 
@@ -1190,6 +1103,7 @@ function criarBotaoJLOCS() {
           '<button id="setor-' + id + '-excluir">Excluir</button>',
           '<button id="setor-' + id + '-salvar" style="display: none;">Salvar</button>',
           '<button id="setor-' + id + '-cancelar" style="display: none;">Cancelar</button>',
+          '<br/>',
           '<button id="setor-' + id + '-adicionar" class="adicionar">&rarr;</button>',
           '<ul id="setor-' + id + '-lista"></ul>',
           '</div>'
@@ -1204,6 +1118,7 @@ function criarBotaoJLOCS() {
         var excluirElement = doc.getElementById('setor-' + id + '-excluir');
         var salvarElement = doc.getElementById('setor-' + id + '-salvar');
         var cancelarElement = doc.getElementById('setor-' + id + '-cancelar');
+        var adicionarElement = doc.getElementById('setor-' + id + '-adicionar');
         var listaElement = doc.getElementById('setor-' + id + '-lista');
 
         function toggleDisplay() {
@@ -1218,6 +1133,7 @@ function criarBotaoJLOCS() {
           nomeElement.select();
           nomeElement.focus();
         }, false);
+
         excluirElement.addEventListener('click', function() {
           if (win.confirm('Deseja excluir o setor "' + nome + '"?')) {
             DB.executarTransacao('setores', (objectStore) => objectStore.delete(id)).then(function() {
@@ -1225,32 +1141,20 @@ function criarBotaoJLOCS() {
             });
           }
         }, false);
+
         salvarElement.addEventListener('click', function() {
-          function NomeNaoFornecido() {}
           var nome = nomeElement.value.trim();
-          var verificarNome = new Promise(function(resolve, reject) {
-            if (nome === '') {
-              reject(new NomeNaoFornecido());
-            } else {
-              resolve(nome);
-            }
-          });
-          verificarNome
-          .then((nome) => DB.substituirItem('setores', {id: id, nome: nome}))
+          if (nome === '') {
+            return erroPreenchendoCampo(nomeElement, 'O nome não pode estar em branco!');
+          }
+          DB.substituirItem('setores', {id: id, nome: nome})
           .then(() => win.location.reload())
           .catch(function(evt) {
-            if (evt instanceof NomeNaoFornecido) {
-              return 'O nome não pode estar em branco!';
-            } else if (evt.target && evt.target.error.name === 'ConstraintError') {
-              return 'Já existe um setor chamado "' + nome + '"!';
+            if (evt.target && evt.target.error.name === 'ConstraintError') {
+              return erroPreenchendoCampo(nomeElement, 'Já existe um setor chamado "' + nome + '"!');
             } else {
               throw evt;
             }
-          })
-          .then(function(msg) {
-            win.alert(msg);
-            nomeElement.select();
-            nomeElement.focus();
           });
         }, false);
 
@@ -1259,16 +1163,66 @@ function criarBotaoJLOCS() {
           toggleDisplay();
         }, false);
 
-        jlocs.filter((obj) => obj.setor === id).forEach(function(jloc) {
+        adicionarElement.addEventListener('click', function() {
+          var localizadoresSelecionados = obterValoresSelecionados('localizadores');
+          var competenciasSelecionadas = obterValoresSelecionadosComoNumeroOuNull('competencias');
+          var classesSelecionadas = obterValoresSelecionadosComoNumeroOuNull('classes');
+          var juizosSelecionados = obterValoresSelecionadosOuNull('juizos');
+
+          if (localizadoresSelecionados.length === 0) {
+            return win.alert('É preciso selecionar ao menos um localizador.');
+          }
+
+          var objs = [];
+          localizadoresSelecionados.forEach(function(localizador) {
+            competenciasSelecionadas.forEach(function(competencia) {
+              classesSelecionadas.forEach(function(classe) {
+                juizosSelecionados.forEach(function(juizo) {
+                  objs.push({
+                    juizo: juizo,
+                    localizador: localizador,
+                    competencia: competencia,
+                    classe: classe,
+                    setor: id
+                  });
+                });
+              });
+            });
+          });
+          DB.adicionarItens('jlocs', objs).then(() => win.location.reload());
+        }, false);
+
+        function compare(a, b) {
+          if (a.localizador < b.localizador) return -1;
+          if (a.localizador > b.localizador) return +1;
+          if (competencias.get(a.competencia) < competencias.get(b.competencia)) return -1;
+          if (competencias.get(a.competencia) > competencias.get(b.competencia)) return +1;
+          if (classes.get(a.classe) < classes.get(b.classe)) return -1;
+          if (classes.get(a.classe) > classes.get(b.classe)) return +1;
+          if (a.juizo < b.juizo) return -1;
+          if (a.juizo > b.juizo) return +1;
+          return 0;
+        }
+
+        jlocs.filter((obj) => obj.setor === id).sort(compare).forEach(function(jloc) {
           var elementos = [jloc.localizador];
-          if (jloc.competencia !== null) elementos.push(competencias.get(jloc.competencia));
-          if (jloc.classe !== null) elementos.push(classes.get(jloc.classea));
+          if (jloc.competencia !== null) elementos.push('<abbr title="' + competencias.get(jloc.competencia) + '">' + ('00' + jloc.competencia).substr(-2) + '</abbr>');
+          if (jloc.classe !== null) elementos.push('<abbr title="' + classes.get(jloc.classe) + '">' + ('000000' + jloc.classe).substr(-6) + '</abbr>');
           if (jloc.juizo !== null) elementos.push(jloc.juizo);
           listaElement.insertAdjacentHTML('beforeend', [
-            '<li data-id="' + jloc.id + '">',
+            '<li id="jloc-' + jloc.id + '">',
+            '<span class="descricao">',
             elementos.join(', '),
+            '</span>',
+            '<span id="jloc-' + jloc.id + '-excluir" class="excluir">&Cross;</span>',
             '</li>'
           ].join(''));
+
+          var excluirElement = doc.getElementById('jloc-' + jloc.id + '-excluir');
+
+          excluirElement.addEventListener('click', function() {
+            DB.executarTransacao('jlocs', (objectStore) => objectStore.delete(jloc.id)).then(() => win.location.reload());
+          }, false);
         });
       });
     });
@@ -1320,105 +1274,3 @@ function criarBotaoLocalizadoresSituacoes() {
   });
 }
 
-function criarBotaoSetores() {
-  return criarBotaoAbrirJanela('setores', 'Setores', function(win, doc) {
-    doc.body.innerHTML = [
-      '<h1>Setores</h1>',
-      '<table border="1" cellspacing="0" cellpadding="2" style="border-collapse: collapse;">',
-      '<thead>',
-      '<tr><th>Setor</th><th>Ações</th></tr>',
-      '</thead>',
-      '<tbody>',
-      '</tbody>',
-      '<tfoot>',
-      '<tr><td><input id="novo-nome" placeholder="Novo setor" autofocus/></td><td><button id="salvar">Salvar</button><button id="cancelar">Cancelar</button></td></tr>',
-      '</tfoot>',
-      '</table>'
-    ].join('');
-
-    var novoSetor = doc.getElementById('novo-nome');
-    var salvar = doc.getElementById('salvar');
-    salvar.addEventListener('click', function(evt) {
-      var nomeNovoSetor = novoSetor.value.trim();
-      DB.adicionarItem('setores', {nome: nomeNovoSetor}).then(function(key) {
-        win.location.reload();
-      }).catch(function(evt) {
-        if (evt.target.error.name === 'ConstraintError') {
-          win.alert('Já existe um setor chamado "' + nomeNovoSetor + '"!');
-          novoSetor.select();
-          novoSetor.focus();
-        } else {
-          throw evt;
-        }
-      });
-    }, false);
-    var cancelar = doc.getElementById('cancelar');
-    cancelar.addEventListener('click', function() { novoSetor.value = ''; }, false);
-
-    DB.obterTodosOrdenadosPorIndice('setores', 'nome').then(function(setores) {
-      setores.forEach(function(setor) {
-        var tabela = doc.getElementsByTagName('table')[0];
-        var linha = tabela.tBodies[0].insertRow();
-        linha.insertCell().textContent = setor.nome;
-        var celulaAcoes = linha.insertCell();
-
-        var editar = doc.createElement('button');
-        editar.textContent = 'Editar';
-        celulaAcoes.appendChild(editar);
-
-        var excluir = doc.createElement('button');
-        excluir.textContent = 'Excluir';
-        celulaAcoes.appendChild(excluir);
-
-        var salvar = doc.createElement('button');
-        salvar.textContent = 'Salvar';
-        salvar.style.display = 'none';
-        celulaAcoes.appendChild(salvar);
-
-        var cancelar = doc.createElement('button');
-        cancelar.textContent = 'Cancelar';
-        cancelar.style.display = 'none';
-        celulaAcoes.appendChild(cancelar);
-
-        editar.addEventListener('click', function() {
-          linha.cells[0].innerHTML = '<input/>';
-          var novoNome = linha.cells[0].querySelector('input');
-          novoNome.value = setor.nome;
-          editar.style.display = 'none';
-          excluir.style.display = 'none';
-          salvar.style.display = '';
-          cancelar.style.display = '';
-        }, false);
-        excluir.addEventListener('click', function() {
-          if (win.confirm('Deseja excluir o setor "' + setor.nome + '"?')) {
-            DB.executarTransacao('setores', (objectStore) => objectStore.delete(setor.id)).then(function() {
-              win.location.reload();
-            });
-          }
-        }, false);
-        salvar.addEventListener('click', function() {
-          var novoSetor = linha.cells[0].querySelector('input');
-          var nomeNovoSetor = novoSetor.value.trim();
-          DB.executarTransacao('setores', (objectStore) => objectStore.put({id: setor.id, nome: nomeNovoSetor})).then(function(key) {
-            win.location.reload();
-          }).catch(function(evt) {
-            if (evt.target.error.name === 'ConstraintError') {
-              win.alert('Já existe um setor chamado "' + nomeNovoSetor + '"!');
-              novoSetor.select();
-              novoSetor.focus();
-            } else {
-              throw evt;
-            }
-          });
-        }, false);
-        cancelar.addEventListener('click', function() {
-          linha.cells[0].textContent = setor.nome;
-          editar.style.display = '';
-          excluir.style.display = '';
-          salvar.style.display = 'none';
-          cancelar.style.display = 'none';
-        }, false);
-      });
-    });
-  });
-}
