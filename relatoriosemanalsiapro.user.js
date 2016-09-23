@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php*
-// @version     13
+// @version     14
 // @grant       none
 // ==/UserScript==
 
@@ -79,7 +79,7 @@ var Competencias = new Map();
 var DB = {
   abrir() {
     return new Promise(function(resolve, reject) {
-      var req = window.indexedDB.open('relatorioSemanal');
+      var req = window.indexedDB.open('relatorioSemanal', 2);
       req.addEventListener('success', function(evt) {
         var db = evt.target.result;
         resolve(db);
@@ -112,6 +112,23 @@ var DB = {
             jlocs.createIndex('jloc', ['juizo', 'localizador', 'competencia', 'classe'], {unique: true});
             jlocs.createIndex('localizador', 'localizador');
             // break intencionalmente omitido
+
+          case 1:
+            processos.createIndex('orgao', 'orgao');
+
+            jlocs.createIndex('setor', 'setor');
+
+            var grupos = db.createObjectStore('grupos', {keyPath: 'id', autoIncrement: true});
+            grupos.createIndex('nome', 'nome', {unique: true});
+
+            var comClaGru = db.createObjectStore('comClaGru', {keyPath: 'id', autoIncrement: true});
+            comClaGru.createIndex('comCla', ['competencia', 'classe'], {unique: true});
+            comClaGru.createIndex('grupo', 'grupo');
+
+            var julgse = db.createObjectStore('julgse', {keyPath: 'id', autoIncrement: true});
+            julgse.createIndex('julg', ['juizo', 'localizador', 'grupo'], {unique: true});
+            julgse.createIndex('setor', 'setor');
+            // break intencionalmente omitido
         }
       });
     });
@@ -134,6 +151,36 @@ var DB = {
   adicionarItens(nomeOS, items, db = null) {
     var promise = DB.verificarDB(db);
     return promise.then(DB.executarTransacao.bind(null, nomeOS, items.map((item) => (objectStore) => objectStore.add(item))));
+  },
+  excluirTodosPorValorIndice(nomeOS, indice, valor, db = null) {
+    var promise = DB.verificarDB(db);
+    return promise.then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var objectStore = db.transaction([nomeOS], 'readwrite').objectStore(nomeOS);
+        var index = objectStore.index(indice);
+        var transacoesPendentes = 0;
+        index.openCursor(IDBKeyRange.only(valor)).addEventListener('success', function(evt) {
+          var cursor = evt.target.result;
+          if (cursor) {
+            var req = cursor.delete();
+            transacoesPendentes++;
+            req.addEventListener('success', function() { transacoesPendentes--; }, false);
+            cursor.continue();
+          }
+        }, false);
+        objectStore.transaction.addEventListener('complete', function() {
+          if (transacoesPendentes === 0) {
+            resolve(db);
+          } else {
+            var err = new Error('Há ' + transacoesPendentes + ' transações pendentes.', nomeOS);
+            reject(err);
+            throw err;
+          }
+        });
+        objectStore.transaction.addEventListener('abort', console.debug.bind(console, 'aborted (DELETE)', nomeOS));
+        objectStore.transaction.addEventListener('error', reject);
+      });
+    });
   },
   executarTransacao(nomeOS, fn, db = null) {
     var promise = DB.verificarDB(db);
@@ -715,6 +762,7 @@ switch (passo) {
   default:
     criarBotaoExcluir();
     criarBotaoObterDados();
+    criarBotaoOrgaos();
     criarBotaoJLOCS();
     criarBotaoLocalizadoresSituacoes();
     criarBotaoExcel();
@@ -831,6 +879,48 @@ function analisarMensagem(id, fn, evt) {
     var win = evt.source, doc = win.document;
     fn(win, doc);
   }
+}
+
+function criarBotaoOrgaos() {
+  return criarBotaoAbrirJanela('orgaos', 'Órgãos', function(win, doc) {
+    var style = doc.createElement('style');
+    style.innerHTML = [
+      'html, body { margin: 0; width: 100%; height: 100%; }',
+      'body, table { font-family: Helvetica, sans-serif; font-size: 12pt; }',
+      'h1 { margin: 0.5em 2ex; font-size: 1.25em; line-height: 1.5em; }',
+      'ul { display: inline-block; margin: 0 2ex; padding: 0; min-width: 15ex; }',
+      'li { list-style-type: none; border-bottom: 1px solid #ccc; }',
+      'span.descricao { display: inline-block; width: -moz-calc(100% - 16px); vertical-align: middle; }',
+      'span.excluir { display: inline-block; width: 16px; height: 16px; font-size: 14px; line-height: 14px; font-weight: bold; text-align: center; background: red; color: white; border-radius: 8px; cursor: default; }'
+    ].join('\n');
+    doc.getElementsByTagName('head')[0].appendChild(style);
+    doc.body.innerHTML = [
+      '<h1>Órgãos</h1>',
+      '<ul id="lista"></ul>'
+    ].join('');
+
+    var lista = doc.getElementById('lista');
+
+    DB.obterValoresIndice('processos', 'orgao').then(function(orgaos) {
+      orgaos.forEach(function(orgao, indiceOrgao) {
+        lista.insertAdjacentHTML('beforeend', [
+          '<li>',
+          '<span class="descricao">',
+          orgao,
+          '</span>',
+          '<span id="excluir-' + indiceOrgao + '" class="excluir" title="Excluir">&Cross;</span>',
+          '</li>'
+        ].join(''));
+
+        var excluirElement = doc.getElementById('excluir-' + indiceOrgao);
+        excluirElement.addEventListener('click', function() {
+          if (win.confirm('Deseja excluir os processos do órgão "' + orgao + '"?')) {
+            DB.excluirTodosPorValorIndice('processos', 'orgao', orgao).then(() => win.location.reload());
+          }
+        }, false);
+      });
+    });
+  });
 }
 
 function criarBotaoJLOCS() {
@@ -1136,7 +1226,7 @@ function criarBotaoJLOCS() {
 
         excluirElement.addEventListener('click', function() {
           if (win.confirm('Deseja excluir o setor "' + nome + '"?')) {
-            DB.executarTransacao('setores', (objectStore) => objectStore.delete(id)).then(function() {
+            DB.excluirTodosPorValorIndice('jlocs', 'setor', id).then(DB.executarTransacao.bind(null, 'setores', (objectStore) => objectStore.delete(id))).then(function() {
               win.location.reload();
             });
           }
@@ -1273,4 +1363,3 @@ function criarBotaoLocalizadoresSituacoes() {
     });
   });
 }
-
