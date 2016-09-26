@@ -3,7 +3,7 @@
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-retirar.jsf
-// @version     14
+// @version     15
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -65,14 +65,19 @@ function inserir() {
 
 					yield Pagina.limparPesquisa();
 
+					var qtdPaginas = Math.ceil(qtdVeiculos / 100);
+					var paginaAtual = 1;
+
 					for (var i = 0; i < qtdVeiculos; ++i) {
 
 						if (i > 99 && i % 100 === 0) {
-							GUI.Logger.write('Obtendo próxima página...');
-							var salvo = GUI.salvarTabelaVeiculos();
-							yield Pagina.obterProximaPaginaListagem();
-							GUI.restaurarTabelaVeiculos(salvo);
-							GUI.Logger.write('........................ ok.\n');
+							GUI.Logger.write('Imprimindo detalhes dos veículos...');
+							Pagina.imprimir();
+							GUI.Logger.write('.............. ok.\n');
+							GUI.Logger.write('Selecione os veículos a restringir.\n');
+							window.alert('Há mais de ' + (paginaAtual * 100) + ' veículos.\n\nAo carregar a página ' + (paginaAtual + 1) + ', os dados serão atualizados.\n\n');
+							yield Pagina.aguardarProximaPaginaListagem(++paginaAtual);
+							GUI.areaImpressao.limpar();
 						}
 
 						let placa = Pagina.obterPlacaVeiculo(i);
@@ -335,7 +340,7 @@ var GUI = (function() {
 
 	var style = document.createElement('style');
 	style.innerHTML = [
-		'@media print { div#alteracoesGreasemonkey, .noprint { display: none; } .ui-datatable .ui-paginator.ui-paginator-bottom { display: none; } }',
+		'@media print { div#alteracoesGreasemonkey, .noprint { display: none; } }',
 		'@media screen { div#impressaoGreasemonkey, .noscreen { display: none; } }',
 		'div#alteracoesGreasemonkey div { font-family: monospace; }',
 		'div#impressaoGreasemonkey table { page-break-inside: avoid; }'
@@ -498,6 +503,26 @@ var Pagina = (function() {
 		addOnOrgaoChangeListener(fn) {
 			addSelectOneMenuListner('form-incluir-restricao:campo-orgao', fn);
 		},
+		aguardarProximaPaginaListagem(pagina) {
+			console.debug('Pagina.aguardarProximaPaginaListagem(pagina)', pagina);
+			var botoesNext = [...document.getElementsByClassName('ui-paginator-next')];
+			botoesNext = botoesNext.filter((botao) => !botao.classList.contains('ui-state-disabled'));
+			var promise = new Promise(function(resolve, reject) {
+				var onPaginaCarregada = function() {
+					console.info('pagina carregada');
+					var botoesPagina = [...document.getElementsByClassName('ui-paginator-page')].filter((botao) => botao.classList.contains('ui-state-active'));
+					if (botoesPagina.length === 2 && Number(botoesPagina[0].textContent) === pagina) {
+						resolve();
+					} else if (botoesPagina.length === 2) {
+						AjaxListener.listenOnce('form-incluir-restricao:lista-veiculo').then(onPaginaCarregada);
+					} else {
+						reject();
+					}
+				};
+				AjaxListener.listenOnce('form-incluir-restricao:lista-veiculo').then(onPaginaCarregada);
+			});
+			return promise;
+		},
 		fecharDetalhesVeiculo(ord) {
 			console.debug('Pagina.fecharDetalhesVeiculo(ord)', ord);
 			var prefixo = Pagina.obterPrefixoVeiculo(ord);
@@ -544,16 +569,6 @@ var Pagina = (function() {
 			botaoLimparPesquisa.click();
 			return promise;
 		},
-		listagemPossuiMaisPaginas() {
-			console.debug('Pagina.listagemPossuiMaisPaginas()');
-			return Pagina.obterBotoesProximaPaginaListagem().length > 0;
-		},
-		obterBotoesProximaPaginaListagem() {
-			console.debug('Pagina.obterBotoesProximaPaginaListagem()');
-			var botoesNext = [...document.getElementsByClassName('ui-paginator-next')];
-			botoesNext = botoesNext.filter((botao) => !botao.classList.contains('ui-state-disabled'));
-			return botoesNext;
-		},
 		obterCelulaRestricaoVeiculo(ord) {
 			console.debug('Pagina.obterCelulaRestricaoVeiculo(ord)', ord);
 			var linha = Pagina.obterLinhaVeiculo(ord);
@@ -562,7 +577,7 @@ var Pagina = (function() {
 		obterLinhaVeiculo(ord) {
 			console.debug('Pagina.obterLinhaVeiculo(ord)', ord);
 			var tBody = document.getElementById('form-incluir-restricao:lista-veiculo_data');
-			return tBody.rows[ord];
+			return tBody.rows[ord % 100];
 		},
 		obterMagistrado() {
 			return document.getElementById('form-incluir-restricao:campo-magistrado_input').value;
@@ -582,15 +597,6 @@ var Pagina = (function() {
 		obterPrefixoVeiculo(ord) {
 			console.debug('Pagina.obterPrefixoVeiculo(ord)', ord);
 			return 'form-incluir-restricao:lista-veiculo:' + ord;
-		},
-		obterProximaPaginaListagem() {
-			console.debug('Pagina.obterProximaPaginaListagem()');
-			var botoesNext = Pagina.obterBotoesProximaPaginaListagem();
-			var promise = AjaxListener.listenOnce('form-incluir-restricao:lista-veiculo').then(function(ok) {
-				console.info('ok', arguments);
-			});
-			botoesNext[0].click();
-			return promise;
 		},
 		obterVeiculosDocumento(documento) {
 			console.debug('Pagina.obterVeiculosDocumento(documento)', documento);
