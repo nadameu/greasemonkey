@@ -1263,23 +1263,60 @@ function criarBotaoJLOCS() {
             return win.alert('É preciso selecionar ao menos um localizador.');
           }
 
-          var objs = [];
+          var objs = [], msgs = [], excluir = [];
           localizadoresSelecionados.forEach(function(localizador) {
+            var incompatibilidade = {
+              competencia: false,
+              classe: false,
+              juizo: false
+            };
             competenciasSelecionadas.forEach(function(competencia) {
               classesSelecionadas.forEach(function(classe) {
                 juizosSelecionados.forEach(function(juizo) {
-                  objs.push({
-                    juizo: juizo,
-                    localizador: localizador,
-                    competencia: competencia,
-                    classe: classe,
-                    setor: id
-                  });
+                  jlocsIncompativeis = jlocs.filter((obj) => obj.localizador === localizador).filter((obj) => (competencia === null ? obj.competencia !== null : obj.competencia === null) || (classe === null ? obj.classe !== null : obj.classe === null) || (juizo === null ? obj.juizo !== null : obj.juizo === null));
+                  if (jlocsIncompativeis.length) {
+                    var indicesExcluir = [];
+                    jlocsIncompativeis.forEach(function(jlocIncompativel, indice) {
+                      var incompativel = false;
+                      if (!competencia && jlocIncompativel.competencia) incompativel = incompatibilidade.competencia = true;
+                      if (!classe && jlocIncompativel.classe) incompativel = incompatibilidade.classe = true;
+                      if (!juizo && jlocIncompativel.juizo) incompativel = incompatibilidade.juizo = true;
+                      if (!incompativel && ((competencia && !jlocIncompativel.competencia) || (classe && !jlocIncompativel.classe) || (juizo && !jlocIncompativel.juizo))) indicesExcluir.push(indice);
+                    });
+                    indicesExcluir.forEach(function(indice) {
+                      Array.prototype.push.apply(excluir, jlocsIncompativeis.splice(indice, 1));
+                    });
+                  }
+                  if (jlocsIncompativeis.length === 0) {
+                    objs.push({
+                      juizo: juizo,
+                      localizador: localizador,
+                      competencia: competencia,
+                      classe: classe,
+                      setor: id
+                    });
+                  }
                 });
               });
             });
+            if (incompatibilidade.competencia || incompatibilidade.classe || incompatibilidade.juizo) {
+              var msg = ['Para o localizador "' + localizador + '":'];
+              if (incompatibilidade.competencia) msg.push('É preciso selecionar uma competência.');
+              if (incompatibilidade.classe) msg.push('É preciso selecionar uma classe.');
+              if (incompatibilidade.juizo) msg.push('É preciso selecionar um juízo.');
+              win.alert(msg.join('\n'));
+            }
           });
-          DB.adicionarItens('jlocs', objs).then(() => win.location.reload());
+          var promise = Promise.resolve();
+          if (excluir.length) {
+            console.info('excluir', excluir);
+            promise = promise.then(DB.executarTransacao('jlocs', excluir.map((obj) => (objectStore) => objectStore.delete(obj.id))));
+          }
+          if (objs.length) {
+            console.info('incluir', objs);
+            promise = promise.then(DB.adicionarItens.bind(null, 'jlocs', objs));
+            promise = promise.then(() => win.location.reload());
+          }
         }, false);
 
         function compare(a, b) {
@@ -1363,3 +1400,4 @@ function criarBotaoLocalizadoresSituacoes() {
     });
   });
 }
+
