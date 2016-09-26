@@ -2,13 +2,14 @@
 // @name        Renajud
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @version     13
+// @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-retirar.jsf
+// @version     14
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
 // ==/UserScript==
 
-function main() {
+function inserir() {
 
 	'use strict';
 
@@ -66,6 +67,14 @@ function main() {
 
 					for (var i = 0; i < qtdVeiculos; ++i) {
 
+						if (i > 99 && i % 100 === 0) {
+							GUI.Logger.write('Obtendo próxima página...');
+							var salvo = GUI.salvarTabelaVeiculos();
+							yield Pagina.obterProximaPaginaListagem();
+							GUI.restaurarTabelaVeiculos(salvo);
+							GUI.Logger.write('........................ ok.\n');
+						}
+
 						let placa = Pagina.obterPlacaVeiculo(i);
 						GUI.Logger.write('Obtendo detalhes do veículo ' + placa.substr(0, 3) + '-' + placa.substr(3) + '...');
 
@@ -76,8 +85,7 @@ function main() {
 
 						if (Pagina.veiculoPossuiRestricoes(i)) {
 							let detalhesRestricoes = yield Pagina.abrirRestricoesVeiculo(i);
-							let restricoes = [...detalhesRestricoes.lista.childNodes].map(li => li.textContent.trim());
-							GUI.definirRestricoesVeiculo(i, restricoes);
+							GUI.definirRestricoesVeiculo(i, detalhesRestricoes.lista);
 							GUI.areaImpressao.adicionar(document.createElement('br'));
 							GUI.areaImpressao.adicionar(detalhesRestricoes.painel);
 							if (detalhesRestricoes.renajud) {
@@ -170,6 +178,8 @@ function main() {
 		}
 	});
 }
+
+function retirar() {}
 
 var PreferenciasUsuario = (function() {
 	'use strict';
@@ -325,7 +335,7 @@ var GUI = (function() {
 
 	var style = document.createElement('style');
 	style.innerHTML = [
-		'@media print { div#alteracoesGreasemonkey, .noprint { display: none; } }',
+		'@media print { div#alteracoesGreasemonkey, .noprint { display: none; } .ui-datatable .ui-paginator.ui-paginator-bottom { display: none; } }',
 		'@media screen { div#impressaoGreasemonkey, .noscreen { display: none; } }',
 		'div#alteracoesGreasemonkey div { font-family: monospace; }',
 		'div#impressaoGreasemonkey table { page-break-inside: avoid; }'
@@ -399,6 +409,18 @@ var GUI = (function() {
 			console.debug('GUI.hide()');
 			alteracoesGreasemonkey.style.display = 'none';
 		},
+		restaurarTabelaVeiculos(fragmento) {
+			console.debug('GUI.restaurarTabelaVeiculos(fragmento)', fragmento);
+			var tBody = document.getElementById('form-incluir-restricao:lista-veiculo_data');
+			tBody.insertBefore(fragmento, tBody.firstChild);
+		},
+		salvarTabelaVeiculos() {
+			console.debug('GUI.salvarTabelaVeiculos()');
+			var fragmento = document.createDocumentFragment();
+			var linhas = [...document.getElementById('form-incluir-restricao:lista-veiculo_data').rows];
+			linhas.forEach((linha) => fragmento.appendChild(linha));
+			return fragmento;
+		},
 		show() {
 			console.debug('GUI.show()');
 			alteracoesGreasemonkey.style.display = '';
@@ -451,7 +473,12 @@ var Pagina = (function() {
 				var idDialogo = prefixo + ':dlg-detalhes-veiculo-restricoes', dialogo = document.getElementById(idDialogo);
 				var fieldsets = dialogo.getElementsByTagName('fieldset');
 				var painelRestricoes = fieldsets[1];
-				var listaRestricoes = painelRestricoes.getElementsByTagName('ul')[0];
+				var listaRestricoes = painelRestricoes.getElementsByTagName('ul');
+				if (listaRestricoes.length > 0) {
+					listaRestricoes = [...listaRestricoes[0].childNodes].map((li) => li.textContent.trim());
+				} else {
+					listaRestricoes = [];
+				}
 				var painelRestricoesRenajud = fieldsets[2];
 				return {
 					painel: painelRestricoes,
@@ -517,6 +544,16 @@ var Pagina = (function() {
 			botaoLimparPesquisa.click();
 			return promise;
 		},
+		listagemPossuiMaisPaginas() {
+			console.debug('Pagina.listagemPossuiMaisPaginas()');
+			return Pagina.obterBotoesProximaPaginaListagem().length > 0;
+		},
+		obterBotoesProximaPaginaListagem() {
+			console.debug('Pagina.obterBotoesProximaPaginaListagem()');
+			var botoesNext = [...document.getElementsByClassName('ui-paginator-next')];
+			botoesNext = botoesNext.filter((botao) => !botao.classList.contains('ui-state-disabled'));
+			return botoesNext;
+		},
 		obterCelulaRestricaoVeiculo(ord) {
 			console.debug('Pagina.obterCelulaRestricaoVeiculo(ord)', ord);
 			var linha = Pagina.obterLinhaVeiculo(ord);
@@ -545,6 +582,15 @@ var Pagina = (function() {
 		obterPrefixoVeiculo(ord) {
 			console.debug('Pagina.obterPrefixoVeiculo(ord)', ord);
 			return 'form-incluir-restricao:lista-veiculo:' + ord;
+		},
+		obterProximaPaginaListagem() {
+			console.debug('Pagina.obterProximaPaginaListagem()');
+			var botoesNext = Pagina.obterBotoesProximaPaginaListagem();
+			var promise = AjaxListener.listenOnce('form-incluir-restricao:lista-veiculo').then(function(ok) {
+				console.info('ok', arguments);
+			});
+			botoesNext[0].click();
+			return promise;
 		},
 		obterVeiculosDocumento(documento) {
 			console.debug('Pagina.obterVeiculosDocumento(documento)', documento);
@@ -645,4 +691,9 @@ var ServicoWSDL = (function() {
 	return ServicoWSDL;
 })();
 
-main();
+var loc = location.href;
+if (loc === 'https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf') {
+	inserir();
+} else if (loc === 'https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-retirar.jsf') {
+	retirar();
+}
