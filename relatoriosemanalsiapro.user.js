@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php*
-// @version     14
+// @version     15
 // @grant       none
 // ==/UserScript==
 
@@ -17,6 +17,15 @@ function parseData(texto) {
   var [d,m,y] = texto.split('/');
   var data = new Date(y, m - 1, d - 1, 23, 59, 59, 999);
   return new Date(data.getTime() + 1);
+}
+
+function juntarComE(partes) {
+  if (partes.length > 1) {
+    var ultimaParte = partes.pop();
+    var penultimaParte = partes.pop();
+    partes.push([penultimaParte, ultimaParte].join(' e '));
+  }
+  return partes.join(', ');
 }
 
 var Aviso = (function() {
@@ -1263,58 +1272,59 @@ function criarBotaoJLOCS() {
             return win.alert('É preciso selecionar ao menos um localizador.');
           }
 
-          var objs = [], msgs = [], excluir = [];
+          var novos = [], msgs = [];
           localizadoresSelecionados.forEach(function(localizador) {
-            var incompatibilidade = {
-              competencia: false,
-              classe: false,
-              juizo: false
-            };
             competenciasSelecionadas.forEach(function(competencia) {
               classesSelecionadas.forEach(function(classe) {
                 juizosSelecionados.forEach(function(juizo) {
-                  jlocsIncompativeis = jlocs.filter((obj) => obj.localizador === localizador).filter((obj) => (competencia === null ? obj.competencia !== null : obj.competencia === null) || (classe === null ? obj.classe !== null : obj.classe === null) || (juizo === null ? obj.juizo !== null : obj.juizo === null));
-                  if (jlocsIncompativeis.length) {
-                    var indicesExcluir = [];
-                    jlocsIncompativeis.forEach(function(jlocIncompativel, indice) {
-                      var incompativel = false;
-                      if (!competencia && jlocIncompativel.competencia) incompativel = incompatibilidade.competencia = true;
-                      if (!classe && jlocIncompativel.classe) incompativel = incompatibilidade.classe = true;
-                      if (!juizo && jlocIncompativel.juizo) incompativel = incompatibilidade.juizo = true;
-                      if (!incompativel && ((competencia && !jlocIncompativel.competencia) || (classe && !jlocIncompativel.classe) || (juizo && !jlocIncompativel.juizo))) indicesExcluir.push(indice);
+                  var novo = {
+                    juizo: juizo,
+                    localizador: localizador,
+                    competencia: competencia,
+                    classe: classe,
+                    setor: id
+                  };
+                  var maisEspecificos = jlocs.filter((existente) => existente.localizador === novo.localizador).filter(function(existente) {
+                    return ['competencia', 'classe', 'juizo'].reduce(function(ret, campo) {
+                      return ret && (novo[campo] === null || (existente[campo] === null || existente[campo] === novo[campo]));
+                    }, true);
+                  });
+                  if (maisEspecificos.length > 0) {
+                    var camposNecessarios = ['competencia', 'classe', 'juizo'].filter(function(campo) {
+                      return maisEspecificos.reduce(function(ret, existente) {
+                        return ret && novo[campo] === null && existente[campo] !== null;
+                      }, true);
                     });
-                    indicesExcluir.forEach(function(indice) {
-                      Array.prototype.push.apply(excluir, jlocsIncompativeis.splice(indice, 1));
-                    });
-                  }
-                  if (jlocsIncompativeis.length === 0) {
-                    objs.push({
-                      juizo: juizo,
-                      localizador: localizador,
-                      competencia: competencia,
-                      classe: classe,
-                      setor: id
-                    });
+                    var msg = ['Para '];
+                    var selecionados = ['o localizador "' + novo.localizador + '"'];
+                    if (novo.competencia) selecionados.push('a competência ' + ('00' + novo.competencia).substr(-2));
+                    if (novo.classe) selecionados.push('a classe ' + ('000000' + novo.classe).substr(-6));
+                    if (novo.juizo) selecionados.push('o juízo "' + novo.juizo + '"');
+                    msg.push(juntarComE(selecionados));
+                    msg.push(', é necessário selecionar ao menos ');
+                    var necessarios = [];
+                    if (camposNecessarios.indexOf('competencia') > -1) necessarios.push('uma competência');
+                    if (camposNecessarios.indexOf('classe') > -1) necessarios.push('uma classe');
+                    if (camposNecessarios.indexOf('juizo') > -1) necessarios.push('um juízo');
+                    msg.push(juntarComE(necessarios));
+                    msg.push('.');
+                    msgs.push(msg.join(''));
+                  } else  {
+                    novos.push(novo);
                   }
                 });
               });
             });
-            if (incompatibilidade.competencia || incompatibilidade.classe || incompatibilidade.juizo) {
-              var msg = ['Para o localizador "' + localizador + '":'];
-              if (incompatibilidade.competencia) msg.push('É preciso selecionar uma competência.');
-              if (incompatibilidade.classe) msg.push('É preciso selecionar uma classe.');
-              if (incompatibilidade.juizo) msg.push('É preciso selecionar um juízo.');
-              win.alert(msg.join('\n'));
-            }
           });
           var promise = Promise.resolve();
-          if (excluir.length) {
-            console.info('excluir', excluir);
-            promise = promise.then(DB.executarTransacao('jlocs', excluir.map((obj) => (objectStore) => objectStore.delete(obj.id))));
+          if (msgs.length) {
+            msgs.unshift('Com base em registros preexistentes, foram encontrados os seguintes erros:', '');
+            msgs.push('', 'Alternativamente, exclua os registros conflitantes.');
+            win.alert(msgs.join('\n'));
           }
-          if (objs.length) {
-            console.info('incluir', objs);
-            promise = promise.then(DB.adicionarItens.bind(null, 'jlocs', objs));
+          if (novos.length) {
+            console.info('incluir', novos);
+            promise = promise.then(DB.adicionarItens.bind(null, 'jlocs', novos));
             promise = promise.then(() => win.location.reload());
           }
         }, false);
