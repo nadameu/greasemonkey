@@ -3,13 +3,13 @@
 // @namespace   http://nadameu.com.br/pi
 // @description Altera a imagem de fundo do e-Proc V2
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\//
-// @version     1
+// @version     2
 // @grant       none
 // ==/UserScript==
 
 var texto = 'π';
-var side = 96;
-var fontSize = side * 0.5;
+var side = 48;
+var fontSize = side * 0.75;
 var rotation = Math.PI / 4
 var bgColor = $(document.body).css('background-color');
 var [trash, r, g, b] = bgColor.match(/rgb\((\d+), (\d+), (\d+)\)/);
@@ -38,10 +38,10 @@ function putText(x, y, rotation) {
   context.translate(-x, -y);
 }
 
-putText(side * 1/4, side * 1/4, -rotation);
-putText(side * 3/4, side * 1/4, +rotation);
-putText(side * 1/4, side * 3/4, +rotation);
-putText(side * 3/4, side * 3/4, -rotation);
+putText(side * 2/4, side * 0/4, -rotation);
+putText(side * 0/4, side * 2/4, +rotation);
+putText(side * 4/4, side * 2/4, +rotation);
+putText(side * 2/4, side * 4/4, -rotation);
 
 var dataURL = canvas.toDataURL();
 var style = $('<style></style>');
