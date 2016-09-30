@@ -3,7 +3,7 @@
 // @namespace   http://nadameu.com.br/pi
 // @description Altera a imagem de fundo do e-Proc V2
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\//
-// @version     2
+// @version     3
 // @grant       none
 // ==/UserScript==
 
@@ -19,10 +19,6 @@ var fgColor = 'rgb(' + [Math.round(r * ratio), Math.round(g * ratio), Math.round
 
 var canvas = $('<canvas width="' + side + '" height="' + side + '" style="border: 2px solid white;"></canvas>').get(0);
 var context = canvas.getContext('2d');
-
-context.rect(0, 0, side, side);
-context.fillStyle = bgColor;
-context.fill();
 
 function putText(x, y, rotation) {
   context.translate(x, y);
@@ -44,8 +40,7 @@ putText(side * 4/4, side * 2/4, +rotation);
 putText(side * 2/4, side * 4/4, -rotation);
 
 var dataURL = canvas.toDataURL();
-var style = $('<style></style>');
-style.html([
+var style = $('<style></style>').html([
   'body { background-image: url(\'' + dataURL + '\'); }',
   'div.infraAreaTelaD, div.infraBarraComandos, div.infraAreaDados, div.infraAviso { border-color: transparent; }',
   'div.infraAreaTelaD { background-color: ' + bgColorAlpha + '; }'
