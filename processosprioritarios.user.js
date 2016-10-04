@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version     4
+// @version     5
 // @grant       none
 // ==/UserScript==
 
@@ -259,7 +259,7 @@ var LocalizadoresFactory = (function() {
         var expira = new Date();
         expira.setFullYear(expira.getFullYear() + 1);
         for (let key in cookiesNovos) {
-          if (cookiesNovos[key] !== cookiesAntigos[key]) {
+          if ((typeof cookiesAntigos[key] !== 'undefined') && cookiesNovos[key] !== cookiesAntigos[key]) {
             document.cookie = encodeURIComponent(key) + '=' + encodeURIComponent(cookiesAntigos[key]) + '; expires=' + expira.toUTCString();
           }
         }
