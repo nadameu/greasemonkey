@@ -3,7 +3,7 @@
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-retirar.jsf
-// @version     15
+// @version     16
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -552,9 +552,9 @@ var Pagina = (function() {
 			console.debug('Pagina.limpar()');
 			var promise = Promise.resolve();
 			var form = document.getElementById('form-incluir-restricao:panel-lista-veiculo');
-			var botoes = form.getElementsByTagName('button');
-			if (botoes.length === 2) {
-				var botaoLimpar = botoes[1], idBotaoLimpar = botaoLimpar.id;
+			var botoes = [...form.getElementsByTagName('button')].filter((botao) => botao.textContent.trim() === 'Limpar lista');
+			if (botoes.length === 1) {
+				var botaoLimpar = botoes[0], idBotaoLimpar = botaoLimpar.id;
 				promise = AjaxListener.listenOnce(idBotaoLimpar);
 				botaoLimpar.click();
 			}
