@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version     5
+// @version     6
 // @grant       none
 // ==/UserScript==
 
@@ -45,13 +45,19 @@ var GUI = (function() {
         return '<span class="gmProcessos gmPrioridade' + indicePrioridade + (processos > 0 ? '' : ' gmVazio') + '" onmouseover="infraTooltipMostrar(&quot;' + avisos[indicePrioridade] + '&quot;);" onmouseout="infraTooltipOcultar();">' + processos + '</span>';
       });
       var conteudo = [];
-      if (localizador.sigla) {
+      if (! (localizador.sigla || localizador.nome)) {
+        conteudo.push(localizador.siglaNome);
+      } else if (localizador.sigla) {
         conteudo.push(localizador.sigla);
         if (localizador.nome !== localizador.sigla) {
           conteudo.push(' (' + localizador.nome + ')');
         }
       } else {
         conteudo.push(localizador.nome);
+      }
+      if (localizador.lembrete) {
+        conteudo.push(' ');
+        conteudo.push('<img class="infraImgNormal" src="../../../infra_css/imagens/balao.gif" style="width:0.9em; height:0.9em; opacity:1; border-width:0;" onmouseover="return infraTooltipMostrar(\'' + localizador.lembrete + '\',\'\',400);" onmouseout="return infraTooltipOcultar();"/>');
       }
       conteudo.push('<div style="float: right;">');
       conteudo.push(baloes.join(''));
@@ -147,10 +153,12 @@ var LocalizadoresFactory = (function() {
   Localizador.prototype = {
     constructor: Localizador,
     id: null,
+    lembrete: null,
     link: null,
-    processos: null,
     nome: null,
+    processos: null,
     sigla: null,
+    siglaNome: null,
     obterPagina(pagina, doc) {
       var self = this;
       return new Promise(function(resolve, reject) {
@@ -197,14 +205,17 @@ var LocalizadoresFactory = (function() {
       } else {
         return this.obterPagina(0).then(function() {
           this.link.textContent = this.processos.length;
-          if (! this.nome && this.processos.length > 0) {
+          if (this.processos.length > 0) {
             var localizadorProcesso = this.processos[0].localizadores.filter((localizador) => localizador.id === this.id)[0];
-            var sigla = localizadorProcesso.sigla;
-            var siglaComSeparador = sigla + ' - ';
-            if (this.sigla.substr(0, siglaComSeparador.length) === siglaComSeparador) {
-              this.nome = this.sigla.substr(siglaComSeparador.length);
-              this.sigla = sigla;
+            if (! this.sigla) {
+              this.sigla = localizadorProcesso.sigla;
             }
+            if (this.sigla && this.nome) {
+              this.siglaNome = [this.sigla, this.nome].join(' - ');
+            }
+            var siglaComSeparador = this.sigla + ' - ';
+            this.nome = this.siglaNome.substr(siglaComSeparador.length);
+            this.lembrete = localizadorProcesso.lembrete;
           }
           return this;
         }.bind(this));
@@ -223,9 +234,8 @@ var LocalizadoresFactory = (function() {
       if (siglaNome.length === 2) {
         localizador.sigla = siglaNome[0];
         localizador.nome = siglaNome[1];
-      } else {
-        localizador.sigla = siglaNome.join(' - ');
       }
+      localizador.siglaNome = siglaNome.join(' - ');
       var link = localizador.link = linha.querySelector('a');
       if (link.href) {
         var camposGet = parsePares(link.search.split(/^\?/)[1].split('&'));
