@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version     6
+// @version     7
 // @grant       none
 // ==/UserScript==
 
@@ -376,7 +376,6 @@ var ProcessoFactory = (function() {
     numprocFormatado: null,
     sigilo: null,
     situacao: null,
-    temasRepetitivos: null,
     ultimoEvento: null,
     get prioridade() {
       return this.dadosComplementares.has('Prioridade Atendimento') ||
@@ -421,12 +420,11 @@ var ProcessoFactory = (function() {
         labelsDadosComplementares.forEach((label) => processo.dadosComplementares.add(label.textContent));
       }
       processo.localizadores = LocalizadoresProcessoFactory.fromCelula(linha.cells[7]);
-      processo.temasRepetitivos = linha.cells[8].textContent;
-      var breakUltimoEvento = linha.cells[9].querySelector('br');
+      var breakUltimoEvento = linha.cells[8].querySelector('br');
       processo.dataUltimoEvento = parseDataHora(breakUltimoEvento.previousSibling.textContent);
       processo.ultimoEvento = breakUltimoEvento.nextSibling.textContent;
-      processo.dataInclusaoLocalizador = parseDataHora(linha.cells[10].textContent);
-      var textoPrioridade = linha.cells[11].textContent;
+      processo.dataInclusaoLocalizador = parseDataHora(linha.cells[9].textContent);
+      var textoPrioridade = linha.cells[10].textContent;
       if (textoPrioridade === 'Sim') {
         processo.dadosComplementares.add('Prioridade Atendimento');
       }
