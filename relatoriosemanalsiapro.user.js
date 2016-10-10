@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php*
-// @version     15
+// @version     16
 // @grant       none
 // ==/UserScript==
 
@@ -571,15 +571,35 @@ var XLSFactory = {
       'localizador': 'Localizador',
       'dataEstatistica': 'Data Estat.',
       'dataUltimaFase': 'Data Últ. Fase',
-      'setor': 'Setor'
+      'setor': 'Setor',
+      'regra': 'Regra',
+      'campo': 'Campo a considerar',
+      'motivo': 'Motivo',
+      'esperado': 'Esperado',
+      'data': 'Data considerada',
+      'dias': 'Dias',
+      'atraso': 'Atraso',
+      'incluir': 'Incluir?'
     };
     var xls = new XLS();
     var table = xls.tabela = document.createElement('table');
-    var tRow = table.createTHead().insertRow();
-    Object.getOwnPropertyNames(campos).forEach((campo) => tRow.insertCell().innerHTML = '<strong>' + campos[campo] + '</strong>');
     var tBody = table.createTBody();
-    processos.forEach(function(processo) {
+    var primeiraLinha = tBody.insertRow();
+    for (let i = 0; i < 14; i++) {
+      primeiraLinha.insertCell();
+    }
+    var dataFinalRelatorio = primeiraLinha.insertCell();
+    dataFinalRelatorio.setAttribute('x:fmla', '=TODAY() + (8 - WEEKDAY(TODAY(), 2))');
+    dataFinalRelatorio.setAttribute('style', 'mso-number-format: "dd\\/mm\\/yyyy";');
+    dataFinalRelatorio.textContent = '(Somente Excel)';
+    for (let i = 15; i < 18; i++) {
+      primeiraLinha.insertCell();
+    }
+    var tRow = tBody.insertRow();
+    Object.getOwnPropertyNames(campos).forEach((campo) => tRow.insertCell().innerHTML = '<strong>' + campos[campo] + '</strong>');
+    processos.forEach(function(processo, indiceProcesso) {
       var row = tBody.insertRow();
+      var linhaExcel = indiceProcesso + 3;
       Object.getOwnPropertyNames(campos).forEach(function(campo, indiceCampo) {
         var celula = row.insertCell();
         if (campo === 'numprocFormatado' ||
@@ -619,6 +639,24 @@ var XLSFactory = {
             var setor = setores.get(idSetor).nome;
             celula.textContent = setor;
           }
+        } else if (campo === 'regra') {
+          celula.setAttribute('x:fmla', '=VLOOKUP(G' + linhaExcel + ', [regras.xls]localizador_situacao_regra!$A$2:$D$999, MATCH(F' + linhaExcel + ', [regras.xls]localizador_situacao_regra!$A$1:$D$1, 0), FALSE)');
+        } else if (campo === 'campo') {
+          celula.setAttribute('x:fmla', '=VLOOKUP(K' + linhaExcel + ', [regras.xls]regras_corregedoria!$A$2:$H$99, 4, FALSE)');
+        } else if (campo === 'motivo') {
+          celula.setAttribute('x:fmla', '=VLOOKUP(K' + linhaExcel + ', [regras.xls]regras_corregedoria!$A$2:$H$99, 3, FALSE)');
+        } else if (campo === 'esperado') {
+          celula.setAttribute('x:fmla', '=VLOOKUP(K' + linhaExcel + ', [regras.xls]regras_corregedoria!$A$2:$H$99, MATCH(E' + linhaExcel + ', [regras.xls]regras_corregedoria!$A$1:$H$1, 0), FALSE)');
+        } else if (campo === 'data') {
+          celula.setAttribute('x:fmla', '=OFFSET(A' + linhaExcel + ', 0, MATCH(L' + linhaExcel + ', $A$2:$N$2, 0) - 1)');
+          celula.setAttribute('style', 'mso-number-format: "dd\\/mm\\/yyyy";');
+        } else if (campo === 'dias') {
+          celula.setAttribute('x:fmla', '=$O$1 - $O' + linhaExcel);
+        } else if (campo === 'atraso') {
+          celula.setAttribute('x:fmla', '=$P$' + linhaExcel + ' / $N$' + linhaExcel + ' - 1');
+          celula.setAttribute('style', 'mso-number-format: "0.00%";');
+        } else if (campo === 'incluir') {
+          celula.setAttribute('x:fmla', '=IF(Q' + linhaExcel + ' >= VLOOKUP($J' + linhaExcel + ', [regras.xls]tolerância!$A$2:$B$9, 2, FALSE), "S", "N")');
         } else {
           celula.textContent = processo[campo];
         }
