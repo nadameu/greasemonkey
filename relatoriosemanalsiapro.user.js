@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php*
-// @version     16
+// @version     17
 // @grant       none
 // ==/UserScript==
 
@@ -563,36 +563,55 @@ var XLSFactory = {
   fromProcessosSetoresJLOCS(processos, setores, jlocs) {
     const campos = {
       'numprocFormatado': 'Processo',
-      'autuacao': 'Data autuação',
+      'competenciaCorregedoria': 'Competência Corregedoria',
       'descricaoCompetencia': 'Competência',
       'descricaoClasse': 'Classe',
-      'competenciaCorregedoria': 'Competência Corregedoria',
-      'situacao': 'Situação',
       'localizador': 'Localizador',
+      'situacao': 'Situação',
+      'autuacao': 'Data autuação',
       'dataEstatistica': 'Data Estat.',
       'dataUltimaFase': 'Data Últ. Fase',
-      'setor': 'Setor',
       'regra': 'Regra',
       'campo': 'Campo a considerar',
+      'data': 'Data considerada',
       'motivo': 'Motivo',
       'esperado': 'Esperado',
-      'data': 'Data considerada',
       'dias': 'Dias',
+      'setor': 'Setor',
       'atraso': 'Atraso',
       'incluir': 'Incluir?'
     };
     var xls = new XLS();
     var table = xls.tabela = document.createElement('table');
+    table.insertAdjacentHTML('afterbegin', [
+      '<col style="mso-number-format: \'@\';"/>', // Processo
+      '<col width="0" style="mso-number-format: \'@\';"/>', // Competência Corregedoria
+      '<col width="0" style="mso-number-format: \'@\';"/>', // Competência
+      '<col style="mso-number-format: \'@\';"/>', // Classe
+      '<col style="mso-number-format: \'@\';"/>', // Localizador
+      '<col style="mso-number-format: \'@\';"/>', // Situação
+      '<col width="0" style="mso-number-format: \'dd\\/mm\\/yyyy\';"/>', // Data autuação;
+      '<col width="0" style="mso-number-format: \'dd\\/mm\\/yyyy\';"/>', // Data Estat.
+      '<col width="0" style="mso-number-format: \'dd\\/mm\\/yyyy\';"/>', // Data Últ. Fase
+      '<col width="0" style="mso-number-format: \'0\';"/>', // Regra
+      '<col width="0" style="mso-number-format: \'@\';"/>', // Campo a considerar
+      '<col style="mso-number-format: \'dd\\/mm\\/yyyy\';"/>', // Data considerada
+      '<col style="mso-number-format: \'@\';"/>', // Motivo
+      '<col style="mso-number-format: \'0\';"/>', // Esperado
+      '<col style="mso-number-format: \'0\';"/>', // Dias
+      '<col style="mso-number-format: \'@\';"/>', // Setor
+      '<col style="mso-number-format: \'0.00%\';"/>', // Atraso
+      '<col style="mso-number-format: \'@\';"/>' // Incluir?
+    ].join(''));
     var tBody = table.createTBody();
     var primeiraLinha = tBody.insertRow();
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 11; i++) {
       primeiraLinha.insertCell();
     }
     var dataFinalRelatorio = primeiraLinha.insertCell();
     dataFinalRelatorio.setAttribute('x:fmla', '=TODAY() + (8 - WEEKDAY(TODAY(), 2))');
-    dataFinalRelatorio.setAttribute('style', 'mso-number-format: "dd\\/mm\\/yyyy";');
     dataFinalRelatorio.textContent = '(Somente Excel)';
-    for (let i = 15; i < 18; i++) {
+    for (let i = 12; i < 18; i++) {
       primeiraLinha.insertCell();
     }
     var tRow = tBody.insertRow();
@@ -640,23 +659,21 @@ var XLSFactory = {
             celula.textContent = setor;
           }
         } else if (campo === 'regra') {
-          celula.setAttribute('x:fmla', '=VLOOKUP(G' + linhaExcel + ', [regras.xls]localizador_situacao_regra!$A$2:$D$999, MATCH(F' + linhaExcel + ', [regras.xls]localizador_situacao_regra!$A$1:$D$1, 0), FALSE)');
+          celula.setAttribute('x:fmla', '=VLOOKUP($E' + linhaExcel + ', [regras.xls]localizador_situacao_regra!$A$2:$D$999, MATCH($F' + linhaExcel + ', [regras.xls]localizador_situacao_regra!$A$1:$D$1, 0), FALSE)');
         } else if (campo === 'campo') {
-          celula.setAttribute('x:fmla', '=VLOOKUP(K' + linhaExcel + ', [regras.xls]regras_corregedoria!$A$2:$H$99, 4, FALSE)');
-        } else if (campo === 'motivo') {
-          celula.setAttribute('x:fmla', '=VLOOKUP(K' + linhaExcel + ', [regras.xls]regras_corregedoria!$A$2:$H$99, 3, FALSE)');
-        } else if (campo === 'esperado') {
-          celula.setAttribute('x:fmla', '=VLOOKUP(K' + linhaExcel + ', [regras.xls]regras_corregedoria!$A$2:$H$99, MATCH(E' + linhaExcel + ', [regras.xls]regras_corregedoria!$A$1:$H$1, 0), FALSE)');
+          celula.setAttribute('x:fmla', '=VLOOKUP($J' + linhaExcel + ', [regras.xls]regras_corregedoria!$A$2:$H$99, 4, FALSE)');
         } else if (campo === 'data') {
-          celula.setAttribute('x:fmla', '=OFFSET(A' + linhaExcel + ', 0, MATCH(L' + linhaExcel + ', $A$2:$N$2, 0) - 1)');
-          celula.setAttribute('style', 'mso-number-format: "dd\\/mm\\/yyyy";');
+          celula.setAttribute('x:fmla', '=OFFSET($A' + linhaExcel + ', 0, MATCH($K' + linhaExcel + ', $A$2:$N$2, 0) - 1)');
+        } else if (campo === 'motivo') {
+          celula.setAttribute('x:fmla', '=VLOOKUP($J' + linhaExcel + ', [regras.xls]regras_corregedoria!$A$2:$H$99, 3, FALSE)');
+        } else if (campo === 'esperado') {
+          celula.setAttribute('x:fmla', '=VLOOKUP($J' + linhaExcel + ', [regras.xls]regras_corregedoria!$A$2:$H$99, MATCH($B' + linhaExcel + ', [regras.xls]regras_corregedoria!$A$1:$H$1, 0), FALSE)');
         } else if (campo === 'dias') {
-          celula.setAttribute('x:fmla', '=$O$1 - $O' + linhaExcel);
+          celula.setAttribute('x:fmla', '=$L$1 - $L' + linhaExcel);
         } else if (campo === 'atraso') {
-          celula.setAttribute('x:fmla', '=$P$' + linhaExcel + ' / $N$' + linhaExcel + ' - 1');
-          celula.setAttribute('style', 'mso-number-format: "0.00%";');
+          celula.setAttribute('x:fmla', '=$O' + linhaExcel + ' / $N' + linhaExcel + ' - 1');
         } else if (campo === 'incluir') {
-          celula.setAttribute('x:fmla', '=IF(Q' + linhaExcel + ' >= VLOOKUP($J' + linhaExcel + ', [regras.xls]tolerância!$A$2:$B$9, 2, FALSE), "S", "N")');
+          celula.setAttribute('x:fmla', '=IF($Q' + linhaExcel + ' >= VLOOKUP($P' + linhaExcel + ', [regras.xls]tolerância!$A$2:$B$9, 2, FALSE), "S", "N")');
         } else {
           celula.textContent = processo[campo];
         }
@@ -1448,4 +1465,3 @@ function criarBotaoLocalizadoresSituacoes() {
     });
   });
 }
-
