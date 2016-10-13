@@ -3,7 +3,7 @@
 // @namespace   http://nadameu.com.br/renajud
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-retirar.jsf
-// @version     16
+// @version     17
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -161,6 +161,7 @@ function inserir() {
 	AjaxListener.listen(id, function (ext) {
 		if (ext.currentStep === 'inclui-restricao') {
 			GUI.hide();
+			GUI.areaImpressao.limpar();
 			document.getElementById('form-incluir-restricao:campo-magistrado_input').childNodes[0].value = '';
 			GUI.criarOpcaoPreencherMagistrado();
 			AjaxListener.listen('form-incluir-restricao:campo-municipio', function() {
