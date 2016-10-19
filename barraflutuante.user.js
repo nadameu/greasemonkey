@@ -5,7 +5,7 @@
 // @include     https://eproc.jfsc.jus.br/eprocV2/*
 // @include     https://eproc.jfrs.jus.br/eprocV2/*
 // @include     https://eproc.trf4.jus.br/eproc2trf4/*
-// @version     5
+// @version     6
 // @grant       none
 // ==/UserScript==
 
@@ -17,16 +17,21 @@ $('head').append($('<style type="text/css"></style>').html([
   '#divInfraBarraTribunal { position: fixed; top: 8px; width: 95%; z-index: 1000; }',
   '#txtNumProcessoPesquisaRapida { padding-right: 17px; }'
 ].join(' ')));
+
 var pesquisaRapida = $('#txtNumProcessoPesquisaRapida');
-var icone = $('<a href="#"><img tabindex="52" src="' + urlIcone + '" width="14" height="14" style="position: absolute; margin-top: 4px; margin-left: -17px;"/></a>');
+
+var icone = $('<a href="#"><img tabindex="52" src="' + urlIcone + '" width="14" height="14" style="position: absolute; margin-top: 4px; margin-left: -17px;" title="Abrir pesquisa em nova janela"/></a>');
 icone.on('click', function(evt) {
+  console.info('click', evt, evt.target);
   evt.preventDefault();
+  evt.stopPropagation();
   var form = pesquisaRapida.parent('form');
   form.attr('target', '_blank');
   form.submit();
   form.attr('target', '');
   pesquisaRapida.val('');
 });
+
 pesquisaRapida.after(icone);
 
 function onResize() {
