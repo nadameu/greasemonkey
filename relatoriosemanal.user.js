@@ -3,7 +3,7 @@
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_consultar\&/
-// @version     4
+// @version     5
 // @grant       none
 // ==/UserScript==
 
@@ -89,7 +89,7 @@ if (acao === 'relatorio_geral_listar') {
   area.prepend($('<button id="gerarArquivoSituacoes">Gerar arquivo situações</button>'));
   $('#gerarArquivoSituacoes').on('click', function(evt) {
     evt.preventDefault();
-    
+
     DB.abrir().then(db => {
       let objectStore = db.transaction(['processos']).objectStore('processos');
       let index = objectStore.index('localizador');
@@ -107,29 +107,25 @@ if (acao === 'relatorio_geral_listar') {
   area.prepend($('<button id="gerarArquivo">Gerar arquivo</button>'));
   $('#gerarArquivo').on('click', function(evt) {
     evt.preventDefault();
-    
+
     DB.abrir().then(db => {
       let objectStore = db.transaction(['processos']).objectStore('processos');
-      let campos = [], processos = [];
+      let campos = ['processo','competenciaCorregedoria',,'classe','localizador','situacao','autuacao','dataEstatistica','data',,,,,,,'setor',,], processos = [];
 
       objectStore.openCursor().onsuccess = function(evt) {
         let cursor = evt.target.result;
         let i = 0;
         if (cursor) {
           let processo = [];
-          let j = 0;
-          for (let n in cursor.value) {
-            if (i === 0) {
-              campos[j++] = n;
-            }
-            if (n === 'localizador') {
-              processo.push(cursor.value[n][0]);
-            } else if (n === 'data') {
-              processo.push(cursor.value[n].toLocaleFormat('%Y-%m-%d %H:%M:%S'));
+          campos.forEach(function(campo, indiceCampo) {
+            if (campo === 'localizador') {
+              processo[indiceCampo] = cursor.value[campo][0];
+            } else if (campo === 'data' || campo === 'autuacao' || campo === 'dataEstatistica') {
+              processo[indiceCampo] = cursor.value[campo].toLocaleFormat('%Y-%m-%d %H:%M:%S');
             } else {
-              processo.push(cursor.value[n]);
+              processo[indiceCampo] = cursor.value[campo];
             }
-          }
+          });
           processos.push(processo);
           i++;
           if (cursor.value.localizador.length > 1) {
@@ -142,22 +138,38 @@ if (acao === 'relatorio_geral_listar') {
           cursor.continue();
         } else {
           let table = document.createElement('table');
+          table.insertAdjacentHTML('afterbegin', [
+            '<col style="mso-number-format: \'@\';"/>', // Processo
+            '<col width="0" style="mso-number-format: \'@\';"/>', // Competência Corregedoria
+            '<col width="0" style="mso-number-format: \'@\';"/>', // Competência
+            '<col style="mso-number-format: \'@\';"/>', // Classe
+            '<col style="mso-number-format: \'@\';"/>', // Localizador
+            '<col style="mso-number-format: \'@\';"/>', // Situação
+            '<col width="0" style="mso-number-format: \'dd\\/mm\\/yyyy\';"/>', // Data autuação;
+            '<col width="0" style="mso-number-format: \'dd\\/mm\\/yyyy\';"/>', // Data Estat.
+            '<col width="0" style="mso-number-format: \'dd\\/mm\\/yyyy\';"/>', // Data Últ. Fase
+            '<col width="0" style="mso-number-format: \'0\';"/>', // Regra
+            '<col width="0" style="mso-number-format: \'@\';"/>', // Campo a considerar
+            '<col style="mso-number-format: \'dd\\/mm\\/yyyy\';"/>', // Data considerada
+            '<col style="mso-number-format: \'@\';"/>', // Motivo
+            '<col style="mso-number-format: \'0\';"/>', // Esperado
+            '<col style="mso-number-format: \'0\';"/>', // Dias
+            '<col style="mso-number-format: \'@\';"/>', // Setor
+            '<col style="mso-number-format: \'0.00%\';"/>', // Atraso
+            '<col style="mso-number-format: \'@\';"/>' // Incluir?
+          ].join(''));
           let tRow = table.createTHead().insertRow();
-          campos.forEach(campo => tRow.insertCell().innerHTML = '<strong>' + campo + '</strong>');
-          tRow.insertCell().innerHTML = '<strong>Parado há</strong>';
+          campos = ['Processo', 'Competência Corregedoria', 'Competência', 'Classe', 'Localizador', 'Situação', 'Data autuação', 'Data Estat.', 'Data Últ. Fase', 'Regra', 'Campo a considerar', 'Data considerada', 'Motivo', 'Esperado', 'Dias', 'Setor', 'Atraso', 'Incluir?'];
+          for (let i = 0; i < campos.length; i++) tRow.insertCell();
+          campos.forEach((campo, i) => tRow.cells[i].innerHTML = '<strong>' + campo + '</strong>');
           let tBody = table.createTBody();
           processos.forEach((processo, r) => {
             let row = tBody.insertRow();
+            for (let i = 0; i < campos.length; i++) row.insertCell();
             processo.forEach((campo, i) => {
-              row.insertCell().textContent = campo;
+              row.cells[i].textContent = campo;
               if (i === 0) row.cells[i].setAttribute('x:str', campo);
-              if (i === processo.length - 1) {
-                row.insertCell().textContent = '???';
-                row.cells[i + 1].setAttribute('x:fmla', '=NOW() - H' + (r + 2));
-                row.cells[i + 1].setAttribute('x:str', '????');
-                row.cells[i + 1].setAttribute('style', 'mso-number-format: "\\[>=1.5\\]0\\\\ \\0022dias\\0022\\;\\\\-\\\\ 0\\\\ \\0022dia\\0022_s\\;0\\\\ \\0022dia\\0022_s\\;\\@";');
-              }
-            })
+            });
           });
           let blob = new Blob([
             '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head>',
@@ -185,11 +197,11 @@ if (acao === 'relatorio_geral_listar') {
   });
 
   area.prepend(buttons);
-  
+
   area.prepend($('<button id="excluirDB">Excluir banco de dados</button>'));
   $('#excluirDB').on('click', function(evt) {
     evt.preventDefault();
-    
+
     console.info('apagando...');
     new Promise(function(resolve, reject) {
       let req = indexedDB.deleteDatabase('relatorioSemanal');
@@ -203,12 +215,12 @@ if (acao === 'relatorio_geral_listar') {
       location.reload();
     });
   });
-  
+
 
 } else if (acao === 'relatorio_geral_consultar') {
 
   let tabela = $('#tabelaLocalizadores');
-  let campos = [,'processo',,'dias','situacao','sigilo','classe','localizador',,'data'];
+  let campos = [,'processo','autuacao','dias','situacao','sigilo','classe','localizador',,'data'];
   let processos = [], localizadores = new Set(), situacoes = new Set();
   tabela.each(function() {
     $(this).find('tr.infraTrClara, tr.infraTrEscura').each(function() {
@@ -218,12 +230,29 @@ if (acao === 'relatorio_geral_listar') {
         switch (campo) {
           case 'processo':
             processo.numproc = valor.replace(/[-.]/g, '');
-            break;
-            
-          case 'dias':
-            valor = Number(valor);
+            processo.setor = '???';
+            let classe = Number(this.dataset.classe);
+            let competencia = Number(this.dataset.competencia);
+            if (competencia >= 9 && competencia <= 20) {
+              processo.competenciaCorregedoria = 'Juizado';
+            } else if (competencia >= 21 && competencia <= 30) {
+              processo.competenciaCorregedoria = 'Criminal';
+            } else if ((competencia === 41 || competencia === 43) &&
+                       (classe === 99 || classe === 60)) {
+              processo.competenciaCorregedoria = 'Execução Fiscal';
+            } else {
+              processo.competenciaCorregedoria = 'Cível';
+            }
             break;
 
+          case 'dias':
+            valor = Number(valor);
+            var agora = new Date();
+            var hoje = new Date((new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() - 1, 23, 59, 59, 999).getTime() + 1));
+            processo.dataEstatistica = new Date(hoje.setDate(hoje.getDate() - valor));
+            break;
+
+          case 'autuacao':
           case 'data':
             let [d,m,y,h,i,s] = valor.split(/[\/ :]/g);
             valor = new Date(y, m - 1, d, h, i, s);
@@ -235,7 +264,7 @@ if (acao === 'relatorio_geral_listar') {
             valor = valor.map(loc => loc.replace(/ \(Princ.\)$/, ''));
             valor.forEach(loc => localizadores.add(loc));
             break;
-            
+
           case 'situacao':
             situacoes.add(valor);
             break;
