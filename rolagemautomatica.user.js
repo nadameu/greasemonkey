@@ -3,57 +3,61 @@
 // @namespace   http://nadameu.com.br/autoscroll
 // @description Rola automaticamente a página
 // @include     http://sap.trf4.gov.br/relat_estat/estat_proc_concl_n_desp.php
-// @version     1
+// @version     2
 // @grant       none
 // ==/UserScript==
+
+const fps = 60;
 
 var Preferencias = {
 	get velocidade() { return localStorage.getItem('velocidade') || 10; },
 	set velocidade(val) { localStorage.setItem('velocidade', val); },
-	get pausa() { return localStorage.getItem('pausa') || 1; },
-	set pausa(val) { localStorage.setItem('pausa', val); }
 };
 
 var posicaoAtual = 0;
-var rolando = false;
+var direcaoAtual = 0;
 var velocidadeAtual = Preferencias.velocidade;
 var pausaAtual = Preferencias.pausa;
 
-var posicaoMaxima = window.scrollMaxY;
+var posicaoMaxima = 0;
+var frameInterval = Math.round(1000 / fps);
 var intervalo, timer;
 
+var tps = 0
 function iniciarRolagem() {
-	posicaoAtual = 0;
-	posicaoMaxima = window.scrollMaxY;
+	posicaoMaxima = posicaoAtual = window.scrollY;
+	direcaoAtual = -1;
 	intervalo = window.setInterval(function() {
-		posicaoAtual = posicaoAtual + velocidadeAtual / 100;
-		if (posicaoAtual > posicaoMaxima) {
-			pararRolagem();
-			timer = window.setTimeout(function() {
-				window.clearTimeout(timer);
-				posicaoAtual = 0;
-				iniciarRolagem();
-			}, pausaAtual * 1000);
+		posicaoAtual = posicaoAtual + direcaoAtual * velocidadeAtual / fps;
+		if (posicaoAtual >= posicaoMaxima) {
+			posicaoAtual = posicaoMaxima;
+			direcaoAtual = -1;
+		} else if (posicaoAtual <= 0) {
+			posicaoAtual = 0;
+			direcaoAtual = 1;
 		}
-		window.scrollTo(0, Math.floor(posicaoAtual));
-	}, 1);
-	rolando = true;
+		window.scrollTo(0, Math.round(posicaoAtual));
+		tps++;
+	}, frameInterval);
+	timer = window.setInterval(() => { console.log(posicaoAtual, direcaoAtual, velocidadeAtual, frameInterval, tps); tps = 0; }, 1000);
 }
 
 function pararRolagem() {
 	window.clearInterval(intervalo);
-	rolando = false;
+	window.clearInterval(timer);
+	direcaoAtual = 0;
 }
 
 var style = document.createElement('style');
 style.innerHTML = [
 	'@media print { #gmBotoes { display: none; } }',
-	'#gmBotoes { position: fixed; top: 4px; left: 4px; background-color: #ccc; box-shadow: #444 4px 4px 8px; }',
+	'#gmBotoes { position: fixed; top: 4px; left: 4px; background-color: #ccc; box-shadow: #444 4px 4px 8px; width: -moz-calc(19% - 8px); }',
 	'#gmBotoes, #gmBotoes button { font-size: 14px; }',
 	'#gmBarra { background-color: #048; }',
-	'#gmTitulo { display: inline-block; color: #fff; font-weight: bold; padding: 0 4px; }',
-	'#gmFechar { display: inline-block; margin-left: 50px; margin-right: 1px; width: 18px; height: 18px; text-align: center; border: 2px solid #fff; background-color: #c00; color: #fff; font-weight: bold; text-decoration: none; border-radius: 4px; }',
+	'#gmTitulo { display: inline-block; color: #fff; font-weight: bold; padding: 0 4px; width: -moz-calc(100% - 31px); }',
+	'#gmFechar { display: inline-block; margin-right: 1px; width: 18px; height: 18px; text-align: center; border: 2px solid #fff; background-color: #c00; color: #fff; font-weight: bold; text-decoration: none; border-radius: 4px; }',
 	'#gmConteudo { text-align: center; }',
+	'#gmAviso { padding: 4px; }',
 	'#gmPlayPause { margin: 4px; border: 2px outset #aaa; }',
 	'#gmConteudo label { display: block; margin: 4px; }',
 	'#gmVelocidade, #gmPausa { width: 10ex; }'
@@ -68,13 +72,15 @@ botoes.innerHTML = [
 	'<a id="gmFechar" href="#">X</a>',
 	'</div>',
 	'<div id="gmConteudo">',
+	'<div id="gmAviso">',
+	'Role a página até o ponto onde a rolagem automática deve parar.',
+	'<br/>',
+	'Depois, clique em "Iniciar/Parar".',
+	'</div>',
 	'<button id="gmPlayPause">Iniciar/Parar</button>',
 	'<label> Velocidade: ',
 	'<input id="gmVelocidade" type="number" min="1">',
-	'</label>',
-	'<label> Pausa: ',
-	'<input id="gmPausa" type="number" min="0">',
-	'</label>',
+	' pixels por segundo</label>',
 	'</div>'
 ].join('');
 
@@ -90,7 +96,7 @@ fechar.addEventListener('click', function(evt) {
 }, false);
 
 playPause.addEventListener('click', function(evt) {
-	if (rolando) {
+	if (direcaoAtual !== 0) {
 		pararRolagem();
 	} else {
 		iniciarRolagem();
@@ -102,11 +108,3 @@ velocidade.addEventListener('change', function(evt) {
 	velocidadeAtual = Number(velocidade.value);
 	Preferencias.velocidade = velocidadeAtual;
 }, false);
-
-pausa.value = pausaAtual;
-pausa.addEventListener('change', function(evt) {
-	pausaAtual = Number(pausa.value);
-	Preferencias.pausa = pausaAtual;
-}, false);
-
-iniciarRolagem();
