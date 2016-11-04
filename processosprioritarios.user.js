@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version     7
+// @version     8
 // @grant       none
 // ==/UserScript==
 
@@ -14,6 +14,17 @@ var GUI = (function() {
 
   var instance = null, construindo = false;
   var button = null, progresso = null, saida = null;
+  var invalidSymbols = /[&<>"]/g;
+  var replacementSymbols = {
+    '&': 'amp',
+    '<': 'lt',
+    '>': 'gt',
+    '"': 'quot'
+  };
+
+  function safeHTML(strings, ...vars) {
+    return vars.reduce((result, variable, i) => result + variable.replace(invalidSymbols, (sym) => '&' + replacementSymbols[sym] + ';') + strings[i + 1], strings[0]);
+  }
 
   function GUI() {
     if (! construindo) {
@@ -57,7 +68,7 @@ var GUI = (function() {
       }
       if (localizador.lembrete) {
         conteudo.push(' ');
-        conteudo.push('<img class="infraImgNormal" src="../../../infra_css/imagens/balao.gif" style="width:0.9em; height:0.9em; opacity:1; border-width:0;" onmouseover="return infraTooltipMostrar(\'' + localizador.lembrete + '\',\'\',400);" onmouseout="return infraTooltipOcultar();"/>');
+        conteudo.push('<img class="infraImgNormal" src="../../../infra_css/imagens/balao.gif" style="width:0.9em; height:0.9em; opacity:1; border-width:0;" onmouseover="' + safeHTML`return infraTooltipMostrar('${localizador.lembrete}','',400);` + '" onmouseout="return infraTooltipOcultar();"/>');
       }
       conteudo.push('<div style="float: right;">');
       conteudo.push(baloes.join(''));
