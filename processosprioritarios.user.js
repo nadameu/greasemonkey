@@ -6,9 +6,22 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version     8
+// @version     9
 // @grant       none
 // ==/UserScript==
+
+const CompetenciasCorregedoria = {
+  JUIZADO: 1,
+  CIVEL: 2,
+  CRIMINAL: 3,
+  EXECUCAO_FISCAL: 4
+};
+
+const Situacoes = {
+  'MOVIMENTO': 17,
+  'MOVIMENTO-AGUARDA DESPACHO': 18,
+  'MOVIMENTO-AGUARDA SENTENÇA': 19
+}
 
 var GUI = (function() {
 
@@ -44,16 +57,22 @@ var GUI = (function() {
   }
   GUI.prototype = {
     constructor: GUI,
-    atualizarVisualizacao(localizador, ...prioridades) {
+    atualizarVisualizacao(localizador) {
       var linha = localizador.linha;
       var avisos = [
-        'Processos prioritários',
-        'Processos parados há mais de 60 dias',
-        'Processos parados há mais de 30 dias',
-        'Processos movimentados nos últimos 30 dias'
+        'Processos com prazo excedido em mais que o dobro',
+        'Processos com prazo vencido',
+        'Processos com prazo a vencer nos próximos 3 dias',
+        'Processos no prazo'
+      ];
+      var prioridades = [
+        localizador.processos.filter(processo => processo.atrasoPorcentagem >= 1),
+        localizador.processos.filter(processo => processo.atraso >= 0 && processo.atrasoPorcentagem < 1),
+        localizador.processos.filter(processo => processo.atraso < 0 && processo.atraso >= -3),
+        localizador.processos.filter(processo => processo.atraso < -3)
       ];
       var baloes = prioridades.map(function(processos, indicePrioridade) {
-        return '<span class="gmProcessos gmPrioridade' + indicePrioridade + (processos > 0 ? '' : ' gmVazio') + '" onmouseover="infraTooltipMostrar(&quot;' + avisos[indicePrioridade] + '&quot;);" onmouseout="infraTooltipOcultar();">' + processos + '</span>';
+        return '<span id="gmLocalizador' + localizador.id + 'Prioridade' + indicePrioridade + '" class="gmProcessos gmPrioridade' + indicePrioridade + (processos.length > 0 ? '' : ' gmVazio') + '" onmouseover="infraTooltipMostrar(&quot;' + avisos[indicePrioridade] + '&quot;);" onmouseout="infraTooltipOcultar();">' + processos.length + '</span>';
       });
       var conteudo = [];
       if (! (localizador.sigla || localizador.nome)) {
@@ -74,6 +93,49 @@ var GUI = (function() {
       conteudo.push(baloes.join(''));
       conteudo.push('</div>');
       linha.cells[0].innerHTML = conteudo.join('');
+      prioridades.forEach(function(processos, indicePrioridade) {
+        var balao = document.getElementById('gmLocalizador' + localizador.id + 'Prioridade' + indicePrioridade);
+        balao.addEventListener('click', function(evt) {
+          evt.preventDefault();
+          evt.stopPropagation();
+          [...document.getElementsByClassName('gmDetalhes')].forEach(function(linhaAntiga) {
+            linha.parentElement.removeChild(linhaAntiga);
+          });
+          if (balao.classList.contains('gmDetalhesAberto')) {
+            balao.classList.remove('gmDetalhesAberto');
+            return;
+          }
+          [...document.getElementsByClassName('gmDetalhesAberto')].forEach(function(balaoAberto) {
+            balaoAberto.classList.remove('gmDetalhesAberto');
+          });
+          balao.classList.add('gmDetalhesAberto');
+          processos.sort((a, b) => {
+            if (a.atrasoPorcentagem < b.atrasoPorcentagem) return +1;
+            if (a.atrasoPorcentagem > b.atrasoPorcentagem) return -1;
+            return 0;
+          });
+          processos.forEach(function(processo, indiceProcesso) {
+            var linhaNova = linha.parentElement.insertRow(linha.rowIndex + 1 + indiceProcesso);
+            var atraso = Math.round(processo.atraso);
+            linhaNova.className = 'infraTrClara gmDetalhes';
+            linhaNova.dataset.classe = ('0'.repeat(6) + processo.numClasse).substr(-6);
+            linhaNova.dataset.competencia = ('0'.repeat(2) + processo.numCompetencia).substr(-2);
+            linhaNova.innerHTML = [
+              '<td>',
+              '<a href="' + processo.link + '">' + processo.numprocFormatado + '</a> | ' + processo.classe,
+              '</td>',
+              '<td>',
+              atraso >= 0 ? 'Prazo excedido há ' : '',
+              Math.abs(atraso),
+              Math.abs(atraso) > 1 ? ' dias ' : ' dia ',
+              atraso < 0 ? 'até o fim do prazo' : '',
+              processo.prioridade ? ' <span style="color: red;">(Prioridade)</span>' : '',
+              '</td>'
+            ].join('');
+            console.info(processo.atraso, processo.atrasoPorcentagem);
+          });
+        }, false);
+      });
     },
     avisoCarregando: {
       acrescentar(qtd) {
@@ -388,6 +450,46 @@ var ProcessoFactory = (function() {
     sigilo: null,
     situacao: null,
     ultimoEvento: null,
+    get atraso() {
+      var hoje = new Date();
+      var dataConsiderada;
+      switch (this.situacao) {
+        case 'MOVIMENTO-AGUARDA DESPACHO':
+        case 'MOVIMENTO-AGUARDA SENTENÇA':
+          dataConsiderada = this.dataSituacao;
+          break;
+
+        case 'MOVIMENTO':
+          dataConsiderada = this.dataUltimoEvento;
+          break;
+
+        default:
+          dataConsiderada = this.dataSituacao;
+          break;
+      }
+      return hoje.getTime()/864e5 - (dataConsiderada.getTime()/864e5 + this.prazoCorregedoria);
+    },
+    get atrasoPorcentagem() {
+      return this.atraso / this.prazoCorregedoria;
+    },
+    get competenciaCorregedoria() {
+      if (this.competencia >= 9 && this.competencia <= 20) {
+        return CompetenciasCorregedoria.JUIZADO;
+      } else if (this.competencia >= 21 && this.competencia <= 30) {
+        return CompetenciasCorregedoria.CRIMINAL;
+      } else if ((this.competencia === 41 || this.competencia === 43) &&
+                 (this.classe === 99 || this.classe === 60)) {
+        return CompetenciasCorregedoria.EXECUCAO_FISCAL;
+      } else {
+        return CompetenciasCorregedoria.CIVEL;
+      }
+    },
+    get prazoCorregedoria() {
+      if (! (this.situacao in Situacoes)) return 0;
+      var dias = RegrasCorregedoria[this.competenciaCorregedoria][ Situacoes[this.situacao] ];
+      if (this.prioridade) dias /= 2;
+      return dias;
+    },
     get prioridade() {
       return this.dadosComplementares.has('Prioridade Atendimento') ||
         this.dadosComplementares.has('Réu Preso') ||
@@ -445,6 +547,29 @@ var ProcessoFactory = (function() {
   return ProcessoFactory;
 })();
 
+var RegrasCorregedoria = {
+  [CompetenciasCorregedoria.JUIZADO]: {
+    [Situacoes['MOVIMENTO']]: 10,
+    [Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 15,
+    [Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 45
+  },
+  [CompetenciasCorregedoria.CIVEL]: {
+    [Situacoes['MOVIMENTO']]: 15,
+    [Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 20,
+    [Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60
+  },
+  [CompetenciasCorregedoria.CRIMINAL]: {
+    [Situacoes['MOVIMENTO']]: 15,
+    [Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 20,
+    [Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60
+  },
+  [CompetenciasCorregedoria.EXECUCAO_FISCAL]: {
+    [Situacoes['MOVIMENTO']]: 25,
+    [Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 60,
+    [Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60
+  }
+};
+
 function adicionarBotaoComVinculo(localizadores) {
   var gui = GUI.getInstance();
   var botao = gui.criarBotaoAcao();
@@ -456,22 +581,8 @@ function adicionarBotaoComVinculo(localizadores) {
 
     localizadores.obterProcessos().then(function() {
       gui.avisoCarregando.ocultar();
-      var hoje = new Date();
       localizadores.forEach(function(localizador) {
-        var vermelho = 0, laranja = 0, amarelo = 0, verde = 0;
-        localizador.processos.forEach(function(processo) {
-          var ultimoEvento = processo.dataUltimoEvento.getTime();
-          if (processo.prioridade) {
-            vermelho++;
-          } else if (ultimoEvento < (hoje.getTime() - 60*864e5)) {
-            laranja++;
-          } else if (ultimoEvento < (hoje.getTime() - 30*864e5)) {
-            amarelo++;
-          } else {
-            verde++;
-          }
-        });
-        gui.atualizarVisualizacao(localizador, vermelho, laranja, amarelo, verde);
+        gui.atualizarVisualizacao(localizador);
       });
     });
   }, false);
