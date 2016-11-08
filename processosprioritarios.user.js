@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version     9
+// @version     10
 // @grant       none
 // ==/UserScript==
 
@@ -18,9 +18,11 @@ const CompetenciasCorregedoria = {
 };
 
 const Situacoes = {
-  'MOVIMENTO': 17,
-  'MOVIMENTO-AGUARDA DESPACHO': 18,
-  'MOVIMENTO-AGUARDA SENTENÇA': 19
+  'MOVIMENTO': 3,
+  'MOVIMENTO-AGUARDA DESPACHO': 2,
+  'MOVIMENTO-AGUARDA SENTENÇA': 4,
+  'INICIAL': 1,
+  'INDEFINIDA': 5
 }
 
 var GUI = (function() {
@@ -46,12 +48,14 @@ var GUI = (function() {
     var estilos = document.createElement('style');
     estilos.innerHTML = [
       'tr.infraTrEscura { background-color: #f0f0f0; }',
-      '.gmProcessos { display: inline-block; margin: 0 0.25ex; padding: 0 0.5ex; font-weight: bold; min-width: 2.5ex; line-height: 1.5em; border-radius: 1ex; text-align: center; color: black; }',
+      '.gmProcessos { display: inline-block; margin: 0 0.25ex; padding: 0 0.5ex; font-weight: bold; min-width: 2.5ex; line-height: 1.5em; border: 2px solid transparent; border-radius: 1ex; text-align: center; color: black; }',
       '.gmProcessos.gmPrioridade0 { background-color: #ff8a8a; }',
       '.gmProcessos.gmPrioridade1 { background-color: #f84; }',
       '.gmProcessos.gmPrioridade2 { background-color: #ff8; }',
       '.gmProcessos.gmPrioridade3 { background-color: #8aff8a; }',
-      '.gmProcessos.gmVazio { opacity: 0.25; background-color: inherit; color: #888; }'
+      '.gmProcessos.gmVazio { opacity: 0.25; background-color: inherit; color: #888; }',
+      '.gmDetalhes td:first-child { padding-left: 3ex; }',
+      '.gmDetalhesAberto { border-color: black; }'
     ].join('\n');
     document.querySelector('head').appendChild(estilos);
   }
@@ -60,7 +64,7 @@ var GUI = (function() {
     atualizarVisualizacao(localizador) {
       var linha = localizador.linha;
       var avisos = [
-        'Processos com prazo excedido em mais que o dobro',
+        'Processos com prazo excedido em dobro',
         'Processos com prazo vencido',
         'Processos com prazo a vencer nos próximos 3 dias',
         'Processos no prazo'
@@ -120,9 +124,37 @@ var GUI = (function() {
             linhaNova.className = 'infraTrClara gmDetalhes';
             linhaNova.dataset.classe = ('0'.repeat(6) + processo.numClasse).substr(-6);
             linhaNova.dataset.competencia = ('0'.repeat(2) + processo.numCompetencia).substr(-2);
+            var textoData;
+            switch (processo.campoDataConsiderada) {
+              case 'dataSituacao':
+                switch (processo.situacao) {
+                  case 'MOVIMENTO-AGUARDA DESPACHO':
+                    textoData = 'concl. p/ desp. desde ';
+                    break;
+
+                  case 'MOVIMENTO-AGUARDA SENTENÇA':
+                    textoData = 'concl. p/ sent. desde ';
+                    break;
+
+                  default:
+                    textoData = 'na situação desde ';
+                    break;
+                }
+                break;
+
+              case 'dataUltimoEvento':
+                textoData = 'último evento em ';
+                break;
+            }
+            var esperado = processo.prazoCorregedoria;
             linhaNova.innerHTML = [
               '<td>',
-              '<a href="' + processo.link + '">' + processo.numprocFormatado + '</a> | ' + processo.classe,
+              [
+                '<a href="' + processo.link + '">' + processo.numprocFormatado + '</a>',
+                textoData + processo[ processo.campoDataConsiderada ].toLocaleString().substr(0, 10),
+                ' esperado ' + esperado + (esperado > 1 ? ' dias' : ' dia'),
+                processo.classe.toUpperCase()
+              ].join(' | '),
               '</td>',
               '<td>',
               atraso >= 0 ? 'Prazo excedido há ' : '',
@@ -132,7 +164,6 @@ var GUI = (function() {
               processo.prioridade ? ' <span style="color: red;">(Prioridade)</span>' : '',
               '</td>'
             ].join('');
-            console.info(processo.atraso, processo.atrasoPorcentagem);
           });
         }, false);
       });
@@ -452,21 +483,7 @@ var ProcessoFactory = (function() {
     ultimoEvento: null,
     get atraso() {
       var hoje = new Date();
-      var dataConsiderada;
-      switch (this.situacao) {
-        case 'MOVIMENTO-AGUARDA DESPACHO':
-        case 'MOVIMENTO-AGUARDA SENTENÇA':
-          dataConsiderada = this.dataSituacao;
-          break;
-
-        case 'MOVIMENTO':
-          dataConsiderada = this.dataUltimoEvento;
-          break;
-
-        default:
-          dataConsiderada = this.dataSituacao;
-          break;
-      }
+      var dataConsiderada = this[ this.campoDataConsiderada ];
       return hoje.getTime()/864e5 - (dataConsiderada.getTime()/864e5 + this.prazoCorregedoria);
     },
     get atrasoPorcentagem() {
@@ -484,9 +501,25 @@ var ProcessoFactory = (function() {
         return CompetenciasCorregedoria.CIVEL;
       }
     },
+    get campoDataConsiderada() {
+      switch (this.situacao) {
+        case 'MOVIMENTO-AGUARDA DESPACHO':
+        case 'MOVIMENTO-AGUARDA SENTENÇA':
+          return 'dataSituacao';
+          break;
+
+        case 'MOVIMENTO':
+          return 'dataUltimoEvento';
+          break;
+
+        default:
+          return 'dataSituacao';
+          break;
+      }
+    },
     get prazoCorregedoria() {
-      if (! (this.situacao in Situacoes)) return 0;
-      var dias = RegrasCorregedoria[this.competenciaCorregedoria][ Situacoes[this.situacao] ];
+      var situacao = Situacoes[this.situacao] || Situacoes['INDEFINIDA'];
+      var dias = RegrasCorregedoria[this.competenciaCorregedoria][ situacao ];
       if (this.prioridade) dias /= 2;
       return dias;
     },
@@ -549,24 +582,32 @@ var ProcessoFactory = (function() {
 
 var RegrasCorregedoria = {
   [CompetenciasCorregedoria.JUIZADO]: {
-    [Situacoes['MOVIMENTO']]: 10,
+    [Situacoes['INICIAL']]: 10,
     [Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 15,
-    [Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 45
+    [Situacoes['MOVIMENTO']]: 10,
+    [Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 45,
+    [Situacoes['INDEFINIDA']]: 30
   },
   [CompetenciasCorregedoria.CIVEL]: {
-    [Situacoes['MOVIMENTO']]: 15,
+    [Situacoes['INICIAL']]: 10,
     [Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 20,
-    [Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60
+    [Situacoes['MOVIMENTO']]: 15,
+    [Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60,
+    [Situacoes['INDEFINIDA']]: 60
   },
   [CompetenciasCorregedoria.CRIMINAL]: {
-    [Situacoes['MOVIMENTO']]: 15,
+    [Situacoes['INICIAL']]: 15,
     [Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 20,
-    [Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60
+    [Situacoes['MOVIMENTO']]: 15,
+    [Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60,
+    [Situacoes['INDEFINIDA']]: 30
   },
   [CompetenciasCorregedoria.EXECUCAO_FISCAL]: {
-    [Situacoes['MOVIMENTO']]: 25,
+    [Situacoes['INICIAL']]: 10,
     [Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 60,
-    [Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60
+    [Situacoes['MOVIMENTO']]: 25,
+    [Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60,
+    [Situacoes['INDEFINIDA']]: 120
   }
 };
 
