@@ -129,21 +129,21 @@ var GUI = (function() {
               case 'dataSituacao':
                 switch (processo.situacao) {
                   case 'MOVIMENTO-AGUARDA DESPACHO':
-                    textoData = 'concl. p/ desp. desde ';
+                    textoData = 'Data da conclusão para despacho';
                     break;
 
                   case 'MOVIMENTO-AGUARDA SENTENÇA':
-                    textoData = 'concl. p/ sent. desde ';
+                    textoData = 'Data da conclusão para sentença';
                     break;
 
                   default:
-                    textoData = 'na situação desde ';
+                    textoData = 'Data de alteração da situação';
                     break;
                 }
                 break;
 
               case 'dataUltimoEvento':
-                textoData = 'último evento em ';
+                textoData = 'Data do último evento';
                 break;
             }
             var esperado = processo.prazoCorregedoria;
@@ -151,8 +151,7 @@ var GUI = (function() {
               '<td>',
               [
                 '<a href="' + processo.link + '">' + processo.numprocFormatado + '</a>',
-                textoData + processo[ processo.campoDataConsiderada ].toLocaleString().substr(0, 10),
-                ' esperado ' + esperado + (esperado > 1 ? ' dias' : ' dia'),
+                '<abbr title="' + textoData + '">' + processo[ processo.campoDataConsiderada ].toLocaleString().substr(0, 10) + '</abbr> + ' + esperado.toString().replace(/\.5$/, '&half;') + (esperado >= 2 ? ' dias' : ' dia') + ' = ' + processo.termoPrazoCorregedoria.toLocaleString().substr(0, 10),
                 processo.classe.toUpperCase()
               ].join(' | '),
               '</td>',
@@ -483,19 +482,18 @@ var ProcessoFactory = (function() {
     ultimoEvento: null,
     get atraso() {
       var hoje = new Date();
-      var dataConsiderada = this[ this.campoDataConsiderada ];
-      return hoje.getTime()/864e5 - (dataConsiderada.getTime()/864e5 + this.prazoCorregedoria);
+      return (hoje.getTime() - this.termoPrazoCorregedoria.getTime())/864e5;
     },
     get atrasoPorcentagem() {
       return this.atraso / this.prazoCorregedoria;
     },
     get competenciaCorregedoria() {
-      if (this.competencia >= 9 && this.competencia <= 20) {
+      if (this.numCompetencia >= 9 && this.numCompetencia <= 20) {
         return CompetenciasCorregedoria.JUIZADO;
-      } else if (this.competencia >= 21 && this.competencia <= 30) {
+      } else if (this.numCompetencia >= 21 && this.numCompetencia <= 30) {
         return CompetenciasCorregedoria.CRIMINAL;
-      } else if ((this.competencia === 41 || this.competencia === 43) &&
-                 (this.classe === 99 || this.classe === 60)) {
+      } else if ((this.numCompetencia === 41 || this.numCompetencia === 43) &&
+                 (this.numClasse === 99 || this.numClasse === 60)) {
         return CompetenciasCorregedoria.EXECUCAO_FISCAL;
       } else {
         return CompetenciasCorregedoria.CIVEL;
@@ -528,6 +526,12 @@ var ProcessoFactory = (function() {
         this.dadosComplementares.has('Réu Preso') ||
         this.dadosComplementares.has('Doença Grave') ||
         this.dadosComplementares.has('Idoso');
+    },
+    get termoPrazoCorregedoria() {
+      var dataConsiderada = this[ this.campoDataConsiderada ];
+      var dataTermo = new Date(dataConsiderada.getTime());
+      dataTermo.setDate(dataTermo.getDate() + this.prazoCorregedoria);
+      return dataTermo;
     }
   };
 
