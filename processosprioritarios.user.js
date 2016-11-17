@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version     10
+// @version     11
 // @grant       none
 // ==/UserScript==
 
@@ -55,7 +55,10 @@ var GUI = (function() {
       '.gmProcessos.gmPrioridade3 { background-color: #8aff8a; }',
       '.gmProcessos.gmVazio { opacity: 0.25; background-color: inherit; color: #888; }',
       '.gmDetalhes td:first-child { padding-left: 3ex; }',
-      '.gmDetalhesAberto { border-color: black; }'
+      '.gmDetalhesAberto { border-color: black; }',
+      '.gmDetalhes meter { width: 10ex; }',
+      '.gmDetalhes meter.gmExcesso { width: 20ex; }',
+      '.gmPorcentagem { display: inline-block; width: 6ex; text-align: right; }',
     ].join('\n');
     document.querySelector('head').appendChild(estilos);
   }
@@ -147,6 +150,13 @@ var GUI = (function() {
                 break;
             }
             var esperado = processo.prazoCorregedoria;
+            var minimo = 0;
+            var maximo = esperado * (indicePrioridade > 1 ? 1 : 2);
+            var baixo = esperado - 3;
+            var alto = esperado;
+            var ideal = esperado / 2;
+            var valor = esperado + atraso;
+            var porcentagem = Math.round(100 + processo.atrasoPorcentagem * 100) + '%';
             linhaNova.innerHTML = [
               '<td>',
               [
@@ -156,10 +166,16 @@ var GUI = (function() {
               ].join(' | '),
               '</td>',
               '<td>',
-              atraso >= 0 ? 'Prazo excedido há ' : '',
+              '<meter',
+              (indicePrioridade < 2 ? ' class="gmExcesso"' : ''),
+              ' min="' + minimo + '" max="' + maximo + '" low="' + baixo + '" high="' + alto + '" optimum="' + ideal + '" value="' + valor + '">' + atraso + '</meter>',
+              '<span class="gmPorcentagem">',
+              porcentagem,
+              '</span> | ',
+              processo.atraso >= 0 ? 'Prazo excedido há ' : '',
               Math.abs(atraso),
               Math.abs(atraso) > 1 ? ' dias ' : ' dia ',
-              atraso < 0 ? 'até o fim do prazo' : '',
+              processo.atraso < 0 ? 'até o fim do prazo' : '',
               processo.prioridade ? ' <span style="color: red;">(Prioridade)</span>' : '',
               '</td>'
             ].join('');
@@ -207,10 +223,9 @@ var GUI = (function() {
       area.insertBefore(button, area.firstChild);
       return button;
     },
-    removerBotaoAcao() {
+    atualizarBotaoAcao() {
       if (button) {
-        button.parentNode.removeChild(button);
-        button = null;
+        button.textContent = 'Atualizar';
       }
     },
     visitLocalizador(pvtVars) {
@@ -302,6 +317,7 @@ var LocalizadoresFactory = (function() {
       .catch(console.error.bind(console));
     },
     obterProcessos() {
+      this.processos = [];
       var link = this.link;
       if (! link.href) {
         return Promise.resolve(this);
@@ -559,9 +575,9 @@ var ProcessoFactory = (function() {
       processo.juizo = linha.cells[3].textContent;
       processo.dataAutuacao = parseDataHora(linha.cells[4].textContent);
       var diasNaSituacao = Number(linha.cells[5].textContent);
-      var dataHoje = new Date();
-      var dataAnteriorSituacao = new Date(dataHoje.getFullYear(), dataHoje.getMonth(), dataHoje.getDate() - diasNaSituacao - 1, 23, 59, 59, 999);
-      processo.dataSituacao = new Date(dataAnteriorSituacao.getTime() + 1);
+      var dataSituacao = new Date();
+      dataSituacao.setDate(dataSituacao.getDate() - diasNaSituacao);
+      processo.dataSituacao = dataSituacao;
       var labelsDadosComplementares = [...linha.cells[6].getElementsByTagName('label')];
       if (labelsDadosComplementares.length === 0) {
         processo.classe = linha.cells[6].textContent;
@@ -620,12 +636,11 @@ function adicionarBotaoComVinculo(localizadores) {
   var botao = gui.criarBotaoAcao();
   botao.addEventListener('click', function() {
 
-    gui.removerBotaoAcao();
-
     gui.avisoCarregando.atualizar(0, localizadores.quantidadeProcessos);
 
     localizadores.obterProcessos().then(function() {
       gui.avisoCarregando.ocultar();
+      gui.atualizarBotaoAcao();
       localizadores.forEach(function(localizador) {
         gui.atualizarVisualizacao(localizador);
       });
