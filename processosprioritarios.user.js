@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version     11
+// @version     12
 // @grant       none
 // ==/UserScript==
 
@@ -55,6 +55,7 @@ var GUI = (function() {
       '.gmProcessos.gmPrioridade3 { background-color: #8aff8a; }',
       '.gmProcessos.gmVazio { opacity: 0.25; background-color: inherit; color: #888; }',
       '.gmDetalhes td:first-child { padding-left: 3ex; }',
+      '.gmLocalizadorExtra { display: inline-block; float: right; background: #eee; border: 1px solid #aaa; color: #333; padding: 2px; margin: 0 3px 0 0; border-radius: 3px; font-size: 0.9em; }',
       '.gmDetalhesAberto { border-color: black; }',
       '.gmDetalhes meter { width: 10ex; }',
       '.gmDetalhes meter.gmExcesso { width: 20ex; }',
@@ -157,6 +158,7 @@ var GUI = (function() {
             var ideal = esperado / 2;
             var valor = esperado + atraso;
             var porcentagem = Math.round(100 + processo.atrasoPorcentagem * 100) + '%';
+            var localizadoresExtra = processo.localizadores.filter(loc => loc.id !== localizador.id).map(loc => loc.sigla);
             linhaNova.innerHTML = [
               '<td>',
               [
@@ -164,6 +166,7 @@ var GUI = (function() {
                 '<abbr title="' + textoData + '">' + processo[ processo.campoDataConsiderada ].toLocaleString().substr(0, 10) + '</abbr> + ' + esperado.toString().replace(/\.5$/, '&half;') + (esperado >= 2 ? ' dias' : ' dia') + ' = ' + processo.termoPrazoCorregedoria.toLocaleString().substr(0, 10),
                 processo.classe.toUpperCase()
               ].join(' | '),
+              localizadoresExtra.length > 0 ? localizadoresExtra.map(loc => '<span class="gmLocalizadorExtra">' + loc + '</span>').join(' ') : '',
               '</td>',
               '<td>',
               '<meter',
