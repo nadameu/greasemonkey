@@ -9,11 +9,156 @@
 
 const DOMAIN = `${window.top.location.protocol}//${window.top.document.domain}`;
 
+const Armazem = {
+	_listeners: new Map(),
+	abrir() {
+		const req = indexedDB.open('carpp', 1);
+		req.addEventListener('upgradeneeded', evt => Armazem.criar(evt.target.result));
+		return new Promise((resolve, reject) => {
+			req.addEventListener('success', evt => resolve(evt.target.result));
+			req.addEventListener('error', evt => console.error(evt));
+		});
+	},
+	criar(db) {
+		const pessoas = db.createObjectStore('pessoas', {keyPath: 'sigla'});
+		pessoas.createIndex('nome', 'nome');
+	},
+	disparar(store, dados) {
+		if (! Armazem._listeners.has(store)) {
+			Armazem._listeners.set(store, new Set());
+		}
+		Armazem._listeners.get(store).forEach(listener => {
+			listener(dados);
+		});
+	},
+	observar(store, listener) {
+		if (! Armazem._listeners.has(store)) {
+			Armazem._listeners.set(store, new Set());
+		}
+		Armazem._listeners.get(store).add(listener);
+	},
+	obter(store) {
+		return Armazem.abrir().then(db => {
+			const t = db.transaction([store]);
+			const os = t.objectStore(store);
+			const req = os.openCursor();
+			const map = new Map();
+			return new Promise((resolve, reject) => {
+				req.addEventListener('success', evt => {
+					const cursor = evt.target.result;
+					if (cursor) {
+						map.set(cursor.key, cursor.value);
+						cursor.continue();
+					} else {
+						Armazem.disparar(store, map);
+						resolve(map);
+					}
+				});
+			});
+		});
+	},
+	salvar(store, objs) {
+		console.log(store, objs);
+		return Armazem.abrir().then(db => {
+			const t = db.transaction([store], 'readwrite');
+			const os = t.objectStore(store);
+			return new Promise((resolve, reject) => {
+				os.getAll().addEventListener('success', ({target:{result:oldObjs}}) => {
+					oldObjs.forEach(oldObj => {
+						let id = oldObj[os.keyPath];
+						if (objs.has(id)) {
+							let obj = objs.get(id);
+							let changed = false;
+							for (let prop in obj) {
+								if (obj[prop] !== oldObj[prop]) changed = true;
+							}
+							if (changed) {
+								console.info('CHANGED', oldObj);
+								os.put(obj);
+							}
+							objs.delete(id);
+						} else {
+							console.info('DELETED', oldObj);
+							os.delete(id);
+						}
+					});
+					objs.forEach(obj => {
+						console.info('NEW', obj);
+						os.add(obj);
+					});
+				});
+				t.addEventListener('complete', _ => {
+					Armazem.obter(store);
+					resolve();
+				});
+			});
+		});
+	}
+};
+
 function Botao(texto) {
 	const botao = document.createElement('button');
 	botao.textContent = texto;
 	return botao;
 }
+
+const Eproc = {
+	obterPessoas() {
+		const pessoas = new Map();
+		const url = Eproc.obterMenu('usuario_listar_todos');
+
+		function obterPagina(doc, pagina = 0) {
+			const consultarElement = doc.getElementById('btnConsultar');
+			const formElement = consultarElement.form;
+			const url = formElement.action;
+			const method = formElement.method;
+			const data = new FormData(formElement);
+			data.append('hdnInfraPaginaAtual', pagina.toString());
+			return Eproc.xhr(url, method, data);
+		}
+
+		function analisarPagina(doc) {
+			const tabela = doc.querySelector('table[summary="Tabela de Usuários Ativos do Órgão"]');
+			const linhas = Array.from(tabela.rows).filter(linha => linha.classList.contains('infraTrClara') || linha.classList.contains('infraTrEscura'));
+			linhas.forEach(linha => {
+				let nome = linha.cells[0].textContent;
+				let sigla = linha.cells[1].textContent;
+				if (! pessoas.has(sigla)) {
+					pessoas.set(sigla, {sigla, nome});
+				}
+			});
+			if (doc.getElementById('lnkInfraProximaPaginaSuperior')) {
+				const paginaAtualElement = doc.getElementById('hdnInfraPaginaAtual');
+				var paginaAtual = Number(paginaAtualElement.value);
+				return obterPagina(doc, ++paginaAtual).then(analisarPagina);
+			}
+		}
+
+		return Eproc.xhr(url).then(obterPagina).then(analisarPagina).then(_ => {
+			Armazem.salvar('pessoas', pessoas);
+		});
+	},
+	obterMenu(acao) {
+		const menuElement = document.querySelector('#main-menu');
+		const re = new RegExp(`^\\?acao=${acao}&hash`);
+		const links = Array.from(menuElement.querySelectorAll('a[href]')).filter(link => re.test(link.search));
+		if (links.length === 1) {
+			return links[0].href;
+		} else {
+			throw new Error(`Link não encontrado: ${acao}`);
+		}
+	},
+	xhr(url, method = 'GET', data = null) {
+		return new Promise((resolve, reject) => {
+			const xhr = new XMLHttpRequest();
+			xhr.open(method, url);
+			xhr.responseType = 'document';
+			xhr.addEventListener('load', evt => resolve(evt.target.response), false);
+			xhr.addEventListener('error', reject, false);
+			xhr.send(data);
+		});
+	}
+};
 
 function main() {
 	const barraLocalizacao = document.querySelector('#divInfraBarraLocalizacao');
@@ -32,36 +177,58 @@ function abrirIframeGerenciar() {
 		'.cabecalho { background: #009688; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }',
 		'.cabecalho__titulo { margin: 0; padding: 8px; font-size: 24px; color: #fff; }',
 		'.cabecalho__subtitulo { margin: 0; padding: 0 8px 8px; font-size: 16px; color: rgba(255,255,255,0.7); }',
-		'.usuarios { margin: 16px; min-height: 300px; max-width: 600px; border-radius: 2px; background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }',
-		'.usuarios__titulo { margin: 0; padding: 8px; font-size: 20px; color: #fff; background: #00796b; }',
-		'.usuarios__atualizar { border: none; color: white; font-weight: bold; text-decoration: none; float: right; margin: 8px; background: #d50000; padding: 8px; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }',
-		'.usuarios__atualizar:disabled { background: #eee; color: rgba(0,0,0,0.38); }',
-		'.usuarios__container { clear: right; margin: 8px; }',
-		'.usuario { display: flex; border-bottom: 1px solid #ccc; }',
-		'.usuario__nome { flex: 6; }',
-		'.usuario__sigla { flex: 1; }',
-		'.usuario__tipo { flex: 5; }'
+		'.pessoas { margin: 16px; min-height: 300px; max-width: 600px; border-radius: 2px; background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }',
+		'.pessoas__titulo { margin: 0; padding: 8px; font-size: 20px; color: #fff; background: #00796b; }',
+		'.pessoas__atualizar { border: none; color: white; font-weight: bold; text-decoration: none; float: right; margin: 8px; background: #d50000; padding: 8px; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }',
+		'.pessoas__atualizar:disabled { background: #eee; color: rgba(0,0,0,0.38); }',
+		'.pessoas__container { clear: right; margin: 8px; }',
+		'.pessoa, .pessoa-cabecalho { display: flex; padding: 2px 0; border-bottom: 1px solid #ccc; }',
+		'.pessoa-cabecalho { font-weight: bold; }',
+		'.pessoa__nome { flex: 3; margin-right: 1ex; }',
+		'.pessoa__sigla { flex: 1; margin-left: 1ex; }',
 	].join('\n'), [
 		'<header class="cabecalho">',
 		'<h1 class="cabecalho__titulo">CARPP</h1>',
 		'<h2 class="cabecalho__subtitulo">Controle de Andamento e Regularidade de Prazos Processuais</h2>',
 		'</header>',
-		'<div class="usuarios">',
-		'<h3 class="usuarios__titulo">Usuários</h3>',
-		'<button class="usuarios__atualizar" disabled>Atualizar</button>',
-		'<div class="usuarios__container">Carregando...',
-		'<div class="usuario"><div class="usuario__nome">ADRIANA REGINA BARNI RITTER</div><div class="usuario__sigla">ARI</div><div class="usuario__tipo">MAGISTRADO</div></div>',
-		'<div class="usuario"><div class="usuario__nome">AIRTON AGOSTINI</div><div class="usuario__sigla">AGI</div><div class="usuario__tipo">SERVIDOR DE SECRETARIA (VARA)</div></div>',
-		'<div class="usuario"><div class="usuario__nome">ALEX PERES ROCHA</div><div class="usuario__sigla">ARP</div><div class="usuario__tipo">MAGISTRADO</div></div>',
+		'<div class="pessoas">',
+		'<h3 class="pessoas__titulo">Pessoas</h3>',
+		'<button class="pessoas__atualizar" disabled>Atualizar</button>',
+		'<div class="pessoas__container">',
+		'<div class="pessoa-cabecalho"><div class="pessoa__nome">Nome</div><div class="pessoa__sigla">Sigla</div></div>',
+		'<div class="pessoa"><div class="pessoa__nome"></div><div class="pessoa__sigla"></div></div>',
 		'</div>',
 		'</div>'
 	].join('')).then((win) => {
 		const doc = win.document;
-		const usuariosElement = doc.querySelector('.usuarios');
-		const usuariosAtualizarElement = doc.querySelector('.usuarios__atualizar');
-		usuariosAtualizarElement.addEventListener('click', evt => {
+		const pessoasElement = doc.querySelector('.pessoas');
+		const pessoasAtualizarElement = doc.querySelector('.pessoas__atualizar');
+		const pessoasContainer = doc.querySelector('.pessoas__container');
+		const pessoaTemplate = doc.querySelector('.pessoa').cloneNode(true);
+		pessoasAtualizarElement.addEventListener('click', evt => {
 			evt.preventDefault();
+			evt.target.disabled = true;
+			Eproc.obterPessoas().then(_ => evt.target.disabled = false);
 		}, false);
+		Armazem.observar('pessoas', function(pessoas) {
+			Array.from(pessoasContainer.querySelectorAll('.pessoa')).forEach(pessoa => pessoasContainer.removeChild(pessoa));
+			let pessoasOrdenadas = [...pessoas.values()].sort((a, b) => {
+				if (a.nome < b.nome) return -1;
+				if (a.nome > b.nome) return +1;
+				if (a.sigla < b.sigla) return -1;
+				if (a.sigla > b.sigla) return +1;
+				return 0;
+			});
+			pessoasOrdenadas.forEach(pessoa => {
+				let pessoaElement = pessoaTemplate.cloneNode(true);
+				let pessoaNomeElement = pessoaElement.querySelector('.pessoa__nome');
+				let pessoaSiglaElement = pessoaElement.querySelector('.pessoa__sigla');
+				pessoaNomeElement.textContent = pessoa.nome;
+				pessoaSiglaElement.textContent = pessoa.sigla;
+				pessoasContainer.appendChild(pessoaElement);
+			});
+		});
+		Armazem.obter('pessoas').then(_ => pessoasAtualizarElement.disabled = false);
 	});
 }
 
@@ -82,7 +249,6 @@ function abrirIframe(title, style = '', body = '') {
 		], {type: 'text/html'});
 		const url = URL.createObjectURL(blob);
 		window.addEventListener('message', function handler(evt) {
-			console.log(evt);
 			if (evt.origin === DOMAIN && evt.data === id) {
 				window.removeEventListener('message', handler, false);
 				resolve(evt.source);
@@ -103,7 +269,7 @@ function sobreporIframe(url, id) {
 		estilos.textContent = [
 			'#carppFundo { position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: rgba(0,0,0,0.5); z-index: 2000; transition: opacity 150ms; }',
 			'#carppIframe { position: absolute; top: 10%; left: 10%; width: 80%; height: 80%; border: none; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); background: white; }',
-			'#carppFechar { position: absolute; top: 10%; margin-top: -16px; left: 90%; margin-left: -16px; width: 32px; height: 32px; font-size: 32px; line-height: 32px; border: none; border-radius: 16px; background: #d50000; color: white; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }'
+			'#carppFechar { position: absolute; top: 10%; margin-top: -32px; left: 90%; width: 32px; height: 32px; font-size: 32px; line-height: 32px; border: none; border-radius: 16px; background: #d50000; color: white; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }'
 		].join('\n');
 		document.querySelector('head').appendChild(estilos);
 		fundo = document.createElement('div');
@@ -114,162 +280,44 @@ function sobreporIframe(url, id) {
 	fundo.innerHTML = `<iframe id="carppIframe" name="${id}" src="${url}"></iframe><button id="carppFechar">&times;</button>`;
 	fundo.style.opacity = '0';
 	fundo.style.display = '';
-	requestAnimationFrame(_ => fundo.style.opacity = '');
-	const iframe = fundo.querySelector('iframe');
+	fundo.getBoundingClientRect();
+	fundo.style.opacity = '';
+	const iframe = document.getElementById('carppIframe');
+	iframe.style.transform = `translateX(-120%) translateY(-120%) scaleX(0) scaleY(0)`;
+	iframe.style.transformOrigin = 'top left';
+	iframe.getBoundingClientRect();
+	iframe.style.transition = 'transform 300ms ease-out';
+	iframe.style.transform = '';
 	const fecharElement = document.getElementById('carppFechar');
+	fecharElement.style.opacity = '0';
+	fecharElement.getBoundingClientRect();
+	fecharElement.style.transition = 'opacity 150ms';
+	runOnce(iframe, 'transitionend', _ => fecharElement.style.opacity = '');
 	fecharElement.addEventListener('click', function(evt) {
-		fundo.innerHTML = '';
-		fundo.style.display = 'none';
+		fundo.style.opacity = '0';
+		runOnce(fundo, 'transitionend', _ => fundo.style.display = 'none');
+		iframe.style.transition = 'transform 150ms ease-in';
+		iframe.style.transform = 'translateX(120%) translateY(-120%) scaleX(0) scaleY(0)';
+		runOnce(iframe, 'transitionend', _ => fundo.innerHTML = '');
 	}, false);
 }
-/*
-const CARPP = (function() {
-	const CARPP = {
-		gerenciar() {
-			var blob = new Blob([
-				'<!doctype html><html><head>',
-				'<meta charset="utf-8"/>',
-				'<title>CARPP</title>',
-				'<style>',
-				[
-					'html, body { margin: 0; padding: 0; }',
-					'body { background: white; }'
-				].join('\n'),
-				'</style>',
-				'</head><body>',
-				'<button class="fechar">X</button>',
-				'<h1>CARPP</h2>',
-				'<h2>Controle de Andamento e Regularidade de Prazos Processuais</h2>',
-				'<ul>',
-				'<li>Usuários</li>',
-				'<li>Competências</li>',
-				'</ul>',
-				'<div class="usuarios"></div>',
-				'<script>window.top.postMessage("gerenciar", `${window.top.location.protocol}//${window.top.document.domain}`);</script>',
-				'</body></html>'
-			], {type: 'text/html'});
-			var url = URL.createObjectURL(blob);
-			GUI.abrirIframe(url, 'gerenciar', function(win, doc) {
-				const fecharElement = doc.querySelector('.fechar');
-				fecharElement.addEventListener('click', function(evt) {
-					GUI.fecharIframe();
-				}, false);
 
-				const usuariosElement = doc.querySelector('usuarios');
-				Eproc.obterListaUsuarios()
-					.then((usuarios) => {
-					console.log('ok');
-					alert(usuarios);
-				}).catch(err => {
+function runOnce(element, type, listener, capture = false) {
+	element.addEventListener(type, function handler() {
+		element.removeEventListener(type, handler, capture);
+		return listener.apply(this, arguments);
+	}, capture);
+}
 
-				});
-			});
-		}
-	};
-	return CARPP;
-})();
+const invalidSymbols = /[&<>"]/g;
+const replacementSymbols = {
+	'&': 'amp',
+	'<': 'lt',
+	'>': 'gt',
+	'"': 'quot'
+};
+function safeHTML(strings, ...vars) {
+	return vars.reduce((result, variable, i) => result + variable.replace(invalidSymbols, (sym) => '&' + replacementSymbols[sym] + ';') + strings[i + 1], strings[0]);
+}
 
-const Eproc = (function() {
-	const Eproc = {
-		obterListaUsuarios() {
-			return new Promise(function(resolve, reject) {
-				const url = Eproc.obterMenu('usuario_listar_todos');
-				const xhr = new XMLHttpRequest();
-				xhr.open('GET', url);
-				xhr.responseType = 'document';
-				xhr.addEventListener('load', evt => resolve(evt.target.response), false);
-				xhr.addEventListener('error', reject, false);
-				xhr.send(null);
-			});
-		},
-		obterMenu(acao) {
-			const menuElement = document.querySelector('#main-menu');
-			const re = new RegExp(`^\\?acao=${acao}&hash`);
-			const links = Array.from(menuElement.querySelectorAll('a[href]')).filter(link => re.test(link.search));
-			if (links.length === 1) {
-				return links[0].href;
-			} else {
-				throw new Error(`Link não encontrado: ${acao}`);
-			}
-		}
-	};
-	return Eproc;
-})();
-
-const GUI = (function() {
-
-	const style = document.createElement('style');
-	style.innerHTML = [
-		'#carppDivFundo { display: none; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); }',
-		'#carppIframe { width: 80%; height: 80%; }'
-	].join('\n');
-	document.querySelector('head').appendChild(style);
-
-	const GUI = {
-		abrirIframe(url, id, fn) {
-			const iframe = GUI.obterIframe();
-			iframe.name = id;
-			iframe.src = url;
-			window.addEventListener('message', function handler(evt) {
-				if (evt.data === id) {
-					window.removeEventListener('message', handler);
-					const win = evt.source, doc = win.document;
-					fn(win, doc);
-				}
-			}, false);
-			GUI.exibirIframe();
-		},
-		adicionarBotaoGerenciar() {
-			const areaTelaD = document.querySelector('#divInfraAreaTelaD');
-			const botaoGerenciar = document.createElement('button');
-			botaoGerenciar.textContent = 'Gerenciar';
-			botaoGerenciar.addEventListener('click', evt => CARPP.gerenciar(), false);
-			areaTelaD.insertBefore(botaoGerenciar, areaTelaD.firstChild);
-		},
-		criarDivFundo() {
-			const divFundo = document.createElement('div');
-			divFundo.id = 'carppDivFundo';
-			document.body.appendChild(divFundo);
-			return divFundo;
-		},
-		criarIframe() {
-			const divFundo = GUI.obterDivFundo();
-			iframe = document.createElement('iframe');
-			iframe.id = 'carppIframe';
-			divFundo.appendChild(iframe);
-			return iframe;
-		},
-		exibirDivFundo() {
-			const divFundo = GUI.obterDivFundo();
-			divFundo.style.display = 'flex';
-		},
-		exibirIframe() {
-			GUI.exibirDivFundo();
-		},
-		fecharIframe() {
-			const iframe = GUI.obterIframe();
-			iframe.src = '';
-			GUI.ocultarIframe();
-		},
-		obterDivFundo() {
-			const divFundo = GUI.criarDivFundo();
-			GUI.obterDivFundo = () => divFundo;
-			return GUI.obterDivFundo();
-		},
-		obterIframe() {
-			const iframe = GUI.criarIframe();
-			GUI.obterIframe = () => iframe;
-			return GUI.obterIframe();
-		},
-		ocultarDivFundo() {
-			const divFundo = GUI.obterDivFundo();
-			divFundo.style.display = 'none';
-		},
-		ocultarIframe() {
-			GUI.ocultarDivFundo();
-		}
-	};
-	return GUI;
-})();
-*/
 main();
