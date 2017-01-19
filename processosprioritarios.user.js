@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version     12
+// @version     13
 // @grant       none
 // ==/UserScript==
 
@@ -56,6 +56,7 @@ var GUI = (function() {
       '.gmProcessos.gmVazio { opacity: 0.25; background-color: inherit; color: #888; }',
       '.gmDetalhes td:first-child { padding-left: 3ex; }',
       '.gmLocalizadorExtra { display: inline-block; float: right; background: #eee; border: 1px solid #aaa; color: #333; padding: 2px; margin: 0 3px 0 0; border-radius: 3px; font-size: 0.9em; }',
+      '.gmFiltrar { float: right; font-size: 1em; background: #ccc; padding: 4px; border-radius: 4px; margin-right: 3ex; }',
       '.gmDetalhesAberto { border-color: black; }',
       '.gmDetalhes meter { width: 10ex; }',
       '.gmDetalhes meter.gmExcesso { width: 20ex; }',
@@ -65,7 +66,7 @@ var GUI = (function() {
   }
   GUI.prototype = {
     constructor: GUI,
-    atualizarVisualizacao(localizador) {
+    atualizarVisualizacao(localizador, filtrado = false) {
       var linha = localizador.linha;
       var avisos = [
         'Processos com prazo excedido em dobro',
@@ -101,6 +102,26 @@ var GUI = (function() {
       conteudo.push(baloes.join(''));
       conteudo.push('</div>');
       linha.cells[0].innerHTML = conteudo.join('');
+      if (localizador.quantidadeProcessos > 0 && !filtrado) {
+        var filtrar = document.createElement('a');
+        filtrar.setAttribute('onmouseover', 'infraTooltipMostrar("Excluir processos com prazos em aberto.");');
+        filtrar.setAttribute('onmouseout', 'infraTooltipOcultar();');
+        filtrar.className = 'gmFiltrar';
+        filtrar.textContent = 'Filtrar';
+        filtrar.addEventListener('click', function(evt) {
+          evt.preventDefault();
+          evt.stopPropagation();
+          filtrar.parentNode.removeChild(filtrar);
+          var gui = GUI.getInstance();
+          gui.avisoCarregando.exibir('Filtrando processos com prazo em aberto...');
+          gui.avisoCarregando.atualizar(0, localizador.quantidadeProcessos);
+          localizador.excluirPrazosAbertos().then(function() {
+            gui.avisoCarregando.ocultar();
+            gui.atualizarVisualizacao(localizador, true);
+          });
+        }, false);
+        linha.cells[0].appendChild(filtrar);
+      }
       prioridades.forEach(function(processos, indicePrioridade) {
         var balao = document.getElementById('gmLocalizador' + localizador.id + 'Prioridade' + indicePrioridade);
         balao.addEventListener('click', function(evt) {
@@ -202,10 +223,10 @@ var GUI = (function() {
         progresso.value = atual;
         saida.textContent = atual + ' / ' + total;
       },
-      exibir() {
+      exibir(texto = 'Carregando dados dos processos...') {
         window.infraExibirAviso(false, [
           '<center>',
-          'Carregando dados dos processos...<br/>',
+          `${texto}<br/>`,
           '<progress id="gmProgresso" value="0" max="1"></progress><br/>',
           '<output id="gmSaida"></output>',
           '</center>'
@@ -248,11 +269,28 @@ var GUI = (function() {
 
 var LocalizadoresFactory = (function() {
 
-  function trataHTML(evt) {
-    var parser = new DOMParser();
-    var doc = parser.parseFromString(evt.target.response, 'text/html');
+  function obterFormularioRelatorioGeral() {
+    var promiseRelatorioGeral = new Promise(function(resolve, reject) {
+      var url = Array.from(document.querySelectorAll('#main-menu a[href]')).filter(link => { return /^\?acao=relatorio_geral_listar&/.test(link.search); }).map(link => link.href)[0];
+      var xml = new XMLHttpRequest();
+      xml.open('GET', url);
+      xml.responseType = 'document';
+      xml.onerror = reject;
+      xml.onload = resolve;
+      xml.send(null);
+    }).then(function({target:{response:doc}}) {
+      console.log('Página relatório geral obtida', doc);
+      const consultar = doc.getElementById('btnConsultar');
+      const form = consultar.form;
+      return form;
+    });
+    obterFormularioRelatorioGeral = _ => promiseRelatorioGeral;
+    return obterFormularioRelatorioGeral();
+  }
+
+  function trataHTML({target:{response:doc}}) {
     var pagina = Number(doc.getElementById('hdnInfraPaginaAtual').value);
-    var quantidadeProcessosCarregados = Number(doc.getElementById('hdnInfraNroItens').value);
+    var quantidadeProcessosCarregados = parseInt(doc.getElementById('hdnInfraNroItens').value);
     var gui = GUI.getInstance();
     gui.avisoCarregando.acrescentar(quantidadeProcessosCarregados);
     var linhas = [...doc.querySelectorAll('#divInfraAreaTabela > table > tbody > tr[class^="infraTr"]')];
@@ -278,6 +316,7 @@ var LocalizadoresFactory = (function() {
     link: null,
     nome: null,
     processos: null,
+    quantidadeProcessosNaoFiltrados: null,
     sigla: null,
     siglaNome: null,
     obterPagina(pagina, doc) {
@@ -296,8 +335,9 @@ var LocalizadoresFactory = (function() {
             'optPrioridadeAtendimento',
             'chkStatusProcesso'
           ];
-          camposPost.forEach((campo) => data.append(campo, 'S'));
-          data.append('paginacao', '100');
+          camposPost.forEach((campo) => data.set(campo, 'S'));
+          data.set('paginacao', '100');
+          data.set('hdnInfraPaginaAtual', pagina);
         } else {
           doc.getElementById('selLocalizador').value = self.id;
           var paginaAtual = doc.getElementById('hdnInfraPaginaAtual');
@@ -311,13 +351,73 @@ var LocalizadoresFactory = (function() {
         }
         var xml = new XMLHttpRequest();
         xml.open('POST', url);
-        xml.responseType = 'text/html';
+        xml.responseType = 'document';
         xml.onerror = reject;
         xml.onload = resolve;
         xml.send(data);
       })
       .then(trataHTML.bind(this))
       .catch(console.error.bind(console));
+    },
+    obterPrazosPagina(pagina = 0) {
+      const self = this;
+      return obterFormularioRelatorioGeral().then(function(form) {
+        const url = form.action;
+        const method = form.method;
+        const data = new FormData();
+        data.set('paginacao', 100);
+        data.set('selPrazo', 'A');
+        data.set('selLocalizadorPrincipal', self.id);
+        data.set('selLocalizadorPrincipalSelecionados', self.id);
+        data.set('optchkcClasse', 'S');
+        data.set('hdnInfraPaginaAtual', pagina);
+        return new Promise(function(resolve, reject) {
+          var xml = new XMLHttpRequest();
+          xml.open(method, url);
+          xml.responseType = 'document';
+          xml.onerror = reject;
+          xml.onload = resolve;
+          xml.send(data);
+        });
+      }).then(function({target:{response:doc}}) {
+        const tabela = doc.getElementById('tabelaLocalizadores');
+        const quantidadeProcessosCarregados = parseInt(doc.getElementById('hdnInfraNroItens').value);
+        if (! tabela) {
+          console.log(pagina, self.sigla, quantidadeProcessosCarregados);
+        } else {
+          console.log(pagina, self.sigla, tabela.querySelector('caption').textContent);
+          const linhas = Array.from(tabela.querySelectorAll('tr[data-classe]'));
+          const processosComPrazoAberto = new Set();
+          linhas.forEach(linha => {
+            const numproc = linha.cells[1].querySelector('a[href]').search.match(/&num_processo=(\d+)&/)[1];
+            processosComPrazoAberto.add(numproc);
+          });
+          for (let i = self.processos.length - 1; i >= 0; i--) {
+            if (processosComPrazoAberto.has(self.processos[i].numproc)) {
+              self.processos.splice(i, 1);
+            }
+          }
+        }
+        if (doc.getElementById('lnkProximaPaginaSuperior')) {
+          const paginaAtual = parseInt(doc.getElementById('selInfraPaginacaoSuperior').value);
+          const paginaNova = paginaAtual < 2 ? 2 : paginaAtual + 1;
+          return self.obterPrazosPagina.call(self, paginaNova);
+        } else {
+          const gui = GUI.getInstance();
+          gui.avisoCarregando.acrescentar(parseInt(self.link.textContent));
+          return self;
+        }
+      });
+    },
+    excluirPrazosAbertos() {
+      const link = this.link;
+      if (! link.href) {
+        return Promise.resolve(this);
+      }
+      return this.obterPrazosPagina(0).then(function() {
+        this.link.textContent = this.processos.length;
+        return this;
+      }.bind(this));
     },
     obterProcessos() {
       this.processos = [];
@@ -326,6 +426,7 @@ var LocalizadoresFactory = (function() {
         return Promise.resolve(this);
       } else {
         return this.obterPagina(0).then(function() {
+          this.quantidadeProcessosNaoFiltrados = this.processos.length;
           this.link.textContent = this.processos.length;
           if (this.processos.length > 0) {
             var localizadorProcesso = this.processos[0].localizadores.filter((localizador) => localizador.id === this.id)[0];
@@ -359,6 +460,7 @@ var LocalizadoresFactory = (function() {
       }
       localizador.siglaNome = siglaNome.join(' - ');
       var link = localizador.link = linha.querySelector('a');
+      localizador.quantidadeProcessosNaoFiltrados = parseInt(link.textContent);
       if (link.href) {
         var camposGet = parsePares(link.search.split(/^\?/)[1].split('&'));
         localizador.id = camposGet.selLocalizador;
@@ -370,6 +472,7 @@ var LocalizadoresFactory = (function() {
       localizador.linha = linha;
       localizador.nome = linha.cells[0].textContent.match(/^Processos com Localizador\s+"(.*)"$/)[1];
       var link = localizador.link = linha.querySelector('a,u');
+      localizador.quantidadeProcessosNaoFiltrados = parseInt(link.textContent);
       if (link && link.href) {
         var camposGet = parsePares(link.search.split(/^\?/)[1].split('&'));
         localizador.id = camposGet.selLocalizador;
@@ -378,27 +481,34 @@ var LocalizadoresFactory = (function() {
     }
   };
 
+  function paraCadaLocalizador(fn) {
+    var cookiesAntigos = parseCookies(document.cookie);
+    var promises = this.map(fn);
+    return Promise.all(promises).then(function() {
+      var cookiesNovos = parseCookies(document.cookie);
+      var expira = new Date();
+      expira.setFullYear(expira.getFullYear() + 1);
+      for (let key in cookiesNovos) {
+        if ((typeof cookiesAntigos[key] !== 'undefined') && cookiesNovos[key] !== cookiesAntigos[key]) {
+          document.cookie = encodeURIComponent(key) + '=' + encodeURIComponent(cookiesAntigos[key]) + '; expires=' + expira.toUTCString();
+        }
+      }
+    });
+  }
+
   function Localizadores() {
   }
   Localizadores.prototype = definirPropriedades(Object.create(Array.prototype), {
     constructor: Localizadores,
     tabela: null,
     obterProcessos() {
-      var cookiesAntigos = parseCookies(document.cookie);
-      var promises = this.map((localizador) => localizador.obterProcessos());
-      return Promise.all(promises).then(function() {
-        var cookiesNovos = parseCookies(document.cookie);
-        var expira = new Date();
-        expira.setFullYear(expira.getFullYear() + 1);
-        for (let key in cookiesNovos) {
-          if ((typeof cookiesAntigos[key] !== 'undefined') && cookiesNovos[key] !== cookiesAntigos[key]) {
-            document.cookie = encodeURIComponent(key) + '=' + encodeURIComponent(cookiesAntigos[key]) + '; expires=' + expira.toUTCString();
-          }
-        }
-      });
+      return paraCadaLocalizador.call(this, localizador => localizador.obterProcessos());
     },
     get quantidadeProcessos() {
       return this.reduce((soma, localizador) => soma + localizador.quantidadeProcessos, 0);
+    },
+    get quantidadeProcessosNaoFiltrados() {
+      return this.reduce((soma, localizador) => soma + localizador.quantidadeProcessosNaoFiltrados, 0);
     }
   });
 
@@ -639,7 +749,7 @@ function adicionarBotaoComVinculo(localizadores) {
   var botao = gui.criarBotaoAcao();
   botao.addEventListener('click', function() {
 
-    gui.avisoCarregando.atualizar(0, localizadores.quantidadeProcessos);
+    gui.avisoCarregando.atualizar(0, localizadores.quantidadeProcessosNaoFiltrados);
 
     localizadores.obterProcessos().then(function() {
       gui.avisoCarregando.ocultar();
