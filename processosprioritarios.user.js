@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version     13
+// @version     14
 // @grant       none
 // ==/UserScript==
 
@@ -106,12 +106,12 @@ var GUI = (function() {
         var filtrar = document.createElement('a');
         filtrar.setAttribute('onmouseover', 'infraTooltipMostrar("Excluir processos com prazos em aberto.");');
         filtrar.setAttribute('onmouseout', 'infraTooltipOcultar();');
+        filtrar.setAttribute('onclick', 'infraTooltipOcultar();');
         filtrar.className = 'gmFiltrar';
         filtrar.textContent = 'Filtrar';
         filtrar.addEventListener('click', function(evt) {
           evt.preventDefault();
           evt.stopPropagation();
-          filtrar.parentNode.removeChild(filtrar);
           var gui = GUI.getInstance();
           gui.avisoCarregando.exibir('Filtrando processos com prazo em aberto...');
           gui.avisoCarregando.atualizar(0, localizador.quantidadeProcessos);
