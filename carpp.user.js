@@ -9,92 +9,115 @@
 
 const DOMAIN = `${window.top.location.protocol}//${window.top.document.domain}`;
 
-const Armazem = {
-	_listeners: new Map(),
-	abrir() {
-		const req = indexedDB.open('carpp', 1);
-		req.addEventListener('upgradeneeded', evt => Armazem.criar(evt.target.result));
-		return new Promise((resolve, reject) => {
-			req.addEventListener('success', evt => resolve(evt.target.result));
-			req.addEventListener('error', evt => console.error(evt));
-		});
-	},
-	criar(db) {
-		const pessoas = db.createObjectStore('pessoas', {keyPath: 'sigla'});
-		pessoas.createIndex('nome', 'nome');
-	},
-	disparar(store, dados) {
-		if (! Armazem._listeners.has(store)) {
-			Armazem._listeners.set(store, new Set());
+const Armazem = (function() {
+
+	const listeners = new Map();
+
+	/**
+	 * Cria um conjunto de listeners se não existir
+	 *
+	 * @param {String} store nome do objectStore
+	 * @returns {Set} listeners do objectStore especificado
+	 */
+	function obterListeners(store) {
+		if (! listeners.has(store)) {
+			listeners.set(store, new Set());
 		}
-		Armazem._listeners.get(store).forEach(listener => {
-			listener(dados);
-		});
-	},
-	observar(store, listener) {
-		if (! Armazem._listeners.has(store)) {
-			Armazem._listeners.set(store, new Set());
-		}
-		Armazem._listeners.get(store).add(listener);
-	},
-	obter(store) {
-		return Armazem.abrir().then(db => {
-			const t = db.transaction([store]);
-			const os = t.objectStore(store);
-			const req = os.openCursor();
-			const map = new Map();
+		return listeners.get(store);
+	}
+
+	const Armazem = {
+		abrir() {
+			const VERSION = 1;
+			const req = indexedDB.open('carpp', VERSION);
+			req.addEventListener('upgradeneeded', evt => Armazem.criar(evt.target.result));
 			return new Promise((resolve, reject) => {
-				req.addEventListener('success', evt => {
-					const cursor = evt.target.result;
-					if (cursor) {
-						map.set(cursor.key, cursor.value);
-						cursor.continue();
-					} else {
+				req.addEventListener('success', evt => resolve(evt.target.result));
+				req.addEventListener('error', evt => reject(evt));
+			});
+		},
+		criar(db) {
+			const pessoas = db.createObjectStore('pessoas', {keyPath: 'sigla'});
+			pessoas.createIndex('nome', 'nome');
+		},
+		disparar(store, dados) {
+			obterListeners(store).forEach(listener => listener(dados));
+		},
+		observar(store, listener) {
+			obterListeners(store).add(listener);
+		},
+		obter(store) {
+			return Armazem.abrir().then(db => {
+				return new Promise((resolve) => {
+					const t = db.transaction([store]);
+					const os = t.objectStore(store);
+					const map = new Map();
+					os.getAll().addEventListener('success', ({ target: { result: objs }}) => {
+						objs.forEach(obj => {
+							let key = obj[os.keyPath];
+							map.set(key, obj);
+						});
 						Armazem.disparar(store, map);
 						resolve(map);
-					}
-				});
-			});
-		});
-	},
-	salvar(store, objs) {
-		console.log(store, objs);
-		return Armazem.abrir().then(db => {
-			const t = db.transaction([store], 'readwrite');
-			const os = t.objectStore(store);
-			return new Promise((resolve, reject) => {
-				os.getAll().addEventListener('success', ({target:{result:oldObjs}}) => {
-					oldObjs.forEach(oldObj => {
-						let id = oldObj[os.keyPath];
-						if (objs.has(id)) {
-							let obj = objs.get(id);
-							let changed = false;
-							for (let prop in obj) {
-								if (obj[prop] !== oldObj[prop]) changed = true;
-							}
-							if (changed) {
-								console.info('CHANGED', oldObj);
-								os.put(obj);
-							}
-							objs.delete(id);
-						} else {
-							console.info('DELETED', oldObj);
-							os.delete(id);
-						}
-					});
-					objs.forEach(obj => {
-						console.info('NEW', obj);
-						os.add(obj);
 					});
 				});
-				t.addEventListener('complete', _ => {
-					Armazem.obter(store);
-					resolve();
+			});
+		},
+		salvar(store, obj) {
+			return Armazem.abrir().then(db => {
+				const t = db.transaction([store]);
+				const os = t.objectStore(store);
+				const map = new Map();
+				map.set(obj[os.keyPath], obj);
+				return Armazem.salvarTudo(store, map, false);
+			});
+		},
+		salvarTudo(store, newObjs, apagarExistentes = true) {
+			console.log(store, newObjs);
+			return Armazem.abrir().then(db => {
+				const t = db.transaction([store], 'readwrite');
+				const os = t.objectStore(store);
+				return new Promise((resolve) => {
+					os.getAll().addEventListener('success', ({ target: { result: oldObjs } }) => {
+						oldObjs.forEach(oldObj => {
+							let key = oldObj[os.keyPath];
+							if (newObjs.has(key)) {
+								let newObj = newObjs.get(key);
+								let changed = false, changedObj = oldObj;
+								for (let prop in newObj) {
+									if (newObj.hasOwnProperty(prop) && newObj[prop] !== oldObj[prop]) {
+										changedObj[prop] = newObj[prop];
+										changed = true;
+									}
+								}
+								if (changed) {
+									console.info('CHANGED', changedObj);
+									os.put(changedObj);
+								}
+								// Manter na coleção apenas os que ainda não foram salvos
+								newObjs.delete(key);
+							} else if (apagarExistentes) {
+								console.info('DELETED', oldObj);
+								os.delete(key);
+							}
+						});
+						newObjs.forEach(newObj => {
+							console.info('NEW', newObj);
+							os.add(newObj);
+						});
+					});
+					t.addEventListener('complete', () => {
+						Armazem.obter(store);
+						resolve();
+					});
+					t.addEventListener('abort', evt => console.error('NEW', 'aborted', evt));
 				});
 			});
-		});
-	}
-};
+		}
+	};
+
+	return Armazem;
+})();
 
 function Botao(texto) {
 	const botao = document.createElement('button');
@@ -118,25 +141,34 @@ const Eproc = {
 		}
 
 		function analisarPagina(doc) {
-			const tabela = doc.querySelector('table[summary="Tabela de Usuários Ativos do Órgão"]');
-			const linhas = Array.from(tabela.rows).filter(linha => linha.classList.contains('infraTrClara') || linha.classList.contains('infraTrEscura'));
+			const tabela = doc.querySelector(
+				'table[summary="Tabela de Usuários Ativos do Órgão"]'
+			);
+			const linhas = Array.from(tabela.rows)
+				.filter(linha => {
+					return linha.classList.contains('infraTrClara')
+						|| linha.classList.contains('infraTrEscura');
+				});
 			linhas.forEach(linha => {
 				let nome = linha.cells[0].textContent;
 				let sigla = linha.cells[1].textContent;
 				if (! pessoas.has(sigla)) {
-					pessoas.set(sigla, {sigla, nome});
+					pessoas.set(sigla, new Pessoa({sigla, nome}));
 				}
 			});
 			if (doc.getElementById('lnkInfraProximaPaginaSuperior')) {
 				const paginaAtualElement = doc.getElementById('hdnInfraPaginaAtual');
-				var paginaAtual = Number(paginaAtualElement.value);
-				return obterPagina(doc, ++paginaAtual).then(analisarPagina);
+				const paginaAtual = Number(paginaAtualElement.value);
+				return obterPagina(doc, paginaAtual + 1).then(analisarPagina);
 			}
 		}
 
-		return Eproc.xhr(url).then(obterPagina).then(analisarPagina).then(_ => {
-			Armazem.salvar('pessoas', pessoas);
-		});
+		return Eproc.xhr(url)
+			.then(obterPagina)
+			.then(analisarPagina)
+			.then(() => {
+				Armazem.salvarTudo('pessoas', pessoas);
+			});
 	},
 	obterMenu(acao) {
 		const menuElement = document.querySelector('#main-menu');
@@ -144,9 +176,8 @@ const Eproc = {
 		const links = Array.from(menuElement.querySelectorAll('a[href]')).filter(link => re.test(link.search));
 		if (links.length === 1) {
 			return links[0].href;
-		} else {
-			throw new Error(`Link não encontrado: ${acao}`);
 		}
+		throw new Error(`Link não encontrado: ${acao}`);
 	},
 	xhr(url, method = 'GET', data = null) {
 		return new Promise((resolve, reject) => {
@@ -159,6 +190,114 @@ const Eproc = {
 		});
 	}
 };
+
+const Pessoa = (function() {
+	function Pessoa(newProperties = {}) {
+		for (let prop in Pessoa.prototype) {
+			if (newProperties.hasOwnProperty(prop)) {
+				this[prop] = newProperties[prop];
+			}
+		}
+	}
+	Pessoa.prototype = {
+		apelido: '',
+		ativa: false,
+		nome: null,
+		sigla: null
+	};
+	Object.defineProperties(Pessoa.prototype, {
+		'constructor': {
+			enumerable: false,
+			value: Pessoa
+		},
+		'exibirComo': {
+			enumerable: false,
+			get: function() { return this.apelido || this.nome; }
+		}
+	});
+	Pessoa.sort = function(a, b) {
+		const descricaoA = a.exibirComo.toLowerCase();
+		const descricaoB = b.exibirComo.toLowerCase();
+		if (descricaoA < descricaoB) return -1;
+		if (descricaoA > descricaoB) return +1;
+		if (a.sigla < b.sigla) return -1;
+		if (a.sigla > b.sigla) return +1;
+		return 0;
+	};
+	return Pessoa;
+})();
+
+var pessoa = new Pessoa();
+
+
+const PessoasDecorator = (function() {
+	const elements = new WeakMap();
+
+	function getElement() {
+		if (! elements.has(this)) {
+			const elt = document.createElement('div');
+			elt.className = 'pessoa';
+			const ativa = document.createElement('input');
+			ativa.type = 'checkbox';
+			ativa.className = 'pessoa__ativa';
+			ativa.checked = this.ativa;
+			const nome = document.createElement('div');
+			nome.className = 'pessoa__nome';
+			const sigla = document.createElement('div');
+			sigla.className = 'pessoa__sigla';
+			elt.appendChild(ativa);
+			elt.appendChild(nome);
+			elt.appendChild(sigla);
+			elt.associatedObject = this;
+			elements.set(this, elt);
+		}
+		let element = elements.get(this);
+		element.querySelector('.pessoa__nome').textContent = this.exibirComo;
+		element.querySelector('.pessoa__sigla').textContent = this.sigla;
+		return element;
+	}
+
+	const PessoasDecorator = {
+		decoratePessoa(pessoa) {
+			Object.defineProperty(pessoa, 'getElement', {
+				enumerable: false,
+				value: getElement
+			});
+			return pessoa;
+		}
+	};
+	return PessoasDecorator;
+})();
+
+const SetoresDecorator = (function() {
+	const pessoaElements = new WeakMap();
+
+	function getPessoaElement() {
+		if (! pessoaElements.has(this)) {
+			const elt = document.createElement('div');
+			elt.className = 'integrante';
+			const nome = document.createElement('div');
+			nome.className = 'integrante__nome';
+			elt.appendChild(nome);
+			elt.associatedObject = this;
+			pessoaElements.set(this, elt);
+		}
+		let element = pessoaElements.get(this);
+		element.querySelector('.integrante__nome').textContent = this.exibirComo;
+		return element;
+	}
+
+	const SetoresDecorator = {
+		decoratePessoa(pessoa) {
+			Object.defineProperty(pessoa, 'getElement', {
+				enumerable: false,
+				value: getPessoaElement
+			});
+			return pessoa;
+		}
+	};
+	return SetoresDecorator;
+})();
 
 function main() {
 	const barraLocalizacao = document.querySelector('#divInfraBarraLocalizacao');
@@ -177,63 +316,112 @@ function abrirIframeGerenciar() {
 		'.cabecalho { background: #009688; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }',
 		'.cabecalho__titulo { margin: 0; padding: 8px; font-size: 24px; color: #fff; }',
 		'.cabecalho__subtitulo { margin: 0; padding: 0 8px 8px; font-size: 16px; color: rgba(255,255,255,0.7); }',
-		'.pessoas { margin: 16px; min-height: 300px; max-width: 600px; border-radius: 2px; background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }',
-		'.pessoas__titulo { margin: 0; padding: 8px; font-size: 20px; color: #fff; background: #00796b; }',
+		'.painel { float: left; margin: 16px; width: 30%; min-width: 400px; min-height: 300px; max-width: 600px; border-radius: 2px; background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }',
+		'.titulo { margin: 0; padding: 8px; font-size: 20px; color: #fff; background: #00796b; }',
 		'.pessoas__atualizar { border: none; color: white; font-weight: bold; text-decoration: none; float: right; margin: 8px; background: #d50000; padding: 8px; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }',
 		'.pessoas__atualizar:disabled { background: #eee; color: rgba(0,0,0,0.38); }',
+		'.pessoas__instrucoes { margin: 8px; text-align: justify; }',
 		'.pessoas__container { clear: right; margin: 8px; }',
 		'.pessoa, .pessoa-cabecalho { display: flex; padding: 2px 0; border-bottom: 1px solid #ccc; }',
 		'.pessoa-cabecalho { font-weight: bold; }',
-		'.pessoa__nome { flex: 3; margin-right: 1ex; }',
-		'.pessoa__sigla { flex: 1; margin-left: 1ex; }',
+		'.pessoa-desativada { color: #aaa; }',
+		'.pessoa__ativa { flex: 1; margin-right: 1ex; }',
+		'.pessoa__nome { flex: 9; margin-right: 1ex; }',
+		'.pessoa__sigla { flex: 3; margin-left: 1ex; }',
+		'.setores { }',
+		'.setores__container { }',
+		'.setor { margin: 8px; min-width: 64px; min-height: 64px; border: 2px solid #aaa; border-radius: 8px; }',
+		'.setor-novo { border: 4px dashed #ccc; }',
+		'.setor-inexistente { border: none; }',
+		'.setor__integrantes { display: flex; flex-flow: row wrap; }',
+		'.integrante { margin: 2px; padding: 4px 8px; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }'
 	].join('\n'), [
 		'<header class="cabecalho">',
 		'<h1 class="cabecalho__titulo">CARPP</h1>',
 		'<h2 class="cabecalho__subtitulo">Controle de Andamento e Regularidade de Prazos Processuais</h2>',
 		'</header>',
-		'<div class="pessoas">',
-		'<h3 class="pessoas__titulo">Pessoas</h3>',
+		'<div class="pessoas painel">',
+		'<h3 class="pessoas__titulo titulo">Pessoas</h3>',
 		'<button class="pessoas__atualizar" disabled>Atualizar</button>',
+		'<div class="pessoas__instrucoes">Marque as pessoas que trabalham na sua unidade.<br><br>Recomenda-se clicar sobre os nomes para definir um apelido ou um nome mais curto para exibição.</div>',
 		'<div class="pessoas__container">',
-		'<div class="pessoa-cabecalho"><div class="pessoa__nome">Nome</div><div class="pessoa__sigla">Sigla</div></div>',
-		'<div class="pessoa"><div class="pessoa__nome"></div><div class="pessoa__sigla"></div></div>',
+		'<div class="pessoa-cabecalho"><div class="pessoa__ativa"></div><div class="pessoa__nome">Nome</div><div class="pessoa__sigla">Sigla</div></div>',
+		'</div>',
+		'</div>',
+		'<div class="setores painel">',
+		'<h3 class="setores__titulo titulo">Setores</h3>',
+		'<div class="setores__container">',
+		'<div class="setor setor-novo"><h4 class="setor__titulo">Novo setor</h4></div>',
+		'<div class="setor setor-inexistente">',
+		'<div class="setor__integrantes"></div>',
+		'</div>',
 		'</div>',
 		'</div>'
 	].join('')).then((win) => {
 		const doc = win.document;
-		const pessoasElement = doc.querySelector('.pessoas');
+
+		function lidarComEventoEspecifico(evt, nomeClasse, nomeClasseParent, callback) {
+			if (! evt.target.classList.contains(nomeClasse)) return;
+			let parent = evt.target.parentNode;
+			while (parent && ! parent.classList.contains(nomeClasseParent)) parent = parent.parentNode;
+			if (! parent) return;
+			const obj = parent.associatedObject;
+			callback(obj);
+		}
+		/* Painel "Pessoas" */
 		const pessoasAtualizarElement = doc.querySelector('.pessoas__atualizar');
 		const pessoasContainer = doc.querySelector('.pessoas__container');
-		const pessoaTemplate = doc.querySelector('.pessoa').cloneNode(true);
 		pessoasAtualizarElement.addEventListener('click', evt => {
 			evt.preventDefault();
 			evt.target.disabled = true;
-			Eproc.obterPessoas().then(_ => evt.target.disabled = false);
+			Eproc.obterPessoas();
 		}, false);
-		Armazem.observar('pessoas', function(pessoas) {
+		Armazem.observar('pessoas', function(dadosPessoas) {
 			Array.from(pessoasContainer.querySelectorAll('.pessoa')).forEach(pessoa => pessoasContainer.removeChild(pessoa));
-			let pessoasOrdenadas = [...pessoas.values()].sort((a, b) => {
-				if (a.nome < b.nome) return -1;
-				if (a.nome > b.nome) return +1;
-				if (a.sigla < b.sigla) return -1;
-				if (a.sigla > b.sigla) return +1;
-				return 0;
+			let pessoasOrdenadas = Array.from(dadosPessoas.values())
+				.map(dadosPessoa => PessoasDecorator.decoratePessoa(new Pessoa(dadosPessoa)))
+				.sort(Pessoa.sort);
+			pessoasOrdenadas.forEach(pessoa => pessoasContainer.appendChild(pessoa.getElement()));
+			pessoasAtualizarElement.disabled = false;
+		});
+		pessoasContainer.addEventListener('click', (evt) => {
+
+			lidarComEventoEspecifico(evt, 'pessoa__ativa', 'pessoa', pessoa => {
+				evt.preventDefault();
+				evt.target.disabled = true;
+				pessoa.getElement().classList.add('pessoa-desativada');
+				pessoa.ativa = evt.target.checked;
+				Armazem.salvar('pessoas', pessoa);
 			});
-			pessoasOrdenadas.forEach(pessoa => {
-				let pessoaElement = pessoaTemplate.cloneNode(true);
-				let pessoaNomeElement = pessoaElement.querySelector('.pessoa__nome');
-				let pessoaSiglaElement = pessoaElement.querySelector('.pessoa__sigla');
-				pessoaNomeElement.textContent = pessoa.nome;
-				pessoaSiglaElement.textContent = pessoa.sigla;
-				pessoasContainer.appendChild(pessoaElement);
+
+			lidarComEventoEspecifico(evt, 'pessoa__nome', 'pessoa', pessoa => {
+				if (pessoa.getElement().classList.contains('pessoa-desativada')) return;
+				const resposta = prompt(`Altere o nome da pessoa para exibição:\n\nDeixe em branco para usar o nome original:\n${pessoa.nome}`, pessoa.apelido);
+				if (resposta !== null) {
+					pessoa.apelido = resposta;
+					console.log(pessoa);
+					Armazem.salvar('pessoas', pessoa);
+				}
 			});
 		});
-		Armazem.obter('pessoas').then(_ => pessoasAtualizarElement.disabled = false);
+		Armazem.obter('pessoas');
+
+		/* Painel "Setores" */
+		const setoresContainer = doc.querySelector('.setor-inexistente .setor__integrantes');
+		Armazem.observar('pessoas', function(dadosPessoas) {
+			Array.from(setoresContainer.querySelectorAll('.integrante')).forEach(pessoa => setoresContainer.removeChild(pessoa));
+			let pessoasOrdenadas = Array.from(dadosPessoas.values())
+				.filter(pessoa => pessoa.ativa)
+				.map(dadosPessoa => SetoresDecorator.decoratePessoa(new Pessoa(dadosPessoa)))
+				.sort(Pessoa.sort);
+			pessoasOrdenadas.forEach(pessoa => setoresContainer.appendChild(pessoa.getElement()));
+		});
+
 	});
 }
 
 function abrirIframe(title, style = '', body = '') {
-	return new Promise((resolve, reject) => {
+	return new Promise((resolve) => {
 		const id = gerarIdAleatorio();
 		const blob = new Blob([
 			'<!doctype html><html><head>',
@@ -259,7 +447,8 @@ function abrirIframe(title, style = '', body = '') {
 }
 
 function gerarIdAleatorio() {
-	return 'id-' + ((1+Math.random()) * 0x1000000 | 0).toString(16).substring(1);
+	const randomString = ((1 + Math.random()) * 0x1000000 | 0).toString(16).substring(1);
+	return `id-${randomString}`;
 }
 
 function sobreporIframe(url, id) {
@@ -283,7 +472,7 @@ function sobreporIframe(url, id) {
 	fundo.getBoundingClientRect();
 	fundo.style.opacity = '';
 	const iframe = document.getElementById('carppIframe');
-	iframe.style.transform = `translateX(-120%) translateY(-120%) scaleX(0) scaleY(0)`;
+	iframe.style.transform = 'translateX(-120%) translateY(-120%) scaleX(0) scaleY(0)';
 	iframe.style.transformOrigin = 'top left';
 	iframe.getBoundingClientRect();
 	iframe.style.transition = 'transform 300ms ease-out';
@@ -292,13 +481,13 @@ function sobreporIframe(url, id) {
 	fecharElement.style.opacity = '0';
 	fecharElement.getBoundingClientRect();
 	fecharElement.style.transition = 'opacity 150ms';
-	runOnce(iframe, 'transitionend', _ => fecharElement.style.opacity = '');
-	fecharElement.addEventListener('click', function(evt) {
+	runOnce(iframe, 'transitionend', () => fecharElement.style.opacity = '');
+	fecharElement.addEventListener('click', function() {
 		fundo.style.opacity = '0';
-		runOnce(fundo, 'transitionend', _ => fundo.style.display = 'none');
+		runOnce(fundo, 'transitionend', () => fundo.style.display = 'none');
 		iframe.style.transition = 'transform 150ms ease-in';
 		iframe.style.transform = 'translateX(120%) translateY(-120%) scaleX(0) scaleY(0)';
-		runOnce(iframe, 'transitionend', _ => fundo.innerHTML = '');
+		runOnce(iframe, 'transitionend', () => fundo.innerHTML = '');
 	}, false);
 }
 
@@ -317,7 +506,16 @@ const replacementSymbols = {
 	'"': 'quot'
 };
 function safeHTML(strings, ...vars) {
-	return vars.reduce((result, variable, i) => result + variable.replace(invalidSymbols, (sym) => '&' + replacementSymbols[sym] + ';') + strings[i + 1], strings[0]);
+	return vars.reduce((result, variable, i) => result + variable.replace(invalidSymbols, (sym) => `&${replacementSymbols[sym]};`) + strings[i + 1], strings[0]);
+}
+
+function estender(dest, orig) {
+	Object.getOwnPropertyNames(orig).forEach(prop => Object.defineProperty(
+		dest,
+		prop,
+		Object.getOwnPropertyDescriptor(orig, prop)
+	));
+	return dest;
 }
 
 main();
