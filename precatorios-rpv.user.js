@@ -4,7 +4,7 @@
 // @namespace   http://nadameu.com.br/precatorios-rpv
 // @include     /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=processo_selecionar\&/
 // @include     /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=processo_precatorio_rpv\&/
-// @version     2
+// @version     3
 // @grant       none
 // ==/UserScript==
 
@@ -39,7 +39,7 @@ function criarLinkNovo() {
 				legend = $('#legInfAdicional');
 	linkListar
 		.attr('target', '_blank')
-		.text('Abrir precatórios/RPVs em nova aba/janela')
+		.text('Editar precatório/RPV')
 		.on('click', linkListarClicado);
 	legend.append(linkListar);
 }
