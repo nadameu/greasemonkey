@@ -4,7 +4,7 @@
 // @namespace   http://nadameu.com.br/precatorios-rpv
 // @include     /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=processo_selecionar\&/
 // @include     /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=processo_precatorio_rpv\&/
-// @version     1
+// @version     2
 // @grant       none
 // ==/UserScript==
 
@@ -74,7 +74,7 @@ function editarUnicaRequisicaoComStatus(statusDesejado) {
 		return status === statusDesejado;
 	});
 	if (linkEditar.length === 1) {
-		window.location.href = linkEditar.attr('href');
+		window.open(linkEditar.attr('href'), '_top');
 	}
 }
 
