@@ -6,11 +6,9 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 16
+// @version 17
 // @grant none
 // ==/UserScript==
-
-/* jshint esversion: 6, -W069 */
 
 const CompetenciasCorregedoria = {
 	JUIZADO: 1,
@@ -29,11 +27,11 @@ const Situacoes = {
 
 var GUI = (function() {
 	var instance = null,
-		construindo = false,
-		button = null,
-		tabela = null,
-		progresso = null,
-		saida = null;
+			construindo = false,
+			button = null,
+			tabela = null,
+			progresso = null,
+			saida = null;
 	var invalidSymbols = /[&<>"]/g;
 	var replacementSymbols = {
 		'&': 'amp',
@@ -114,7 +112,7 @@ var GUI = (function() {
 			}
 			if (localizador.lembrete) {
 				conteudo.push(' ');
-				conteudo.push('<img class="infraImgNormal" src="../../../infra_css/imagens/balao.gif" style="width:0.9em; height:0.9em; opacity:1; border-width:0;" onmouseover="' + safeHTML `return infraTooltipMostrar('${localizador.lembrete}','',400);` + '" onmouseout="return infraTooltipOcultar();"/>');
+				conteudo.push('<img class="infraImgNormal" src="../../../infra_css/imagens/balao.gif" style="width:0.9em; height:0.9em; opacity:1; border-width:0;" onmouseover="' + safeHTML`return infraTooltipMostrar('${localizador.lembrete}','',400);` + '" onmouseout="return infraTooltipOcultar();"/>');
 			}
 			conteudo.push('<div class="gmBaloes">');
 			conteudo.push(baloes.join(''));
@@ -187,7 +185,7 @@ var GUI = (function() {
 						var atraso = Math.round(processo.atraso);
 						linhaNova.className = 'infraTrClara gmDetalhes';
 						const DIGITOS_CLASSE = 6,
-							DIGITOS_COMPETENCIA = 2;
+									DIGITOS_COMPETENCIA = 2;
 						linhaNova.dataset.classe = ('0'.repeat(DIGITOS_CLASSE) + processo.numClasse).substr(-DIGITOS_CLASSE);
 						linhaNova.dataset.competencia = ('0'.repeat(DIGITOS_COMPETENCIA) + processo.numCompetencia).substr(-DIGITOS_COMPETENCIA);
 						var textoData;
@@ -216,9 +214,9 @@ var GUI = (function() {
 								throw new Error('Campo "data considerada" desconhecido.');
 						}
 						const MAXIMO_PRIORIDADE_MENOR_OU_IGUAL_A_UM = 2,
-							MAXIMO_PRIORIDADE_DOIS_OU_MAIOR = 1,
-							DIAS_BAIXO = 3,
-							IDEAL = 0.5;
+									MAXIMO_PRIORIDADE_DOIS_OU_MAIOR = 1,
+									DIAS_BAIXO = 3,
+									IDEAL = 0.5;
 						var esperado = processo.prazoCorregedoria;
 						var minimo = 0;
 						var maximo = esperado * indicePrioridade > 1 ? MAXIMO_PRIORIDADE_DOIS_OU_MAIOR : MAXIMO_PRIORIDADE_MENOR_OU_IGUAL_A_UM;
@@ -231,7 +229,8 @@ var GUI = (function() {
 						var localizadoresExtra = processo.localizadores.filter(loc => loc.id !== localizador.id).map(loc => loc.sigla);
 						linhaNova.innerHTML = [
 							'<td>',
-							safeHTML `<img class="gmLembreteProcesso${processo.lembretes.length === 0 ? ' gmLembreteProcessoVazio' : ''}" src="../../../infra_css/imagens/balao.gif" onmouseover="return infraTooltipMostrar('${processo.lembretes.map(lembrete => lembrete.replace(/\n/g, '<br>')).join('<hr style="border-width: 0 0 1px 0;">')}', 'Lembretes', 400);" onmouseout="return infraTooltipOcultar();">`, [
+							safeHTML`<img class="gmLembreteProcesso${processo.lembretes.length === 0 ? ' gmLembreteProcessoVazio' : ''}" src="../../../infra_css/imagens/balao.gif" onmouseover="return infraTooltipMostrar('${processo.lembretes.map(lembrete => lembrete.replace(/\n/g, '<br>')).join('<hr style="border-width: 0 0 1px 0;">')}', 'Lembretes', 400);" onmouseout="return infraTooltipOcultar();">`,
+							[
 								`<a href="${processo.link}">${processo.numprocFormatado}</a>`,
 								`<abbr title="${textoData}">${processo[processo.campoDataConsiderada].toLocaleString().substr(0, 10)}</abbr> + ${esperado.toString().replace(/\.5$/, '&half;')}${esperado >= 2 ? ' dias' : ' dia'} = ${processo.termoPrazoCorregedoria.toLocaleString().substr(0, 10)}`,
 							].join(' | '),
@@ -257,7 +256,7 @@ var GUI = (function() {
 					throw new Error('Aviso ainda não foi exibido.');
 				}
 				var atual = progresso.value,
-					total = progresso.max;
+						total = progresso.max;
 				this.atualizar(atual + qtd, total);
 			},
 			atualizar(atual, total) {
@@ -321,6 +320,143 @@ var GUI = (function() {
 				button.textContent = 'Atualizar';
 			}
 		},
+		criarGrafico(localizadores) {
+			var canvases = document.getElementsByTagName('canvas');
+			if (canvases.length > 0) {
+				console.log('Excluindo canvas antigo');
+				Array.from(canvases).forEach(canvas => canvas.parentNode.removeChild(canvas));
+			}
+
+			var tabelaDatas = new Map();
+			var agora = new Date(), hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+
+			localizadores.forEach(localizador => {
+				localizador.processos.forEach(processo => {
+					var termo = new Date(Math.max(hoje, processo.termoPrazoCorregedoria));
+					var data = new Date(termo.getFullYear(), termo.getMonth(), termo.getDate());
+					var timestamp = data.getTime();
+					if (! tabelaDatas.has(timestamp)) {
+						tabelaDatas.set(timestamp, 0);
+					}
+					tabelaDatas.set(timestamp, tabelaDatas.get(timestamp) + 1);
+				});
+			});
+
+			var datas = Array.from(tabelaDatas.keys()).sort();
+			var canvas = document.createElement('canvas');
+			var l = 1;
+			var t = 5;
+			var b = 1;
+			var r = 1;
+			var w = canvas.width = 1024;
+			var h = canvas.height = 400;
+			var barSpacing = 4;
+			var textSpacing = 4;
+			document.getElementById('divInfraAreaTelaD').appendChild(canvas);
+			var ctx = canvas.getContext('2d');
+			ctx.fillStyle = 'rgb(51, 51, 51)';
+			ctx.rect(0, 0, w, h);
+			ctx.fill();
+			var qtdMaxima = datas.reduce((maximo, data) => Math.max(maximo, tabelaDatas.get(data)), -Infinity);
+			var qtdDigitos = Math.ceil(Math.log(qtdMaxima) / Math.log(10));
+			ctx.textBaseline = 'middle';
+			ctx.textAlign = 'center';
+			ctx.font = '10px Arial';
+			l = ctx.measureText('0'.repeat(qtdDigitos)).width + textSpacing;
+
+			var unidadePrimaria = Math.pow(10, qtdDigitos - 1);
+			var unidadeSecundaria = Math.pow(10, qtdDigitos - 2);
+			var maximoEscala = Math.ceil(qtdMaxima / unidadePrimaria) * unidadePrimaria;
+
+			var qtdDias = (datas[datas.length - 1] - hoje) / 864e5 + 1;
+			var larguraBarra = (w - l - r) / qtdDias - barSpacing;
+			var distanciaBarras = larguraBarra + barSpacing;
+			var tamanhoFonte = -1, larguraPadrao;
+			do {
+				ctx.font = `${++tamanhoFonte}px Arial`;
+				larguraPadrao = ctx.measureText('00').width;
+			} while (larguraPadrao <= distanciaBarras && tamanhoFonte < 22);
+			tamanhoFonte -= 1;
+			b = tamanhoFonte + textSpacing;
+
+			ctx.font = '10px Arial';
+			ctx.strokeStyle = 'hsla(0, 0%, 100%, 1)';
+			ctx.lineWidth = 1;
+			ctx.fillStyle = 'hsla(180, 100%, 87%, 0.87)';
+			var tamanhoUnidadePrimaria = (h - b - t) / (maximoEscala / unidadePrimaria);
+			for (var i = 0; i <= maximoEscala; i += unidadePrimaria) {
+				var xTexto = l / 2;
+				var x1 = l;
+				var x2 = w - r;
+				var y = h - b - (i / unidadePrimaria * tamanhoUnidadePrimaria);
+				ctx.fillText(i, xTexto, y);
+				ctx.beginPath();
+				ctx.moveTo(x1, y);
+				ctx.lineTo(x2, y);
+				ctx.stroke();
+			}
+
+			var tamanhoUnidadeSecundaria = (h - b - t) / (maximoEscala / unidadeSecundaria);
+			console.log(tamanhoUnidadeSecundaria);
+			var desenharEscalaSecundaria = false;
+			[1, 2.5, 5].forEach(mult => {
+				if (desenharEscalaSecundaria) return;
+				if (mult * tamanhoUnidadeSecundaria >= 20 + 2 * textSpacing) {
+					desenharEscalaSecundaria = true;
+					unidadeSecundaria *= mult;
+					tamanhoUnidadeSecundaria *= mult;
+				}
+			});
+			if (desenharEscalaSecundaria) {
+				ctx.lineWidth = 0.25;
+				for (var i = 0; i <= maximoEscala; i += unidadeSecundaria) {
+					var xTexto = l / 2;
+					var x1 = l;
+					var x2 = w - r;
+					var y = h - b - (i / unidadeSecundaria * tamanhoUnidadeSecundaria);
+					ctx.fillText(i, xTexto, y);
+					ctx.beginPath();
+					ctx.moveTo(x1, y);
+					ctx.lineTo(x2, y);
+					ctx.stroke();
+				}
+
+			}
+
+			ctx.font = `${tamanhoFonte}px Arial`;
+			var media = 0;
+			ctx.lineWidth = 4;
+			ctx.lineJoin = 'round';
+			ctx.beginPath();
+			for (var i = 0, data = new Date(hoje.getTime()); data <= datas[datas.length - 1]; data.setDate(data.getDate() + 1)) {
+				let xBarra = l + barSpacing/2 + i * distanciaBarras;
+				let xTexto = xBarra - barSpacing/2 + distanciaBarras/2;
+				let valor;
+				if (tabelaDatas.has(data.getTime())) {
+					valor = tabelaDatas.get(data.getTime());
+					var alturaBarra = valor / maximoEscala * (h - t - b);
+					ctx.fillStyle = 'hsla(60, 100%, 75%, 1)';
+					ctx.fillRect(xBarra, h - b - alturaBarra, larguraBarra, alturaBarra);
+				} else {
+					valor = 0;
+				}
+				if (i === 0) {
+					media = valor;
+				} else {
+					media = (media * i + valor) / (i + 1);
+				}
+				if (i === 0) {
+					ctx.moveTo(xTexto, h - b - media / maximoEscala * (h - t - b));
+				} else {
+					ctx.lineTo(xTexto, h - b - media / maximoEscala * (h - t - b));
+				}
+				ctx.fillStyle = 'hsla(180, 100%, 87%, 0.87)';
+				ctx.fillText(data.getDate(), xTexto, h - b/2);
+				i++;
+			}
+			ctx.strokeStyle = 'hsla(180, 100%, 34%, 0.67)';
+			ctx.stroke();
+		},
 		visitLocalizador(pvtVars) {
 			return pvtVars;
 		}
@@ -339,9 +475,9 @@ var LocalizadoresFactory = (function() {
 	var obterFormularioRelatorioGeral = function() {
 		var promiseRelatorioGeral = new Promise(function(resolve, reject) {
 			var url = Array.from(document.querySelectorAll('#main-menu a[href]'))
-				.filter(link => /^\?acao=relatorio_geral_listar&/.test(link.search))
-				.map(link => link.href)[0];
-			var xml = new XMLHttpRequest();
+			.filter(link => /^\?acao=relatorio_geral_listar&/.test(link.search))
+							.map(link => link.href)[0];
+							var xml = new XMLHttpRequest();
 			xml.open('GET', url);
 			xml.responseType = 'document';
 			xml.onerror = reject;
@@ -390,84 +526,84 @@ var LocalizadoresFactory = (function() {
 		obterPagina(pagina, doc) {
 			var self = this;
 			return new Promise(function(resolve, reject) {
-					var url, data;
-					if (pagina === 0) {
-						url = self.link.href;
-						data = new FormData();
-						var camposPost = ['optchkcClasse', 'optDataAutuacao', 'optchkcUltimoEvento', 'optNdiasSituacao', 'optJuizo', 'optPrioridadeAtendimento', 'chkStatusProcesso'];
-						camposPost.forEach((campo) => data.set(campo, 'S'));
-						data.set('paginacao', '100');
-						data.set('hdnInfraPaginaAtual', pagina);
-					} else {
-						doc.getElementById('selLocalizador').value = self.id;
-						var paginaAtual = doc.getElementById('hdnInfraPaginaAtual');
-						paginaAtual.value = pagina;
-						var form = paginaAtual.parentElement;
-						while (form.tagName.toLowerCase() !== 'form') {
-							form = form.parentElement;
-						}
-						url = form.action;
-						data = new FormData(form);
+				var url, data;
+				if (pagina === 0) {
+					url = self.link.href;
+					data = new FormData();
+					var camposPost = ['optchkcClasse', 'optDataAutuacao', 'optchkcUltimoEvento', 'optNdiasSituacao', 'optJuizo', 'optPrioridadeAtendimento', 'chkStatusProcesso'];
+					camposPost.forEach((campo) => data.set(campo, 'S'));
+					data.set('paginacao', '100');
+					data.set('hdnInfraPaginaAtual', pagina);
+				} else {
+					doc.getElementById('selLocalizador').value = self.id;
+					var paginaAtual = doc.getElementById('hdnInfraPaginaAtual');
+					paginaAtual.value = pagina;
+					var form = paginaAtual.parentElement;
+					while (form.tagName.toLowerCase() !== 'form') {
+						form = form.parentElement;
 					}
-					var xml = new XMLHttpRequest();
-					xml.open('POST', url);
-					xml.responseType = 'document';
-					xml.onerror = reject;
-					xml.onload = resolve;
-					xml.send(data);
-				})
+					url = form.action;
+					data = new FormData(form);
+				}
+				var xml = new XMLHttpRequest();
+				xml.open('POST', url);
+				xml.responseType = 'document';
+				xml.onerror = reject;
+				xml.onload = resolve;
+				xml.send(data);
+			})
 				.then(trataHTML.bind(this))
 				.catch(console.error.bind(console));
 		},
 		obterPrazosPagina(pagina = 0) {
 			const self = this;
 			return obterFormularioRelatorioGeral().then(function(form) {
-					const url = form.action;
-					const method = form.method;
-					const data = new FormData();
-					data.set('paginacao', '100');
-					data.set('selPrazo', 'A');
-					data.set('selLocalizadorPrincipal', self.id);
-					data.set('selLocalizadorPrincipalSelecionados', self.id);
-					data.set('optchkcClasse', 'S');
-					data.set('hdnInfraPaginaAtual', pagina);
-					return new Promise(function(resolve, reject) {
-						var xml = new XMLHttpRequest();
-						xml.open(method, url);
-						xml.responseType = 'document';
-						xml.onerror = reject;
-						xml.onload = resolve;
-						xml.send(data);
-					});
-				})
-				.then(function({ target: { response: doc } }) {
-					const tabela = doc.getElementById('tabelaLocalizadores');
-					const quantidadeProcessosCarregados = parseInt(doc.getElementById('hdnInfraNroItens').value);
-					if (tabela) {
-						console.log(pagina, self.sigla, tabela.querySelector('caption').textContent);
-						const linhas = Array.from(tabela.querySelectorAll('tr[data-classe]'));
-						const processosComPrazoAberto = new Set();
-						linhas.forEach(linha => {
-							const numproc = linha.cells[1].querySelector('a[href]').search.match(/&num_processo=(\d+)&/)[1];
-							processosComPrazoAberto.add(numproc);
-						});
-						for (let i = self.processos.length - 1; i >= 0; i--) {
-							if (processosComPrazoAberto.has(self.processos[i].numproc)) {
-								self.processos.splice(i, 1);
-							}
-						}
-					} else {
-						console.log(pagina, self.sigla, quantidadeProcessosCarregados);
-					}
-					if (doc.getElementById('lnkProximaPaginaSuperior')) {
-						const paginaAtual = parseInt(doc.getElementById('selInfraPaginacaoSuperior').value);
-						const paginaNova = paginaAtual < 2 ? 2 : paginaAtual + 1;
-						return self.obterPrazosPagina.call(self, paginaNova);
-					}
-					const gui = GUI.getInstance();
-					gui.avisoCarregando.acrescentar(parseInt(self.link.textContent));
-					return self;
+				const url = form.action;
+				const method = form.method;
+				const data = new FormData();
+				data.set('paginacao', '100');
+				data.set('selPrazo', 'A');
+				data.set('selLocalizadorPrincipal', self.id);
+				data.set('selLocalizadorPrincipalSelecionados', self.id);
+				data.set('optchkcClasse', 'S');
+				data.set('hdnInfraPaginaAtual', pagina);
+				return new Promise(function(resolve, reject) {
+					var xml = new XMLHttpRequest();
+					xml.open(method, url);
+					xml.responseType = 'document';
+					xml.onerror = reject;
+					xml.onload = resolve;
+					xml.send(data);
 				});
+			})
+				.then(function({ target: { response: doc } }) {
+				const tabela = doc.getElementById('tabelaLocalizadores');
+				const quantidadeProcessosCarregados = parseInt(doc.getElementById('hdnInfraNroItens').value);
+				if (tabela) {
+					console.log(pagina, self.sigla, tabela.querySelector('caption').textContent);
+					const linhas = Array.from(tabela.querySelectorAll('tr[data-classe]'));
+					const processosComPrazoAberto = new Set();
+					linhas.forEach(linha => {
+						const numproc = linha.cells[1].querySelector('a[href]').search.match(/&num_processo=(\d+)&/)[1];
+						processosComPrazoAberto.add(numproc);
+					});
+					for (let i = self.processos.length - 1; i >= 0; i--) {
+						if (processosComPrazoAberto.has(self.processos[i].numproc)) {
+							self.processos.splice(i, 1);
+						}
+					}
+				} else {
+					console.log(pagina, self.sigla, quantidadeProcessosCarregados);
+				}
+				if (doc.getElementById('lnkProximaPaginaSuperior')) {
+					const paginaAtual = parseInt(doc.getElementById('selInfraPaginacaoSuperior').value);
+					const paginaNova = paginaAtual < 2 ? 2 : paginaAtual + 1;
+					return self.obterPrazosPagina.call(self, paginaNova);
+				}
+				const gui = GUI.getInstance();
+				gui.avisoCarregando.acrescentar(parseInt(self.link.textContent));
+				return self;
+			});
 		},
 		excluirPrazosAbertos() {
 			const link = this.link;
@@ -637,13 +773,13 @@ var ProcessoFactory = (function() {
 
 	const MILISSEGUNDOS_EM_UM_DIA = 864e5;
 	const COMPETENCIA_JUIZADO_MIN = 9,
-		COMPETENCIA_JUIZADO_MAX = 20,
-		COMPETENCIA_CRIMINAL_MIN = 21,
-		COMPETENCIA_CRIMINAL_MAX = 30,
-		COMPETENCIA_EF_MIN = 41,
-		COMPETENCIA_EF_MAX = 43,
-		CLASSE_EF = 99,
-		CLASSE_CARTA_PRECATORIA = 60;
+				COMPETENCIA_JUIZADO_MAX = 20,
+				COMPETENCIA_CRIMINAL_MIN = 21,
+				COMPETENCIA_CRIMINAL_MAX = 30,
+				COMPETENCIA_EF_MIN = 41,
+				COMPETENCIA_EF_MAX = 43,
+				CLASSE_EF = 99,
+				CLASSE_CARTA_PRECATORIA = 60;
 
 	function Processo() {
 		this.dadosComplementares = new Set();
@@ -804,10 +940,6 @@ var RegrasCorregedoria = {
 	}
 };
 
-// FIXME Alterações específicas para SCLAG02
-RegrasCorregedoria[[CompetenciasCorregedoria.JUIZADO]][Situacoes['MOVIMENTO-AGUARDA DESPACHO']] = 30;
-RegrasCorregedoria[[CompetenciasCorregedoria.JUIZADO]][Situacoes['MOVIMENTO']] = 30;
-
 function adicionarBotaoComVinculo(localizadores) {
 	var gui = GUI.getInstance();
 	var botao = gui.criarBotaoAcao();
@@ -819,6 +951,7 @@ function adicionarBotaoComVinculo(localizadores) {
 			localizadores.forEach(function(localizador) {
 				gui.atualizarVisualizacao(localizador);
 			});
+			gui.criarGrafico(localizadores);
 		});
 	}, false);
 }
