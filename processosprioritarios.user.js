@@ -137,6 +137,7 @@ var GUI = (function() {
 						localizador.excluirPrazosAbertos().then(function() {
 							gui.avisoCarregando.ocultar();
 							gui.atualizarVisualizacao(localizador, true);
+							gui.atualizarGrafico();
 						});
 					}, false);
 					container.appendChild(filtrar);
@@ -153,6 +154,7 @@ var GUI = (function() {
 					localizador.obterProcessos().then(function() {
 						gui.avisoCarregando.ocultar();
 						gui.atualizarVisualizacao(localizador);
+						gui.atualizarGrafico();
 					});
 				}, false);
 				container.appendChild(atualizar);
@@ -321,42 +323,265 @@ var GUI = (function() {
 			}
 		},
 		criarGrafico(localizadores) {
-			var canvases = document.getElementsByTagName('canvas');
-			if (canvases.length > 0) {
-				console.log('Excluindo canvas antigo');
-				Array.from(canvases).forEach(canvas => canvas.parentNode.removeChild(canvas));
+
+			function excluirCanvasAntigo() {
+				const canvases = document.getElementsByTagName('canvas');
+				if (canvases.length > 0) {
+					console.log('Excluindo canvas antigo');
+					Array.from(canvases).forEach(canvas => canvas.parentNode.removeChild(canvas));
+				}
 			}
 
-			var tabelaDatas = new Map();
-			var agora = new Date(), hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+			function extrairProcessos(localizadores) {
+				const processos = new Map();
 
-			localizadores.forEach(localizador => {
-				localizador.processos.forEach(processo => {
-					var termo = new Date(Math.max(hoje, processo.termoPrazoCorregedoria));
-					var data = new Date(termo.getFullYear(), termo.getMonth(), termo.getDate());
-					var timestamp = data.getTime();
-					if (! tabelaDatas.has(timestamp)) {
-						tabelaDatas.set(timestamp, 0);
-					}
-					tabelaDatas.set(timestamp, tabelaDatas.get(timestamp) + 1);
+				const agora = new Date(),
+							hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+
+				localizadores.forEach(localizador => {
+					localizador.processos.forEach(processo => {
+						const numproc = processo.numproc;
+
+						const termo = processo.termoPrazoCorregedoria,
+									dataTermo = new Date(termo.getFullYear(), termo.getMonth(), termo.getDate());
+						const timestamp = Math.max(hoje, dataTermo);
+
+						if (processos.has(numproc)) {
+							const timestampAntigo = processos.get(numproc),
+										timestampNovo = Math.min(timestampAntigo, timestamp);
+							processos.set(numproc, timestampNovo);
+						} else {
+							processos.set(numproc, timestamp);
+						}
+					});
 				});
-			});
+
+				return processos;
+			}
+
+			function extrairDatas(processos) {
+				const datas = new Map();
+
+				for (let [numproc, timestamp] of processos.entries()) {
+					let valorAtual = datas.get(timestamp) || 0;
+					datas.set(timestamp, valorAtual + 1);
+				}
+
+				return datas;
+			}
+
+			const Grafico = (function() {
+
+				class Grafico {
+
+					get area() {
+						var area = {
+							corFundo: 'rgba(102, 102, 102, 0.25)',
+							linha: {
+								espessura: 1,
+								cor: '#666'
+							}
+						};
+						const margemExterna = this.dimensoes.margem + this.linha.espessura/2 + this.dimensoes.espacamento + area.linha.espessura/2;
+						area.margens = {
+							t: margemExterna + this.texto.altura/2,
+							r: margemExterna,
+							b: margemExterna + this.texto.altura + this.dimensoes.espacamento,
+							l: margemExterna + this.escala.largura + 2*this.dimensoes.espacamento
+						};
+						area.dimensoes = {
+							largura: this.dimensoes.largura - area.margens.l - area.margens.r,
+							altura: this.dimensoes.altura - area.margens.t - area.margens.b
+						}
+						return area;
+					}
+
+					constructor() {
+						this.dimensoes = {
+							largura: 1024,
+							altura: 400,
+							margem: 3,
+							espacamento: 5
+						};
+						this.linha = {
+							espessura: 1,
+							cor: 'rgba(255, 255, 255, 0.9)'
+						};
+						this.corFundo = 'rgb(51, 51, 51)';
+						this.texto = {
+							altura: 10,
+							cor: 'hsla(180, 100%, 87%, 0.87)',
+							corSecundaria: 'hsla(180, 100%, 87%, 0.5)'
+						}
+						this.escala = {
+							maximo: 20,
+							unidadePrimaria: 10,
+							unidadeSecundaria: 5,
+							largura: 2 * this.texto.altura,
+							linhaPrimaria: {
+								espessura: 2,
+								cor: '#888'
+							},
+							linhaSecundaria: {
+								espessura: 0.5,
+								cor: '#666'
+							}
+						};
+
+						const canvas = document.createElement('canvas');
+						canvas.width = this.dimensoes.largura;
+						canvas.height = this.dimensoes.altura;
+						this.canvas = canvas;
+
+						this.context = this.canvas.getContext('2d');
+						this.dados = new Map();
+					}
+
+					inserirDados(dados) {
+						this.dados = dados;
+					}
+
+					render() {
+						this.calcularEscala();
+						this.calcularLarguraEscala();
+
+						this.desenharFundo();
+						this.desenharArea();
+						this.desenharEscala();
+						return this.canvas;
+					}
+
+					desenharFundo() {
+						const context = this.context;
+						context.fillStyle = this.corFundo;
+						context.fillRect(0, 0, this.dimensoes.largura, this.dimensoes.altura);
+						context.beginPath();
+						let x = y = this.dimensoes.margem;
+						let w = this.dimensoes.largura - 2*this.dimensoes.margem;
+						let h = this.dimensoes.altura - 2*this.dimensoes.margem;
+						context.rect(x, y, w, h);
+						context.lineWidth = this.linha.espessura;
+						context.strokeStyle = this.linha.cor;
+						context.stroke();
+					}
+
+					desenharArea() {
+						const context = this.context;
+						context.beginPath();
+						context.rect(this.area.margens.l, this.area.margens.t, this.area.dimensoes.largura, this.area.dimensoes.altura);
+						context.fillStyle = this.area.corFundo;
+						context.fill();
+						context.lineWidth = this.area.linha.espessura;
+						context.strokeStyle = this.area.linha.cor;
+						context.stroke();
+					}
+
+					desenharEscala() {
+						const qtdIntervalos = this.escala.maximo / this.escala.unidadePrimaria;
+						const alturaIntervalo = this.area.dimensoes.altura / qtdIntervalos;
+
+						const context = this.context;
+						const xTexto = this.dimensoes.margem + this.linha.espessura/2 + this.dimensoes.espacamento + this.escala.largura/2;
+						const xLinha = xTexto + this.escala.largura/2 + this.dimensoes.espacamento;
+						const wLinha = this.area.dimensoes.largura + this.dimensoes.espacamento;
+						for (let i = 0; i <= this.escala.maximo; i += this.escala.unidadeSecundaria) {
+							if (i % this.escala.unidadePrimaria === 0) {
+								context.fillStyle = this.texto.cor;
+								context.strokeStyle = this.escala.linhaPrimaria.cor;
+								context.lineWidth = this.escala.linhaPrimaria.espessura;
+							} else {
+								context.fillStyle = this.texto.corSecundaria;
+								context.strokeStyle = this.escala.linhaSecundaria.cor;
+								context.lineWidth = this.escala.linhaSecundaria.espessura;
+							}
+							let proporcao = i / this.escala.maximo;
+							let y = this.dimensoes.altura - this.area.margens.b - proporcao * this.area.dimensoes.altura;
+							context.fillText(i, xTexto, y);
+							context.beginPath();
+							context.moveTo(xLinha, y);
+							context.lineTo(xLinha + wLinha, y);
+							context.stroke();
+						}
+					}
+
+					calcularEscala() {
+
+						const quantidades = Array.from(this.dados.values());
+						const maximo = Math.max.apply(null, quantidades);
+						this.calcularDadosEscala(maximo);
+
+						const distanciaMinima = 2*this.dimensoes.espacamento + 2*this.texto.altura;
+
+						let secundariaOk = this.assegurarDistanciaMinima('unidadeSecundaria', distanciaMinima);
+						if (secundariaOk) return;
+
+						primariaOk = this.assegurarDistanciaMinima('unidadePrimaria', distanciaMinima);
+						if (primariaOk) {
+							this.escala.unidadeSecundaria = this.escala.unidadePrimaria;
+						} else {
+							throw new Error('Não sei o que fazer');
+						}
+
+					}
+
+					calcularLarguraEscala() {
+						const context = this.context;
+						context.textBaseline = 'middle';
+						context.textAlign = 'center';
+						context.font = `${this.texto.altura}px Arial`;
+						const largura = context.measureText(this.escala.maximo.toString()).width;
+						this.escala.largura = largura;
+					}
+
+					calcularDadosEscala(maximo) {
+						if (maximo <= 10) {
+							this.escala.unidadePrimaria = 10;
+						} else {
+							const ordem = Math.floor(Math.log(maximo) / Math.log(10));
+							this.escala.unidadePrimaria = Math.pow(10, ordem);
+						}
+						this.escala.unidadeSecundaria = this.escala.unidadePrimaria / 10;
+						this.escala.maximo = Math.ceil(maximo / this.escala.unidadeSecundaria) * this.escala.unidadeSecundaria;
+					}
+
+					assegurarDistanciaMinima(unidade, distancia) {
+						let tamanhoIdealEncontrado = false;
+						[1, 2, 2.5, 5, 10].forEach(mult => {
+							if (tamanhoIdealEncontrado) return;
+							let novoIntervalo = this.escala[unidade] * mult;
+							if (novoIntervalo % 1 !== 0) return;
+							let novoMaximo = Math.ceil(this.escala.maximo / novoIntervalo) * novoIntervalo;
+							if (novoMaximo / novoIntervalo * distancia <= this.area.dimensoes.altura) {
+								tamanhoIdealEncontrado = true;
+								if (mult !== 1) {
+									this.escala[unidade] *= mult;
+									this.escala.maximo = novoMaximo;
+								}
+							}
+						});
+						return tamanhoIdealEncontrado;
+					}
+
+				}
+
+				return Grafico;
+			})();
+
+			excluirCanvasAntigo();
+			const processos = extrairProcessos(localizadores);
+			const tabelaDatas = extrairDatas(processos);
+			var grafico = new Grafico();
+			grafico.inserirDados(tabelaDatas);
+			document.getElementById('divInfraAreaTelaD').appendChild(grafico.render());
+
+
+			return;
+
+
 
 			var datas = Array.from(tabelaDatas.keys()).sort();
-			var canvas = document.createElement('canvas');
-			var l = 1;
-			var t = 5;
-			var b = 1;
-			var r = 1;
-			var w = canvas.width = 1024;
-			var h = canvas.height = 400;
-			var barSpacing = 4;
-			var textSpacing = 4;
-			document.getElementById('divInfraAreaTelaD').appendChild(canvas);
-			var ctx = canvas.getContext('2d');
-			ctx.fillStyle = 'rgb(51, 51, 51)';
-			ctx.rect(0, 0, w, h);
-			ctx.fill();
+
+
 			var qtdMaxima = datas.reduce((maximo, data) => Math.max(maximo, tabelaDatas.get(data)), -Infinity);
 			var qtdDigitos = Math.ceil(Math.log(qtdMaxima) / Math.log(10));
 			ctx.textBaseline = 'middle';
@@ -952,6 +1177,7 @@ function adicionarBotaoComVinculo(localizadores) {
 				gui.atualizarVisualizacao(localizador);
 			});
 			gui.criarGrafico(localizadores);
+			gui.atualizarGrafico = gui.criarGrafico.bind(null, localizadores);
 		});
 	}, false);
 }
