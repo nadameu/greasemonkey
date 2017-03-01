@@ -427,6 +427,22 @@ var GUI = (function() {
 								cor: '#666'
 							}
 						};
+						let self = this;
+						this.categorias = {
+							quantidade: 1,
+							get distancia() {
+								return self.area.dimensoes.largura / self.categorias.quantidade;
+							}
+						};
+						this.barras = {
+							corVencido: 'hsla(15, 80%, 75%, 1)',
+							corProximosDias: 'hsla(60, 100%, 75%, 1)',
+							corNoPrazo: 'hsla(120, 75%, 80%, 1)',
+							espacamento: 0.2, // valor entre 0 e 1, proporcional à largura disponível
+							get largura() {
+								return self.categorias.distancia * (1 - self.barras.espacamento);
+							}
+						};
 
 						const canvas = document.createElement('canvas');
 						canvas.width = this.dimensoes.largura;
@@ -444,10 +460,13 @@ var GUI = (function() {
 					render() {
 						this.calcularEscala();
 						this.calcularLarguraEscala();
+						this.calcularCategorias();
 
 						this.desenharFundo();
 						this.desenharArea();
 						this.desenharEscala();
+						this.desenharCategorias();
+						this.desenharBarras();
 						return this.canvas;
 					}
 
@@ -456,7 +475,7 @@ var GUI = (function() {
 						context.fillStyle = this.corFundo;
 						context.fillRect(0, 0, this.dimensoes.largura, this.dimensoes.altura);
 						context.beginPath();
-						let x = y = this.dimensoes.margem;
+						let y, x = y = this.dimensoes.margem;
 						let w = this.dimensoes.largura - 2*this.dimensoes.margem;
 						let h = this.dimensoes.altura - 2*this.dimensoes.margem;
 						context.rect(x, y, w, h);
@@ -504,6 +523,47 @@ var GUI = (function() {
 						}
 					}
 
+					desenharCategorias() {
+						const context = this.context;
+						const larguraPossivelTexto = context.measureText('99').width;
+						const step = Math.ceil((larguraPossivelTexto + this.dimensoes.espacamento) / this.categorias.distancia);
+						const agora = new Date(), hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+
+						context.fillStyle = this.texto.cor;
+						const y = this.dimensoes.altura - (this.dimensoes.margem + this.linha.espessura/2 + this.area.margens.b)/2;
+						for (let i = 0; i < this.categorias.quantidade; i += step) {
+							let dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
+							let x = this.area.margens.l + (i + 0.5) * this.categorias.distancia;
+							context.fillText(dia.getDate(), x, y);
+						}
+					}
+
+					desenharBarras() {
+						const context = this.context;
+						const agora = new Date(), hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+						const larguraBarra = this.categorias.distancia * (1 - this.barras.espacamento);
+
+						for (let i = 0; i < this.categorias.quantidade; i++) {
+							if (i === 0) {
+								context.fillStyle = this.barras.corVencido;
+							} else if (i <= 3) {
+								context.fillStyle = this.barras.corProximosDias;
+							} else {
+								context.fillStyle = this.barras.corNoPrazo;
+							}
+							let dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
+							if (this.dados.has(dia.getTime())) {
+								let x = this.area.margens.l + (i + 0.5) * this.categorias.distancia - larguraBarra/2;
+								let valor = this.dados.get(dia.getTime());
+								let altura = valor / this.escala.maximo * this.area.dimensoes.altura;
+								let y = this.dimensoes.altura - this.area.margens.b - altura;
+								context.fillRect(x, y, larguraBarra, altura);
+							} else {
+
+							}
+						}
+					}
+
 					calcularEscala() {
 
 						const quantidades = Array.from(this.dados.values());
@@ -531,6 +591,14 @@ var GUI = (function() {
 						context.font = `${this.texto.altura}px Arial`;
 						const largura = context.measureText(this.escala.maximo.toString()).width;
 						this.escala.largura = largura;
+					}
+
+					calcularCategorias() {
+						const dias = Array.from(this.dados.keys());
+						const minimo = Math.min.apply(null, dias);
+						const maximo = Math.max.apply(null, dias);
+						const UM_DIA = 864e5;
+						this.categorias.quantidade = (maximo - minimo) / UM_DIA + 1;
 					}
 
 					calcularDadosEscala(maximo) {
@@ -573,114 +641,6 @@ var GUI = (function() {
 			var grafico = new Grafico();
 			grafico.inserirDados(tabelaDatas);
 			document.getElementById('divInfraAreaTelaD').appendChild(grafico.render());
-
-
-			return;
-
-
-
-			var datas = Array.from(tabelaDatas.keys()).sort();
-
-
-			var qtdMaxima = datas.reduce((maximo, data) => Math.max(maximo, tabelaDatas.get(data)), -Infinity);
-			var qtdDigitos = Math.ceil(Math.log(qtdMaxima) / Math.log(10));
-			ctx.textBaseline = 'middle';
-			ctx.textAlign = 'center';
-			ctx.font = '10px Arial';
-			l = ctx.measureText('0'.repeat(qtdDigitos)).width + textSpacing;
-
-			var unidadePrimaria = Math.pow(10, qtdDigitos - 1);
-			var unidadeSecundaria = Math.pow(10, qtdDigitos - 2);
-			var maximoEscala = Math.ceil(qtdMaxima / unidadePrimaria) * unidadePrimaria;
-
-			var qtdDias = (datas[datas.length - 1] - hoje) / 864e5 + 1;
-			var larguraBarra = (w - l - r) / qtdDias - barSpacing;
-			var distanciaBarras = larguraBarra + barSpacing;
-			var tamanhoFonte = -1, larguraPadrao;
-			do {
-				ctx.font = `${++tamanhoFonte}px Arial`;
-				larguraPadrao = ctx.measureText('00').width;
-			} while (larguraPadrao <= distanciaBarras && tamanhoFonte < 22);
-			tamanhoFonte -= 1;
-			b = tamanhoFonte + textSpacing;
-
-			ctx.font = '10px Arial';
-			ctx.strokeStyle = 'hsla(0, 0%, 100%, 1)';
-			ctx.lineWidth = 1;
-			ctx.fillStyle = 'hsla(180, 100%, 87%, 0.87)';
-			var tamanhoUnidadePrimaria = (h - b - t) / (maximoEscala / unidadePrimaria);
-			for (var i = 0; i <= maximoEscala; i += unidadePrimaria) {
-				var xTexto = l / 2;
-				var x1 = l;
-				var x2 = w - r;
-				var y = h - b - (i / unidadePrimaria * tamanhoUnidadePrimaria);
-				ctx.fillText(i, xTexto, y);
-				ctx.beginPath();
-				ctx.moveTo(x1, y);
-				ctx.lineTo(x2, y);
-				ctx.stroke();
-			}
-
-			var tamanhoUnidadeSecundaria = (h - b - t) / (maximoEscala / unidadeSecundaria);
-			console.log(tamanhoUnidadeSecundaria);
-			var desenharEscalaSecundaria = false;
-			[1, 2.5, 5].forEach(mult => {
-				if (desenharEscalaSecundaria) return;
-				if (mult * tamanhoUnidadeSecundaria >= 20 + 2 * textSpacing) {
-					desenharEscalaSecundaria = true;
-					unidadeSecundaria *= mult;
-					tamanhoUnidadeSecundaria *= mult;
-				}
-			});
-			if (desenharEscalaSecundaria) {
-				ctx.lineWidth = 0.25;
-				for (var i = 0; i <= maximoEscala; i += unidadeSecundaria) {
-					var xTexto = l / 2;
-					var x1 = l;
-					var x2 = w - r;
-					var y = h - b - (i / unidadeSecundaria * tamanhoUnidadeSecundaria);
-					ctx.fillText(i, xTexto, y);
-					ctx.beginPath();
-					ctx.moveTo(x1, y);
-					ctx.lineTo(x2, y);
-					ctx.stroke();
-				}
-
-			}
-
-			ctx.font = `${tamanhoFonte}px Arial`;
-			var media = 0;
-			ctx.lineWidth = 4;
-			ctx.lineJoin = 'round';
-			ctx.beginPath();
-			for (var i = 0, data = new Date(hoje.getTime()); data <= datas[datas.length - 1]; data.setDate(data.getDate() + 1)) {
-				let xBarra = l + barSpacing/2 + i * distanciaBarras;
-				let xTexto = xBarra - barSpacing/2 + distanciaBarras/2;
-				let valor;
-				if (tabelaDatas.has(data.getTime())) {
-					valor = tabelaDatas.get(data.getTime());
-					var alturaBarra = valor / maximoEscala * (h - t - b);
-					ctx.fillStyle = 'hsla(60, 100%, 75%, 1)';
-					ctx.fillRect(xBarra, h - b - alturaBarra, larguraBarra, alturaBarra);
-				} else {
-					valor = 0;
-				}
-				if (i === 0) {
-					media = valor;
-				} else {
-					media = (media * i + valor) / (i + 1);
-				}
-				if (i === 0) {
-					ctx.moveTo(xTexto, h - b - media / maximoEscala * (h - t - b));
-				} else {
-					ctx.lineTo(xTexto, h - b - media / maximoEscala * (h - t - b));
-				}
-				ctx.fillStyle = 'hsla(180, 100%, 87%, 0.87)';
-				ctx.fillText(data.getDate(), xTexto, h - b/2);
-				i++;
-			}
-			ctx.strokeStyle = 'hsla(180, 100%, 34%, 0.67)';
-			ctx.stroke();
 		},
 		visitLocalizador(pvtVars) {
 			return pvtVars;
