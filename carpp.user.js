@@ -7,6 +7,8 @@
 // @grant       none
 // ==/UserScript==
 
+/* globals indexedDB window */
+
 const DOMAIN = `${window.top.location.protocol}//${window.top.document.domain}`;
 
 const Armazem = (function() {
@@ -14,13 +16,11 @@ const Armazem = (function() {
 	const listeners = new Map();
 
 	/**
-	 * Cria um conjunto de listeners se não existir
-	 *
-	 * @param {String} store nome do objectStore
-	 * @returns {Set} listeners do objectStore especificado
+	 * @param {string} store Nome do objectStore
+	 * @returns {Set} Observadores deste objectStore
 	 */
 	function obterListeners(store) {
-		if (! listeners.has(store)) {
+		if (!listeners.has(store)) {
 			listeners.set(store, new Set());
 		}
 		return listeners.get(store);
@@ -30,15 +30,18 @@ const Armazem = (function() {
 		abrir() {
 			const VERSION = 1;
 			const req = indexedDB.open('carpp', VERSION);
-			req.addEventListener('upgradeneeded', evt => Armazem.criar(evt.target.result));
+			req.addEventListener('upgradeneeded', ({ target: { result: db } }) => Armazem.criar(db));
 			return new Promise((resolve, reject) => {
-				req.addEventListener('success', evt => resolve(evt.target.result));
+				req.addEventListener('success', ({ target: { result: db } }) => resolve(db));
 				req.addEventListener('error', evt => reject(evt));
 			});
 		},
 		criar(db) {
-			const pessoas = db.createObjectStore('pessoas', {keyPath: 'sigla'});
+			const pessoas = db.createObjectStore('pessoas', { keyPath: 'sigla' });
 			pessoas.createIndex('nome', 'nome');
+
+			const setores = db.createObjectStore('setores', { keyPath: 'id', autoIncrement: true });
+			setores.createIndex('parent', 'parent');
 		},
 		disparar(store, dados) {
 			obterListeners(store).forEach(listener => listener(dados));
@@ -52,7 +55,7 @@ const Armazem = (function() {
 					const t = db.transaction([store]);
 					const os = t.objectStore(store);
 					const map = new Map();
-					os.getAll().addEventListener('success', ({ target: { result: objs }}) => {
+					os.getAll().addEventListener('success', ({ target: { result: objs } }) => {
 						objs.forEach(obj => {
 							let key = obj[os.keyPath];
 							map.set(key, obj);
@@ -73,7 +76,6 @@ const Armazem = (function() {
 			});
 		},
 		salvarTudo(store, newObjs, apagarExistentes = true) {
-			console.log(store, newObjs);
 			return Armazem.abrir().then(db => {
 				const t = db.transaction([store], 'readwrite');
 				const os = t.objectStore(store);
@@ -83,7 +85,8 @@ const Armazem = (function() {
 							let key = oldObj[os.keyPath];
 							if (newObjs.has(key)) {
 								let newObj = newObjs.get(key);
-								let changed = false, changedObj = oldObj;
+								let changed = false,
+									changedObj = oldObj;
 								for (let prop in newObj) {
 									if (newObj.hasOwnProperty(prop) && newObj[prop] !== oldObj[prop]) {
 										changedObj[prop] = newObj[prop];
@@ -102,6 +105,10 @@ const Armazem = (function() {
 							}
 						});
 						newObjs.forEach(newObj => {
+							let key = os.keyPath;
+							if (newObj[key] === null) {
+								delete newObj[key];
+							}
 							console.info('NEW', newObj);
 							os.add(newObj);
 						});
@@ -144,16 +151,14 @@ const Eproc = {
 			const tabela = doc.querySelector(
 				'table[summary="Tabela de Usuários Ativos do Órgão"]'
 			);
-			const linhas = Array.from(tabela.rows)
-				.filter(linha => {
-					return linha.classList.contains('infraTrClara')
-						|| linha.classList.contains('infraTrEscura');
-				});
+			const linhas = Array.from(tabela.rows).filter(linha => {
+				return linha.classList.contains('infraTrClara') || linha.classList.contains('infraTrEscura');
+			});
 			linhas.forEach(linha => {
 				let nome = linha.cells[0].textContent;
 				let sigla = linha.cells[1].textContent;
-				if (! pessoas.has(sigla)) {
-					pessoas.set(sigla, new Pessoa({sigla, nome}));
+				if (!pessoas.has(sigla)) {
+					pessoas.set(sigla, new Pessoa({ sigla, nome }));
 				}
 			});
 			if (doc.getElementById('lnkInfraProximaPaginaSuperior')) {
@@ -192,76 +197,89 @@ const Eproc = {
 };
 
 const Pessoa = (function() {
-	function Pessoa(newProperties = {}) {
-		for (let prop in Pessoa.prototype) {
-			if (newProperties.hasOwnProperty(prop)) {
-				this[prop] = newProperties[prop];
+	class Pessoa {
+
+		constructor(newProperties = {}) {
+			for (let prop in Pessoa.prototype) {
+				if (newProperties.hasOwnProperty(prop)) {
+					this[prop] = newProperties[prop];
+				}
 			}
 		}
-	}
-	Pessoa.prototype = {
-		apelido: '',
-		ativa: false,
-		nome: null,
-		sigla: null
-	};
-	Object.defineProperties(Pessoa.prototype, {
-		'constructor': {
-			enumerable: false,
-			value: Pessoa
-		},
-		'exibirComo': {
-			enumerable: false,
-			get: function() { return this.apelido || this.nome; }
+
+		get exibirComo() {
+			return this.apelido || this.nome;
 		}
-	});
-	Pessoa.sort = function(a, b) {
-		const descricaoA = a.exibirComo.toLowerCase();
-		const descricaoB = b.exibirComo.toLowerCase();
-		if (descricaoA < descricaoB) return -1;
-		if (descricaoA > descricaoB) return +1;
-		if (a.sigla < b.sigla) return -1;
-		if (a.sigla > b.sigla) return +1;
-		return 0;
-	};
+
+		static sort(a, b) {
+			const descricaoA = a.exibirComo.toLowerCase();
+			const descricaoB = b.exibirComo.toLowerCase();
+			if (descricaoA < descricaoB) return -1;
+			if (descricaoA > descricaoB) return +1;
+			if (a.sigla < b.sigla) return -1;
+			if (a.sigla > b.sigla) return +1;
+			return 0;
+		}
+
+	}
+	Pessoa.prototype.apelido = '';
+	Pessoa.prototype.ativa = false;
+	Pessoa.prototype.nome = null;
+	Pessoa.prototype.sigla = null;
+	Pessoa.prototype.setor = null;
+
 	return Pessoa;
 })();
 
-var pessoa = new Pessoa();
+const Setor = (function() {
+	class Setor {
 
+		constructor(newProperties = {}) {
+			this.id = newProperties.id || null;
+			for (let prop in Setor.prototype) {
+				if (newProperties.hasOwnProperty(prop)) {
+					this[prop] = newProperties[prop];
+				}
+			}
+		}
+
+		static sort(a, b) {
+			if (a.id !== null && b.id === null) return -1;
+			if (a.id === null && b.id !== null) return +1;
+			if (a.nome < b.nome) return -1;
+			if (a.nome > b.nome) return +1;
+			return 0;
+		}
+
+	}
+	Setor.prototype.nome = '';
+	Setor.prototype.parent = null;
+
+	return Setor;
+})();
 
 const PessoasDecorator = (function() {
+
 	const elements = new WeakMap();
 
-	function getElement() {
-		if (! elements.has(this)) {
-			const elt = document.createElement('div');
-			elt.className = 'pessoa';
-			const ativa = document.createElement('input');
-			ativa.type = 'checkbox';
-			ativa.className = 'pessoa__ativa';
-			ativa.checked = this.ativa;
-			const nome = document.createElement('div');
-			nome.className = 'pessoa__nome';
-			const sigla = document.createElement('div');
-			sigla.className = 'pessoa__sigla';
-			elt.appendChild(ativa);
-			elt.appendChild(nome);
-			elt.appendChild(sigla);
+	function getElement(doc) {
+		if (!elements.has(this)) {
+			const template = doc.querySelector('#pessoa-template').content;
+			const elt = doc.importNode(template, true).firstElementChild;
+			elt.querySelector('.pessoa__ativa').checked = this.ativa;
+			elt.querySelector('.pessoa__nome').textContent = this.exibirComo;
+			elt.querySelector('.pessoa__sigla').textContent = this.sigla;
 			elt.associatedObject = this;
 			elements.set(this, elt);
 		}
 		let element = elements.get(this);
-		element.querySelector('.pessoa__nome').textContent = this.exibirComo;
-		element.querySelector('.pessoa__sigla').textContent = this.sigla;
 		return element;
 	}
 
 	const PessoasDecorator = {
-		decoratePessoa(pessoa) {
+		decoratePessoa(pessoa, doc = document) {
 			Object.defineProperty(pessoa, 'getElement', {
-				enumerable: false,
-				value: getElement
+				value: getElement.bind(pessoa, doc)
 			});
 			return pessoa;
 		}
@@ -270,30 +288,52 @@ const PessoasDecorator = (function() {
 })();
 
 const SetoresDecorator = (function() {
-	const pessoaElements = new WeakMap();
 
-	function getPessoaElement() {
-		if (! pessoaElements.has(this)) {
-			const elt = document.createElement('div');
-			elt.className = 'integrante';
-			const nome = document.createElement('div');
-			nome.className = 'integrante__nome';
-			elt.appendChild(nome);
+	const pessoaElements = new WeakMap();
+	const setorElements = new WeakMap();
+
+	function getPessoaElement(doc) {
+		if (!pessoaElements.has(this)) {
+			const template = doc.querySelector('#integrante-template').content;
+			const elt = doc.importNode(template, true).firstElementChild;
+			elt.querySelector('.integrante__nome').textContent = this.exibirComo;
 			elt.associatedObject = this;
 			pessoaElements.set(this, elt);
 		}
 		let element = pessoaElements.get(this);
-		element.querySelector('.integrante__nome').textContent = this.exibirComo;
+		return element;
+	}
+
+	function getSetorElement(doc) {
+		if (!setorElements.has(this)) {
+			const template = doc.querySelector('#setor-template').content;
+			const elt = doc.importNode(template, true).firstElementChild;
+			if (this.id !== null) {
+				elt.id = `setor-${this.id}`;
+			}
+			elt.querySelector('.setor__nome').textContent = this.nome;
+			elt.subsetores = elt.querySelector('.setor__subsetores');
+			elt.novo = elt.querySelector('.setor__novo');
+			elt.integrantes = elt.querySelector('.setor__integrantes');
+			elt.associatedObject = this;
+			setorElements.set(this, elt);
+		}
+		let element = setorElements.get(this);
 		return element;
 	}
 
 	const SetoresDecorator = {
-		decoratePessoa(pessoa) {
+		decoratePessoa(pessoa, doc = document) {
 			Object.defineProperty(pessoa, 'getElement', {
-				enumerable: false,
-				value: getPessoaElement
+				value: getPessoaElement.bind(pessoa, doc)
 			});
 			return pessoa;
+		},
+		decorateSetor(setor, doc = document) {
+			Object.defineProperty(setor, 'getElement', {
+				value: getSetorElement.bind(setor, doc)
+			});
+			return setor;
 		}
 	};
 	return SetoresDecorator;
@@ -310,61 +350,77 @@ function main() {
 }
 
 function abrirIframeGerenciar() {
-	abrirIframe('CARPP', [
-		'html, body { margin: 0; padding: 0; }',
-		'body { font-family: Arial, sans-serif; font-size: 14px; background: #e0f2f1; }',
-		'.cabecalho { background: #009688; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }',
-		'.cabecalho__titulo { margin: 0; padding: 8px; font-size: 24px; color: #fff; }',
-		'.cabecalho__subtitulo { margin: 0; padding: 0 8px 8px; font-size: 16px; color: rgba(255,255,255,0.7); }',
-		'.painel { float: left; margin: 16px; width: 30%; min-width: 400px; min-height: 300px; max-width: 600px; border-radius: 2px; background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }',
-		'.titulo { margin: 0; padding: 8px; font-size: 20px; color: #fff; background: #00796b; }',
-		'.pessoas__atualizar { border: none; color: white; font-weight: bold; text-decoration: none; float: right; margin: 8px; background: #d50000; padding: 8px; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }',
-		'.pessoas__atualizar:disabled { background: #eee; color: rgba(0,0,0,0.38); }',
-		'.pessoas__instrucoes { margin: 8px; text-align: justify; }',
-		'.pessoas__container { clear: right; margin: 8px; }',
-		'.pessoa, .pessoa-cabecalho { display: flex; padding: 2px 0; border-bottom: 1px solid #ccc; }',
-		'.pessoa-cabecalho { font-weight: bold; }',
-		'.pessoa-desativada { color: #aaa; }',
-		'.pessoa__ativa { flex: 1; margin-right: 1ex; }',
-		'.pessoa__nome { flex: 9; margin-right: 1ex; }',
-		'.pessoa__sigla { flex: 3; margin-left: 1ex; }',
-		'.setores { }',
-		'.setores__container { }',
-		'.setor { margin: 8px; min-width: 64px; min-height: 64px; border: 2px solid #aaa; border-radius: 8px; }',
-		'.setor-novo { border: 4px dashed #ccc; }',
-		'.setor-inexistente { border: none; }',
-		'.setor__integrantes { display: flex; flex-flow: row wrap; }',
-		'.integrante { margin: 2px; padding: 4px 8px; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }'
-	].join('\n'), [
-		'<header class="cabecalho">',
-		'<h1 class="cabecalho__titulo">CARPP</h1>',
-		'<h2 class="cabecalho__subtitulo">Controle de Andamento e Regularidade de Prazos Processuais</h2>',
-		'</header>',
-		'<div class="pessoas painel">',
-		'<h3 class="pessoas__titulo titulo">Pessoas</h3>',
-		'<button class="pessoas__atualizar" disabled>Atualizar</button>',
-		'<div class="pessoas__instrucoes">Marque as pessoas que trabalham na sua unidade.<br><br>Recomenda-se clicar sobre os nomes para definir um apelido ou um nome mais curto para exibição.</div>',
-		'<div class="pessoas__container">',
-		'<div class="pessoa-cabecalho"><div class="pessoa__ativa"></div><div class="pessoa__nome">Nome</div><div class="pessoa__sigla">Sigla</div></div>',
-		'</div>',
-		'</div>',
-		'<div class="setores painel">',
-		'<h3 class="setores__titulo titulo">Setores</h3>',
-		'<div class="setores__container">',
-		'<div class="setor setor-novo"><h4 class="setor__titulo">Novo setor</h4></div>',
-		'<div class="setor setor-inexistente">',
-		'<div class="setor__integrantes"></div>',
-		'</div>',
-		'</div>',
-		'</div>'
-	].join('')).then((win) => {
+	abrirIframe('CARPP', `
+html, body { margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; font-size: 14px; background: #e0f2f1; }
+.cabecalho { background: #009688; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+.cabecalho__titulo { margin: 0; padding: 8px; font-size: 24px; color: #fff; }
+.cabecalho__subtitulo { margin: 0; padding: 0 8px 8px; font-size: 16px; color: rgba(255,255,255,0.7); }
+.painel { float: left; margin: 16px; width: 30%; min-width: 400px; min-height: 300px; max-width: 600px; border-radius: 2px; background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+.titulo { margin: 0; padding: 8px; font-size: 20px; color: #fff; background: #00796b; }
+.botao { border: none; font-weight: bold; text-decoration: none; padding: 8px; border-radius: 2px; background: transparent; color: #d50000; }
+.botao:hover { box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+.botao-acao { background: #d50000; color: white; }
+.pessoas__atualizar { float: right; margin: 8px; }
+.pessoas__atualizar:disabled { background: #eee; color: rgba(0,0,0,0.38); }
+.pessoas__instrucoes { margin: 8px; text-align: justify; }
+.pessoas__container { clear: right; margin: 8px; }
+.pessoa, .pessoa-cabecalho { display: flex; padding: 2px 0; border-bottom: 1px solid #ccc; }
+.pessoa-cabecalho { font-weight: bold; }
+.pessoa-desativada { color: #aaa; }
+.pessoa__ativa { flex: 1; margin-right: 1ex; }
+.pessoa__nome { flex: 9; margin-right: 1ex; }
+.pessoa__sigla { flex: 3; margin-left: 1ex; }
+.setores { }
+.setores__container { }
+.setor { margin: 8px; min-width: 64px; border: 2px solid #aaa; border-radius: 8px; }
+.setor-inexistente { border: none; }
+.setor__cabecalho { display: flex; }
+.setor__nome { flex: 1; margin: 8px; display: flex; align-items: center; }
+.setor__novo { margin: 8px; }
+.setor__integrantes { display: flex; flex-flow: row wrap; }
+.integrante { margin: 2px; height: 32px; border-radius: 16px; background: rgba(0, 0, 0, 0.12); color: rgba(0, 0, 0, 0.87); }
+.integrante__primeira_letra { }
+.integrante__nome {}
+`, `
+<header class="cabecalho">
+<h1 class="cabecalho__titulo">CARPP</h1>
+<h2 class="cabecalho__subtitulo">Controle de Andamento e Regularidade de Prazos Processuais</h2>
+</header>
+<div class="pessoas painel">
+<h3 class="pessoas__titulo titulo">Pessoas</h3>
+<button class="pessoas__atualizar botao botao-acao" disabled>Atualizar</button>
+<div class="pessoas__instrucoes">Marque as pessoas que trabalham na sua unidade.<br><br>Clique sobre os nomes para definir um apelido ou um nome mais curto para exibição.</div>
+<div class="pessoas__container">
+<div class="pessoa-cabecalho"><div class="pessoa__ativa"></div><div class="pessoa__nome">Nome</div><div class="pessoa__sigla">Sigla</div></div>
+<template id="pessoa-template"><div class="pessoa"><input type="checkbox" class="pessoa__ativa"><div class="pessoa__nome"></div><div class="pessoa__sigla"></div></div></template>
+</div>
+</div>
+<div class="setores painel">
+<h3 class="setores__titulo titulo">Setores</h3>
+<div class="setores__container">
+<template id="setor-template">
+<div class="setor">
+<header class="setor__cabecalho">
+<h4 class="setor__nome"></h4>
+<button class="setor__novo botao">Novo setor</button>
+</header>
+<div class="setor__subsetores">
+</div>
+<div class="setor__integrantes"></div>
+</div>
+</template>
+<template id="integrante-template"><div class="integrante"><div class="integrante__primeira_letra">?</div><div class="integrante__nome"></div></div></template>
+</div>
+</div>
+`).then((win) => {
 		const doc = win.document;
 
 		function lidarComEventoEspecifico(evt, nomeClasse, nomeClasseParent, callback) {
-			if (! evt.target.classList.contains(nomeClasse)) return;
+			if (!evt.target.classList.contains(nomeClasse)) return;
 			let parent = evt.target.parentNode;
-			while (parent && ! parent.classList.contains(nomeClasseParent)) parent = parent.parentNode;
-			if (! parent) return;
+			while (parent && !parent.classList.contains(nomeClasseParent)) parent = parent.parentNode;
+			if (!parent) return;
 			const obj = parent.associatedObject;
 			callback(obj);
 		}
@@ -379,7 +435,7 @@ function abrirIframeGerenciar() {
 		Armazem.observar('pessoas', function(dadosPessoas) {
 			Array.from(pessoasContainer.querySelectorAll('.pessoa')).forEach(pessoa => pessoasContainer.removeChild(pessoa));
 			let pessoasOrdenadas = Array.from(dadosPessoas.values())
-				.map(dadosPessoa => PessoasDecorator.decoratePessoa(new Pessoa(dadosPessoa)))
+				.map(dadosPessoa => PessoasDecorator.decoratePessoa(new Pessoa(dadosPessoa), doc))
 				.sort(Pessoa.sort);
 			pessoasOrdenadas.forEach(pessoa => pessoasContainer.appendChild(pessoa.getElement()));
 			pessoasAtualizarElement.disabled = false;
@@ -387,19 +443,20 @@ function abrirIframeGerenciar() {
 		pessoasContainer.addEventListener('click', (evt) => {
 
 			lidarComEventoEspecifico(evt, 'pessoa__ativa', 'pessoa', pessoa => {
+				const ativa = evt.target.checked;
 				evt.preventDefault();
 				evt.target.disabled = true;
 				pessoa.getElement().classList.add('pessoa-desativada');
-				pessoa.ativa = evt.target.checked;
+				pessoa.ativa = ativa;
+				// pessoa.setor = Math.floor(Math.random() * 10) + 1;
 				Armazem.salvar('pessoas', pessoa);
 			});
 
 			lidarComEventoEspecifico(evt, 'pessoa__nome', 'pessoa', pessoa => {
 				if (pessoa.getElement().classList.contains('pessoa-desativada')) return;
-				const resposta = prompt(`Altere o nome da pessoa para exibição:\n\nDeixe em branco para usar o nome original:\n${pessoa.nome}`, pessoa.apelido);
+				const resposta = prompt(`Altere o nome da pessoa para exibição.\n(Deixe em branco para usar o nome original)\n\n${pessoa.nome}`, pessoa.apelido);
 				if (resposta !== null) {
 					pessoa.apelido = resposta;
-					console.log(pessoa);
 					Armazem.salvar('pessoas', pessoa);
 				}
 			});
@@ -407,14 +464,52 @@ function abrirIframeGerenciar() {
 		Armazem.obter('pessoas');
 
 		/* Painel "Setores" */
-		const setoresContainer = doc.querySelector('.setor-inexistente .setor__integrantes');
-		Armazem.observar('pessoas', function(dadosPessoas) {
-			Array.from(setoresContainer.querySelectorAll('.integrante')).forEach(pessoa => setoresContainer.removeChild(pessoa));
-			let pessoasOrdenadas = Array.from(dadosPessoas.values())
+		let setores = [];
+		let integrantes = [];
+
+		const setoresContainer = doc.querySelector('.setores__container');
+
+		function atualizarPainelSetores(alterado, parent = null) {
+			let parentId = null,
+				container = setoresContainer;
+			if (parent !== null) {
+				parentId = parent.id;
+				container = parent.getElement().subsetores;
+			}
+			const setoresDesteNivel = setores.filter(setor => setor.parent === parentId).sort(Setor.sort);
+			setoresDesteNivel.forEach(setor => {
+				container.appendChild(setor.getElement());
+				if (alterado === 'setores') {
+					setor.getElement().novo.addEventListener('click', evt => {
+						const nome = prompt('Nome do novo setor?');
+						Armazem.salvar('setores', new Setor({ nome, parent: setor.id }));
+					});
+				}
+				let integrantesContainer = setor.getElement().integrantes;
+				integrantes.filter(pessoa => pessoa.setor === setor.id).forEach(pessoa => {
+					integrantesContainer.appendChild(pessoa.getElement());
+				});
+				if (setor.id !== null) {
+					atualizarPainelSetores(alterado, setor);
+				}
+			});
+		}
+
+		Armazem.observar('setores', dadosSetores => {
+			Array.from(setoresContainer.querySelectorAll('.setor')).forEach(setor => setor.parentNode.removeChild(setor));
+			setores = Array.from(dadosSetores.values()).concat({}).map(dadosSetor => SetoresDecorator.decorateSetor(new Setor(dadosSetor), doc));
+			let ultimo = setores[setores.length - 1];
+			ultimo.getElement().classList.add('setor-inexistente');
+			atualizarPainelSetores('setores');
+		});
+		Armazem.obter('setores');
+		Armazem.observar('pessoas', dadosPessoas => {
+			Array.from(setoresContainer.querySelectorAll('.integrante')).forEach(pessoa => pessoa.parentNode.removeChild(pessoa));
+			integrantes = Array.from(dadosPessoas.values())
+				.map(dadosPessoa => SetoresDecorator.decoratePessoa(new Pessoa(dadosPessoa), doc))
 				.filter(pessoa => pessoa.ativa)
-				.map(dadosPessoa => SetoresDecorator.decoratePessoa(new Pessoa(dadosPessoa)))
 				.sort(Pessoa.sort);
-			pessoasOrdenadas.forEach(pessoa => setoresContainer.appendChild(pessoa.getElement()));
+			atualizarPainelSetores('pessoas');
 		});
 
 	});
@@ -423,18 +518,20 @@ function abrirIframeGerenciar() {
 function abrirIframe(title, style = '', body = '') {
 	return new Promise((resolve) => {
 		const id = gerarIdAleatorio();
-		const blob = new Blob([
-			'<!doctype html><html><head>',
-			'<meta charset="utf-8"/>',
-			`<title>${title}</title>`,
-			'<style>',
-			style,
-			'</style>',
-			'</head><body>',
-			body,
-			`<script>window.top.postMessage('${id}', '${DOMAIN}');</script>`,
-			'</body></html>'
-		], {type: 'text/html'});
+		const blob = new Blob([`
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<title>${title}</title>
+		<style>${style}</style>
+	</head>
+	<body>
+		${body}
+		<script>window.top.postMessage('${id}', '${DOMAIN}');</script>
+	</body>
+</html>
+`], { type: 'text/html' });
 		const url = URL.createObjectURL(blob);
 		window.addEventListener('message', function handler(evt) {
 			if (evt.origin === DOMAIN && evt.data === id) {
@@ -453,13 +550,13 @@ function gerarIdAleatorio() {
 
 function sobreporIframe(url, id) {
 	var fundo = document.getElementById('carppFundo');
-	if (! fundo) {
+	if (!fundo) {
 		const estilos = document.createElement('style');
-		estilos.textContent = [
-			'#carppFundo { position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: rgba(0,0,0,0.5); z-index: 2000; transition: opacity 150ms; }',
-			'#carppIframe { position: absolute; top: 10%; left: 10%; width: 80%; height: 80%; border: none; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); background: white; }',
-			'#carppFechar { position: absolute; top: 10%; margin-top: -32px; left: 90%; width: 32px; height: 32px; font-size: 32px; line-height: 32px; border: none; border-radius: 16px; background: #d50000; color: white; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }'
-		].join('\n');
+		estilos.textContent = `
+#carppFundo { position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: rgba(0,0,0,0.5); z-index: 2000; transition: opacity 150ms; }
+#carppIframe { position: absolute; top: 10%; left: 10%; width: 80%; height: 80%; border: none; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); background: white; }
+#carppFechar { position: absolute; top: 10%; margin-top: -32px; left: 90%; width: 32px; height: 32px; font-size: 32px; line-height: 32px; border: none; border-radius: 16px; background: #d50000; color: white; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+`;
 		document.querySelector('head').appendChild(estilos);
 		fundo = document.createElement('div');
 		fundo.id = 'carppFundo';
@@ -505,6 +602,7 @@ const replacementSymbols = {
 	'>': 'gt',
 	'"': 'quot'
 };
+
 function safeHTML(strings, ...vars) {
 	return vars.reduce((result, variable, i) => result + variable.replace(invalidSymbols, (sym) => `&${replacementSymbols[sym]};`) + strings[i + 1], strings[0]);
 }
