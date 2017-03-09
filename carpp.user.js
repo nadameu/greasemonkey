@@ -208,12 +208,21 @@ const Pessoa = (function() {
 		}
 
 		get exibirComo() {
-			return this.apelido || this.nome;
+			if (this.apelido) {
+				let apelido = this.apelido;
+				let virgulasNoApelido = apelido.match(/,/g);
+				if (virgulasNoApelido && virgulasNoApelido.length === 1) {
+					let partes = apelido.split(/\s*,\s*/);
+					apelido = partes.reverse().join(' ');
+				}
+				return apelido;
+			}
+			return this.nome;
 		}
 
 		static sort(a, b) {
-			const descricaoA = a.exibirComo.toLowerCase();
-			const descricaoB = b.exibirComo.toLowerCase();
+			const descricaoA = (a.apelido || a.nome).toLowerCase();
+			const descricaoB = (b.apelido || b.nome).toLowerCase();
 			if (descricaoA < descricaoB) return -1;
 			if (descricaoA > descricaoB) return +1;
 			if (a.sigla < b.sigla) return -1;
@@ -266,7 +275,9 @@ const PessoasDecorator = (function() {
 		if (!elements.has(this)) {
 			const template = doc.querySelector('#pessoa-template').content;
 			const elt = doc.importNode(template, true).firstElementChild;
-			elt.querySelector('.pessoa__ativa').checked = this.ativa;
+			if (this.ativa) {
+			 elt.querySelector('.pessoa__ativa').setAttribute('checked', 'checked');
+			}
 			elt.querySelector('.pessoa__nome').textContent = this.exibirComo;
 			elt.querySelector('.pessoa__sigla').textContent = this.sigla;
 			elt.associatedObject = this;
@@ -297,6 +308,7 @@ const SetoresDecorator = (function() {
 			const template = doc.querySelector('#integrante-template').content;
 			const elt = doc.importNode(template, true).firstElementChild;
 			elt.querySelector('.integrante__nome').textContent = this.exibirComo;
+			elt.querySelector('.integrante__primeira_letra').textContent = this.exibirComo[0].toUpperCase();
 			elt.associatedObject = this;
 			pessoaElements.set(this, elt);
 		}
@@ -357,9 +369,9 @@ body { font-family: Arial, sans-serif; font-size: 14px; background: #e0f2f1; }
 .cabecalho__titulo { margin: 0; padding: 8px; font-size: 24px; color: #fff; }
 .cabecalho__subtitulo { margin: 0; padding: 0 8px 8px; font-size: 16px; color: rgba(255,255,255,0.7); }
 .painel { float: left; margin: 16px; width: 30%; min-width: 400px; min-height: 300px; max-width: 600px; border-radius: 2px; background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-.titulo { margin: 0; padding: 8px; font-size: 20px; color: #fff; background: #00796b; }
-.botao { border: none; font-weight: bold; text-decoration: none; padding: 8px; border-radius: 2px; background: transparent; color: #d50000; }
-.botao:hover { box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+.titulo { margin: 0 0 8px; padding: 8px; font-size: 20px; color: #fff; background: #00796b; }
+.botao { border: none; font-weight: bold; text-decoration: none; padding: 8px; border-radius: 2px; background: transparent; color: #d50000; will-change: transform; transition: transform 100ms ease-out; }
+.botao:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 100ms ease-in; }
 .botao-acao { background: #d50000; color: white; }
 .pessoas__atualizar { float: right; margin: 8px; }
 .pessoas__atualizar:disabled { background: #eee; color: rgba(0,0,0,0.38); }
@@ -372,16 +384,17 @@ body { font-family: Arial, sans-serif; font-size: 14px; background: #e0f2f1; }
 .pessoa__nome { flex: 9; margin-right: 1ex; }
 .pessoa__sigla { flex: 3; margin-left: 1ex; }
 .setores { }
-.setores__container { }
 .setor { margin: 8px; min-width: 64px; border: 2px solid #aaa; border-radius: 8px; }
-.setor-inexistente { border: none; }
 .setor__cabecalho { display: flex; }
-.setor__nome { flex: 1; margin: 8px; display: flex; align-items: center; }
-.setor__novo { margin: 8px; }
-.setor__integrantes { display: flex; flex-flow: row wrap; }
+.setor__nome { flex: 1; margin: 8px; display: flex; justify-content: center; }
+.setor__excluir { margin: 4px; padding: 0; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 18px; font-weight: bold; background: #aaa; color: white; }
+.setor__excluir:hover { background: #d50000; }
+.setor__novo { margin: 8px; min-width: 64px; min-height: 32px; border: 2px dashed #aaa; background: transparent; color: #00796b; font-weight: bold; }
+.setor__integrantes { display: flex; flex-flow: row wrap; align-items: flex-start; margin: 0 6px; }
+.setor__subsetores { display: flex; flex-flow: row wrap; align-items: flex-start; }
 .integrante { margin: 2px; height: 32px; border-radius: 16px; background: rgba(0, 0, 0, 0.12); color: rgba(0, 0, 0, 0.87); }
-.integrante__primeira_letra { }
-.integrante__nome {}
+.integrante__primeira_letra { display: inline-block; width: 32px; height: 32px; line-height: 32px; font-size: 18px; border-radius: 16px; font-weight: bold; background: rgba(0, 121, 107, 0.27); text-align: center; color: white; }
+.integrante__nome { display: inline-block; margin: 0 12px 0 8px; }
 `, `
 <header class="cabecalho">
 <h1 class="cabecalho__titulo">CARPP</h1>
@@ -393,24 +406,40 @@ body { font-family: Arial, sans-serif; font-size: 14px; background: #e0f2f1; }
 <div class="pessoas__instrucoes">Marque as pessoas que trabalham na sua unidade.<br><br>Clique sobre os nomes para definir um apelido ou um nome mais curto para exibição.</div>
 <div class="pessoas__container">
 <div class="pessoa-cabecalho"><div class="pessoa__ativa"></div><div class="pessoa__nome">Nome</div><div class="pessoa__sigla">Sigla</div></div>
-<template id="pessoa-template"><div class="pessoa"><input type="checkbox" class="pessoa__ativa"><div class="pessoa__nome"></div><div class="pessoa__sigla"></div></div></template>
+<template id="pessoa-template">
+<div class="pessoa">
+  <input type="checkbox" class="pessoa__ativa">
+  <div class="pessoa__nome"></div>
+  <div class="pessoa__sigla"></div>
+</div>
+</template>
 </div>
 </div>
 <div class="setores painel">
 <h3 class="setores__titulo titulo">Setores</h3>
-<div class="setores__container">
-<template id="setor-template">
-<div class="setor">
-<header class="setor__cabecalho">
-<h4 class="setor__nome"></h4>
-<button class="setor__novo botao">Novo setor</button>
-</header>
-<div class="setor__subsetores">
-</div>
-<div class="setor__integrantes"></div>
+<div class="setor__integrantes">
+<template id="integrante-template">
+<div class="integrante">
+<div class="integrante__primeira_letra">?</div>
+<div class="integrante__nome"></div>
 </div>
 </template>
-<template id="integrante-template"><div class="integrante"><div class="integrante__primeira_letra">?</div><div class="integrante__nome"></div></div></template>
+</div>
+<div class="setor__subsetores">
+<template id="setor-template">
+<div class="setor">
+	<header class="setor__cabecalho">
+		<h4 class="setor__nome"></h4>
+		<button class="setor__excluir botao">&times;</button>
+	</header>
+	<div class="setor__integrantes"></div>
+	<div class="setor__subsetores">
+   <button class="setor__novo">+</button>
+  </div>
+</div>
+</template>
+<button class="setor__novo">+</button>
+</div>
 </div>
 </div>
 `).then((win) => {
@@ -448,7 +477,12 @@ body { font-family: Arial, sans-serif; font-size: 14px; background: #e0f2f1; }
 				evt.target.disabled = true;
 				pessoa.getElement().classList.add('pessoa-desativada');
 				pessoa.ativa = ativa;
-				// pessoa.setor = Math.floor(Math.random() * 10) + 1;
+				if (! ativa) {
+					pessoa.setor = null;
+				} else {
+					// DEBUG
+					pessoa.setor = window.setor || null;
+				}
 				Armazem.salvar('pessoas', pessoa);
 			});
 
@@ -466,45 +500,51 @@ body { font-family: Arial, sans-serif; font-size: 14px; background: #e0f2f1; }
 		/* Painel "Setores" */
 		let setores = [];
 		let integrantes = [];
+		let botaoNovoSetorPrincipalInicializado = false;
 
-		const setoresContainer = doc.querySelector('.setores__container');
-
-		function atualizarPainelSetores(alterado, parent = null) {
-			let parentId = null,
-				container = setoresContainer;
-			if (parent !== null) {
-				parentId = parent.id;
-				container = parent.getElement().subsetores;
+		function atualizarPainelSetores(alterado, setor = null) {
+			let id = null,
+				containerIntegrantes = doc.querySelector('.setores > .setor__integrantes'),
+				containerSubsetores = doc.querySelector('.setores > .setor__subsetores'),
+				botaoNovo = containerSubsetores.querySelector('.setor__novo');
+			if (setor !== null) {
+				id = setor.id;
+				containerIntegrantes = setor.getElement().integrantes;
+				containerSubsetores = setor.getElement().subsetores;
+				botaoNovo = setor.getElement().novo;
 			}
-			const setoresDesteNivel = setores.filter(setor => setor.parent === parentId).sort(Setor.sort);
-			setoresDesteNivel.forEach(setor => {
-				container.appendChild(setor.getElement());
-				if (alterado === 'setores') {
-					setor.getElement().novo.addEventListener('click', evt => {
-						const nome = prompt('Nome do novo setor?');
-						Armazem.salvar('setores', new Setor({ nome, parent: setor.id }));
-					});
-				}
-				let integrantesContainer = setor.getElement().integrantes;
-				integrantes.filter(pessoa => pessoa.setor === setor.id).forEach(pessoa => {
-					integrantesContainer.appendChild(pessoa.getElement());
+
+			integrantes.filter(pessoa => pessoa.setor === id).forEach(pessoa => {
+				containerIntegrantes.insertBefore(pessoa.getElement(), containerIntegrantes.lastElementChild);
+			});
+
+			if (alterado === 'setores' && !botaoNovoSetorPrincipalInicializado) {
+				botaoNovo.addEventListener('click', evt => {
+					const nome = prompt('Nome do novo setor?');
+					if (nome === null) return;
+					Armazem.salvar('setores', new Setor({ nome, parent: id }));
 				});
-				if (setor.id !== null) {
-					atualizarPainelSetores(alterado, setor);
-				}
+			}
+
+			const subsetores = setores.filter(setor => setor.parent === id).sort(Setor.sort);
+			subsetores.forEach(subsetor => {
+				containerSubsetores.insertBefore(subsetor.getElement(), containerSubsetores.lastElementChild);
+				atualizarPainelSetores(alterado, subsetor);
 			});
 		}
 
 		Armazem.observar('setores', dadosSetores => {
-			Array.from(setoresContainer.querySelectorAll('.setor')).forEach(setor => setor.parentNode.removeChild(setor));
-			setores = Array.from(dadosSetores.values()).concat({}).map(dadosSetor => SetoresDecorator.decorateSetor(new Setor(dadosSetor), doc));
-			let ultimo = setores[setores.length - 1];
-			ultimo.getElement().classList.add('setor-inexistente');
+			Array.from(doc.querySelectorAll('.setores .setor')).forEach(setor => setor.parentNode.removeChild(setor));
+			// DEBUG
+			window.setores = Array.from(dadosSetores.values()).map(dados => {
+				return [dados.id, dados.nome].join(' = ');
+			}).join('\n');
+			setores = Array.from(dadosSetores.values()).map(dadosSetor => SetoresDecorator.decorateSetor(new Setor(dadosSetor), doc));
 			atualizarPainelSetores('setores');
 		});
 		Armazem.obter('setores');
 		Armazem.observar('pessoas', dadosPessoas => {
-			Array.from(setoresContainer.querySelectorAll('.integrante')).forEach(pessoa => pessoa.parentNode.removeChild(pessoa));
+			Array.from(doc.querySelectorAll('.setores .integrante')).forEach(pessoa => pessoa.parentNode.removeChild(pessoa));
 			integrantes = Array.from(dadosPessoas.values())
 				.map(dadosPessoa => SetoresDecorator.decoratePessoa(new Pessoa(dadosPessoa), doc))
 				.filter(pessoa => pessoa.ativa)
@@ -554,8 +594,9 @@ function sobreporIframe(url, id) {
 		const estilos = document.createElement('style');
 		estilos.textContent = `
 #carppFundo { position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: rgba(0,0,0,0.5); z-index: 2000; transition: opacity 150ms; }
-#carppIframe { position: absolute; top: 10%; left: 10%; width: 80%; height: 80%; border: none; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); background: white; }
-#carppFechar { position: absolute; top: 10%; margin-top: -32px; left: 90%; width: 32px; height: 32px; font-size: 32px; line-height: 32px; border: none; border-radius: 16px; background: #d50000; color: white; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+#carppIframe { position: absolute; top: 32px; left: 32px; width: calc(100% - 64px); height: calc(100% - 64px); border: none; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); background: white; }
+#carppFechar { position: absolute; top: 2px; left: calc(100% - 32px); width: 32px; height: 32px; font-size: 32px; line-height: 32px; border: none; border-radius: 16px; background: #d50000; color: white; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.3); will-change: transform; transition: transform 100ms ease; }
+#carppFechar:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
 `;
 		document.querySelector('head').appendChild(estilos);
 		fundo = document.createElement('div');
@@ -578,7 +619,10 @@ function sobreporIframe(url, id) {
 	fecharElement.style.opacity = '0';
 	fecharElement.getBoundingClientRect();
 	fecharElement.style.transition = 'opacity 150ms';
-	runOnce(iframe, 'transitionend', () => fecharElement.style.opacity = '');
+	runOnce(iframe, 'transitionend', () => {
+		fecharElement.style.opacity = '';
+		fecharElement.style.transition = '';
+	});
 	fecharElement.addEventListener('click', function() {
 		fundo.style.opacity = '0';
 		runOnce(fundo, 'transitionend', () => fundo.style.display = 'none');
