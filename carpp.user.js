@@ -8,6 +8,7 @@
 // ==/UserScript==
 
 /* globals indexedDB window */
+/* jshint esversion:6 */
 
 const DOMAIN = `${window.top.location.protocol}//${window.top.document.domain}`;
 
@@ -34,6 +35,21 @@ const Armazem = (function() {
 			return new Promise((resolve, reject) => {
 				req.addEventListener('success', ({ target: { result: db } }) => resolve(db));
 				req.addEventListener('error', evt => reject(evt));
+			});
+		},
+		apagar(store, keys) {
+			if (!(keys instanceof Array)) keys = [keys];
+			return Armazem.abrir().then(db => {
+				const t = db.transaction([store], 'readwrite');
+				const os = t.objectStore(store);
+				return new Promise((resolve) => {
+					keys.forEach(key => os.delete(key));
+					t.addEventListener('complete', () => {
+						Armazem.obter(store);
+						resolve();
+					});
+					t.addEventListener('abort', evt => console.error('NEW', 'aborted', evt));
+				});
 			});
 		},
 		criar(db) {
@@ -255,8 +271,10 @@ const Setor = (function() {
 		static sort(a, b) {
 			if (a.id !== null && b.id === null) return -1;
 			if (a.id === null && b.id !== null) return +1;
-			if (a.nome < b.nome) return -1;
-			if (a.nome > b.nome) return +1;
+			let descricaoA = a.nome.toLowerCase();
+			let descricaoB = b.nome.toLowerCase();
+			if (descricaoA < descricaoB) return -1;
+			if (descricaoA > descricaoB) return +1;
 			return 0;
 		}
 
@@ -276,7 +294,7 @@ const PessoasDecorator = (function() {
 			const template = doc.querySelector('#pessoa-template').content;
 			const elt = doc.importNode(template, true).firstElementChild;
 			if (this.ativa) {
-			 elt.querySelector('.pessoa__ativa').setAttribute('checked', 'checked');
+				elt.querySelector('.pessoa__ativa').setAttribute('checked', 'checked');
 			}
 			elt.querySelector('.pessoa__nome').textContent = this.exibirComo;
 			elt.querySelector('.pessoa__sigla').textContent = this.sigla;
@@ -308,7 +326,7 @@ const SetoresDecorator = (function() {
 			const template = doc.querySelector('#integrante-template').content;
 			const elt = doc.importNode(template, true).firstElementChild;
 			elt.querySelector('.integrante__nome').textContent = this.exibirComo;
-			elt.querySelector('.integrante__primeira_letra').textContent = this.exibirComo[0].toUpperCase();
+			elt.querySelector('.integrante__primeira_letra').textContent = (this.apelido || this.nome)[0].toUpperCase();
 			elt.associatedObject = this;
 			pessoaElements.set(this, elt);
 		}
@@ -327,6 +345,7 @@ const SetoresDecorator = (function() {
 			elt.subsetores = elt.querySelector('.setor__subsetores');
 			elt.novo = elt.querySelector('.setor__novo');
 			elt.integrantes = elt.querySelector('.setor__integrantes');
+			elt.excluir = elt.querySelector('.setor__excluir');
 			elt.associatedObject = this;
 			setorElements.set(this, elt);
 		}
@@ -364,18 +383,19 @@ function main() {
 function abrirIframeGerenciar() {
 	abrirIframe('CARPP', `
 html, body { margin: 0; padding: 0; }
-body { font-family: Arial, sans-serif; font-size: 14px; background: #e0f2f1; }
+body, button { font-family: Arial, sans-serif; }
+body { font-size: 14px; background: #e0f2f1; }
 .cabecalho { background: #009688; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
 .cabecalho__titulo { margin: 0; padding: 8px; font-size: 24px; color: #fff; }
 .cabecalho__subtitulo { margin: 0; padding: 0 8px 8px; font-size: 16px; color: rgba(255,255,255,0.7); }
 .painel { float: left; margin: 16px; width: 30%; min-width: 400px; min-height: 300px; max-width: 600px; border-radius: 2px; background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
 .titulo { margin: 0 0 8px; padding: 8px; font-size: 20px; color: #fff; background: #00796b; }
-.botao { border: none; font-weight: bold; text-decoration: none; padding: 8px; border-radius: 2px; background: transparent; color: #d50000; will-change: transform; transition: transform 100ms ease-out; }
-.botao:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 100ms ease-in; }
+.botao { border: none; font-weight: bold; text-decoration: none; padding: 8px; border-radius: 2px; background: transparent; color: #d50000; will-change: transform; transition: transform 100ms ease-in; }
+.botao:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,0.3); transition: transform 100ms ease-out; }
 .botao-acao { background: #d50000; color: white; }
+.instrucoes { margin: 8px; text-align: justify; }
 .pessoas__atualizar { float: right; margin: 8px; }
 .pessoas__atualizar:disabled { background: #eee; color: rgba(0,0,0,0.38); }
-.pessoas__instrucoes { margin: 8px; text-align: justify; }
 .pessoas__container { clear: right; margin: 8px; }
 .pessoa, .pessoa-cabecalho { display: flex; padding: 2px 0; border-bottom: 1px solid #ccc; }
 .pessoa-cabecalho { font-weight: bold; }
@@ -387,7 +407,7 @@ body { font-family: Arial, sans-serif; font-size: 14px; background: #e0f2f1; }
 .setor { margin: 8px; min-width: 64px; border: 2px solid #aaa; border-radius: 8px; }
 .setor__cabecalho { display: flex; }
 .setor__nome { flex: 1; margin: 8px; display: flex; justify-content: center; }
-.setor__excluir { margin: 4px; padding: 0; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 18px; font-weight: bold; background: #aaa; color: white; }
+.setor__excluir { margin: 4px; padding: 0; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 24px; line-height: 24px; font-weight: 800; background: #aaa; color: white; }
 .setor__excluir:hover { background: #d50000; }
 .setor__novo { margin: 8px; min-width: 64px; min-height: 32px; border: 2px dashed #aaa; background: transparent; color: #00796b; font-weight: bold; }
 .setor__integrantes { display: flex; flex-flow: row wrap; align-items: flex-start; margin: 0 6px; }
@@ -403,7 +423,7 @@ body { font-family: Arial, sans-serif; font-size: 14px; background: #e0f2f1; }
 <div class="pessoas painel">
 <h3 class="pessoas__titulo titulo">Pessoas</h3>
 <button class="pessoas__atualizar botao botao-acao" disabled>Atualizar</button>
-<div class="pessoas__instrucoes">Marque as pessoas que trabalham na sua unidade.<br><br>Clique sobre os nomes para definir um apelido ou um nome mais curto para exibição.</div>
+<div class="pessoas__instrucoes instrucoes">Marque as pessoas que trabalham na sua unidade.<br><br>Clique sobre os nomes para definir um apelido ou um nome mais curto para exibição.</div>
 <div class="pessoas__container">
 <div class="pessoa-cabecalho"><div class="pessoa__ativa"></div><div class="pessoa__nome">Nome</div><div class="pessoa__sigla">Sigla</div></div>
 <template id="pessoa-template">
@@ -417,6 +437,9 @@ body { font-family: Arial, sans-serif; font-size: 14px; background: #e0f2f1; }
 </div>
 <div class="setores painel">
 <h3 class="setores__titulo titulo">Setores</h3>
+<div class="setores__instrucoes instrucoes">
+Clique sobre o nome das pessoas para adicioná-las a um setor.
+</div>
 <div class="setor__integrantes">
 <template id="integrante-template">
 <div class="integrante">
@@ -477,7 +500,7 @@ body { font-family: Arial, sans-serif; font-size: 14px; background: #e0f2f1; }
 				evt.target.disabled = true;
 				pessoa.getElement().classList.add('pessoa-desativada');
 				pessoa.ativa = ativa;
-				if (! ativa) {
+				if (!ativa) {
 					pessoa.setor = null;
 				} else {
 					// DEBUG
@@ -514,16 +537,37 @@ body { font-family: Arial, sans-serif; font-size: 14px; background: #e0f2f1; }
 				botaoNovo = setor.getElement().novo;
 			}
 
-			integrantes.filter(pessoa => pessoa.setor === id).forEach(pessoa => {
+			let integrantesDesteSetor = integrantes.filter(pessoa => pessoa.setor === id);
+			integrantesDesteSetor.forEach(pessoa => {
 				containerIntegrantes.insertBefore(pessoa.getElement(), containerIntegrantes.lastElementChild);
 			});
 
-			if (alterado === 'setores' && !botaoNovoSetorPrincipalInicializado) {
+			if (alterado === 'setores' && (id !== null || !botaoNovoSetorPrincipalInicializado)) {
 				botaoNovo.addEventListener('click', evt => {
 					const nome = prompt('Nome do novo setor?');
 					if (nome === null) return;
 					Armazem.salvar('setores', new Setor({ nome, parent: id }));
 				});
+				if (id === null) {
+					botaoNovoSetorPrincipalInicializado = true;
+				} else {
+					let botaoExcluir = setor.getElement().excluir;
+					botaoExcluir.addEventListener('click', evt => {
+						const confirmar = confirm(`Deseja excluir o setor "${setor.nome}"?`);
+						if (confirmar) {
+							let apagarSetor = function(setor) {
+								const integrantesSetor = integrantes.filter(pessoa => pessoa.setor === setor.id);
+								integrantesSetor.forEach(pessoa => pessoa.setor = null);
+								const mapa = integrantesSetor.reduce((map, pessoa) => map.set(pessoa.sigla, pessoa), new Map());
+								Armazem.salvarTudo('pessoas', mapa, false);
+								Armazem.apagar('setores', setor.id);
+								const subsetoresSetor = setores.filter(subsetor => subsetor.parent === setor.id);
+								subsetoresSetor.forEach(subsetor => apagarSetor(subsetor));
+							};
+							apagarSetor(setor);
+						}
+					});
+				}
 			}
 
 			const subsetores = setores.filter(setor => setor.parent === id).sort(Setor.sort);
