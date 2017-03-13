@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 17
+// @version 18
 // @grant none
 // ==/UserScript==
 
@@ -29,7 +29,6 @@ var GUI = (function() {
 	var instance = null,
 			construindo = false,
 			button = null,
-			tabela = null,
 			progresso = null,
 			saida = null;
 	var invalidSymbols = /[&<>"]/g;
@@ -73,7 +72,6 @@ var GUI = (function() {
 			'.gmPorcentagem { display: inline-block; width: 6ex; text-align: right; }'
 		].join('\n');
 		document.querySelector('head').appendChild(estilos);
-		tabela = document.getElementById('divInfraAreaTabela').querySelector('table');
 	}
 	GUI.prototype = {
 		constructor: GUI,
@@ -212,6 +210,10 @@ var GUI = (function() {
 								textoData = 'Data do último evento';
 								break;
 
+							case 'dataInclusaoLocalizador':
+								textoData = 'Data de inclusão no localizador';
+								break;
+
 							default:
 								throw new Error('Campo "data considerada" desconhecido.');
 						}
@@ -221,7 +223,7 @@ var GUI = (function() {
 									IDEAL = 0.5;
 						var esperado = processo.prazoCorregedoria;
 						var minimo = 0;
-						var maximo = esperado * indicePrioridade > 1 ? MAXIMO_PRIORIDADE_DOIS_OU_MAIOR : MAXIMO_PRIORIDADE_MENOR_OU_IGUAL_A_UM;
+						var maximo = esperado * (indicePrioridade > 1 ? MAXIMO_PRIORIDADE_DOIS_OU_MAIOR : MAXIMO_PRIORIDADE_MENOR_OU_IGUAL_A_UM);
 						var baixo = esperado - DIAS_BAIXO;
 						var alto = esperado;
 						var ideal = esperado * IDEAL;
@@ -293,9 +295,9 @@ var GUI = (function() {
 
 				function onMostrarChange() {
 					if ((!mostrarPorPadrao) || localStorage.getItem(id) === 'N') {
-						tabela.classList.add(classeOcultar);
+						document.body.classList.add(classeOcultar);
 					} else {
-						tabela.classList.remove(classeOcultar);
+						document.body.classList.remove(classeOcultar);
 					}
 				}
 				input.addEventListener('click', evt => {
@@ -362,7 +364,7 @@ var GUI = (function() {
 			function extrairDatas(processos) {
 				const datas = new Map();
 
-				for (let [numproc, timestamp] of processos.entries()) {
+				for (let timestamp of processos.values()) {
 					let valorAtual = datas.get(timestamp) || 0;
 					datas.set(timestamp, valorAtual + 1);
 				}
@@ -392,13 +394,15 @@ var GUI = (function() {
 						area.dimensoes = {
 							largura: this.dimensoes.largura - area.margens.l - area.margens.r,
 							altura: this.dimensoes.altura - area.margens.t - area.margens.b
-						}
+						};
 						return area;
 					}
 
 					constructor() {
 						this.dimensoes = {
-							largura: 1024,
+							get largura() {
+								return Math.min(1024, document.querySelector('#divInfraAreaTelaD').clientWidth);
+							},
 							altura: 400,
 							margem: 3,
 							espacamento: 5
@@ -412,7 +416,7 @@ var GUI = (function() {
 							altura: 10,
 							cor: 'hsla(180, 100%, 87%, 0.87)',
 							corSecundaria: 'hsla(180, 100%, 87%, 0.5)'
-						}
+						};
 						this.escala = {
 							maximo: 20,
 							unidadePrimaria: 10,
@@ -496,9 +500,6 @@ var GUI = (function() {
 					}
 
 					desenharEscala() {
-						const qtdIntervalos = this.escala.maximo / this.escala.unidadePrimaria;
-						const alturaIntervalo = this.area.dimensoes.altura / qtdIntervalos;
-
 						const context = this.context;
 						const xTexto = this.dimensoes.margem + this.linha.espessura/2 + this.dimensoes.espacamento + this.escala.largura/2;
 						const xLinha = xTexto + this.escala.largura/2 + this.dimensoes.espacamento;
@@ -575,7 +576,7 @@ var GUI = (function() {
 						let secundariaOk = this.assegurarDistanciaMinima('unidadeSecundaria', distanciaMinima);
 						if (secundariaOk) return;
 
-						primariaOk = this.assegurarDistanciaMinima('unidadePrimaria', distanciaMinima);
+						let primariaOk = this.assegurarDistanciaMinima('unidadePrimaria', distanciaMinima);
 						if (primariaOk) {
 							this.escala.unidadeSecundaria = this.escala.unidadePrimaria;
 						} else {
@@ -645,6 +646,7 @@ var GUI = (function() {
 		visitLocalizador(pvtVars) {
 			return pvtVars;
 		}
+
 	};
 	GUI.getInstance = function() {
 		if (!instance) {
@@ -689,7 +691,7 @@ var LocalizadoresFactory = (function() {
 		}, this);
 		var proxima = doc.getElementById('lnkInfraProximaPaginaSuperior');
 		if (proxima) {
-			console.info('Buscando próxima página', this.nome);
+			console.info('Buscando próxima página', this.nome || this.siglaNome);
 			return this.obterPagina(pagina + 1, doc);
 		}
 		return this;
@@ -1017,6 +1019,9 @@ var ProcessoFactory = (function() {
 
 				case 'MOVIMENTO':
 					ret = 'dataUltimoEvento';
+					if (this.dataInclusaoLocalizador < this.dataUltimoEvento) {
+						ret = 'dataInclusaoLocalizador';
+					}
 					break;
 
 				default:
