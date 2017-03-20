@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 18
+// @version 19
 // @grant none
 // ==/UserScript==
 
@@ -56,6 +56,8 @@ var GUI = (function() {
 			'.gmProcessos.gmPrioridade2 { background-color: #ff8; }',
 			'.gmProcessos.gmPrioridade3 { background-color: #8aff8a; }',
 			'.gmProcessos.gmVazio { opacity: 0.25; background-color: inherit; color: #888; }',
+			'.gmPeticoes { display: inline-block; margin-right: 1ex; width: 15px; height: 15px; line-height: 15px; background: red; color: white; border: 1px solid red; text-align: center; border-radius: 50%; font-size: 12px; }',
+			'.gmPeticoes.gmVazio { visibility: hidden; }',
 			'.gmDetalhes td:first-child { padding-left: 0; }',
 			'.gmNaoMostrarClasses .gmDetalheClasse { display: none; }',
 			'.gmNaoMostrarDiasParaFim .gmDiasParaFim { display: none; }',
@@ -112,6 +114,11 @@ var GUI = (function() {
 				conteudo.push(' ');
 				conteudo.push('<img class="infraImgNormal" src="../../../infra_css/imagens/balao.gif" style="width:0.9em; height:0.9em; opacity:1; border-width:0;" onmouseover="' + safeHTML`return infraTooltipMostrar('${localizador.lembrete}','',400);` + '" onmouseout="return infraTooltipOcultar();"/>');
 			}
+			var processosComPeticao = localizador.processos.filter(processo => {
+				let localizadoresPeticao = processo.localizadores.filter(localizadorProcesso => localizadorProcesso.sigla === 'PETIÇÃO');
+				return localizadoresPeticao.length > 0;
+			});
+			baloes.unshift('<span id="gmLocalizador' + localizador.id + 'Peticoes" class="gmPeticoes' + (processosComPeticao.length > 0 ? '' : ' gmVazio') + '" onmouseover="infraTooltipMostrar(&quot;Processos com localizador PETIÇÃO&quot;);" onmouseout="infraTooltipOcultar();">' + (processosComPeticao.length > 99 ? '+' : processosComPeticao.length) + '</span>');
 			conteudo.push('<div class="gmBaloes">');
 			conteudo.push(baloes.join(''));
 			conteudo.push('</div>');
@@ -129,6 +136,16 @@ var GUI = (function() {
 					filtrar.addEventListener('click', function(evt) {
 						evt.preventDefault();
 						evt.stopPropagation();
+						[...document.getElementsByClassName('gmDetalhesAberto')].forEach(function(balaoAberto) {
+							let linhaAberta = balaoAberto.parentElement;
+							while (linhaAberta && (linhaAberta.tagName.toLowerCase() !== 'tr')) linhaAberta = linhaAberta.parentElement;
+							if (linhaAberta && (linhaAberta === linha)) {
+								balaoAberto.classList.remove('gmDetalhesAberto');
+								[...document.getElementsByClassName('gmDetalhes')].forEach(function(linhaAntiga) {
+									linha.parentElement.removeChild(linhaAntiga);
+								});
+							}
+						});
 						var gui = GUI.getInstance();
 						gui.avisoCarregando.exibir('Filtrando processos com prazo em aberto...');
 						gui.avisoCarregando.atualizar(0, localizador.quantidadeProcessos);
@@ -146,6 +163,16 @@ var GUI = (function() {
 				atualizar.addEventListener('click', function(evt) {
 					evt.preventDefault();
 					evt.stopPropagation();
+					[...document.getElementsByClassName('gmDetalhesAberto')].forEach(function(balaoAberto) {
+						let linhaAberta = balaoAberto.parentElement;
+						while (linhaAberta && (linhaAberta.tagName.toLowerCase() !== 'tr')) linhaAberta = linhaAberta.parentElement;
+						if (linhaAberta && (linhaAberta === linha)) {
+							balaoAberto.classList.remove('gmDetalhesAberto');
+							[...document.getElementsByClassName('gmDetalhes')].forEach(function(linhaAntiga) {
+								linha.parentElement.removeChild(linhaAntiga);
+							});
+						}
+					});
 					var gui = GUI.getInstance();
 					gui.avisoCarregando.exibir('Atualizando...');
 					gui.avisoCarregando.atualizar(0, localizador.quantidadeProcessosNaoFiltrados);
@@ -159,100 +186,120 @@ var GUI = (function() {
 				var divExistente = linha.cells[0].querySelector('div');
 				divExistente.insertBefore(container, divExistente.firstChild);
 			}
+
+			function alternarDetalhes(balao, processos, indicePrioridade) {
+				[...document.getElementsByClassName('gmDetalhes')].forEach(function(linhaAntiga) {
+					linha.parentElement.removeChild(linhaAntiga);
+				});
+				if (balao.classList.contains('gmDetalhesAberto')) {
+					balao.classList.remove('gmDetalhesAberto');
+					return;
+				}
+				[...document.getElementsByClassName('gmDetalhesAberto')].forEach(function(balaoAberto) {
+					balaoAberto.classList.remove('gmDetalhesAberto');
+				});
+				balao.classList.add('gmDetalhesAberto');
+				processos.sort((a, b) => {
+					if (a.atrasoPorcentagem < b.atrasoPorcentagem) return +1;
+					if (a.atrasoPorcentagem > b.atrasoPorcentagem) return -1;
+					return 0;
+				});
+				processos.forEach(function(processo, indiceProcesso) {
+					var linhaNova = linha.parentElement.insertRow(linha.rowIndex + 1 + indiceProcesso);
+					var atraso = Math.round(processo.atraso);
+					linhaNova.className = 'infraTrClara gmDetalhes';
+					const DIGITOS_CLASSE = 6,
+								DIGITOS_COMPETENCIA = 2;
+					linhaNova.dataset.classe = ('0'.repeat(DIGITOS_CLASSE) + processo.numClasse).substr(-DIGITOS_CLASSE);
+					linhaNova.dataset.competencia = ('0'.repeat(DIGITOS_COMPETENCIA) + processo.numCompetencia).substr(-DIGITOS_COMPETENCIA);
+					var textoData;
+					switch (processo.campoDataConsiderada) {
+						case 'dataSituacao':
+							switch (processo.situacao) {
+								case 'MOVIMENTO-AGUARDA DESPACHO':
+									textoData = 'Data da conclusão para despacho';
+									break;
+
+								case 'MOVIMENTO-AGUARDA SENTENÇA':
+									textoData = 'Data da conclusão para sentença';
+									break;
+
+								default:
+									textoData = 'Data de alteração da situação';
+									break;
+							}
+							break;
+
+						case 'dataUltimoEvento':
+							textoData = 'Data do último evento';
+							break;
+
+						case 'dataInclusaoLocalizador':
+							textoData = 'Data de inclusão no localizador';
+							break;
+
+						default:
+							throw new Error('Campo "data considerada" desconhecido.');
+					}
+					const MAXIMO_PRIORIDADE_MENOR_OU_IGUAL_A_UM = 2,
+								MAXIMO_PRIORIDADE_DOIS_OU_MAIOR = 1,
+								DIAS_BAIXO = 3,
+								IDEAL = 0.5;
+					var indicePrioridadeProcesso = indicePrioridade;
+					if (typeof indicePrioridade === 'undefined') {
+						prioridades.forEach((processos, indice) => {
+							if (processos.includes(processo)) {
+								indicePrioridadeProcesso = indice;
+							}
+						});
+					}
+					var esperado = processo.prazoCorregedoria;
+					var minimo = 0;
+					var maximo = esperado * (indicePrioridadeProcesso > 1 ? MAXIMO_PRIORIDADE_DOIS_OU_MAIOR : MAXIMO_PRIORIDADE_MENOR_OU_IGUAL_A_UM);
+					var baixo = esperado - DIAS_BAIXO;
+					var alto = esperado;
+					var ideal = esperado * IDEAL;
+					var valor = esperado + atraso;
+					const PCT = 100;
+					var porcentagem = Math.round(PCT + processo.atrasoPorcentagem * PCT) + '%';
+					var localizadoresExtra = processo.localizadores.filter(loc => loc.id !== localizador.id).map(loc => loc.sigla);
+					linhaNova.innerHTML = [
+						'<td>',
+						safeHTML`<img class="gmLembreteProcesso${processo.lembretes.length === 0 ? ' gmLembreteProcessoVazio' : ''}" src="../../../infra_css/imagens/balao.gif" onmouseover="return infraTooltipMostrar('${processo.lembretes.map(lembrete => lembrete.replace(/\n/g, '<br>')).join('<hr style="border-width: 0 0 1px 0;">')}', 'Lembretes', 400);" onmouseout="return infraTooltipOcultar();">`,
+						[
+							`<a href="${processo.link}">${processo.numprocFormatado}</a>`,
+							`<abbr title="${textoData}">${processo[processo.campoDataConsiderada].toLocaleString().substr(0, 10)}</abbr> + ${esperado.toString().replace(/\.5$/, '&half;')}${esperado >= 2 ? ' dias' : ' dia'} = ${processo.termoPrazoCorregedoria.toLocaleString().substr(0, 10)}`,
+						].join(' | '),
+						`<span class="gmDetalheClasse"> | ${processo.classe.toUpperCase()}</span>`,
+						localizadoresExtra.length > 0 ? localizadoresExtra.map(loc => `<span class="gmLocalizadorExtra">${loc}</span>`).join(' ') : '',
+						'</td>',
+						'<td>',
+						`<meter ${indicePrioridadeProcesso < 2 ? ' class="gmExcesso"' : ''} min="${minimo}" max="${maximo}" low="${baixo}" high="${alto}" optimum="${ideal}" value="${valor}">${atraso}</meter>`,
+						`<span class="gmPorcentagem">${porcentagem}</span><span class="gmDiasParaFim"> | ${processo.atraso >= 0 ? 'Prazo excedido há ' : ''}`,
+						Math.abs(atraso),
+						Math.abs(atraso) > 1 ? ' dias ' : ' dia ',
+						processo.atraso < 0 ? 'até o fim do prazo' : '',
+						processo.prioridade ? '</span> <span style="color: red;">(Prioridade)</span>' : '',
+						'</td>'
+					].join('');
+				});
+			}
+
 			prioridades.forEach(function(processos, indicePrioridade) {
 				var balao = document.getElementById('gmLocalizador' + localizador.id + 'Prioridade' + indicePrioridade);
 				balao.addEventListener('click', function(evt) {
 					evt.preventDefault();
 					evt.stopPropagation();
-					[...document.getElementsByClassName('gmDetalhes')].forEach(function(linhaAntiga) {
-						linha.parentElement.removeChild(linhaAntiga);
-					});
-					if (balao.classList.contains('gmDetalhesAberto')) {
-						balao.classList.remove('gmDetalhesAberto');
-						return;
-					}
-					[...document.getElementsByClassName('gmDetalhesAberto')].forEach(function(balaoAberto) {
-						balaoAberto.classList.remove('gmDetalhesAberto');
-					});
-					balao.classList.add('gmDetalhesAberto');
-					processos.sort((a, b) => {
-						if (a.atrasoPorcentagem < b.atrasoPorcentagem) return +1;
-						if (a.atrasoPorcentagem > b.atrasoPorcentagem) return -1;
-						return 0;
-					});
-					processos.forEach(function(processo, indiceProcesso) {
-						var linhaNova = linha.parentElement.insertRow(linha.rowIndex + 1 + indiceProcesso);
-						var atraso = Math.round(processo.atraso);
-						linhaNova.className = 'infraTrClara gmDetalhes';
-						const DIGITOS_CLASSE = 6,
-									DIGITOS_COMPETENCIA = 2;
-						linhaNova.dataset.classe = ('0'.repeat(DIGITOS_CLASSE) + processo.numClasse).substr(-DIGITOS_CLASSE);
-						linhaNova.dataset.competencia = ('0'.repeat(DIGITOS_COMPETENCIA) + processo.numCompetencia).substr(-DIGITOS_COMPETENCIA);
-						var textoData;
-						switch (processo.campoDataConsiderada) {
-							case 'dataSituacao':
-								switch (processo.situacao) {
-									case 'MOVIMENTO-AGUARDA DESPACHO':
-										textoData = 'Data da conclusão para despacho';
-										break;
-
-									case 'MOVIMENTO-AGUARDA SENTENÇA':
-										textoData = 'Data da conclusão para sentença';
-										break;
-
-									default:
-										textoData = 'Data de alteração da situação';
-										break;
-								}
-								break;
-
-							case 'dataUltimoEvento':
-								textoData = 'Data do último evento';
-								break;
-
-							case 'dataInclusaoLocalizador':
-								textoData = 'Data de inclusão no localizador';
-								break;
-
-							default:
-								throw new Error('Campo "data considerada" desconhecido.');
-						}
-						const MAXIMO_PRIORIDADE_MENOR_OU_IGUAL_A_UM = 2,
-									MAXIMO_PRIORIDADE_DOIS_OU_MAIOR = 1,
-									DIAS_BAIXO = 3,
-									IDEAL = 0.5;
-						var esperado = processo.prazoCorregedoria;
-						var minimo = 0;
-						var maximo = esperado * (indicePrioridade > 1 ? MAXIMO_PRIORIDADE_DOIS_OU_MAIOR : MAXIMO_PRIORIDADE_MENOR_OU_IGUAL_A_UM);
-						var baixo = esperado - DIAS_BAIXO;
-						var alto = esperado;
-						var ideal = esperado * IDEAL;
-						var valor = esperado + atraso;
-						const PCT = 100;
-						var porcentagem = Math.round(PCT + processo.atrasoPorcentagem * PCT) + '%';
-						var localizadoresExtra = processo.localizadores.filter(loc => loc.id !== localizador.id).map(loc => loc.sigla);
-						linhaNova.innerHTML = [
-							'<td>',
-							safeHTML`<img class="gmLembreteProcesso${processo.lembretes.length === 0 ? ' gmLembreteProcessoVazio' : ''}" src="../../../infra_css/imagens/balao.gif" onmouseover="return infraTooltipMostrar('${processo.lembretes.map(lembrete => lembrete.replace(/\n/g, '<br>')).join('<hr style="border-width: 0 0 1px 0;">')}', 'Lembretes', 400);" onmouseout="return infraTooltipOcultar();">`,
-							[
-								`<a href="${processo.link}">${processo.numprocFormatado}</a>`,
-								`<abbr title="${textoData}">${processo[processo.campoDataConsiderada].toLocaleString().substr(0, 10)}</abbr> + ${esperado.toString().replace(/\.5$/, '&half;')}${esperado >= 2 ? ' dias' : ' dia'} = ${processo.termoPrazoCorregedoria.toLocaleString().substr(0, 10)}`,
-							].join(' | '),
-							`<span class="gmDetalheClasse"> | ${processo.classe.toUpperCase()}</span>`,
-							localizadoresExtra.length > 0 ? localizadoresExtra.map(loc => `<span class="gmLocalizadorExtra">${loc}</span>`).join(' ') : '',
-							'</td>',
-							'<td>',
-							`<meter ${indicePrioridade < 2 ? ' class="gmExcesso"' : ''} min="${minimo}" max="${maximo}" low="${baixo}" high="${alto}" optimum="${ideal}" value="${valor}">${atraso}</meter>`,
-							`<span class="gmPorcentagem">${porcentagem}</span><span class="gmDiasParaFim"> | ${processo.atraso >= 0 ? 'Prazo excedido há ' : ''}`,
-							Math.abs(atraso),
-							Math.abs(atraso) > 1 ? ' dias ' : ' dia ',
-							processo.atraso < 0 ? 'até o fim do prazo' : '',
-							processo.prioridade ? '</span> <span style="color: red;">(Prioridade)</span>' : '',
-							'</td>'
-						].join('');
-					});
+					alternarDetalhes(balao, processos, indicePrioridade);
 				}, false);
 			});
+			const balaoPeticoes = document.getElementById('gmLocalizador' + localizador.id + 'Peticoes');
+			balaoPeticoes.addEventListener('click', function(evt) {
+				evt.preventDefault();
+				evt.stopPropagation();
+				alternarDetalhes(balaoPeticoes, processosComPeticao);
+			}, false);
+
 		},
 		avisoCarregando: {
 			acrescentar(qtd) {
