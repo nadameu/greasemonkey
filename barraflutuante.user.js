@@ -1,7 +1,11 @@
 // ==UserScript==
 // @name        Barra flutuante
 // @namespace   http://nadameu.com.br/barraflutuante
-// @version     11
+// @include     https://eproc.jfpr.jus.br/eprocV2/*
+// @include     https://eproc.jfsc.jus.br/eprocV2/*
+// @include     https://eproc.jfrs.jus.br/eprocV2/*
+// @include     https://eproc.trf4.jus.br/eproc2trf4/*
+// @version     12
 // @grant       none
 // ==/UserScript==
 
