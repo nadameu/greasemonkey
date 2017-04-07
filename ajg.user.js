@@ -3,7 +3,7 @@
 // @description Permite a criação de solicitações de pagamento em bloco
 // @namespace   http://nadameu.com.br/ajg
 // @include     /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=localizador_processos_ajg&/
-// @version     1
+// @version     2
 // @grant       none
 // ==/UserScript==
 
@@ -232,8 +232,6 @@ class PaginaNomeacoes extends Pagina {
 		const form = this.doc.querySelector('.gm-ajg__formulario');
 		const url = form.action;
 		const method = form.method;
-		const data = new FormData(form);
-		data.set('hdnInfraTipoPagina', '1');
 
 		const tabela = this.doc.getElementById('tabelaNomAJG');
 		const linhas = Array.from(tabela.rows);
@@ -264,6 +262,8 @@ class PaginaNomeacoes extends Pagina {
 		let duvida = false;
 		linhasProcessosSelecionados.forEach(linha => {
 			const nomeacao = this.nomeacaoFromLinha(linha);
+			const data = new FormData(form);
+			data.set('hdnInfraTipoPagina', '1');
 			data.set('id_unica', nomeacao.idUnica);
 			data.set('num_processo', nomeacao.numProcesso);
 			data.set('numeroNomeacao', nomeacao.numeroNomeacao);
