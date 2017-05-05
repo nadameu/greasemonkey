@@ -526,7 +526,8 @@ var GUI = (function() {
 						context.fillStyle = this.corFundo;
 						context.fillRect(0, 0, this.dimensoes.largura, this.dimensoes.altura);
 						context.beginPath();
-						let y, x = y = this.dimensoes.margem;
+						let x = this.dimensoes.margem;
+						let y = x;
 						let w = this.dimensoes.largura - 2*this.dimensoes.margem;
 						let h = this.dimensoes.altura - 2*this.dimensoes.margem;
 						context.rect(x, y, w, h);
