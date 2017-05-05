@@ -1,0 +1,8 @@
+{
+	"elision": true,
+	"esversion": 6,
+	"moz": true,
+	"-W027": true,
+	"-W069": true,
+	"-W086": true
+}

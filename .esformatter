@@ -1,0 +1,18 @@
+{
+	"root": true,
+	"indent": {
+		"value": "\t"
+	},
+	"lineBreak": {
+		"before": {
+		},
+		"after": {
+		}
+	},
+	"whiteSpace": {
+		"before": {
+		},
+		"after": {
+		}
+	}
+}
