@@ -44,56 +44,61 @@ class PaginaCriar extends Pagina {
 
 class PaginaNomeacoes extends Pagina {
 
+	get tabela() {
+		return this.doc.getElementById('tabelaNomAJG');
+	}
+
 	adicionarAlteracoes() {
 		this.adicionarEstilos();
 		const aviso = this.adicionarAvisoCarregando();
 		this.adicionarFormulario()
 			.then(() => {
 				aviso.carregado = true;
-				return this.adicionarAlteracoesTabela();
+				this.adicionarAlteracoesTabela();
 			})
 			.catch(err => {
 				aviso.carregado = false;
-				if (err instanceof ErroLinkCriarNaoExiste) {
-				} else {
+				if (!(err instanceof ErroLinkCriarNaoExiste)) {
 					throw err;
 				}
 			});
 	}
 
 	adicionarAlteracoesTabela() {
-		const tabela = this.doc.getElementById('tabelaNomAJG');
-		const linhas = Array.from(tabela.rows);
-		linhas.forEach((linha, indice) => {
-			if (indice === 0) {
-				linha.insertAdjacentHTML('afterbegin', `<th class="infraTh"><input class="gm-ajg__todos" type="checkbox"></th>`);
-			} else {
-				const celula = linha.insertCell(0);
-				linha.cells[1].classList.add('gm-ajg__linha__processo');
-				linha.cells[2].classList.add('gm-ajg__linha__nomeacao');
-				const linkCriar = linha.querySelector('a[href^="controlador.php?acao=criar_solicitacao_pagamento&"]');
-				if (! linkCriar) return;
-				celula.insertAdjacentHTML('afterbegin', `<input class="gm-ajg__linha__checkbox" type="checkbox">`);
-			}
-		});
-		tabela.addEventListener('click', this.onTabelaClicada.bind(this));
+		const tabela = this.tabela;
+		const linhas = tabela.rows;
+		let checkboxCount = 0;
+		for (let indice = 1, len = linhas.length; indice < len; indice++) {
+			let linha = linhas[indice];
+			let celula = linha.insertCell(0);
+			linha.cells[1].classList.add('gm-ajg__linha__processo');
+			linha.cells[2].classList.add('gm-ajg__linha__nomeacao');
+			let linkCriar = linha.querySelector('a[href^="controlador.php?acao=criar_solicitacao_pagamento&"]');
+			if (!linkCriar) continue;
+			celula.insertAdjacentHTML('afterbegin', `<input class="gm-ajg__linha__checkbox" type="checkbox">`);
+			checkboxCount++;
+		}
+		if (checkboxCount > 0) {
+			linhas[0].insertAdjacentHTML('afterbegin', `<th class="infraTh"><input class="gm-ajg__todos" type="checkbox"></th>`);
+			tabela.addEventListener('click', this.onTabelaClicada.bind(this));
+		}
 	}
 
 	adicionarAvisoCarregando() {
 		const aviso = this.doc.createElement('label');
 		aviso.className = 'gm-ajg__aviso';
 
-		let qtdPontinhos = 1;
+		let qtdPontinhos = 0;
 		function updateAviso() {
-			qtdPontinhos += 1;
-			qtdPontinhos %= 3;
 			let pontinhos = '.'.repeat(qtdPontinhos + 1);
 			aviso.textContent = `Aguarde, carregando formulário${pontinhos}`;
+			qtdPontinhos += 1;
+			qtdPontinhos %= 3;
 		}
 		updateAviso();
 		const win = this.doc.defaultView;
 		const timer = win.setInterval(updateAviso, 1000 / 3);
-		const tabela = this.doc.getElementById('tabelaNomAJG');
+		const tabela = this.tabela;
 		tabela.parentElement.insertBefore(aviso, tabela);
 		return {
 			get carregado() {
@@ -112,8 +117,8 @@ class PaginaNomeacoes extends Pagina {
 	}
 
 	adicionarEstilos() {
-		const style = this.doc.createElement('style');
-		style.innerHTML = `
+		this.doc.querySelector('head').insertAdjacentHTML('beforeend', `
+<style>
 .gm-ajg__aviso {}
 .gm-ajg__aviso--carregado {}
 .gm-ajg__aviso--nao-carregado {
@@ -134,52 +139,53 @@ class PaginaNomeacoes extends Pagina {
 .gm-ajg__lista__resultado--erro {
 	color: red;
 }
-		`;
-		this.doc.querySelector('head').appendChild(style);
+</style>
+		`);
 	}
 
 	adicionarFormulario() {
-		const areaTelaD = this.doc.getElementById('divInfraAreaTelaD');
-		areaTelaD.insertAdjacentHTML('beforeend', `<div class="gm-ajg__div"></div>`);
-		const div = this.doc.querySelector('.gm-ajg__div');
+		return executarAssincrono(function*() {
+			const areaTelaD = this.doc.getElementById('divInfraAreaTelaD');
+			areaTelaD.insertAdjacentHTML('beforeend', `<div class="gm-ajg__div"></div>`);
+			const div = this.doc.querySelector('.gm-ajg__div');
 
-		const linkCriar = this.doc.querySelector('a[href^="controlador.php?acao=criar_solicitacao_pagamento&"]');
-		if (! linkCriar) return Promise.reject(new ErroLinkCriarNaoExiste());
-		div.innerHTML = '<label>Aguarde, carregando formulário...</label>';
-		return XHR.buscarDocumento(linkCriar.href).then(doc => {
+			const linkCriar = this.doc.querySelector('a[href^="controlador.php?acao=criar_solicitacao_pagamento&"]');
+			if (!linkCriar) return Promise.reject(new ErroLinkCriarNaoExiste());
+			div.innerHTML = `<label>Aguarde, carregando formulário...</label>`;
+			const doc = yield XHR.buscarDocumento(linkCriar.href);
 			div.textContent = '';
 			const paginaCriar = Pagina.analisar(doc);
 			const form = paginaCriar.formElement.cloneNode(true);
-			if (! this.validarFormularioExterno(form)) return;
+			if (!this.validarFormularioExterno(form)) return;
 			div.textContent = 'Ok.';
 			div.innerHTML = `
-<fieldset class="infraFieldset">
-<legend class="infraLegend">Criar solicitações de pagamento em bloco</legend>
-<form class="gm-ajg__formulario" method="${form.method}" action="${form.action}">
-	<label>Valor da solicitação (R$): <input name="txtValorSolicitacao" onpaste="return false;" onkeypress="return infraMascaraDinheiro(this, event, 2, 18);"></label><br>
+	<fieldset class="infraFieldset">
+	<legend class="infraLegend">Criar solicitações de pagamento em bloco</legend>
+	<form class="gm-ajg__formulario" method="${form.method}" action="${form.action}">
+		<label>Valor da solicitação (R$): <input name="txtValorSolicitacao" onpaste="return false;" onkeypress="return infraMascaraDinheiro(this, event, 2, 18);"></label><br>
+		<br>
+		<label>Data da prestação do serviço: <input id="gm-ajg__formulario__data" name="txtDataPrestacao" onpaste="return false;" onkeypress="return infraMascaraData(this, event);"></label><img title="Selecionar data" alt="Selecionar data" src="../../../infra_css/imagens/calendario.gif" class="infraImg" onclick="infraCalendario('gm-ajg__formulario__data', this);"><br>
+		<br>
+		<label class="infraLabel">Motivo:</label><br>
+		<label><input type="checkbox" name="chkMotivo[]" value="0"> Nível de especialização e complexidade do trabalho</label><br>
+		<label><input type="checkbox" name="chkMotivo[]" value="1"> Natureza e importância da causa</label><br>
+		<label><input type="checkbox" name="chkMotivo[]" value="6"> Lugar da prestação do serviço</label><br>
+		<label><input type="checkbox" name="chkMotivo[]" value="3"> Tempo de tramitação do processo</label><br>
+		<label><input type="checkbox" name="chkMotivo[]" value="2"> Grau de zelo profissional</label><br>
+		<label><input type="checkbox" name="chkMotivo[]" value="4"> Trabalho realizado pelo profissional</label><br>
+		<br>
+		<label>Observação:<br><textarea name="selTxtObservacao" cols="55" rows="4" maxlength="500"></textarea></label><br>
+		<br>
+		<label>Decisão fundamentada <small><em>(Obrigatório quando o valor extrapolar o máximo)</em></small>:<br><textarea name="selTxtDecisao" cols="55" rows="4" maxlength="2000"></textarea></label><br>
+	</form>
 	<br>
-	<label>Data da prestação do serviço: <input id="gm-ajg__formulario__data" name="txtDataPrestacao" onpaste="return false;" onkeypress="return infraMascaraData(this, event);"></label><img title="Selecionar data" alt="Selecionar data" src="../../../infra_css/imagens/calendario.gif" class="infraImg" onclick="infraCalendario('gm-ajg__formulario__data', this);"><br>
-	<br>
-	<label class="infraLabel">Motivo:</label><br>
-	<label><input type="checkbox" name="chkMotivo[]" value="0"> Nível de especialização e complexidade do trabalho</label><br>
-	<label><input type="checkbox" name="chkMotivo[]" value="1"> Natureza e importância da causa</label><br>
-	<label><input type="checkbox" name="chkMotivo[]" value="6"> Lugar da prestação do serviço</label><br>
-	<label><input type="checkbox" name="chkMotivo[]" value="3"> Tempo de tramitação do processo</label><br>
-	<label><input type="checkbox" name="chkMotivo[]" value="2"> Grau de zelo profissional</label><br>
-	<label><input type="checkbox" name="chkMotivo[]" value="4"> Trabalho realizado pelo profissional</label><br>
-	<br>
-	<label>Observação:<br><textarea name="selTxtObservacao" cols="55" rows="4" maxlength="500"></textarea></label><br>
-	<br>
-	<label>Decisão fundamentada <small><em>(Obrigatório quando o valor extrapolar o máximo)</em></small>:<br><textarea name="selTxtDecisao" cols="55" rows="4" maxlength="2000"></textarea></label><br>
-</form>
-<br>
-<button class="gm-ajg__formulario__enviar">Criar solicitações em bloco</button>
-</fieldset>
-<output class="gm-ajg__resultado"></output>
+	<button class="gm-ajg__formulario__enviar">Criar solicitações em bloco</button>
+	</fieldset>
+	<output class="gm-ajg__resultado"></output>
 			`;
 			const enviar = this.doc.querySelector('.gm-ajg__formulario__enviar');
 			enviar.addEventListener('click', this.onEnviarClicado.bind(this));
-		});
+		}, this);
 	}
 
 	enviarFormulario(url, method, data) {
@@ -205,7 +211,7 @@ class PaginaNomeacoes extends Pagina {
 			}
 			window.errorDoc = doc;
 			console.error('DEBUG: window.errorDoc');
-			if (excecoes.length === 0 && ! tabelaErros) {
+			if (excecoes.length === 0 && !tabelaErros) {
 				return false;
 			}
 			const msgErro = Array.from(msgsErro.values()).join('\n');
@@ -249,7 +255,7 @@ class PaginaNomeacoes extends Pagina {
 		} else {
 			pergunta = `Criar solicitações de pagamento para ${linhasProcessosSelecionados.length} processos?`;
 		}
-		if (! confirm(pergunta)) return;
+		if (!confirm(pergunta)) return;
 
 		const resultado = this.doc.querySelector('.gm-ajg__resultado');
 		resultado.innerHTML = `
@@ -324,7 +330,7 @@ class PaginaNomeacoes extends Pagina {
 				mensagem += '\nA página será recarregada para atualizar a lista de processos.';
 			}
 			this.doc.defaultView.alert(mensagem);
-			if (! duvida) {
+			if (!duvida) {
 				this.doc.defaultView.location.reload();
 			}
 		});
@@ -391,6 +397,38 @@ class XHR {
 function main() {
 	const pagina = Pagina.analisar(document);
 	pagina.adicionarAlteracoes();
+}
+
+function executarAssincrono(gerador, thisObj = null) {
+	if (!gerador.isGenerator()) {
+		throw new Error('Função não é um gerador!');
+	}
+	return Promise.resolve().then(() => {
+		const gerado = gerador.apply(thisObj);
+		function analisarRetorno(retorno) {
+			if (!retorno.done) {
+				const promise = retorno.value;
+				if (promise instanceof Promise) {
+					return promise.then(enviarValor).catch(enviarErro);
+				} else {
+					return Promise.reject(new Error('"yield" utilizado sem um objeto Promise!'));
+				}
+			} else {
+				return retorno.value;
+			}
+		}
+		const enviarValor = capturarErros.bind(null, 'next');
+		const enviarErro = capturarErros.bind(null, 'throw');
+		function capturarErros(metodo, parametro) {
+			try {
+				const retorno = gerado[metodo](parametro);
+				return analisarRetorno(retorno);
+			} catch (err) {
+				return Promise.reject(err);
+			}
+		}
+		return enviarValor(undefined);
+	});
 }
 
 main();
