@@ -445,6 +445,12 @@ class PaginaProcesso extends Pagina {
 		return this.doc.getElementById('fldInformacoesAdicionais');
 	}
 
+	get justicaGratuita() {
+		const elemento = this.doc.getElementById('lnkJusticaGratuita');
+		if (elemento) return elemento.textContent;
+		return '???';
+	}
+
 	get linkListar() {
 		return this.informacoesAdicionais.querySelector('a[href^="controlador.php?acao=processo_precatorio_rpv&"]');
 	}
@@ -709,6 +715,7 @@ class PaginaProcesso extends Pagina {
 				calculos: this.calculos,
 				contratos: this.contratos,
 				honorarios: this.honorarios,
+				justicaGratuita: this.justicaGratuita,
 				magistrado: this.magistrado,
 				sentencas: this.sentencas,
 				transito: this.transito
@@ -1332,7 +1339,9 @@ p.gm-dados-adicionais {
 				link.addEventListener('click', this.onLinkDocumentoClicado.bind(this));
 			});
 		});
-	}
+		areaDocumentos.insertAdjacentHTML('beforeend', '<br><br><span class="atencao">&nbsp;&nbsp;Justiça Gratuita</span>');
+		areaDocumentos.insertAdjacentHTML('beforeend', `<p class="gm-resposta">${dadosProcesso.justicaGratuita}</p>`);
+}
 
 	onBotaoPrepararClicado(evt, fecharAposPreparar = false) {
 		evt.preventDefault();
