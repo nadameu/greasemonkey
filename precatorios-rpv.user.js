@@ -483,7 +483,7 @@ class PaginaProcesso extends Pagina {
 	}
 
 	get transito() {
-		const reDecisoesTerminativas = /(^(Julgamento|Sentença))|Voto|Recurso Extraordinário Inadmitido/;
+		const reDecisoesTerminativas = /(^(Julgamento|Sentença))|Voto|Recurso Extraordinário Inadmitido|Pedido de Uniformização para a Turma Nacional - Inadmitido/;
 		const reDecurso = /CIÊNCIA, COM RENÚNCIA AO PRAZO|Decurso de Prazo/;
 		const reTransito = /Trânsito em Julgado/;
 		const reTransitoComData = /Data: (\d\d\/\d\d\/\d\d\d\d)/;
