@@ -12,8 +12,8 @@ const curry = function(fn, ...args) {
 	return curry.bind(null, fn, ...args);
 };
 const pluck = curry((attr, obj) => obj[attr]);
-const _compose = (f, g) => (...args) => f(g(...args));
-const compose = (...funcoes) => funcoes.reduce(_compose);
+const pipe2 = (f, g) => (...args) => g(f(...args));
+const compose = (...funcoes) => funcoes.reduceRight(pipe2);
 
 const inserirApos = (antigo, novo) => {
 	antigo.parentElement.insertBefore(novo, antigo.nextSibling);
