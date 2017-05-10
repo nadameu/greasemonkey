@@ -1177,6 +1177,9 @@ var RegrasCorregedoria = {
 		[Situacoes['INDEFINIDA']]: 120
 	}
 };
+// TODO Somente para SCLAG02
+RegrasCorregedoria[CompetenciasCorregedoria.JUIZADO][Situacoes.MOVIMENTO] = 30;
+RegrasCorregedoria[CompetenciasCorregedoria.JUIZADO][Situacoes.INDEFINIDA] = 60;
 
 function adicionarBotaoComVinculo(localizadores) {
 	var gui = GUI.getInstance();
