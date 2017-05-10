@@ -42,8 +42,6 @@ const compose = (...funcoes) => funcoes.reduceRight(pipe2);
 const map = curry((fn, obj) => obj.map(fn));
 // apply :: f (a -> b) -> a -> f b
 const apply = curry((m, obj) => m.ap(obj));
-// chain :: (a -> f b) -> f a -> f b
-const chain = curry((fn, obj) => obj.chain(fn));
 // reduce :: (a -> b) -> b -> f a -> b
 const reduce = curry((fn, acc, obj) => obj.reduce(fn, acc));
 // trace :: String -> a -> _, a
