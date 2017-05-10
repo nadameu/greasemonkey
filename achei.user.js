@@ -3,7 +3,7 @@
 // @namespace   http://nadameu.com.br/achei
 // @description Link para informações da Intra na página do Achei!
 // @include     http://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar*
-// @version     1
+// @version     2
 // @grant       none
 // ==/UserScript==
 
