@@ -36,7 +36,7 @@ const pluck = curry((attr, obj) => obj[attr]);
 const pipe2 = (f, g) => (...args) => g(f(...args));
 // pipe :: (a -> b), (b -> ...), ..., (... -> c) -> (a -> c)
 const pipe = (...funcoes) => funcoes.reduce(pipe2);
-// pipe :: (... -> c), ..., (b -> ...), (a -> b) -> (a -> c)
+// compose :: (... -> c), ..., (b -> ...), (a -> b) -> (a -> c)
 const compose = (...funcoes) => funcoes.reduceRight(pipe2);
 // map :: (a -> b) -> f a -> f b
 const map = curry((fn, obj) => obj.map(fn));
