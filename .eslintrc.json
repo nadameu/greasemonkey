@@ -11,7 +11,7 @@
 
 		"block-scoped-var": "warn",
 		"complexity": ["warn", 3],
-		"curly": ["error", "multi-line"],
+		"curly": ["error", "multi-or-nest"],
 		"dot-location": ["error", "property"],
 		"eqeqeq": ["error", "smart"],
 		"no-useless-escape": "error",
