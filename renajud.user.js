@@ -1,13 +1,23 @@
 // ==UserScript==
 // @name        Renajud
+// @author      nadameu
+// @description Facilita a utilização do sistema RENAJUD por usuários da Justiça Federal da 4ª Região.
+// @icon        car.png
 // @namespace   http://nadameu.com.br/renajud
+// @homepage    http://www.nadameu.com.br/
+// @source      https://github.com/nadameu/greasemonkey/
+// @supportURL  https://github.com/nadameu/greasemonkey/issues
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-retirar.jsf
-// @version     17
+// @connect     www.trf4.jus.br
+// @version     18
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
 // ==/UserScript==
+
+/* eslint-env jquery,greasemonkey */
+/* eslint no-console: off, complexity: off, max-depth: off, max-nested-callbacks: off */
 
 function inserir() {
 
@@ -29,7 +39,7 @@ function inserir() {
 	}
 
 	GUI.addOnNumprocChangeListener(function(numproc) {
-		async(function*() {
+		async(function *() {
 			try {
 
 				GUI.Logger.clear();
@@ -65,7 +75,6 @@ function inserir() {
 
 					yield Pagina.limparPesquisa();
 
-					var qtdPaginas = Math.ceil(qtdVeiculos / 100);
 					var paginaAtual = 1;
 
 					for (var i = 0; i < qtdVeiculos; ++i) {
@@ -128,10 +137,9 @@ function inserir() {
 		}
 		var texto = opcao[0].innerHTML;
 		var menu = document.getElementById(idCampo).getElementsByClassName('ui-selectonemenu-trigger');
-		var opcao = [...document.getElementById(idPainel).getElementsByTagName('li')].filter(li => li.dataset.label === texto);
+		opcao = [...document.getElementById(idPainel).getElementsByTagName('li')].filter(li => li.dataset.label === texto);
 		if (menu.length === 0) {
 			throw new Error('Campo não encontrado: "' + idCampo + '"', select, texto, menu, opcao);
-			return;
 		}
 		menu[0].click();
 		opcao[0].click();
@@ -157,8 +165,8 @@ function inserir() {
 	}
 
 	var form = document.getElementById('form-incluir-restricao');
-	var firstDiv = form.getElementsByTagName('div') [0], id = firstDiv.id;
-	AjaxListener.listen(id, function (ext) {
+	var firstDiv = form.getElementsByTagName('div')[0], id = firstDiv.id;
+	AjaxListener.listen(id, function(ext) {
 		if (ext.currentStep === 'inclui-restricao') {
 			GUI.hide();
 			GUI.areaImpressao.limpar();
@@ -282,10 +290,10 @@ var AjaxListener = (function() {
 
 		$(window.document).ajaxComplete(function(evt, xhr, options) {
 			var extension = $('extension', xhr.responseXML).text();
-			if (extension !== '') {
-				extension = JSON.parse(extension);
-			} else {
+			if (extension === '') {
 				extension = null;
+			} else {
+				extension = JSON.parse(extension);
 			}
 			var eventDetails = {
 				type: 'ajaxComplete',
@@ -297,7 +305,7 @@ var AjaxListener = (function() {
 	}
 
 	var script = document.createElement('script');
-	script.innerHTML = '(' + privilegedCode.toSource() + ')();';
+	script.innerHTML = '(' + privilegedCode.toString() + ')();';
 	document.getElementsByTagName('head')[0].appendChild(script);
 
 	const origin = [location.protocol, document.domain].join('//');
@@ -314,7 +322,7 @@ var AjaxListener = (function() {
 			} else {
 				throw new Error('Tipo desconhecido: ' + eventDetails.type);
 			}
-		} catch(err) {
+		} catch (err) {
 			console.error(err);
 		}
 	}, false);
@@ -327,7 +335,7 @@ var AjaxListener = (function() {
 		listenOnce(source) {
 			console.debug('AjaxListener.listenOnce(source)', source);
 			var hijackedResolve;
-			var promise = new Promise(function(resolve, reject) {
+			var promise = new Promise(function(resolve) {
 				hijackedResolve = resolve;
 			});
 			addResolve(source, hijackedResolve);
@@ -365,7 +373,7 @@ var GUI = (function() {
 
 	var listeners = [];
 	var numprocElement = alteracoesGreasemonkey.querySelector('input');
-	numprocElement.addEventListener('change', function(evt) {
+	numprocElement.addEventListener('change', function() {
 		var numproc = GUI.numproc.replace(/\D+/g, '');
 		GUI.numproc = numproc;
 		listeners.forEach(fn => fn(numproc));
@@ -424,7 +432,7 @@ var GUI = (function() {
 			console.debug('GUI.salvarTabelaVeiculos()');
 			var fragmento = document.createDocumentFragment();
 			var linhas = [...document.getElementById('form-incluir-restricao:lista-veiculo_data').rows];
-			linhas.forEach((linha) => fragmento.appendChild(linha));
+			linhas.forEach(linha => fragmento.appendChild(linha));
 			return fragmento;
 		},
 		show() {
@@ -481,7 +489,7 @@ var Pagina = (function() {
 				var painelRestricoes = fieldsets[1];
 				var listaRestricoes = painelRestricoes.getElementsByTagName('ul');
 				if (listaRestricoes.length > 0) {
-					listaRestricoes = [...listaRestricoes[0].childNodes].map((li) => li.textContent.trim());
+					listaRestricoes = [...listaRestricoes[0].childNodes].map(li => li.textContent.trim());
 				} else {
 					listaRestricoes = [];
 				}
@@ -506,12 +514,10 @@ var Pagina = (function() {
 		},
 		aguardarProximaPaginaListagem(pagina) {
 			console.debug('Pagina.aguardarProximaPaginaListagem(pagina)', pagina);
-			var botoesNext = [...document.getElementsByClassName('ui-paginator-next')];
-			botoesNext = botoesNext.filter((botao) => !botao.classList.contains('ui-state-disabled'));
 			var promise = new Promise(function(resolve, reject) {
 				var onPaginaCarregada = function() {
 					console.info('pagina carregada');
-					var botoesPagina = [...document.getElementsByClassName('ui-paginator-page')].filter((botao) => botao.classList.contains('ui-state-active'));
+					var botoesPagina = [...document.getElementsByClassName('ui-paginator-page')].filter(botao => botao.classList.contains('ui-state-active'));
 					if (botoesPagina.length === 2 && Number(botoesPagina[0].textContent) === pagina) {
 						resolve();
 					} else if (botoesPagina.length === 2) {
@@ -535,7 +541,7 @@ var Pagina = (function() {
 			console.debug('Pagina.fecharRestricoesVeiculo(ord)', ord);
 			var prefixo = Pagina.obterPrefixoVeiculo(ord);
 			var idDivDetalhesRestricoes = prefixo + ':dlg-detalhes-veiculo-restricoes', divDetalhesRestricoes = document.getElementById(idDivDetalhesRestricoes);
-			var fecharRestricoes = divDetalhesRestricoes.getElementsByTagName('button') [1];
+			var fecharRestricoes = divDetalhesRestricoes.getElementsByTagName('button')[1];
 			fecharRestricoes.click();
 		},
 		imprimir() {
@@ -553,7 +559,7 @@ var Pagina = (function() {
 			console.debug('Pagina.limpar()');
 			var promise = Promise.resolve();
 			var form = document.getElementById('form-incluir-restricao:panel-lista-veiculo');
-			var botoes = [...form.getElementsByTagName('button')].filter((botao) => botao.textContent.trim() === 'Limpar lista');
+			var botoes = [...form.getElementsByTagName('button')].filter(botao => botao.textContent.trim() === 'Limpar lista');
 			if (botoes.length === 1) {
 				var botaoLimpar = botoes[0], idBotaoLimpar = botaoLimpar.id;
 				promise = AjaxListener.listenOnce(idBotaoLimpar);
@@ -688,12 +694,12 @@ var ServicoWSDL = (function() {
 							reject(new Error('Erro ao tentar obter os dados do processo.'));
 						}
 					},
-					onerror: function(xhr) { reject(new Error('Erro ao tentar obter os dados do processo.')); }
+					onerror: function() { reject(new Error('Erro ao tentar obter os dados do processo.')); }
 				};
 				GM_xmlhttpRequest(options);
 			});
 			return promise.then(analisarRespostaNumeroProcesso);
-		},
+		}
 	};
 	return ServicoWSDL;
 })();
