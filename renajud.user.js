@@ -2,15 +2,14 @@
 // @name        Renajud
 // @author      nadameu
 // @description Facilita a utilização do sistema RENAJUD por usuários da Justiça Federal da 4ª Região.
-// @icon        car.png
+// @icon        https://github.com/nadameu/greasemonkey/raw/master/car.png
 // @namespace   http://nadameu.com.br/renajud
 // @homepage    http://www.nadameu.com.br/
-// @source      https://github.com/nadameu/greasemonkey/
 // @supportURL  https://github.com/nadameu/greasemonkey/issues
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-retirar.jsf
 // @connect     www.trf4.jus.br
-// @version     18
+// @version     19
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
