@@ -7,43 +7,101 @@
 // @grant       none
 // ==/UserScript==
 
-const texto = 'π';
-const side = 48;
-const fontSize = side * 0.75;
-const rotation = Math.PI / 4
-const bgColor = $(document.body).css('background-color');
-const [, r, g, b] = bgColor.match(/rgb\((\d+), (\d+), (\d+)\)/);
-const components = [r,g,b];
-const bgColorAlpha = 'rgba(' + components.join(', ') + ', 0.5)';
-const ratio = 0.95;
-const fgColor = 'rgb(' + components.map(color => Math.round(color * ratio)).join(', ') + ')';
+const TEXTO = 'π';
+const SIDE = 48;
+const FONT_SIZE = getFontSize(SIDE);
+const FOREGROUND_RATIO = 0.95;
 
-const canvas = $(`<canvas width="${side}" height="${side}"></canvas>`).get(0);
-const context = canvas.getContext('2d');
+const ROTATION = Math.PI / 4;
+const TEXT_PARAMETERS = [
+	[1, 0, -1],
+	[0, 1, 1],
+	[2, 1, 1],
+	[1, 2, -1]
+].map(([x, y, r]) => createTextParameters(SIDE * x / 2, SIDE * y / 2, ROTATION * r));
 
-function putText(x, y, rotation) {
-  context.translate(x, y);
-  context.rotate(rotation);
+Reader(app).run(IO(getEnvironment).performUnsafeIO(document));
 
-  context.font = fontSize + 'px Times New Roman';
-  context.textAlign = 'center';
-  context.textBaseline = 'middle';
-  context.fillStyle = fgColor;
-  context.fillText(texto, 0, 0);
-
-  context.rotate(-rotation);
-  context.translate(-x, -y);
+function app({ doc, addStyles, createCanvas }) {
+	const bgColor = getBodyBgColor(doc);
+	const bgColorAlpha = addAlpha(bgColor, 0.5);
+	const fgColor = applyRatio(bgColor, FOREGROUND_RATIO);
+	const canvas = createCanvas(SIDE);
+	const context = getContext(canvas);
+	drawText(context, {
+		size: FONT_SIZE,
+		color: fgColor,
+		text: TEXTO
+	}, drawText => TEXT_PARAMETERS.forEach(({ x, y, rotation }) => drawText(x, y, rotation)));
+	const dataURL = getURL(canvas);
+	addStyles(dataURL, bgColorAlpha);
 }
 
-putText(side * 2/4, side * 0/4, -rotation);
-putText(side * 0/4, side * 2/4, +rotation);
-putText(side * 4/4, side * 2/4, +rotation);
-putText(side * 2/4, side * 4/4, -rotation);
+function IO(performUnsafeIO) {
+	return { performUnsafeIO };
+}
+function Reader(run) {
+	return { run };
+}
 
-const dataURL = canvas.toDataURL();
-const style = $('<style></style>').html([
-  `body { background-image: url('${dataURL}'); }`,
-  'div.infraAreaTelaD, div.infraBarraComandos, div.infraAreaDados, div.infraAviso { border-color: transparent; }',
-  `div.infraAreaTelaD { background-color: ${bgColorAlpha}; }`
-].join('\n'));
-$('head').append(style);
+function addAlpha(rgb, alpha) {
+	return 'rgba(' + rgbToArray(rgb).concat([alpha.toString()]).join(', ') + ')';
+}
+function applyRatio(rgb, ratio) {
+	return 'rgb(' + rgbToArray(rgb).map(color => Math.round(color * ratio)).join(', ') + ')';
+}
+function createTextParameters(x, y, rotation) {
+	return { x, y, rotation };
+}
+function drawText(context, { size, color, text }, callback) {
+	context.save();
+	context.font = `${size}px Times New Roman`;
+	context.textAlign = 'center';
+	context.textAlign = 'center';
+	context.textBaseline = 'middle';
+	context.fillStyle = color;
+	callback((x, y, rotation) => {
+		context.save();
+		context.translate(x, y);
+		context.rotate(rotation);
+		context.fillText(text, 0, 0);
+		context.restore();
+	});
+	context.restore();
+}
+function getBodyBgColor(doc) {
+	return getComputedStyle(doc.body).backgroundColor;
+}
+function getContext(canvas) {
+	return canvas.getContext('2d');
+}
+function getEnvironment(doc) {
+	return { doc, addStyles, createCanvas };
+	function addStyles(url, color) {
+		const style = createElement([
+			'<style>',
+			`body { background-image: url('${url}'); }`,
+			'div.infraAreaTelaD, div.infraBarraComandos, div.infraAreaDados, div.infraAviso { border-color: transparent; }',
+			`div.infraAreaTelaD { background-color: ${color}; }`,
+			'</style>'
+		].join('\n'));
+		doc.querySelector('head').appendChild(style);
+	}
+	function createCanvas(side) {
+		return createElement(`<canvas width="${side}" height="${side}"></canvas>`);
+	}
+	function createElement(html) {
+		const div = doc.createElement('div');
+		div.innerHTML = html;
+		return div.firstElementChild;
+	}
+}
+function getFontSize(side) {
+	return side * 0.75;
+}
+function getURL(canvas) {
+	return canvas.toDataURL();
+}
+function rgbToArray(rgb) {
+	return rgb.match(/rgb\((\d+), (\d+), (\d+)\)/).slice(1);
+}
