@@ -4,11 +4,12 @@
 // @description Link para informações da Intra na página do Achei!
 // @include     http://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar*
 // @include     http://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar*
-// @version     3
+// @version     4
 // @grant       none
 // ==/UserScript==
 
-Function.prototype.map = function(f) { return (...args) => f(this(...args)); };
+Array.prototype.chain = function(f) { return Array.concat(...this.map(f)); };
+Function.prototype.chain = function(f) { return (...args) => f(this(...args))(...args); };
 
 const Impure = (x, f) => ({
 	'@@type': 'Impure',
@@ -32,6 +33,16 @@ const Free = {
 	Impure,
 	liftF: f => Impure(f, Pure)
 };
+const Identity = x => ({
+	'@@type': 'Identity',
+	x,
+	ap: a => a.map(f => f(x)),
+	chain: f => f(x),
+	fold: f => f(x),
+	map: f => Identity(f(x)),
+	traverse: (T, f) => T.of(x).chain(f)
+});
+Identity.of = Identity;
 const IO = performUnsafeIO => ({
 	'@@type': 'IO',
 	performUnsafeIO,
@@ -45,6 +56,7 @@ const Just = x => ({
 	x,
 	ap(a) { return a.chain(f => this.map(f)); },
 	chain: f => f(x),
+	fold: f => f(x),
 	map(f) { return this.chain(x => Just(f(x))); }
 });
 const Nothing = () => ({
@@ -53,6 +65,7 @@ const Nothing = () => ({
 	chain: () => Nothing(),
 	map: () => Nothing()
 });
+const Maybe = { Just, Nothing, of: Just };
 const Task = fork => ({
 	'@@type': 'Task',
 	fork,
@@ -63,39 +76,39 @@ const Task = fork => ({
 Task.of = x => Task((rej, res) => res(x));
 Task.rejected = e => Task(rej => rej(e));
 
-const append = postfix => text => text + postfix;
-const call = (method, ...args) => obj => obj[method].apply(obj, args);
-const compose = (...fs) => fs.reduceRight((a, b) => a.map(b));
-const decrement = x => x - 1;
-const map = f => F => F.map(f);
-const mcompose = (...fs) => mpipe(...fs.reverse());
-const mpipe = (f1, ...fs) => (...args) => fs.reduce((x, f) => x.chain(f), f1(...args));
-const path = steps => obj => steps.reduce((cur, n) => cur == null ? cur : cur[n], obj);
-const prop = p => path([p]);
+const id = i => i;
+const liftA2 = (f, a, b) => b.ap(a.map(f));
 const fromNullable = x => x == null ? Nothing() : Just(x);
 
 const main = () => {
 	function *logic() {
 		const doc = yield IO.of(document);
-		const form = yield formularioDocumento(doc);
-		const nodes = nodesNextFormulario(form).filter(contemSigla);
-		const dominio = yield dominioFormulario(form);
-		for (const node of nodes) {
-			const url = urlNode(node)(dominio);
-			const link = linkUrl(url)(doc);
-			const frag = envolverEmColchetes(link)(doc);
+		const form = yield Identity.of(doc)
+			.fold(formularioDocumento);
+		const dominio = yield Identity.of(form)
+			.chain(localFormulario)
+			.fold(dominioLocal);
+		const nodes = Identity.of(form)
+			.fold(nodesNextFormulario)
+			.filter(contemSigla);
+		for (let node of nodes) {
+			const frag = linkUrl(urlNode(node)(dominio)).chain(envolverEmColchetes)(doc);
 			apensarFragmento(frag)(node);
 		}
 		return nodes;
 	}
 
 	function translator(x) {
+		console.log('x', x);
 		switch (x['@@type']) {
 			case 'IO':
 				return Task.of(x.performUnsafeIO());
 
+			case 'Identity':
+				return Task.of(x.fold(id));
+
 			case 'Just':
-				return Task.of(x.x);
+				return Task.of(x.fold(id));
 
 			case 'Nothing':
 				return Task.rejected('Maybe failed');
@@ -109,10 +122,8 @@ const main = () => {
 		return Free.Impure('*', () => {
 			const g = gen();
 			const step = value => {
-				const result = g.next(value);
-				return result.done ?
-            Pure(result.value) :
-            Free.liftF(result.value).chain(step);
+				const { done, value: next } = g.next(value);
+				return done ? Pure(next) : Free.liftF(next).chain(step);
 			};
 			return step();
 		});
@@ -124,31 +135,71 @@ const main = () => {
 	);
 };
 
-const formularioDocumento = compose(fromNullable, call('querySelector', 'form[name="formulario"]'));
-const localFormulario = compose(fromNullable, path(['local', 'value']));
-const dominioLocal = compose(map(append('.jus.br')), fromNullable, n => prop(n)(['trf4', 'jfrs', 'jfsc', 'jfpr']), decrement, Number);
-const dominioFormulario = mcompose(dominioLocal, localFormulario);
+const formularioDocumento = doc =>
+	Identity.of(doc.querySelector('form[name="formulario"]'))
+		.traverse(Maybe, fromNullable);
+const localFormulario = form =>
+	fromNullable(form.local)
+	.chain(local => fromNullable(local.value));
+const dominioLocal = local =>
+	Identity.of(Number(local))
+		.map(i => i - 1)
+		.map(i => ['trf4', 'jfrs', 'jfsc', 'jfpr'][i])
+		.traverse(Maybe, fromNullable)
+		.map(s => `${s}.jus.br`);
 const nodesNextFormulario = form => {
-	let allNodes = compose(Array.from, path(['parentNode', 'childNodes']))(form);
-	let formIndex = allNodes.indexOf(form);
-	let nextNodes = allNodes.filter((x, i) => i > formIndex);
-	const tables = nextNodes.filter(x => 'tagName' in x && x.tagName.toLowerCase() === 'table');
-	if (tables.length > 0) {
-		return tables.chain(compose(x => x.getOrElse([]), map(Array.from), fromNullable, prop('childNodes'), call('querySelector', 'td:nth-child(2)')));
-	}
-	return nextNodes;
+	const Any = x => ({
+		x,
+		fold: f => f(x),
+		concat: ({ x: y }) => Any(x || y)
+	});
+	Any.empty = () => Any(false);
+	const AfterFound = (found, list) => ({
+		found,
+		list,
+		concat: ({ found: f2, list: l2 }) => AfterFound(found.concat(f2), found.x ? list.concat(l2) : list)
+	});
+	AfterFound.empty = () => AfterFound(Any.empty(), []);
+
+	const afterFound = form => reducer => (acc, x) => reducer(acc, AfterFound(Any(x === form), [x]));
+	const initial = AfterFound.empty();
+	const reducer = (acc, x) => acc.concat(x);
+	const nodes = siblings(form).reduce(afterFound(form)(reducer), initial).list;
+	const tables = nodes.filter(isTable);
+	return tables.length === 0 ?
+		nodes :
+		tables.reduce((acc, x) => reducer(acc,
+			Array.from(x.querySelectorAll('td:nth-child(2)'))
+				.chain(c => [...c.childNodes])
+		), []);
 };
+const siblings = element => Array.from(element.parentNode.childNodes);
+const isTable = x => 'tagName' in x && (/^table$/i).test(x.tagName);
 const { isSigla, siglaTexto } = (() => {
 	const re = /^\s*Sigla:\s*(\w*)\s*$/;
 	return {
 		isSigla: x => re.test(x),
-		siglaTexto: compose(prop(1), x => x.match(re))
+		siglaTexto: x => x.match(re)[1]
 	};
 })();
-const contemSigla = compose(isSigla, prop('textContent'));
-const urlSigla = sigla => dominio => `https://intra.trf4.jus.br/membros/${sigla.toLowerCase()}${dominio.replace(/\./g, '-')}`;
-const urlNode = compose(urlSigla, siglaTexto, prop('textContent'));
-const linkUrl = url => doc => Object.assign(doc.createElement('a'), { href: url, target: '_blank', textContent: 'Abrir na Intra' });
+const contemSigla = node => isSigla(node.textContent);
+const urlSigla = sigla => dominio =>
+	liftA2(
+		sigla => dominio => `https://intra.trf4.jus.br/membros/${sigla}${dominio}`,
+		Identity.of(sigla).map(s => s.toLowerCase()),
+		Identity.of(dominio).map(d => d.replace(/\./g, '-'))
+	).fold(id);
+const urlNode = node =>
+	Identity.of(node.textContent)
+	.map(siglaTexto)
+	.fold(urlSigla);
+const linkUrl = url => doc =>
+	Identity.of(doc.createElement('a'))
+		.fold(l => Object.assign(l, {
+			href: url,
+			target: '_blank',
+			textContent: 'Abrir na Intra'
+		}));
 const envolverEmColchetes = link => doc => {
 	const frag = doc.createDocumentFragment();
 	frag.appendChild(doc.createTextNode(' [ '));
