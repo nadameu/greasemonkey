@@ -3,133 +3,159 @@
 // @namespace   http://nadameu.com.br/achei
 // @description Link para informações da Intra na página do Achei!
 // @include     http://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar*
-// @version     2
+// @include     http://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar*
+// @version     3
 // @grant       none
 // ==/UserScript==
 
-// FuturePromise :: (a -> b) -> Promise (a -> b)
-function FuturePromise(fn) {
-	let run;
-	const promise = new Promise(resolve => run = () => resolve(fn()));
-	promise.run = run;
-	return promise;
-}
+Function.prototype.map = function(f) { return (...args) => f(this(...args)); };
 
-// Promise#map :: (a -> b) -> Promise b
-Promise.prototype.map = Promise.prototype.then;
-// Promise#ap :: a -> Promise b
-Promise.prototype.ap = function(x) {
-	return this.then(f => f(x));
-};
-
-// curry :: (((b, c, d, ...) -> a), b, c, d, ...) -> (e, f, g, ...) -> a
-const curry = function(fn, ...args) {
-	return function(...extraArgs) {
-		const argsSoFar = args.concat(extraArgs);
-		if (argsSoFar.length < fn.length) return curry(fn, ...argsSoFar);
-		return fn(...argsSoFar);
-	};
-};
-// pluck :: String -> Object -> a
-const pluck = curry((attr, obj) => obj[attr]);
-// pipe2 :: (a -> b), (b -> c) -> (a -> c)
-const pipe2 = (f, g) => (...args) => g(f(...args));
-// pipe :: (a -> b), (b -> ...), ..., (... -> c) -> (a -> c)
-const pipe = (...funcoes) => funcoes.reduce(pipe2);
-// compose :: (... -> c), ..., (b -> ...), (a -> b) -> (a -> c)
-const compose = (...funcoes) => funcoes.reduceRight(pipe2);
-// map :: (a -> b) -> f a -> f b
-const map = curry((fn, obj) => obj.map(fn));
-// apply :: f (a -> b) -> a -> f b
-const apply = curry((m, obj) => m.ap(obj));
-// reduce :: (a -> b) -> b -> f a -> b
-const reduce = curry((fn, acc, obj) => obj.reduce(fn, acc));
-// trace :: String -> a -> _, a
-const trace = curry((texto, x) => {
-	console.log(texto, x);
-	return x;
+const Impure = (x, f) => ({
+	'@@type': 'Impure',
+	ap: a => Impure(x, y => f(y).ap(a)),
+	chain: g => Impure(x, y => f(y).chain(g)),
+	foldMap: (i, T) =>
+		x === '*' ?
+			f().foldMap(i, T) :
+			i(x).chain(result => f(result).foldMap(i, T)),
+	map: g => Impure(x, y => f(y).map(g))
 });
-
-// inserirApos :: Node, Node -> Node
-const inserirApos = (antigo, novo) => {
-	antigo.parentElement.insertBefore(novo, antigo.nextSibling);
-	return novo;
+const Pure = x => ({
+	'@@type': 'Pure',
+	ap: a => a.map(f => f(x)),
+	chain: f => f(x),
+	foldMap: (i, T) => T.of(x),
+	map: f => Pure(f(x))
+});
+const Free = {
+	Pure,
+	Impure,
+	liftF: f => Impure(f, Pure)
 };
+const IO = performUnsafeIO => ({
+	'@@type': 'IO',
+	performUnsafeIO,
+	ap(a) { return a.chain(f => this.map(f)); },
+	chain: f => IO(() => f(performUnsafeIO()).performUnsafeIO()),
+	map(f) { return this.chain(x => IO.of(f(x))); }
+});
+IO.of = x => IO(() => x);
+const Just = x => ({
+	'@@type': 'Just',
+	x,
+	ap(a) { return a.chain(f => this.map(f)); },
+	chain: f => f(x),
+	map(f) { return this.chain(x => Just(f(x))); }
+});
+const Nothing = () => ({
+	'@@type': 'Nothing',
+	ap: () => Nothing(),
+	chain: () => Nothing(),
+	map: () => Nothing()
+});
+const Task = fork => ({
+	'@@type': 'Task',
+	fork,
+	ap(a) { return a.chain(f => this.map(f)); },
+	chain: f => Task((rej, res) => fork(rej, x => f(x).fork(rej, res))),
+	map(f) { return this.chain(x => Task.of(f(x))); }
+});
+Task.of = x => Task((rej, res) => res(x));
+Task.rejected = e => Task(rej => rej(e));
 
-// elementosSeguintes :: Node -> [Node]
-const elementosSeguintes = first => {
-	const arr = [];
-	for (let next = first.nextSibling; next; next = next.nextSibling) {
-		arr.push(next);
+const append = postfix => text => text + postfix;
+const call = (method, ...args) => obj => obj[method].apply(obj, args);
+const compose = (...fs) => fs.reduceRight((a, b) => a.map(b));
+const decrement = x => x - 1;
+const map = f => F => F.map(f);
+const mcompose = (...fs) => mpipe(...fs.reverse());
+const mpipe = (f1, ...fs) => (...args) => fs.reduce((x, f) => x.chain(f), f1(...args));
+const path = steps => obj => steps.reduce((cur, n) => cur == null ? cur : cur[n], obj);
+const prop = p => path([p]);
+const fromNullable = x => x == null ? Nothing() : Just(x);
+
+const main = () => {
+	function *logic() {
+		const doc = yield IO.of(document);
+		const form = yield formularioDocumento(doc);
+		const nodes = nodesNextFormulario(form).filter(contemSigla);
+		const dominio = yield dominioFormulario(form);
+		for (const node of nodes) {
+			const url = urlNode(node)(dominio);
+			const link = linkUrl(url)(doc);
+			const frag = envolverEmColchetes(link)(doc);
+			apensarFragmento(frag)(node);
+		}
+		return nodes;
 	}
-	return arr;
+
+	function translator(x) {
+		switch (x['@@type']) {
+			case 'IO':
+				return Task.of(x.performUnsafeIO());
+
+			case 'Just':
+				return Task.of(x.x);
+
+			case 'Nothing':
+				return Task.rejected('Maybe failed');
+
+			default:
+				return Task.rejected(x);
+		}
+	}
+
+	function run(gen) {
+		return Free.Impure('*', () => {
+			const g = gen();
+			const step = value => {
+				const result = g.next(value);
+				return result.done ?
+            Pure(result.value) :
+            Free.liftF(result.value).chain(step);
+			};
+			return step();
+		});
+	}
+
+	run(logic).foldMap(translator, Task).fork(
+		e => console.error(e),
+		x => console.log(x)
+	);
 };
 
-const reSigla = /^Sigla: (.*)$/;
-// textoEhSigla :: String -> Boolean
-const textoEhSigla = texto => reSigla.test(texto);
-// siglaDeTexto :: String -> String
-const siglaDeTexto = texto => texto.match(reSigla)[1];
-
-// getText :: Node -> String
-const getText = pluck('textContent');
-
-// elementoEhSigla :: Node -> Boolean
-const elementoEhSigla = compose(textoEhSigla, getText);
-// siglaDeElemento :: Node -> String
-const siglaDeElemento = compose(siglaDeTexto, getText);
-// dominioSiglaParaUrl :: String -> String -> String
-const dominioSiglaParaUrl = curry((dominio, sigla) => `https://intra.trf4.jus.br/membros/${sigla.toLowerCase()}${dominio.replace(/\./g, '-')}`);
-
-// filtrarElementos :: [Node] -> [Node]
-const filtrarElementos = elementos => elementos.filter(elementoEhSigla);
-
-// criarLinkIntra :: String -> HTMLAnchorElement
-const criarLinkIntra = url => Object.assign(document.createElement('a'), {
-	target: '_blank',
-	href: url,
-	textContent: 'Acessar na Intra'
-});
-
-// valorParaDominio :: String -> String
-const valorParaDominio = valor => {
-	const dominios = {
-		'1': 'trf4.jus.br',
-		'2': 'jfrs.jus.br',
-		'3': 'jfsc.jus.br',
-		'4': 'jfpr.jus.br'
+const formularioDocumento = compose(fromNullable, call('querySelector', 'form[name="formulario"]'));
+const localFormulario = compose(fromNullable, path(['local', 'value']));
+const dominioLocal = compose(map(append('.jus.br')), fromNullable, n => prop(n)(['trf4', 'jfrs', 'jfsc', 'jfpr']), decrement, Number);
+const dominioFormulario = mcompose(dominioLocal, localFormulario);
+const nodesNextFormulario = form => {
+	let allNodes = compose(Array.from, path(['parentNode', 'childNodes']))(form);
+	let formIndex = allNodes.indexOf(form);
+	let nextNodes = allNodes.filter((x, i) => i > formIndex);
+	const tables = nextNodes.filter(x => 'tagName' in x && x.tagName.toLowerCase() === 'table');
+	if (tables.length > 0) {
+		return tables.chain(compose(x => x.getOrElse([]), map(Array.from), fromNullable, prop('childNodes'), call('querySelector', 'td:nth-child(2)')));
+	}
+	return nextNodes;
+};
+const { isSigla, siglaTexto } = (() => {
+	const re = /^\s*Sigla:\s*(\w*)\s*$/;
+	return {
+		isSigla: x => re.test(x),
+		siglaTexto: compose(prop(1), x => x.match(re))
 	};
-	return dominios[valor];
+})();
+const contemSigla = compose(isSigla, prop('textContent'));
+const urlSigla = sigla => dominio => `https://intra.trf4.jus.br/membros/${sigla.toLowerCase()}${dominio.replace(/\./g, '-')}`;
+const urlNode = compose(urlSigla, siglaTexto, prop('textContent'));
+const linkUrl = url => doc => Object.assign(doc.createElement('a'), { href: url, target: '_blank', textContent: 'Abrir na Intra' });
+const envolverEmColchetes = link => doc => {
+	const frag = doc.createDocumentFragment();
+	frag.appendChild(doc.createTextNode(' [ '));
+	frag.appendChild(link);
+	frag.appendChild(doc.createTextNode(' ]'));
+	return frag;
 };
+const apensarFragmento = frag => node => node.parentElement.insertBefore(frag, node.nextSibling);
 
-// formulario :: FuturePromise HTMLFormElement
-const formulario = new FuturePromise(() => document.querySelector('form[name="formulario"]'));
-// dominio :: Promise String
-const dominio = formulario.then(pipe(pluck('local'), pluck('value'), valorParaDominio));
-
-// siglaParaUrl :: Promise String -> Promise String
-const siglaParaUrl = dominio.map(dominioSiglaParaUrl);
-
-// criarLinkElemento :: String -> Promise HTMLAnchorElement
-const criarLinkElemento = compose(map(criarLinkIntra), apply(siglaParaUrl), siglaDeElemento);
-
-// criarElementosAdicionais :: Node -> Promise [Node]
-const criarElementosAdicionais = elemento => criarLinkElemento(elemento).map(link => [
-	document.createTextNode(' [ '),
-	link,
-	document.createTextNode(' ]')
-]);
-
-// adicionarLink :: Node -> Promise Node
-const adicionarLink = elemento => criarElementosAdicionais(elemento).map(elementosAdicionais => {
-	return elementosAdicionais.reduce(inserirApos, elemento);
-});
-
-// adicionarLinks :: [Node] -> [Promise Node]
-const adicionarLinks = map(adicionarLink);
-
-// app :: Promise HTMLFormElement -> [Promise Node]
-const app = compose(adicionarLinks, filtrarElementos, elementosSeguintes);
-
-formulario.map(app);
-formulario.run();
+main();
