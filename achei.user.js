@@ -8,149 +8,185 @@
 // @grant       none
 // ==/UserScript==
 
-Array.prototype.chain = function(f) { return Array.concat(...this.map(f)); };
-Function.prototype.chain = function(f) { return (...args) => f(this(...args))(...args); };
-
-const Impure = (x, f) => ({
-	'@@type': 'Impure',
-	ap: a => Impure(x, y => f(y).ap(a)),
-	chain: g => Impure(x, y => f(y).chain(g)),
-	foldMap: (i, T) =>
-		x === '*' ?
-			f().foldMap(i, T) :
-			i(x).chain(result => f(result).foldMap(i, T)),
-	map: g => Impure(x, y => f(y).map(g))
-});
-const Pure = x => ({
-	'@@type': 'Pure',
-	ap: a => a.map(f => f(x)),
-	chain: f => f(x),
-	foldMap: (i, T) => T.of(x),
-	map: f => Pure(f(x))
-});
-const Free = {
-	Pure,
-	Impure,
-	liftF: f => Impure(f, Pure)
+Array.prototype.chain = function(f) {
+	return Array.concat(...this.map(f));
 };
-const Identity = x => ({
-	'@@type': 'Identity',
-	x,
-	ap: a => a.map(f => f(x)),
-	chain: f => f(x),
-	fold: f => f(x),
-	map: f => Identity(f(x)),
-	traverse: (T, f) => T.of(x).chain(f)
-});
-Identity.of = Identity;
-const IO = performUnsafeIO => ({
-	'@@type': 'IO',
-	performUnsafeIO,
+Array.prototype.traverse = function(T, f) {
+	return this.reduce(
+		(acc, x) =>
+			liftA2(arr => y => arr.concat(y), acc, f(x)),
+		T.of([])
+	);
+};
+
+function Monad() {
+	throw new TypeError('Not to be called directly');
+}
+Monad.prototype = {
 	ap(a) { return a.chain(f => this.map(f)); },
-	chain: f => IO(() => f(performUnsafeIO()).performUnsafeIO()),
-	map(f) { return this.chain(x => IO.of(f(x))); }
+	chain() { throw new TypeError('Not implemented'); },
+	map(f) { return this.chain(x => (this.of || this.constructor.of || console.error(this))(f(x))); }
+};
+Monad.extend = (constructor, prototype = {}, static = {}) => {
+	Object.assign(constructor,
+		{
+			prototype: Object.assign(Object.create(Monad.prototype),
+				{ constructor },
+				prototype
+			),
+			of() { throw new TypeError('Not implemented'); }
+		},
+		static
+	);
+};
+Monad.extendSum = (main, constructor, prototype) => {
+	Object.assign(constructor,
+		{
+			prototype: Object.assign(Object.create(main.prototype),
+				{
+					constructor,
+					of: main.of
+				},
+				prototype
+			)
+		}
+	);
+};
+
+function IO(f) {
+	if (! (this instanceof IO)) return new IO(f);
+	this.performUnsafeIO = f;
+}
+Monad.extend(IO,
+	{ chain(f) {
+		return IO(() =>
+			f(this.performUnsafeIO()).performUnsafeIO());
+	} },
+	{ of: x => IO(() => x) }
+);
+
+function Identity(x) {
+	if (! (this instanceof Identity)) return new Identity(x);
+	this.x = x;
+}
+Monad.extend(Identity,
+	{
+		chain(f) { return f(this.x); },
+		fold(f) { return f(this.x); },
+		traverse(T, f) { return T.of(this.x).chain(f); }
+	},
+	{ of: Identity }
+);
+
+function Maybe() {
+	throw new TypeError('Not to be called directly');
+}
+function Just(x) {
+	if (! (this instanceof Just)) return new Just(x);
+	this.x = x;
+}
+function Nothing() {
+	if (! (this instanceof Nothing)) return new Nothing();
+}
+Monad.extend(Maybe, {}, { Just, Nothing, of: Just });
+Monad.extendSum(Maybe, Just,
+	{
+		chain(f) { return f(this.x); },
+		fold(f) { return f(this.x); }
+	}
+);
+Monad.extendSum(Maybe, Nothing, {
+	chain() { return this; }
 });
-IO.of = x => IO(() => x);
-const Just = x => ({
-	'@@type': 'Just',
-	x,
-	ap(a) { return a.chain(f => this.map(f)); },
-	chain: f => f(x),
-	fold: f => f(x),
-	map(f) { return this.chain(x => Just(f(x))); }
+
+function Task(fork) {
+	if (! (this instanceof Task)) return new Task(fork);
+	this.fork = fork;
+}
+Monad.extend(Task, {
+	chain(f) { return Task((rej, res) => this.fork(rej, x => f(x).fork(rej, res))); }
+}, {
+	of: x => Task((rej, res) => res(x)),
+	rejected: e => Task(rej => rej(e))
 });
-const Nothing = () => ({
-	'@@type': 'Nothing',
-	ap: () => Nothing(),
-	chain: () => Nothing(),
-	map: () => Nothing()
-});
-const Maybe = { Just, Nothing, of: Just };
-const Task = fork => ({
-	'@@type': 'Task',
-	fork,
-	ap(a) { return a.chain(f => this.map(f)); },
-	chain: f => Task((rej, res) => fork(rej, x => f(x).fork(rej, res))),
-	map(f) { return this.chain(x => Task.of(f(x))); }
-});
-Task.of = x => Task((rej, res) => res(x));
-Task.rejected = e => Task(rej => rej(e));
 
 const id = i => i;
 const liftA2 = (f, a, b) => b.ap(a.map(f));
 const fromNullable = x => x == null ? Nothing() : Just(x);
-
-const main = () => {
-	function *logic() {
-		const doc = yield IO.of(document);
-		const form = yield Identity.of(doc)
-			.fold(formularioDocumento);
-		const dominio = yield Identity.of(form)
-			.chain(localFormulario)
-			.fold(dominioLocal);
-		const nodes = Identity.of(form)
-			.fold(nodesNextFormulario)
-			.filter(contemSigla);
-		for (let node of nodes) {
-			const frag = linkUrl(urlNode(node)(dominio)).chain(envolverEmColchetes)(doc);
-			apensarFragmento(frag)(node);
-		}
-		return nodes;
+const tryCatchIO = io => {
+	try {
+		return Task.of(io.performUnsafeIO());
+	} catch (e) {
+		return Task.rejected(e);
 	}
-
-	function translator(x) {
-		console.log('x', x);
-		switch (x['@@type']) {
-			case 'IO':
-				return Task.of(x.performUnsafeIO());
-
-			case 'Identity':
-				return Task.of(x.fold(id));
-
-			case 'Just':
-				return Task.of(x.fold(id));
-
-			case 'Nothing':
-				return Task.rejected('Maybe failed');
-
-			default:
-				return Task.rejected(x);
-		}
-	}
-
-	function run(gen) {
-		return Free.Impure('*', () => {
-			const g = gen();
-			const step = value => {
-				const { done, value: next } = g.next(value);
-				return done ? Pure(next) : Free.liftF(next).chain(step);
-			};
-			return step();
-		});
-	}
-
-	run(logic).foldMap(translator, Task).fork(
-		e => console.error(e),
-		x => console.log(x)
-	);
 };
 
-const formularioDocumento = doc =>
-	Identity.of(doc.querySelector('form[name="formulario"]'))
-		.traverse(Maybe, fromNullable);
+const taskify = gen => {
+	const translate = x => {
+		switch (x.constructor.name) {
+			case 'Array': return x.traverse(Task, id);
+			case 'IO': return tryCatchIO(x);
+			case 'Identity': return Task.of(x.fold(id));
+			case 'Just': return Task.of(x.fold(id));
+			case 'Nothing': return Task.rejected('Maybe failed');
+			case 'Task': return x;
+			default: return Task.rejected(['Could not convert:', x]);
+		}
+	};
+
+	return Task((rej, res) => {
+		const g = gen();
+		const step = x => {
+			const yielded = g.next(x);
+			if (yielded.done) return res(yielded.value);
+			return translate(yielded.value).fork(rej, step);
+		};
+		return step();
+	});
+};
+
+const main = function *() {
+	const form = yield yield obterFormulario();
+
+	const urlSigla = yield Maybe.of(form)
+		.chain(localFormulario)
+		.chain(dominioLocal)
+		.map(urlDominioSigla);
+
+	const nodes = Identity.of(form)
+		.fold(nodesNextFormulario)
+		.filter(contemSigla);
+
+	const adicionarLinkFactory = node =>
+		IO.of(node)
+			.map(siglaNode)
+			.map(urlSigla)
+			.chain(linkUrl)
+			.chain(envolverEmColchetes);
+
+	const adicionarLink = node => adicionarLinkFactory(node).map(inserirApos(node));
+
+	const transformed = yield nodes.traverse(IO, adicionarLink);
+
+	return `${transformed.length} link(s) adicionado(s).`;
+};
+
+const obterFormulario = () =>
+	IO(() =>
+		fromNullable(document.querySelector('form[name="formulario"]'))
+	);
 const localFormulario = form =>
 	fromNullable(form.local)
 	.chain(local => fromNullable(local.value));
 const dominioLocal = local =>
-	Identity.of(Number(local))
+	Maybe.of(Number(local))
 		.map(i => i - 1)
 		.map(i => ['trf4', 'jfrs', 'jfsc', 'jfpr'][i])
-		.traverse(Maybe, fromNullable)
+		.chain(fromNullable)
 		.map(s => `${s}.jus.br`);
 const nodesNextFormulario = form => {
 	const Any = x => ({
 		x,
-		fold: f => f(x),
 		concat: ({ x: y }) => Any(x || y)
 	});
 	Any.empty = () => Any(false);
@@ -183,30 +219,39 @@ const { isSigla, siglaTexto } = (() => {
 	};
 })();
 const contemSigla = node => isSigla(node.textContent);
-const urlSigla = sigla => dominio =>
+const urlDominioSigla = dominio => sigla =>
 	liftA2(
 		sigla => dominio => `https://intra.trf4.jus.br/membros/${sigla}${dominio}`,
 		Identity.of(sigla).map(s => s.toLowerCase()),
 		Identity.of(dominio).map(d => d.replace(/\./g, '-'))
 	).fold(id);
-const urlNode = node =>
+const siglaNode = node =>
 	Identity.of(node.textContent)
-	.map(siglaTexto)
-	.fold(urlSigla);
-const linkUrl = url => doc =>
-	Identity.of(doc.createElement('a'))
-		.fold(l => Object.assign(l, {
-			href: url,
-			target: '_blank',
-			textContent: 'Abrir na Intra'
-		}));
-const envolverEmColchetes = link => doc => {
-	const frag = doc.createDocumentFragment();
-	frag.appendChild(doc.createTextNode(' [ '));
-	frag.appendChild(link);
-	frag.appendChild(doc.createTextNode(' ]'));
-	return frag;
-};
-const apensarFragmento = frag => node => node.parentElement.insertBefore(frag, node.nextSibling);
+		.fold(siglaTexto);
+const linkUrl = url =>
+	IO(() =>
+		Identity.of(document.createElement('a'))
+			.fold(l => Object.assign(l, {
+				href: url,
+				target: '_blank',
+				textContent: 'Abrir na Intra'
+			}))
+	);
+const envolverEmColchetes = link =>
+	IO(() =>
+		[
+			createText(' [ '),
+			link,
+			createText(' ]')
+		].reduce((acc, x) => {
+			acc.appendChild(x);
+			return acc;
+		}, document.createDocumentFragment())
+	);
+const createText = text => document.createTextNode(text);
+const inserirApos = antigo => novo => antigo.parentElement.insertBefore(novo, antigo.nextSibling);
 
-main();
+taskify(main).fork(
+	e => console.error(e),
+	x => console.log(x)
+);
