@@ -75,7 +75,7 @@ const Propriedades = (function() {
 		}
 	};
 
-	const converterParaNumero = valor => (typeof valor === 'number') ? valor : Moeda.parse(valor.toString());
+	const converterParaNumero = valor => typeof valor === 'number' ? valor : Moeda.parse(valor.toString());
 	camposBoolean.forEach(campo => {
 		Object.defineProperty(Propriedades, campo, {
 			enumerable: true,
@@ -196,7 +196,7 @@ function adicionarAlteracoesHonorario() {
 
 	atualizarResultado();
 
-	tipo.addEventListener('change', evt => {
+	tipo.addEventListener('change', () => {
 		atualizarResultado();
 	});
 }
@@ -249,7 +249,7 @@ function adicionarAlteracoesRequisicao() {
 			Propriedades.salvar();
 		}
 	}
-	tipo.addEventListener('change', evt => {
+	tipo.addEventListener('change', () => {
 		verificarTipo();
 		atualizarResultado();
 	});
@@ -292,7 +292,7 @@ function adicionarAlteracoesRequisicao() {
 		const propriedade = `ha${propriedadeVinculada[0].toUpperCase()}${propriedadeVinculada.slice(1)}`;
 		const elemento = elementos[propriedade] = document.querySelector(`#gm-rpv__${propriedadeVinculada}`);
 		const elementoVinculado = elementos[propriedadeVinculada];
-		elemento.addEventListener('change', evt => {
+		elemento.addEventListener('change', () => {
 			const checked = elemento.checked;
 			Propriedades[propriedade] = checked;
 			elementoVinculado.disabled = ! checked;
@@ -316,21 +316,21 @@ function adicionarAlteracoesRequisicao() {
 		elementos[propriedade].value = conversor(valor);
 		atualizarResultado();
 	}
-	elementos.principal.addEventListener('input', evt => {
+	elementos.principal.addEventListener('input', () => {
 		Propriedades.principal = elementos.principal.value;
 		if (elementos.total.getAttribute('value') === '0,00') {
 			atualizarESalvar('total', Propriedades.principal, Moeda.formatar);
 		}
 	});
 	function onEventoAtualizarAtributo(elemento, evento) {
-		elemento.addEventListener(evento, evt => elemento.setAttribute('value', elemento.value));
+		elemento.addEventListener(evento, () => elemento.setAttribute('value', elemento.value));
 	}
 	onEventoAtualizarAtributo(elementos.total, 'focus');
 	onEventoAtualizarAtributo(elementos.total, 'change');
 
 	function onEventoCalcularDiferenca(propriedade, propriedadeOposta) {
 		const elemento = elementos[propriedade];
-		elemento.addEventListener('focus', evt => {
+		elemento.addEventListener('focus', () => {
 			if (Propriedades[propriedade] === 0) {
 				atualizarESalvar(propriedade, arredondarMoeda(Propriedades.total - Propriedades[propriedadeOposta]), Moeda.formatar);
 			}
@@ -379,15 +379,13 @@ function arredondarMoeda(valor) {
 }
 
 function atualizarResultadoRequisicao(ocultarVazios = false) {
-	return mostrarSeNaoHouverErros(valoresCalculados => {
-		return [
-			gerarHTMLBeneficiario(valoresCalculados, ocultarVazios),
-			gerarHTMLHonorarios(valoresCalculados, ocultarVazios),
-			gerarHTMLSucumbencia(valoresCalculados, ocultarVazios),
-			gerarHTMLOutros(valoresCalculados, ocultarVazios),
-			gerarHTMLTotal(valoresCalculados, ocultarVazios)
-		].filter(x => x !== '').join('<br>');
-	});
+	return mostrarSeNaoHouverErros(valoresCalculados => [
+		gerarHTMLBeneficiario(valoresCalculados, ocultarVazios),
+		gerarHTMLHonorarios(valoresCalculados, ocultarVazios),
+		gerarHTMLSucumbencia(valoresCalculados, ocultarVazios),
+		gerarHTMLOutros(valoresCalculados, ocultarVazios),
+		gerarHTMLTotal(valoresCalculados, ocultarVazios)
+	].filter(x => x !== '').join('<br>'));
 }
 
 function atualizarResultadoBeneficiario() {
@@ -404,20 +402,19 @@ function atualizarResultadoHonorario() {
 		const valor = tipo.value;
 		if (valor === '') { // Indefinido
 			return resultados.filter(x => x !== '').join('<br>');
-		} else if (valor === '2#O') { // Honorários de sucumbência
-			return sucumbencia;
-		} else if (valor === '53#O') { // Honorários contratuais
-			return honorarios;
-		} else {
-			return outros;
 		}
+		if (valor === '2#O') { // Honorários de sucumbência
+			return sucumbencia;
+		}
+		if (valor === '53#O') { // Honorários contratuais
+			return honorarios;
+		}
+		return outros;
 	});
 }
 
 function calcularValores() {
-	const {principal, total, haCorrente, corrente, haAnterior, anterior, honorarios, sucumbencia, outros} = Propriedades;
-
-	const juros = arredondarMoeda(total - principal);
+	const { principal, total, haCorrente, corrente, haAnterior, anterior, honorarios, sucumbencia, outros } = Propriedades;
 
 	const erros = [];
 	if (total < principal) {
@@ -430,10 +427,8 @@ function calcularValores() {
 		erros.push('Valor do exercício anterior não pode ser superior ao total.');
 	}
 	let somaIRPF = 0;
-	if (haCorrente)
-		somaIRPF += corrente;
-	if (haAnterior)
-		somaIRPF += anterior;
+	if (haCorrente) somaIRPF += corrente;
+	if (haAnterior) somaIRPF += anterior;
 	if ((haCorrente || haAnterior) && arredondarMoeda(somaIRPF) !== total) {
 		let inicio;
 		if (haCorrente && haAnterior) {
@@ -494,8 +489,8 @@ window.formatarCampoMoeda = function formatarCampoMoeda(input) {
 };
 
 function gerarHTMLBeneficiario(valoresCalculados, ocultarVazios = false) {
-	const {haCorrente, haAnterior} = Propriedades;
-	const {principalAutor, jurosAutor, totalAutor, correnteAutor, anteriorAutor} = valoresCalculados;
+	const { haCorrente, haAnterior } = Propriedades;
+	const { principalAutor, jurosAutor, totalAutor, correnteAutor, anteriorAutor } = valoresCalculados;
 	if (ocultarVazios && totalAutor === 0) return '';
 	let resultado = `Beneficiário: ${Moeda.formatar(totalAutor)} (${Moeda.formatar(principalAutor)} + ${Moeda.formatar(jurosAutor)})<br>`;
 	if (haCorrente || haAnterior) {
@@ -507,28 +502,28 @@ function gerarHTMLBeneficiario(valoresCalculados, ocultarVazios = false) {
 	return resultado;
 }
 function gerarHTMLHonorarios(valoresCalculados, ocultarVazios = false) {
-	const {principalAdvogado, jurosAdvogado, totalAdvogado} = valoresCalculados;
+	const { principalAdvogado, jurosAdvogado, totalAdvogado } = valoresCalculados;
 	if (ocultarVazios && totalAdvogado === 0) return '';
 	return `
 Honorários contratuais: ${Moeda.formatar(totalAdvogado)} (${Moeda.formatar(principalAdvogado)} + ${Moeda.formatar(jurosAdvogado)})<br>
 	`;
 }
 function gerarHTMLSucumbencia(valoresCalculados, ocultarVazios = false) {
-	const {sucumbencia} = Propriedades;
+	const { sucumbencia } = Propriedades;
 	if (ocultarVazios && sucumbencia === 0) return '';
 	return `
 Honorários sucumbenciais: ${Moeda.formatar(sucumbencia)}<br>
 	`;
 }
 function gerarHTMLOutros(valoresCalculados, ocultarVazios = false) {
-	const {outros} = Propriedades;
+	const { outros } = Propriedades;
 	if (ocultarVazios && outros === 0) return '';
 	return `
 Outras verbas: ${Moeda.formatar(outros)}<br>
 	`;
 }
 function gerarHTMLTotal(valoresCalculados, ocultarVazios = false) {
-	const {totalRequisitado} = valoresCalculados;
+	const { totalRequisitado } = valoresCalculados;
 	if (ocultarVazios && totalRequisitado === 0) return '';
 	return `
 Total requisitado: ${Moeda.formatar(totalRequisitado)}<br>
@@ -551,11 +546,11 @@ function mostrarSeNaoHouverErros(fn) {
 		resultado.style.display = 'none';
 		resultado.innerHTML = resposta;
 		return Promise.reject('');
-	} else {
-		resultado.innerHTML = resposta;
-		resultado.style.display = '';
-		return Promise.resolve(valoresCalculados);
 	}
+	resultado.innerHTML = resposta;
+	resultado.style.display = '';
+	return Promise.resolve(valoresCalculados);
+
 }
 
 main();
