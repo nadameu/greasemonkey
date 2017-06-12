@@ -7,7 +7,7 @@
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
-// @version     5
+// @version     6
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -942,6 +942,7 @@ p.gm-dados-adicionais {
 			new Padrao(/^Magistrado:&nbsp;(.*)$/, 'magistrado'),
 			new Padrao(/^Total Requisitado \(R\$\):&nbsp;(.*)$/, 'valorTotalRequisitado'),
 			new Padrao(/^Espécie da Requisição:&nbsp;(.*?)\s*$/, 'especie'),
+			new Padrao(/^Natureza:&nbsp;(\d+)\s+- (.*)\s*$/, 'codigoAssunto', 'assunto'),
 			new Padrao(/^Natureza Tributária\(ATUALIZADA PELA SELIC\):&nbsp;(.*)$/, 'naturezaTributaria'),
 			new Padrao(/^Natureza do Crédito:&nbsp;(\d+)\. (.*?)\s*$/, 'codigoNatureza', 'natureza'),
 			new Padrao(/^Data do trânsito em julgado da sentença ou acórdão:&nbsp;(\d\d\/\d\d\/\d\d\d\d)$/, 'dataTransito'),
