@@ -4,7 +4,7 @@
 // @description Link para informações da Intra na página do Achei!
 // @include     http://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar*
 // @include     http://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar*
-// @version     4
+// @version     5
 // @grant       none
 // ==/UserScript==
 
@@ -113,13 +113,13 @@ Monad.extend(Task, {
 const id = i => i;
 const liftA2 = (f, a, b) => b.ap(a.map(f));
 const fromNullable = x => x == null ? Nothing() : Just(x);
-const tryCatchIO = io => {
+const tryCatchIO = io => Task((rej, res) => {
 	try {
-		return Task.of(io.performUnsafeIO());
+		return res(io.performUnsafeIO());
 	} catch (e) {
-		return Task.rejected(e);
+		return rej(e);
 	}
-};
+});
 
 const taskify = gen => {
 	const translate = x => {
