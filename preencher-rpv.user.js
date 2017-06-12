@@ -7,7 +7,7 @@
 // @include     http://sap.trf4.gov.br/requisicao/jf/frm_requisicao_jf.php?acao=buscarDadosExecucao&num_proces_format=*
 // @include     http://sap.trf4.gov.br/requisicao/jf/frm_beneficiario_jf.php?num_requis=*
 // @include     http://sap.trf4.gov.br/requisicao/jf/frm_honorario_jf.php?num_requis=*
-// @version     1
+// @version     2
 // @grant       none
 // ==/UserScript==
 
@@ -450,8 +450,14 @@ function calcularValores() {
 	const totalAutor = arredondarMoeda(total - totalAdvogado);
 	const jurosAutor = arredondarMoeda(totalAutor - principalAutor);
 
-	const correnteAutor = arredondarMoeda(corrente * (100 - honorarios) / 100);
-	const anteriorAutor = arredondarMoeda(anterior * (100 - honorarios) / 100);
+	let correnteAutor, anteriorAutor;
+	if (corrente < anterior) {
+		correnteAutor = arredondarMoeda(corrente * (100 - honorarios) / 100);
+		anteriorAutor = arredondarMoeda(totalAutor - correnteAutor);
+	} else {
+		anteriorAutor = arredondarMoeda(anterior * (100 - honorarios) / 100);
+		correnteAutor = arredondarMoeda(totalAutor - anteriorAutor);
+	}
 
 	const totalRequisitado = arredondarMoeda(total + sucumbencia + outros);
 
