@@ -1,4 +1,4 @@
-// ==UserScript==
+﻿// ==UserScript==
 // @name        Solicitações de pagamento em bloco
 // @description Permite a criação de solicitações de pagamento em bloco
 // @namespace   http://nadameu.com.br/ajg
@@ -58,9 +58,10 @@ class PaginaNomeacoes extends Pagina {
 		this.adicionarEstilos();
 		const aviso = this.adicionarAvisoCarregando();
 		this.adicionarFormulario()
-			.then(() => aviso.carregado = true
-    )
-			.catch((err) => {
+			.then(() => {
+				aviso.carregado = true;
+			})
+			.catch(err => {
 				aviso.carregado = false;
 				if (! (err instanceof ErroLinkCriarNaoExiste)) {
 					throw err;
@@ -121,7 +122,7 @@ class PaginaNomeacoes extends Pagina {
 		const div = this.doc.querySelector('.gm-ajg__div');
 
 		div.innerHTML = '<label>Aguarde, carregando formulário...</label>';
-		return XHR.buscarDocumento(linkCriar.href).then((doc) => {
+		return XHR.buscarDocumento(linkCriar.href).then(doc => {
 			div.textContent = '';
 			const paginaCriar = Pagina.analisar(doc);
 			const form = paginaCriar.formElement.cloneNode(true);
@@ -159,7 +160,7 @@ class PaginaNomeacoes extends Pagina {
 	}
 
 	enviarFormulario(url, method, data) {
-		return XHR.buscarDocumento(url, method, data).then((doc) => {
+		return XHR.buscarDocumento(url, method, data).then(doc => {
 			const validacao = doc.getElementById('txaInfraValidacao');
 			const excecoes = Array.from(doc.querySelectorAll('.infraExcecao'));
 			const tabelaErros = doc.querySelector('table[summary="Erro(s)"]');
@@ -207,7 +208,7 @@ class PaginaNomeacoes extends Pagina {
 
 		const tabela = this.tabela;
 		const linhas = Array.from(tabela.rows).slice(1);
-		const linhasProcessosSelecionados = linhas.filter((linha) => {
+		const linhasProcessosSelecionados = linhas.filter(linha => {
 			const checkbox = linha.querySelector('input[type="checkbox"]');
 			return checkbox && checkbox.checked;
 		});
@@ -245,20 +246,23 @@ class PaginaNomeacoes extends Pagina {
 			const DEBUG = false;
 			const fns = [
 				() => definicao.textContent = 'Criando...',
-				() => DEBUG ?
-          new Promise((resolve, reject) => {
-	let timer;
-	timer = this.doc.defaultView.setTimeout(() => {
-		this.doc.defaultView.clearTimeout(timer);
-		if (Math.random() < 0.1) {
-			reject(new Error('Erro ao criar solicitação!'));
-		} else {
-			resolve(parseInt(Math.random() * 1000));
-		}
-	}, 1000);
-}) :
+				() =>
+					DEBUG ?
+					new Promise(
+						(resolve, reject) => {
+							let timer;
+							timer = this.doc.defaultView.setTimeout(() => {
+								this.doc.defaultView.clearTimeout(timer);
+								if (Math.random() < 0.1) {
+									reject(new Error('Erro ao criar solicitação!'));
+								} else {
+									resolve(parseInt(Math.random() * 1000));
+								}
+							}, 1000);
+						}
+					) :
           this.enviarFormulario(url, method, data),
-				(num) => {
+				num => {
 					if (num) {
 						definicao.classList.add('gm-ajg__lista__resultado--ok');
 						definicao.textContent = `Criada solicitação ${num}.`;
@@ -268,7 +272,7 @@ class PaginaNomeacoes extends Pagina {
 					}
 				}
 			];
-			return fns.reduce((p, fn) => p.then(fn), promise).catch((err) => {
+			return fns.reduce((p, fn) => p.then(fn), promise).catch(err => {
 				definicao.classList.add('gm-ajg__lista__resultado--erro');
 				definicao.textContent = 'Erro.';
 				return Promise.reject(err);
@@ -294,7 +298,7 @@ class PaginaNomeacoes extends Pagina {
 				this.doc.defaultView.location.reload();
 			}
 		});
-		promise.catch((err) => {
+		promise.catch(err => {
 			console.error(err);
 			this.doc.defaultView.alert(err.message);
 		});
@@ -333,14 +337,13 @@ function main() {
 }
 
 function extrairParametrosUrl(url) {
-	const str = url
-    .split('?')
-    .slice(1)
-    .join('?');
-	return new Map(str.split('&')
-		.map(pair => pair
-			.split('=')
-			.map(texto => decodeURIComponent(texto))));
+	const str = url.split('?').slice(1).join('?');
+	return new Map(
+		str.split('&')
+			.map(pair =>
+				pair.split('=').map(texto => decodeURIComponent(texto))
+			)
+	);
 }
 
 main();
