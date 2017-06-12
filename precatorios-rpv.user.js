@@ -1,13 +1,13 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name        Precatórios/RPVs
-// @description Cria um link para abrir automaticamente precatórios e RPVs, em uma nova aba/janela.
+// @description Auxilia a conferência de RPVs e precatórios.
 // @namespace   http://nadameu.com.br/precatorios-rpv
 // @include     /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=processo_selecionar\&/
 // @include     /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=processo_precatorio_rpv\&/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
-// @version     6
+// @version     7
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
