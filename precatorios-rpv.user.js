@@ -1,4 +1,4 @@
-// ==UserScript==
+﻿// ==UserScript==
 // @name        Precatórios/RPVs
 // @description Cria um link para abrir automaticamente precatórios e RPVs, em uma nova aba/janela.
 // @namespace   http://nadameu.com.br/precatorios-rpv
@@ -139,7 +139,7 @@ class BotaoAcao {
 }
 
 class Conversor {
-	static analisar(texto) {
+	static analisar() {
 		throw new Error('Propriedade não implementada: converter()!');
 	}
 }
@@ -222,26 +222,19 @@ class ConversorMoeda extends Conversor {
 		let valorArredondado = Utils.round(valor, 2);
 		let reais = Math.floor(valorArredondado).toLocaleString();
 		let centavos = Math.round(valorArredondado * 100 % 100).toString();
-		if (centavos.length < 2)
-			centavos = `0${centavos}`;
+		if (centavos.length < 2) centavos = `0${centavos}`;
 		return `${reais},${centavos}`;
 	}
 }
 
 class ConversorValores extends Conversor {
 	static analisar(texto) {
-		let [total, principal, juros] = texto.match(/^([\d\.,]+)\s+\(([\d\.,]+) \+ ([\d\.,]+)\)$/).slice(1);
+		let [total, principal, juros] = texto.match(/^([\d.,]+)\s+\(([\d.,]+) \+ ([\d.,]+)\)$/).slice(1);
 		return {
 			principal: ConversorMoeda.analisar(principal),
 			juros: ConversorMoeda.analisar(juros),
 			total: ConversorMoeda.analisar(total)
 		};
-	}
-}
-
-class ErroDigitacao extends Error {
-	constructor(msg) {
-		super(msg);
 	}
 }
 
@@ -303,9 +296,9 @@ class Pagina {
 				classe = PaginaRequisicaoPreparada;
 			}
 		} else if (doc.domain.match(/^eproc\.(trf4|jf(pr|rs|sc))\.jus\.br$/)) {
-			if (doc.location.search.match(/^\?acao=processo_selecionar\&/)) {
+			if (doc.location.search.match(/^\?acao=processo_selecionar&/)) {
 				classe = PaginaProcesso;
-			} else if (doc.location.search.match(/^\?acao=processo_precatorio_rpv\&/)) {
+			} else if (doc.location.search.match(/^\?acao=processo_precatorio_rpv&/)) {
 				classe = PaginaListar;
 			}
 		}
@@ -348,7 +341,7 @@ class PaginaListar extends Pagina {
 	adicionarAlteracoes() {
 		const win = this.doc.defaultView;
 		const opener = win.opener;
-		this.testarJanelaProcessoAberta(opener).then(evt => {
+		this.testarJanelaProcessoAberta(opener).then(() => {
 			this.requisicoes.forEach(requisicao => {
 				const botao = BotaoAcao.criar('Verificar dados', evt => {
 					evt.preventDefault();
@@ -390,9 +383,9 @@ class PaginaListar extends Pagina {
 			};
 			opener.postMessage(JSON.stringify(data), this.doc.location.origin);
 			return promise;
-		} else {
-			return Promise.reject();
 		}
+		return Promise.reject();
+
 	}
 }
 
@@ -602,7 +595,7 @@ class PaginaProcesso extends Pagina {
 
 	adicionarAlteracoes() {
 		const win = this.doc.defaultView;
-		win.addEventListener('pagehide', evt => {
+		win.addEventListener('pagehide', () => {
 			this.fecharJanelasDependentes();
 		});
 		win.addEventListener('message', this.onMensagemRecebida.bind(this));
@@ -633,22 +626,19 @@ class PaginaProcesso extends Pagina {
 				const paginaListar = new PaginaListar(doc);
 				let requisicoes = paginaListar.requisicoes.filter(requisicao => requisicao.status === 'Digitada');
 				if (requisicoes.length === 1) {
-					let all = requisicoes.map(requisicao => {
-						return XHR.buscarDocumentoExterno(requisicao.urlConsultar).then(doc => {
-							const paginaRedirecionamento = new PaginaRedirecionamento(doc);
-							this.abrirJanelaRequisicao(paginaRedirecionamento.urlRedirecionamento, requisicao.numero);
-						});
-					});
+					let all = requisicoes.map(requisicao => XHR.buscarDocumentoExterno(requisicao.urlConsultar).then(doc => {
+						const paginaRedirecionamento = new PaginaRedirecionamento(doc);
+						this.abrirJanelaRequisicao(paginaRedirecionamento.urlRedirecionamento, requisicao.numero);
+					}));
 					return Promise.all(all);
-				} else {
-					this.abrirJanelaListar();
 				}
+				this.abrirJanelaListar();
+
 			}).then(() => botao.textContent = textoBotao);
 		});
 		this.informacoesAdicionais.parentElement.insertBefore(botao, this.informacoesAdicionais.nextSibling);
 		this.informacoesAdicionais.parentElement.insertBefore(this.doc.createElement('br'), botao);
 		this.informacoesAdicionais.parentElement.insertBefore(this.doc.createElement('br'), botao.nextSibling);
-		const tabelaEventos = this.tabelaEventos;
 		const ultimoEvento = parseInt(this.tabelaEventos.tBodies[0].rows[0].cells[1].textContent.trim());
 		if (ultimoEvento > 100) {
 			botao.insertAdjacentHTML('afterend', ` <div style="display: inline-block;"><span class="gmTextoDestacado">Processo possui mais de 100 eventos.</span> &mdash; <a href="#" onclick="event.preventDefault(); event.stopPropagation(); this.parentElement.style.display = 'none'; carregarTodasPaginas(); return false;">Carregar todos os eventos</a></div>`);
@@ -842,9 +832,9 @@ class PaginaRedirecionamento extends Pagina {
 		const match = this.doc.documentElement.innerHTML.match(/window\.location = '([^']+)';/);
 		if (match) {
 			return match[1];
-		} else {
-			throw new Error('Não é uma página de redirecionamento.');
 		}
+		throw new Error('Não é uma página de redirecionamento.');
+
 	}
 }
 
@@ -1009,11 +999,11 @@ p.gm-dados-adicionais {
 		});
 
 		let analisadorCorrente = new AnalisadorMultiplo(
-			new Padrao(/^Exercício Corrente\s+-\s+Num. Meses:\s+(\d+)\s+Valor:\s+([\d,\.]+)\s+Atualizado:\s+([\d,\.]+)\s+Ano:\s+(\d{4})$/, 'meses', 'valorTotal', 'valorAtualizado', 'ano')
+			new Padrao(/^Exercício Corrente\s+-\s+Num. Meses:\s+(\d+)\s+Valor:\s+([\d,.]+)\s+Atualizado:\s+([\d,.]+)\s+Ano:\s+(\d{4})$/, 'meses', 'valorTotal', 'valorAtualizado', 'ano')
 		);
 		if (precatorio) {
 			analisadorCorrente = new AnalisadorMultiplo(
-				new Padrao(/^Exercício Corrente\s+-\s+Num. Meses:\s+(\d+)\s+Valor:\s+([\d,\.]+)\s+Atualizado:\s+([\d,\.]+)\s+Ano:\s+(\d{4})$/, 'meses', 'valorTotal', 'valorAtualizado', 'ano')
+				new Padrao(/^Exercício Corrente\s+-\s+Num. Meses:\s+(\d+)\s+Valor:\s+([\d,.]+)\s+Atualizado:\s+([\d,.]+)\s+Ano:\s+(\d{4})$/, 'meses', 'valorTotal', 'valorAtualizado', 'ano')
 			);
 			analisadorCorrente.analisar = function(texto) {
 				if (texto.match(/Exercício Corrente/))
@@ -1027,7 +1017,7 @@ p.gm-dados-adicionais {
 			ano: ConversorAno
 		});
 		let analisadorAnterior = new AnalisadorMultiplo(
-			new Padrao(/^Exercício Anterior\s+-\s+Num. Meses:\s+(\d+)\s+Valor:\s+([\d,\.]+)\s+Atualizado:\s+([\d,\.]+)$/, 'meses', 'valorTotal', 'valorAtualizado')
+			new Padrao(/^Exercício Anterior\s+-\s+Num. Meses:\s+(\d+)\s+Valor:\s+([\d,.]+)\s+Atualizado:\s+([\d,.]+)$/, 'meses', 'valorTotal', 'valorAtualizado')
 		);
 		if (precatorio) {
 			analisadorAnterior = new AnalisadorMultiplo(
@@ -1056,7 +1046,7 @@ p.gm-dados-adicionais {
 		}
 
 		const analisadorPSS = new AnalisadorMultiplo(
-			new Padrao(/^Incidência de PSS - Servidor:\s+(.*?)\s+Data Base:\s+(\d\d\/\d\d\d\d)\s+Valor:\s+([\d,\.]+)\s+Valor Atualizado:\s+([\d,\.]+)$/, 'servidor', 'dataBase', 'valorTotal', 'valorAtualizado')
+			new Padrao(/^Incidência de PSS - Servidor:\s+(.*?)\s+Data Base:\s+(\d\d\/\d\d\d\d)\s+Valor:\s+([\d,.]+)\s+Valor Atualizado:\s+([\d,.]+)$/, 'servidor', 'dataBase', 'valorTotal', 'valorAtualizado')
 		);
 		analisadorPSS.definirConversores({
 			dataBase: ConversorMesAno,
@@ -1344,7 +1334,7 @@ p.gm-dados-adicionais {
 		});
 		areaDocumentos.insertAdjacentHTML('beforeend', '<br><br><span class="atencao">&nbsp;&nbsp;Justiça Gratuita</span>');
 		areaDocumentos.insertAdjacentHTML('beforeend', `<p class="gm-resposta">${dadosProcesso.justicaGratuita}</p>`);
-}
+	}
 
 	onBotaoPrepararClicado(evt, fecharAposPreparar = false) {
 		evt.preventDefault();
