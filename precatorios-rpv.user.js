@@ -7,9 +7,11 @@
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
-// @version     4
+// @version     5
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
+
+const SALARIO_MINIMO = 937;
 
 const Acoes = {
 	ABRIR_DOCUMENTO: 'abrirDocumento',
@@ -1443,9 +1445,36 @@ p.gm-dados-adicionais {
 		this.validarElemento('.gm-requisicao__dados__status', requisicao.status === 'Digitada');
 
 		// Destacar campos que requerem atenção
-		this.validarElemento('.gm-requisicao__dados__especie', undefined);
-		this.validarElemento('.gm-requisicao__dados__naturezaTributaria', undefined);
-		this.validarElemento('.gm-requisicao__dados__natureza', undefined);
+		this.validarElemento('.gm-requisicao__dados__especie', requisicao.valorTotalRequisitado < 60 * SALARIO_MINIMO || undefined);
+
+		// Natureza tributária somente para processos com assunto de direito tributário
+		const ehDireitoTributario = requisicao.codigoAssunto.match(/^03/) !== null;
+		this.validarElemento('.gm-requisicao__dados__naturezaTributaria', requisicao.naturezaTributaria === ehDireitoTributario);
+
+		// 11.NATUREZA ALIMENTÍCIA - Salários, vencimentos, proventos, pensões e suas complementações
+		// 12.NATUREZA ALIMENTÍCIA - Benefícios previdenciários e indenizações por morte ou invalidez
+		// 21.NATUREZA NÃO ALIMENTÍCIA
+		// 31.DESAPROPRIAÇÕES - Único imóvel residencial do credor
+		// 39.DESAPROPRIAÇÕES - Demais
+		const ehPrevidenciario = requisicao.codigoAssunto.match(/^04/) !== null;
+		const ehServidor = requisicao.codigoAssunto.match(/^011[012]/) !== null;
+		const ehDesapropriacao = requisicao.codigoAssunto.match(/^0106/) !== null;
+		let codigoNaturezaCorreto = undefined;
+		switch (requisicao.codigoNatureza) {
+			case '11':
+				codigoNaturezaCorreto = ehServidor;
+				break;
+
+			case '12':
+				codigoNaturezaCorreto = ehPrevidenciario;
+				break;
+
+			case '31':
+			case '39':
+				codigoNaturezaCorreto = ehDesapropriacao;
+				break;
+		}
+		this.validarElemento('.gm-requisicao__dados__natureza', codigoNaturezaCorreto);
 
 		// Conferir valor total requisitado
 		let total = 0;
