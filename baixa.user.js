@@ -2,100 +2,100 @@
 // @name        Preenchimento dados baixa
 // @namespace   http://nadameu.com.br/baixa
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=baixa_arquivamento_processo_etapa_(1|3)&/
-// @version     2
+// @version     3
 // @grant       none
 // ==/UserScript==
 
-/* jshint -W078 */
+/* eslint indent: ["error", 2] */
 
-const NOME_PROPRIEDADE = 'fecharJanelasAoBaixar';
+const FECHAR_APOS_BAIXAR = 'fecharJanelasAposBaixar';
 
-class Buffer extends Array {
-  constructor(maximo) {
-    super();
-    this.maximo = maximo;
-  }
-
-  push(digito) {
-    const comprimento = this.maximo.toString().length;
-    super.push(digito);
-    let valor = parseInt(this.join(''));
-    while (this.length > comprimento || valor > this.maximo) {
-      this.splice(0, 1);
-      valor = parseInt(this.join(''));
+const Buffer = function Buffer(maximo) {
+  this.maximo = maximo;
+};
+Buffer.prototype = Object.assign(
+  Object.create(Array.prototype),
+  {
+    maximo: 0,
+    push(digito) {
+      const comprimento = this.maximo.toString().length;
+      Array.prototype.push.call(this, digito);
+      let valor = parseInt(this.join(''));
+      while (this.length > comprimento || valor > this.maximo) {
+        this.splice(0, 1);
+        valor = parseInt(this.join(''));
+      }
+      return isNaN(valor) ? null : valor;
     }
-    return isNaN(valor) ? null : valor;
   }
-}
-Buffer.prototype.maximo = 0;
+);
 
-class Elemento {
-  constructor(id) {
-    this.elemento = document.getElementById(id);
-  }
-
-  set texto(texto) {
-    this.elemento.insertAdjacentHTML('beforebegin', `<span class="gmValor">${texto}</span>`);
-  }
-
+const Elemento = function Elemento(id) {
+  this.elemento = document.getElementById(id);
+};
+Elemento.prototype = {
+  elemento: null,
   set selecionado(selecionado) {
     this.elemento.checked = selecionado;
+  },
+  set texto(texto) {
+    this.elemento.insertAdjacentHTML('beforeBegin', `<span class="gmValor">${texto}</span>`);
   }
-}
-Elemento.prototype.elemento = null;
+};
 
-class Elementos {
-  static fromIds(ids) {
+const Elementos = {
+  fromIds(ids) {
     return ids
       .map(id => new Elemento(id))
       .filter(wrapper => wrapper.elemento !== null);
   }
-}
+};
 
-class Link {
-  constructor(key, value) {
-    this.key = key;
-    this.value = value;
-  }
-
+const Link = function Link(key, value) {
+  this.key = key;
+  this.value = value;
+};
+Link.prototype = {
+  key: null,
+  next: null,
+  value: null,
   analisarValor(valor) {
     let selecionado = (valor & this.key) === this.key;
     this.value.forEach(elemento => elemento.selecionado = selecionado);
     if (this.next)
       this.next.analisarValor(valor);
   }
-}
-Link.prototype.key = null;
-Link.prototype.value = null;
-Link.prototype.next = null;
+};
 
-class LinkedList {
-  constructor(marcadosPorPadrao, ...definicoes) {
-
-    let elementosPadrao = Elementos.fromIds(marcadosPorPadrao);
-    elementosPadrao.forEach(elemento => elemento.texto = '0');
-    this.head = new Link(0, elementosPadrao);
-
-    let previous = this.head;
-    let i = 0;
-    Elementos.fromIds(definicoes).forEach(elemento => {
-      let key = 1 << i;
-      elemento.texto = key.toString();
-      let current = previous.next = new Link(key, [elemento]);
-      previous = current;
-      this.maximo = (key << 1) - 1;
-      i++;
-    });
+const LinkedList = function LinkedList(marcadosPorPadrao) {
+  const definicoes = [];
+  for (let i = 1; i < arguments.length; i++) {
+    definicoes.push(arguments[i]);
   }
+  let elementosPadrao = Elementos.fromIds(marcadosPorPadrao);
+  elementosPadrao.forEach(elemento => elemento.texto = '0');
+  this.head = new Link(0, elementosPadrao);
 
+  let previous = this.head;
+  let i = 0;
+  Elementos.fromIds(definicoes).forEach(elemento => {
+    let key = 1 << i;
+    elemento.texto = key.toString();
+    let current = previous.next = new Link(key, [elemento]);
+    previous = current;
+    this.maximo = (key << 1) - 1;
+    i++;
+  });
+};
+LinkedList.prototype = {
+  head: null,
+  maximo: 0,
   set valor(valor) {
     if (this.head) {
       this.head.analisarValor(valor);
     }
   }
-}
-LinkedList.prototype.head = null;
-LinkedList.prototype.maximo = 0;
+};
 
 const alturaTela = document.body.clientHeight;
 const tamanhoFonte = alturaTela / 3;
@@ -149,7 +149,7 @@ if (etapa === '1') {
   const fecharLabel = document.querySelector('.gmLabel');
   const onFecharChange = function() {
     let selecionado = fechar.checked;
-    localStorage.setItem(NOME_PROPRIEDADE, selecionado ? 'S' : 'N');
+    localStorage.setItem(FECHAR_APOS_BAIXAR, selecionado ? 'S' : 'N');
     if (selecionado) {
       fecharLabel.classList.add('gmChecked');
     } else {
@@ -157,14 +157,14 @@ if (etapa === '1') {
     }
   };
   fechar.addEventListener('change', onFecharChange);
-  if (localStorage.hasOwnProperty(NOME_PROPRIEDADE)) {
-    fechar.checked = localStorage.getItem(NOME_PROPRIEDADE) === 'S';
+  if (localStorage.hasOwnProperty(FECHAR_APOS_BAIXAR)) {
+    fechar.checked = localStorage.getItem(FECHAR_APOS_BAIXAR) === 'S';
     onFecharChange();
   }
 
   document.body.insertAdjacentHTML('beforeend', '<div class="gmResultado"></div>');
   const resultado = document.querySelector('.gmResultado');
-  resultado.addEventListener('click', evt => {
+  resultado.addEventListener('click', () => {
     resultado.style.display = 'none';
     resultado.style.opacity = '0';
   });
@@ -236,7 +236,7 @@ if (etapa === '1') {
   resultado.mostrarInstrucoes();
 
 } else if (etapa === '3') {
-  if (localStorage.hasOwnProperty(NOME_PROPRIEDADE) && localStorage.getItem(NOME_PROPRIEDADE) === 'S') {
+  if (localStorage.hasOwnProperty(FECHAR_APOS_BAIXAR) && localStorage.getItem(FECHAR_APOS_BAIXAR) === 'S') {
     let abertos = window.opener.documentosAbertos;
     if (abertos) {
       for (let id in abertos) {
