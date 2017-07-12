@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 20
+// @version 21
 // @grant none
 // ==/UserScript==
 
@@ -27,10 +27,10 @@ const Situacoes = {
 
 var GUI = (function() {
 	var instance = null,
-			construindo = false,
-			button = null,
-			progresso = null,
-			saida = null;
+		construindo = false,
+		button = null,
+		progresso = null,
+		saida = null;
 	var invalidSymbols = /[&<>"]/g;
 	var replacementSymbols = {
 		'&': 'amp',
@@ -40,11 +40,11 @@ var GUI = (function() {
 	};
 
 	function safeHTML(strings, ...vars) {
-		return vars.reduce((result, variable, i) => result + variable.replace(invalidSymbols, (sym) => '&' + replacementSymbols[sym] + ';') + strings[i + 1], strings[0]);
+		return vars.reduce((result, variable, i) => result + variable.replace(invalidSymbols, sym => '&' + replacementSymbols[sym] + ';') + strings[i + 1], strings[0]);
 	}
 
 	function GUI() {
-		if (!construindo) {
+		if (! construindo) {
 			throw new Error('Classe deve ser instanciada usando o método .getInstance().');
 		}
 		var estilos = document.createElement('style');
@@ -66,12 +66,15 @@ var GUI = (function() {
 			'.gmBotoesLocalizador { margin-right: 3ex; }',
 			'.gmAtualizar { font-size: 1em; background: #ccc; padding: 4px; border-radius: 4px; margin-right: 1ex; }',
 			'.gmFiltrar { font-size: 1em; background: #ccc; padding: 4px; border-radius: 4px; margin-right: 1ex; }',
+			'.gmFiltrado .gmFiltrar { display: none; }',
 			'.gmDetalhesAberto { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }',
 			'.gmDetalhes meter { width: 10ex; }',
 			'.gmDetalhes meter.gmExcesso { width: 20ex; }',
 			'.gmLembreteProcesso { width: 2ex; height: 2ex; margin: 0 1ex; border-width: 0; }',
 			'.gmLembreteProcessoVazio { opacity: 0; pointer-events: none; }',
-			'.gmPorcentagem { display: inline-block; width: 6ex; text-align: right; }'
+			'.gmPorcentagem { display: inline-block; width: 6ex; text-align: right; }',
+			'.gmPrioridade { display: none; color: red; }',
+			'.gmPrazoMetade .gmPrioridade { display: inline; }'
 		].join('\n');
 		document.querySelector('head').appendChild(estilos);
 	}
@@ -100,7 +103,7 @@ var GUI = (function() {
 				return '<span id="gmLocalizador' + localizador.id + 'Prioridade' + indicePrioridade + '" class="gmProcessos gmPrioridade' + indicePrioridade + (processos.length > 0 ? '' : ' gmVazio') + '" onmouseover="infraTooltipMostrar(&quot;' + avisos[indicePrioridade] + '&quot;);" onmouseout="infraTooltipOcultar();">' + processos.length + '</span>';
 			});
 			var conteudo = [];
-			if (!(localizador.sigla || localizador.nome)) {
+			if (! (localizador.sigla || localizador.nome)) {
 				conteudo.push(localizador.siglaNome);
 			} else if (localizador.sigla) {
 				conteudo.push(localizador.sigla);
@@ -126,7 +129,7 @@ var GUI = (function() {
 			if (localizador.quantidadeProcessosNaoFiltrados > 0) {
 				var container = document.createElement('span');
 				container.className = 'gmBotoesLocalizador';
-				if (!filtrado) {
+				if (! filtrado) {
 					var filtrar = document.createElement('a');
 					filtrar.setAttribute('onmouseover', 'infraTooltipMostrar("Excluir processos com prazos em aberto.");');
 					filtrar.setAttribute('onmouseout', 'infraTooltipOcultar();');
@@ -138,8 +141,8 @@ var GUI = (function() {
 						evt.stopPropagation();
 						[...document.getElementsByClassName('gmDetalhesAberto')].forEach(function(balaoAberto) {
 							let linhaAberta = balaoAberto.parentElement;
-							while (linhaAberta && (linhaAberta.tagName.toLowerCase() !== 'tr')) linhaAberta = linhaAberta.parentElement;
-							if (linhaAberta && (linhaAberta === linha)) {
+							while (linhaAberta && linhaAberta.tagName.toLowerCase() !== 'tr') linhaAberta = linhaAberta.parentElement;
+							if (linhaAberta && linhaAberta === linha) {
 								balaoAberto.classList.remove('gmDetalhesAberto');
 								[...document.getElementsByClassName('gmDetalhes')].forEach(function(linhaAntiga) {
 									linha.parentElement.removeChild(linhaAntiga);
@@ -156,6 +159,8 @@ var GUI = (function() {
 						});
 					}, false);
 					container.appendChild(filtrar);
+				} else {
+					linha.classList.add('gmFiltrado');
 				}
 				var atualizar = document.createElement('a');
 				atualizar.className = 'gmAtualizar';
@@ -165,8 +170,8 @@ var GUI = (function() {
 					evt.stopPropagation();
 					[...document.getElementsByClassName('gmDetalhesAberto')].forEach(function(balaoAberto) {
 						let linhaAberta = balaoAberto.parentElement;
-						while (linhaAberta && (linhaAberta.tagName.toLowerCase() !== 'tr')) linhaAberta = linhaAberta.parentElement;
-						if (linhaAberta && (linhaAberta === linha)) {
+						while (linhaAberta && linhaAberta.tagName.toLowerCase() !== 'tr') linhaAberta = linhaAberta.parentElement;
+						if (linhaAberta && linhaAberta === linha) {
 							balaoAberto.classList.remove('gmDetalhesAberto');
 							[...document.getElementsByClassName('gmDetalhes')].forEach(function(linhaAntiga) {
 								linha.parentElement.removeChild(linhaAntiga);
@@ -209,7 +214,7 @@ var GUI = (function() {
 					var atraso = Math.round(processo.atraso);
 					linhaNova.className = 'infraTrClara gmDetalhes';
 					const DIGITOS_CLASSE = 6,
-								DIGITOS_COMPETENCIA = 2;
+						DIGITOS_COMPETENCIA = 2;
 					linhaNova.dataset.classe = ('0'.repeat(DIGITOS_CLASSE) + processo.numClasse).substr(-DIGITOS_CLASSE);
 					linhaNova.dataset.competencia = ('0'.repeat(DIGITOS_COMPETENCIA) + processo.numCompetencia).substr(-DIGITOS_COMPETENCIA);
 					var textoData;
@@ -242,9 +247,9 @@ var GUI = (function() {
 							throw new Error('Campo "data considerada" desconhecido.');
 					}
 					const MAXIMO_PRIORIDADE_MENOR_OU_IGUAL_A_UM = 2,
-								MAXIMO_PRIORIDADE_DOIS_OU_MAIOR = 1,
-								DIAS_BAIXO = 3,
-								IDEAL = 0.5;
+						MAXIMO_PRIORIDADE_DOIS_OU_MAIOR = 1,
+						DIAS_BAIXO = 3,
+						IDEAL = 0.5;
 					var indicePrioridadeProcesso = indicePrioridade;
 					if (typeof indicePrioridade === 'undefined') {
 						prioridades.forEach((processos, indice) => {
@@ -279,7 +284,7 @@ var GUI = (function() {
 						Math.abs(atraso),
 						Math.abs(atraso) > 1 ? ' dias ' : ' dia ',
 						processo.atraso < 0 ? 'até o fim do prazo' : '',
-						processo.prioridade ? '</span> <span style="color: red;">(Prioridade)</span>' : '',
+						processo.prioridade ? '</span> <span class="gmPrioridade">(Prioridade)</span>' : '',
 						'</td>'
 					].join('');
 				});
@@ -303,15 +308,15 @@ var GUI = (function() {
 		},
 		avisoCarregando: {
 			acrescentar(qtd) {
-				if (!progresso || !saida) {
+				if (! progresso || ! saida) {
 					throw new Error('Aviso ainda não foi exibido.');
 				}
 				var atual = progresso.value,
-						total = progresso.max;
+					total = progresso.max;
 				this.atualizar(atual + qtd, total);
 			},
 			atualizar(atual, total) {
-				if (!progresso || !saida) {
+				if (! progresso || ! saida) {
 					this.exibir();
 				}
 				progresso.max = total;
@@ -329,40 +334,55 @@ var GUI = (function() {
 				saida = null;
 			}
 		},
-		criarBotaoAcao() {
+		criarBotaoAcao(localizadores) {
 			var frag = document.createDocumentFragment();
 			var area = document.getElementById('divInfraAreaTelaD');
 			button = document.createElement('button');
 			button.textContent = 'Analisar conteúdo dos localizadores';
 			frag.appendChild(button);
+			frag.appendChild(document.createElement('br'));
 
-			function criarCheckboxMostrar(id, mostrarPorPadrao, classeOcultar, texto) {
+			function criarCheckboxMostrar(id, padrao, [classeTrue, classeFalse], texto) {
 				var input = document.createElement('input');
 				input.type = 'checkbox';
 
-				function onMostrarChange() {
-					if ((!mostrarPorPadrao) || localStorage.getItem(id) === 'N') {
-						document.body.classList.add(classeOcultar);
-					} else {
-						document.body.classList.remove(classeOcultar);
-					}
-				}
-				input.addEventListener('click', evt => {
+				function onChange() {
 					localStorage.setItem(id, input.checked ? 'S' : 'N');
-					onMostrarChange();
+					if (input.checked) {
+						if (classeFalse !== '') document.body.classList.remove(classeFalse);
+						if (classeTrue !== '') document.body.classList.add(classeTrue);
+					} else {
+						if (classeTrue !== '') document.body.classList.remove(classeTrue);
+						if (classeFalse !== '') document.body.classList.add(classeFalse);
+					}
+
+				}
+				input.checked = localStorage.hasOwnProperty(id) ? localStorage.getItem(id) === 'S' : padrao;
+				input.addEventListener('click', onChange);
+				var gui = GUI.getInstance();
+				input.addEventListener('click', () => {
+					Array.from(document.querySelectorAll('.gmDetalhes')).forEach(detalhe => detalhe.parentNode.removeChild(detalhe));
+					localizadores.forEach(localizador => gui.atualizarVisualizacao(localizador));
 				});
-				input.checked = localStorage.getItem(id) !== 'N';
-				onMostrarChange();
+				onChange();
 				var label = document.createElement('label');
 				label.textContent = texto;
 				label.insertBefore(input, label.firstChild);
 				return label;
 			}
 
-			var labelClasses = criarCheckboxMostrar('mostrarClasses', true, 'gmNaoMostrarClasses', ' Mostrar classe dos processos');
+			var labelClasses = criarCheckboxMostrar('mostrarClasses', true, ['', 'gmNaoMostrarClasses'], ' Mostrar classe dos processos');
 			frag.appendChild(labelClasses);
-			var labelDias = criarCheckboxMostrar('mostrarDiasParaFim', true, 'gmNaoMostrarDiasParaFim', ' Mostrar dias para o fim do prazo');
+			frag.appendChild(document.createElement('br'));
+			var labelDias = criarCheckboxMostrar('mostrarDiasParaFim', true, ['', 'gmNaoMostrarDiasParaFim'], ' Mostrar dias para o fim do prazo');
 			frag.appendChild(labelDias);
+			frag.appendChild(document.createElement('br'));
+			var labelConsiderarDataInclusaoLocalizador = criarCheckboxMostrar('considerarDataInclusaoLocalizador', false, ['gmConsiderarDataInclusaoLocalizador', ''], 'Entre data do último evento e da inclusão no localizador, considerar a mais antiga');
+			frag.appendChild(labelConsiderarDataInclusaoLocalizador);
+			frag.appendChild(document.createElement('br'));
+			var labelPrazoMetade = criarCheckboxMostrar('prazoMetade', true, ['gmPrazoMetade', ''], 'Conceder metade do prazo normal para processos prioritários');
+			frag.appendChild(labelPrazoMetade);
+			frag.appendChild(document.createElement('br'));
 			area.insertBefore(frag, area.firstChild);
 			return button;
 		},
@@ -385,19 +405,19 @@ var GUI = (function() {
 				const processos = new Map();
 
 				const agora = new Date(),
-							hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+					hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
 
 				localizadores.forEach(localizador => {
 					localizador.processos.forEach(processo => {
 						const numproc = processo.numproc;
 
 						const termo = processo.termoPrazoCorregedoria,
-									dataTermo = new Date(termo.getFullYear(), termo.getMonth(), termo.getDate());
+							dataTermo = new Date(termo.getFullYear(), termo.getMonth(), termo.getDate());
 						const timestamp = Math.max(hoje, dataTermo);
 
 						if (processos.has(numproc)) {
 							const timestampAntigo = processos.get(numproc),
-										timestampNovo = Math.min(timestampAntigo, timestamp);
+								timestampNovo = Math.min(timestampAntigo, timestamp);
 							processos.set(numproc, timestampNovo);
 						} else {
 							processos.set(numproc, timestamp);
@@ -431,12 +451,12 @@ var GUI = (function() {
 								cor: '#666'
 							}
 						};
-						const margemExterna = this.dimensoes.margem + this.linha.espessura/2 + this.dimensoes.espacamento + area.linha.espessura/2;
+						const margemExterna = this.dimensoes.margem + this.linha.espessura / 2 + this.dimensoes.espacamento + area.linha.espessura / 2;
 						area.margens = {
-							t: margemExterna + this.texto.altura/2,
+							t: margemExterna + this.texto.altura / 2,
 							r: margemExterna,
 							b: margemExterna + this.texto.altura + this.dimensoes.espacamento,
-							l: margemExterna + this.escala.largura + 2*this.dimensoes.espacamento
+							l: margemExterna + this.escala.largura + 2 * this.dimensoes.espacamento
 						};
 						area.dimensoes = {
 							largura: this.dimensoes.largura - area.margens.l - area.margens.r,
@@ -528,8 +548,8 @@ var GUI = (function() {
 						context.beginPath();
 						let x = this.dimensoes.margem;
 						let y = x;
-						let w = this.dimensoes.largura - 2*this.dimensoes.margem;
-						let h = this.dimensoes.altura - 2*this.dimensoes.margem;
+						let w = this.dimensoes.largura - 2 * this.dimensoes.margem;
+						let h = this.dimensoes.altura - 2 * this.dimensoes.margem;
 						context.rect(x, y, w, h);
 						context.lineWidth = this.linha.espessura;
 						context.strokeStyle = this.linha.cor;
@@ -549,8 +569,8 @@ var GUI = (function() {
 
 					desenharEscala() {
 						const context = this.context;
-						const xTexto = this.dimensoes.margem + this.linha.espessura/2 + this.dimensoes.espacamento + this.escala.largura/2;
-						const xLinha = xTexto + this.escala.largura/2 + this.dimensoes.espacamento;
+						const xTexto = this.dimensoes.margem + this.linha.espessura / 2 + this.dimensoes.espacamento + this.escala.largura / 2;
+						const xLinha = xTexto + this.escala.largura / 2 + this.dimensoes.espacamento;
 						const wLinha = this.area.dimensoes.largura + this.dimensoes.espacamento;
 						for (let i = 0; i <= this.escala.maximo; i += this.escala.unidadeSecundaria) {
 							if (i % this.escala.unidadePrimaria === 0) {
@@ -579,7 +599,7 @@ var GUI = (function() {
 						const agora = new Date(), hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
 
 						context.fillStyle = this.texto.cor;
-						const y = this.dimensoes.altura - (this.dimensoes.margem + this.linha.espessura/2 + this.area.margens.b)/2;
+						const y = this.dimensoes.altura - (this.dimensoes.margem + this.linha.espessura / 2 + this.area.margens.b) / 2;
 						for (let i = 0; i < this.categorias.quantidade; i += step) {
 							let dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
 							let x = this.area.margens.l + (i + 0.5) * this.categorias.distancia;
@@ -602,13 +622,11 @@ var GUI = (function() {
 							}
 							let dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
 							if (this.dados.has(dia.getTime())) {
-								let x = this.area.margens.l + (i + 0.5) * this.categorias.distancia - larguraBarra/2;
+								let x = this.area.margens.l + (i + 0.5) * this.categorias.distancia - larguraBarra / 2;
 								let valor = this.dados.get(dia.getTime());
 								let altura = valor / this.escala.maximo * this.area.dimensoes.altura;
 								let y = this.dimensoes.altura - this.area.margens.b - altura;
 								context.fillRect(x, y, larguraBarra, altura);
-							} else {
-
 							}
 						}
 					}
@@ -619,7 +637,7 @@ var GUI = (function() {
 						const maximo = Math.max.apply(null, quantidades);
 						this.calcularDadosEscala(maximo);
 
-						const distanciaMinima = 2*this.dimensoes.espacamento + 2*this.texto.altura;
+						const distanciaMinima = 2 * this.dimensoes.espacamento + 2 * this.texto.altura;
 
 						let secundariaOk = this.assegurarDistanciaMinima('unidadeSecundaria', distanciaMinima);
 						if (secundariaOk) return;
@@ -644,7 +662,8 @@ var GUI = (function() {
 
 					calcularCategorias() {
 						const dias = Array.from(this.dados.keys());
-						const minimo = Math.min.apply(null, dias);
+						const agora = new Date(), hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+						const minimo = hoje;
 						const maximo = Math.max.apply(null, dias);
 						const UM_DIA = 864e5;
 						this.categorias.quantidade = (maximo - minimo) / UM_DIA + 1;
@@ -697,7 +716,7 @@ var GUI = (function() {
 
 	};
 	GUI.getInstance = function() {
-		if (!instance) {
+		if (! instance) {
 			construindo = true;
 			instance = new GUI();
 			construindo = false;
@@ -712,7 +731,7 @@ var LocalizadoresFactory = (function() {
 			var url = Array.from(document.querySelectorAll('#main-menu a[href]'))
 			.filter(link => /^\?acao=relatorio_geral_listar&/.test(link.search))
 							.map(link => link.href)[0];
-							var xml = new XMLHttpRequest();
+			var xml = new XMLHttpRequest();
 			xml.open('GET', url);
 			xml.responseType = 'document';
 			xml.onerror = reject;
@@ -766,7 +785,7 @@ var LocalizadoresFactory = (function() {
 					url = self.link.href;
 					data = new FormData();
 					var camposPost = ['optchkcClasse', 'optDataAutuacao', 'optchkcUltimoEvento', 'optNdiasSituacao', 'optJuizo', 'optPrioridadeAtendimento', 'chkStatusProcesso'];
-					camposPost.forEach((campo) => data.set(campo, 'S'));
+					camposPost.forEach(campo => data.set(campo, 'S'));
 					data.set('paginacao', '100');
 					data.set('hdnInfraPaginaAtual', pagina);
 				} else {
@@ -812,37 +831,37 @@ var LocalizadoresFactory = (function() {
 				});
 			})
 				.then(function({ target: { response: doc } }) {
-				const tabela = doc.getElementById('tabelaLocalizadores');
-				const quantidadeProcessosCarregados = parseInt(doc.getElementById('hdnInfraNroItens').value);
-				if (tabela) {
-					console.log(pagina, self.sigla, tabela.querySelector('caption').textContent);
-					const linhas = Array.from(tabela.querySelectorAll('tr[data-classe]'));
-					const processosComPrazoAberto = new Set();
-					linhas.forEach(linha => {
-						const numproc = linha.cells[1].querySelector('a[href]').search.match(/&num_processo=(\d+)&/)[1];
-						processosComPrazoAberto.add(numproc);
-					});
-					for (let i = self.processos.length - 1; i >= 0; i--) {
-						if (processosComPrazoAberto.has(self.processos[i].numproc)) {
-							self.processos.splice(i, 1);
+					const tabela = doc.getElementById('tabelaLocalizadores');
+					const quantidadeProcessosCarregados = parseInt(doc.getElementById('hdnInfraNroItens').value);
+					if (tabela) {
+						console.log(pagina, self.sigla, tabela.querySelector('caption').textContent);
+						const linhas = Array.from(tabela.querySelectorAll('tr[data-classe]'));
+						const processosComPrazoAberto = new Set();
+						linhas.forEach(linha => {
+							const numproc = linha.cells[1].querySelector('a[href]').search.match(/&num_processo=(\d+)&/)[1];
+							processosComPrazoAberto.add(numproc);
+						});
+						for (let i = self.processos.length - 1; i >= 0; i--) {
+							if (processosComPrazoAberto.has(self.processos[i].numproc)) {
+								self.processos.splice(i, 1);
+							}
 						}
+					} else {
+						console.log(pagina, self.sigla, quantidadeProcessosCarregados);
 					}
-				} else {
-					console.log(pagina, self.sigla, quantidadeProcessosCarregados);
-				}
-				if (doc.getElementById('lnkProximaPaginaSuperior')) {
-					const paginaAtual = parseInt(doc.getElementById('selInfraPaginacaoSuperior').value);
-					const paginaNova = paginaAtual < 2 ? 2 : paginaAtual + 1;
-					return self.obterPrazosPagina.call(self, paginaNova);
-				}
-				const gui = GUI.getInstance();
-				gui.avisoCarregando.acrescentar(parseInt(self.link.textContent));
-				return self;
-			});
+					if (doc.getElementById('lnkProximaPaginaSuperior')) {
+						const paginaAtual = parseInt(doc.getElementById('selInfraPaginacaoSuperior').value);
+						const paginaNova = paginaAtual < 2 ? 2 : paginaAtual + 1;
+						return self.obterPrazosPagina.call(self, paginaNova);
+					}
+					const gui = GUI.getInstance();
+					gui.avisoCarregando.acrescentar(parseInt(self.link.textContent));
+					return self;
+				});
 		},
 		excluirPrazosAbertos() {
 			const link = this.link;
-			if (!link.href) {
+			if (! link.href) {
 				return Promise.resolve(this);
 			}
 			return this.obterPrazosPagina(0).then(function() {
@@ -853,15 +872,15 @@ var LocalizadoresFactory = (function() {
 		obterProcessos() {
 			this.processos = [];
 			var link = this.link;
-			if (!link.href) {
+			if (! link.href) {
 				return Promise.resolve(this);
 			}
 			return this.obterPagina(0).then(function() {
 				this.quantidadeProcessosNaoFiltrados = this.processos.length;
 				this.link.textContent = this.processos.length;
 				if (this.processos.length > 0) {
-					var localizadorProcesso = this.processos[0].localizadores.filter((localizador) => localizador.id === this.id)[0];
-					if (!this.sigla) {
+					var localizadorProcesso = this.processos[0].localizadores.filter(localizador => localizador.id === this.id)[0];
+					if (! this.sigla) {
 						this.sigla = localizadorProcesso.sigla;
 					}
 					if (this.sigla && this.nome) {
@@ -1008,13 +1027,13 @@ var ProcessoFactory = (function() {
 
 	const MILISSEGUNDOS_EM_UM_DIA = 864e5;
 	const COMPETENCIA_JUIZADO_MIN = 9,
-				COMPETENCIA_JUIZADO_MAX = 20,
-				COMPETENCIA_CRIMINAL_MIN = 21,
-				COMPETENCIA_CRIMINAL_MAX = 30,
-				COMPETENCIA_EF_MIN = 41,
-				COMPETENCIA_EF_MAX = 43,
-				CLASSE_EF = 99,
-				CLASSE_CARTA_PRECATORIA = 60;
+		COMPETENCIA_JUIZADO_MAX = 20,
+		COMPETENCIA_CRIMINAL_MIN = 21,
+		COMPETENCIA_CRIMINAL_MAX = 30,
+		COMPETENCIA_EF_MIN = 41,
+		COMPETENCIA_EF_MAX = 43,
+		CLASSE_EF = 99,
+		CLASSE_CARTA_PRECATORIA = 60;
 
 	function Processo() {
 		this.dadosComplementares = new Set();
@@ -1068,7 +1087,9 @@ var ProcessoFactory = (function() {
 				case 'MOVIMENTO':
 					ret = 'dataUltimoEvento';
 					if (this.dataInclusaoLocalizador < this.dataUltimoEvento) {
-						ret = 'dataInclusaoLocalizador';
+						if (document.body.matches('.gmConsiderarDataInclusaoLocalizador')) {
+							ret = 'dataInclusaoLocalizador';
+						}
 					}
 					break;
 
@@ -1081,7 +1102,7 @@ var ProcessoFactory = (function() {
 		get prazoCorregedoria() {
 			var situacao = Situacoes[this.situacao] || Situacoes['INDEFINIDA'];
 			var dias = RegrasCorregedoria[this.competenciaCorregedoria][situacao];
-			if (this.prioridade) dias /= 2;
+			if (this.prioridade && document.body.matches('.gmPrazoMetade')) dias /= 2;
 			return dias;
 		},
 		get prioridade() {
@@ -1106,7 +1127,7 @@ var ProcessoFactory = (function() {
 			processo.numproc = numprocFormatado.replace(/[-.]/g, '');
 			var links = linha.cells[1].getElementsByTagName('a');
 			if (links.length === 2) {
-				var onmouseover = [...links[1].attributes].filter((attr) => attr.name === 'onmouseover')[0].value;
+				var onmouseover = [...links[1].attributes].filter(attr => attr.name === 'onmouseover')[0].value;
 				var [, codigoLembrete] = onmouseover.match(/^return infraTooltipMostrar\('([^']+)','Lembretes',400\);$/);
 				var div = document.createElement('div');
 				div.innerHTML = codigoLembrete;
@@ -1131,7 +1152,7 @@ var ProcessoFactory = (function() {
 				processo.classe = linha.cells[6].textContent;
 			} else {
 				processo.classe = linha.cells[6].firstChild.textContent;
-				labelsDadosComplementares.forEach((label) => processo.dadosComplementares.add(label.textContent));
+				labelsDadosComplementares.forEach(label => processo.dadosComplementares.add(label.textContent));
 			}
 			processo.localizadores = LocalizadoresProcessoFactory.fromCelula(linha.cells[7]);
 			var breakUltimoEvento = linha.cells[8].querySelector('br');
@@ -1180,7 +1201,7 @@ var RegrasCorregedoria = {
 
 function adicionarBotaoComVinculo(localizadores) {
 	var gui = GUI.getInstance();
-	var botao = gui.criarBotaoAcao();
+	var botao = gui.criarBotaoAcao(localizadores);
 	botao.addEventListener('click', function() {
 		gui.avisoCarregando.atualizar(0, localizadores.quantidadeProcessosNaoFiltrados);
 		localizadores.obterProcessos().then(function() {
@@ -1194,13 +1215,13 @@ function adicionarBotaoComVinculo(localizadores) {
 		});
 	}, false);
 }
-if (/\?acao=usuario_tipo_monitoramento_localizador_listar\&/.test(location.search)) {
+if (/\?acao=usuario_tipo_monitoramento_localizador_listar&/.test(location.search)) {
 	let tabela = document.getElementById('divInfraAreaTabela').querySelector('table');
 	let localizadores = LocalizadoresFactory.fromTabela(tabela);
 	adicionarBotaoComVinculo(localizadores);
-} else if (/\?acao=localizador_processos_lista\&/.test(location.search)) {
+} else if (/\?acao=localizador_processos_lista&/.test(location.search)) {
 	// do nothing
-} else if (/\&acao_origem=principal\&/.test(location.search)) {
+} else if (/&acao_origem=principal&/.test(location.search)) {
 	let tabela = document.getElementById('fldLocalizadores').querySelector('table');
 	let localizadores = LocalizadoresFactory.fromTabelaPainel(tabela);
 	adicionarBotaoComVinculo(localizadores);
