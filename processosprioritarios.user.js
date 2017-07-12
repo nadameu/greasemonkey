@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 21
+// @version 22
 // @grant none
 // ==/UserScript==
 
@@ -363,6 +363,7 @@ var GUI = (function() {
 				input.addEventListener('click', () => {
 					Array.from(document.querySelectorAll('.gmDetalhes')).forEach(detalhe => detalhe.parentNode.removeChild(detalhe));
 					localizadores.forEach(localizador => gui.atualizarVisualizacao(localizador));
+					if (typeof gui.atualizarGrafico === 'function') gui.atualizarGrafico();
 				});
 				onChange();
 				var label = document.createElement('label');
