@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 22
+// @version 23
 // @grant none
 // ==/UserScript==
 
@@ -129,7 +129,10 @@ var GUI = (function() {
 			if (localizador.quantidadeProcessosNaoFiltrados > 0) {
 				var container = document.createElement('span');
 				container.className = 'gmBotoesLocalizador';
-				if (! filtrado) {
+				if (filtrado) {
+					linha.classList.add('gmFiltrado');
+				} else {
+					linha.classList.remove('gmFiltrado');
 					var filtrar = document.createElement('a');
 					filtrar.setAttribute('onmouseover', 'infraTooltipMostrar("Excluir processos com prazos em aberto.");');
 					filtrar.setAttribute('onmouseout', 'infraTooltipOcultar();');
@@ -159,8 +162,6 @@ var GUI = (function() {
 						});
 					}, false);
 					container.appendChild(filtrar);
-				} else {
-					linha.classList.add('gmFiltrado');
 				}
 				var atualizar = document.createElement('a');
 				atualizar.className = 'gmAtualizar';
