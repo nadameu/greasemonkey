@@ -5,8 +5,8 @@
 // @include     http://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar*
 // @include     http://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar*
 // @require     https://github.com/nadameu/greasemonkey/raw/List-v1.0.0/lib/List.js
-// @require     https://github.com/nadameu/greasemonkey/raw/Task-v1.0.1/lib/Task.js
-// @version     9
+// @require     https://github.com/nadameu/greasemonkey/raw/Task-v1.1.0/lib/Task.js
+// @version     10
 // @grant       none
 // ==/UserScript==
 
