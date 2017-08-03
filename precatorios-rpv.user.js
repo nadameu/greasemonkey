@@ -4,6 +4,7 @@
 // @namespace   http://nadameu.com.br/precatorios-rpv
 // @include     /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=processo_selecionar\&/
 // @include     /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=processo_precatorio_rpv\&/
+// @include     /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=oficio_requisitorio_visualizar\&/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
@@ -15,12 +16,12 @@ const SALARIO_MINIMO = 937;
 
 const Acoes = {
 	ABRIR_DOCUMENTO: 'abrirDocumento',
-	ABRIR_REQUISICAO: 'abrirRequisicao',
+	ABRIR_REQUISICAO_ANTIGA: 'abrirRequisicaoAntiga',
 	BUSCAR_DADOS: 'buscarDados',
-	EDITAR_REQUISICAO: 'editarRequisicao',
+	EDITAR_REQUISICAO_ANTIGA: 'editarRequisicaoAntiga',
 	ORDEM_CONFIRMADA: 'ordemConfirmada',
-	PREPARAR_INTIMACAO: 'prepararIntimacao',
-	REQUISICAO_PREPARADA: 'requisicaoPreparada',
+	PREPARAR_INTIMACAO_ANTIGA: 'prepararIntimacaoAntiga',
+	REQUISICAO_ANTIGA_PREPARADA: 'requisicaoAntigaPreparada',
 	RESPOSTA_DADOS: 'respostaDados',
 	RESPOSTA_JANELA_ABERTA: 'respostaJanelaAberta',
 	VERIFICAR_JANELA: 'verificarJanela'
@@ -289,17 +290,19 @@ class Pagina {
 
 		if (doc.domain === 'sap.trf4.gov.br') {
 			if (doc.location.pathname === '/requisicao/jf/visualizar_requisicao_jf.php') {
-				classe = PaginaRequisicao;
+				classe = PaginaRequisicaoAntiga;
 			} else if (doc.location.pathname === '/requisicao/jf/frm_requisicao_jf.php') {
-				classe = PaginaRequisicaoEditar;
+				classe = PaginaRequisicaoAntigaEditar;
 			} else if (doc.location.pathname === '/requisicao/jf/preparar_intimacao_jf.php') {
-				classe = PaginaRequisicaoPreparada;
+				classe = PaginaRequisicaoAntigaPreparada;
 			}
 		} else if (doc.domain.match(/^eproc\.(trf4|jf(pr|rs|sc))\.jus\.br$/)) {
 			if (doc.location.search.match(/^\?acao=processo_selecionar&/)) {
 				classe = PaginaProcesso;
 			} else if (doc.location.search.match(/^\?acao=processo_precatorio_rpv&/)) {
 				classe = PaginaListar;
+			} else if (doc.location.search.match(/^\?acao=oficio_requisitorio_visualizar&/)) {
+				classe = PaginaRequisicao;
 			}
 		}
 
@@ -332,8 +335,22 @@ class PaginaListar extends Pagina {
 			requisicao.numero = parseInt(linha.cells[0].textContent.trim());
 			requisicao.status = linha.cells[1].textContent.trim();
 			const links = Array.from(linha.cells[2].querySelectorAll('a[href]'));
-			links.filter(link => link.href.match(/&numRequis=\d+$/)).forEach(link => requisicao.urlConsultar = link.href);
-			links.filter(link => link.href.match(/&numRequis=\d+&strAcao=editar$/)).forEach(link => requisicao.urlEditar = link.href);
+			links.filter(link => link.href.match(/&numRequis=\d+$/)).forEach(link => {
+				requisicao.tipo = 'antiga';
+				requisicao.urlConsultarAntiga = link.href;
+			});
+			links.filter(link => link.href.match(/&numRequis=\d+&strAcao=editar$/)).forEach(link => {
+				requisicao.tipo = 'antiga';
+				requisicao.urlEditarAntiga = link.href;
+			});
+			links.filter(link => link.href.match(/\?acao=oficio_requisitorio_visualizar&/)).forEach(link => {
+				requisicao.tipo = 'nova';
+				requisicao.urlConsultar = link.href;
+			});
+			links.filter(link => link.href.match(/\?acao=oficio_requisitorio_requisicoes_editar&/)).forEach(link => {
+				requisicao.tipo = 'nova';
+				requisicao.urlEditar = link.href;
+			});
 			return requisicao;
 		});
 	}
@@ -356,7 +373,7 @@ class PaginaListar extends Pagina {
 
 	solicitarAberturaRequisicao(janela, requisicao) {
 		const data = {
-			acao: Acoes.ABRIR_REQUISICAO,
+			acao: Acoes.ABRIR_REQUISICAO_ANTIGA,
 			requisicao: requisicao
 		};
 		janela.postMessage(JSON.stringify(data), this.doc.location.origin);
@@ -602,35 +619,39 @@ class PaginaProcesso extends Pagina {
 		this.adicionarBotao();
 		this.linkListar.addEventListener('click', this.onLinkListarClicado.bind(this));
 		const style = this.doc.createElement('style');
-		style.innerHTML = `
-.gmEventoDestacado > td {
-	background: #f8eddb;
-	border: 0px solid #c0c0c0;
-	border-width: 1px 0;
-}
-.gmTextoDestacado {
-	color: red;
-	font-size: 1.2em;
-}
-		`;
+		style.innerHTML = Utils.css({
+			".gmEventoDestacado > td": {
+				"background": "#f8eddb",
+				"border": "0px solid #c0c0c0",
+				"border-width": "1px 0"
+			},
+			".gmTextoDestacado": {
+				"color": "red",
+				"font-size": "1.2em"
+			}
+		});
 		this.doc.querySelector('head').appendChild(style);
 	}
 
 	adicionarBotao() {
-		const textoBotao = 'Verificar dados requisição';
+		const textoBotao = 'Conferir ofício requisitório';
 		const botao = BotaoAcao.criar(textoBotao, evt => {
 			evt.preventDefault();
 			evt.stopPropagation();
 			botao.textContent = 'Aguarde, carregando...';
 			XHR.buscarDocumento(this.linkListar).then(doc => {
 				const paginaListar = new PaginaListar(doc);
-				let requisicoes = paginaListar.requisicoes.filter(requisicao => requisicao.status === 'Digitada');
-				if (requisicoes.length === 1) {
-					let all = requisicoes.map(requisicao => XHR.buscarDocumentoExterno(requisicao.urlConsultar).then(doc => {
+				const requisicoesAntigas = paginaListar.requisicoes.filter(requisicao => requisicao.tipo === 'antiga' && requisicao.status === 'Digitada');
+				if (requisicoesAntigas.length === 1) {
+					const all = requisicoesAntigas.map(requisicao => XHR.buscarDocumentoExterno(requisicao.urlConsultarAntiga).then(doc => {
 						const paginaRedirecionamento = new PaginaRedirecionamento(doc);
 						this.abrirJanelaRequisicao(paginaRedirecionamento.urlRedirecionamento, requisicao.numero);
 					}));
 					return Promise.all(all);
+				}
+				const requisicoes = paginaListar.requisicoes.filter(requisicao => requisicao.tipo === 'nova' && requisicao.status === 'Finalizada');
+				if (requisicoes.length === 1) {
+					return void this.abrirJanelaRequisicao(requisicoes[0].urlConsultar);
 				}
 				this.abrirJanelaListar();
 
@@ -729,7 +750,7 @@ class PaginaProcesso extends Pagina {
 
 	enviarSolicitacaoPrepararIntimacao(janela, origem, requisicao) {
 		const data = {
-			acao: Acoes.PREPARAR_INTIMACAO,
+			acao: Acoes.PREPARAR_INTIMACAO_ANTIGA,
 			requisicao: requisicao
 		};
 		this.enviarSolicitacao(janela, origem, data);
@@ -793,23 +814,23 @@ class PaginaProcesso extends Pagina {
 					this.enviarDadosProcesso(evt.source, evt.origin);
 				} else if (data.acao === Acoes.ABRIR_DOCUMENTO) {
 					this.abrirDocumento(data.evento, data.documento);
-				} else if (data.acao === Acoes.EDITAR_REQUISICAO) {
-					this.abrirJanelaEditarRequisicao(data.urlEditar, data.requisicao);
-				} else if (data.acao === Acoes.PREPARAR_INTIMACAO) {
+				} else if (data.acao === Acoes.EDITAR_REQUISICAO_ANTIGA) {
+					this.abrirJanelaEditarRequisicao(data.urlEditarAntiga, data.requisicao);
+				} else if (data.acao === Acoes.PREPARAR_INTIMACAO_ANTIGA) {
 					this.requisicoesAPreparar.add(data.requisicao);
 					if (data.fecharProcesso) {
 						this.fecharAposPreparar.add(data.requisicao);
 					}
-					this.abrirJanelaEditarRequisicao(data.urlEditar, data.requisicao);
+					this.abrirJanelaEditarRequisicao(data.urlEditarAntiga, data.requisicao);
 				} else if (data.acao === Acoes.VERIFICAR_JANELA) {
 					if (this.requisicoesAPreparar.has(data.requisicao)) {
 						this.enviarSolicitacaoPrepararIntimacao(evt.source, evt.origin, data.requisicao);
 					}
 				} else if (data.acao === Acoes.ORDEM_CONFIRMADA) {
-					if (data.ordem === Acoes.PREPARAR_INTIMACAO && this.requisicoesAPreparar.has(data.requisicao)) {
+					if (data.ordem === Acoes.PREPARAR_INTIMACAO_ANTIGA && this.requisicoesAPreparar.has(data.requisicao)) {
 						this.requisicoesAPreparar.delete(data.requisicao);
 					}
-				} else if (data.acao === Acoes.REQUISICAO_PREPARADA) {
+				} else if (data.acao === Acoes.REQUISICAO_ANTIGA_PREPARADA) {
 					this.fecharJanelaRequisicao(data.requisicao);
 					if (this.fecharAposPreparar.has(data.requisicao)) {
 						this.fecharJanelaProcesso();
@@ -818,8 +839,8 @@ class PaginaProcesso extends Pagina {
 			} else if (evt.origin === this.doc.location.origin) {
 				if (data.acao === Acoes.VERIFICAR_JANELA) {
 					this.enviarRespostaJanelaAberta(evt.source, evt.origin);
-				} else if (data.acao === Acoes.ABRIR_REQUISICAO) {
-					this.abrirJanelaRequisicao(data.requisicao.urlConsultar, data.requisicao.numero);
+				} else if (data.acao === Acoes.ABRIR_REQUISICAO_ANTIGA) {
+					this.abrirJanelaRequisicao(data.requisicao.urlConsultarAntiga, data.requisicao.numero);
 				}
 			}
 		}
@@ -838,7 +859,7 @@ class PaginaRedirecionamento extends Pagina {
 	}
 }
 
-class PaginaRequisicao extends Pagina {
+class PaginaRequisicaoAntiga extends Pagina {
 	get linkEditar() {
 		return this.doc.querySelector('a[href^="frm_requisicao_jf.php?num_requis="]');
 	}
@@ -852,51 +873,51 @@ class PaginaRequisicao extends Pagina {
 
 	adicionarAlteracoes() {
 		const style = this.doc.createElement('style');
-		style.innerHTML = `
-table a {
-	font-size: 1em;
-}
-.gm-requisicao__dados__tabela tr::before {
-	content: '';
-	font-size: 1.2em;
-	font-weight: bold;
-}
-.gm-resposta {}
-p.gm-resposta {
-	font-size: 1.2em;
-	margin: 1em 0 0;
-}
-.gm-resposta--correta {
-	color: green;
-}
-.gm-resposta--incorreta {
-	color: red;
-}
-.gm-resposta--indefinida {
-	color: #e70;
-}
-.gm-requisicao__dados__tabela .gm-resposta--correta::before {
-	content: '✓';
-	color: green;
-}
-.gm-requisicao__dados__tabela .gm-resposta--incorreta::before {
-	content: '✗';
-	color: red;
-}
-.gm-requisicao__dados__tabela .gm-resposta--indefinida::before {
-	content: '?';
-	color: #e70;
-}
-p.gm-dados-adicionais {
-	margin-top: 0;
-	margin-left: 2ex;
-}
-.gm-botoes {
-	margin: 4em 0;
-	display: flex;
-	justify-content: space-around;
-}
-		`;
+		style.innerHTML = Utils.css({
+			"table a": {
+				"font-size": "1em"
+			},
+			".gm-requisicao__dados__tabela tr::before": {
+				"content": "''",
+				"font-size": "1.2em",
+				"font-weight": "bold",
+			},
+			".gm-resposta": {},
+			"p.gm-resposta": {
+				"font-size": "1.2em",
+				"margin": "1em 0 0",
+			},
+			".gm-resposta--correta": {
+				"color": "green",
+			},
+			".gm-resposta--incorreta": {
+				"color": "red",
+			},
+			".gm-resposta--indefinida": {
+				"color": "#e70",
+			},
+			".gm-requisicao__dados__tabela .gm-resposta--correta::before": {
+				"content": "'✓'",
+				"color": "green",
+			},
+			".gm-requisicao__dados__tabela .gm-resposta--incorreta::before": {
+				"content": "'✗'",
+				"color": "red",
+			},
+			".gm-requisicao__dados__tabela .gm-resposta--indefinida::before": {
+				"content": "'?'",
+				"color": "#e70",
+			},
+			"p.gm-dados-adicionais": {
+				"margin-top": "0",
+				"margin-left": "2ex",
+			},
+			".gm-botoes": {
+				"margin": "4em 0",
+				"display": "flex",
+				"justify-content": "space-around",
+			}
+		});
 		this.doc.querySelector('head').appendChild(style);
 		const win = this.doc.defaultView;
 		win.addEventListener('message', this.onMensagemRecebida.bind(this));
@@ -910,7 +931,7 @@ p.gm-dados-adicionais {
 	}
 
 	adicionarBotoesPreparar() {
-		const botaoPrepararVoltar = BotaoAcao.criar('Preparar para intimação e voltar ao processo', this.onBotaoPrepararVoltarClicado.bind(this));
+		const botaoPrepararVoltar = BotaoAcao.criar('Preparar para intimação e manter aberta', this.onBotaoPrepararVoltarClicado.bind(this));
 		const botaoPrepararFechar = BotaoAcao.criar('Preparar para intimação e fechar', this.onBotaoPrepararFecharClicado.bind(this));
 
 		const areaDados = this.doc.getElementById('divInfraAreaDadosDinamica');
@@ -950,7 +971,7 @@ p.gm-dados-adicionais {
 
 		const linkEditar = this.doc.querySelector('a[href^="frm_requisicao_jf.php?num_requis="]');
 		requisicao.numero = parseInt(linkEditar.textContent.trim());
-		requisicao.urlEditar = linkEditar.href;
+		requisicao.urlEditarAntiga = linkEditar.href;
 
 		const areaDados = this.doc.getElementById('divInfraAreaDadosDinamica');
 		const tabela = areaDados.querySelector('form > table');
@@ -1196,9 +1217,9 @@ p.gm-dados-adicionais {
 
 	enviarSolicitacaoPrepararIntimacao(janela, fecharAposPreparar) {
 		const data = {
-			acao: Acoes.PREPARAR_INTIMACAO,
+			acao: Acoes.PREPARAR_INTIMACAO_ANTIGA,
 			requisicao: this.requisicao.numero,
-			urlEditar: this.requisicao.urlEditar,
+			urlEditarAntiga: this.requisicao.urlEditarAntiga,
 			fecharProcesso: fecharAposPreparar
 		};
 		return this.enviarSolicitacao(janela, data);
@@ -1206,9 +1227,9 @@ p.gm-dados-adicionais {
 
 	enviarSolicitacaoEditarRequisicao(janela) {
 		const data = {
-			acao: Acoes.EDITAR_REQUISICAO,
+			acao: Acoes.EDITAR_REQUISICAO_ANTIGA,
 			requisicao: this.requisicao.numero,
-			urlEditar: this.requisicao.urlEditar
+			urlEditarAntiga: this.requisicao.urlEditarAntiga
 		};
 		return this.enviarSolicitacao(janela, data);
 	}
@@ -1275,27 +1296,28 @@ p.gm-dados-adicionais {
 		});
 
 		requisicao.honorarios.filter(honorario => honorario.tipo !== 'Honorários Contratuais').forEach(honorario => {
-			areaDados.insertAdjacentHTML('beforeend', `
-<p class="gm-resposta">${honorario.nome}</p>
-<p class="gm-resposta gm-dados-adicionais"><span class="gm-resposta--indefinida">${honorario.tipo}</span> &mdash; <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valorTotal.principal)}</span> + <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valorTotal.juros)}</span> = <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valorTotal.total)}</span> em <span class="gm-resposta--indefinida">${ConversorMesAno.converter(honorario.dataBase)}</span></p>`);
+			areaDados.insertAdjacentHTML('beforeend', [
+				`<p class="gm-resposta">${honorario.nome}</p>`,
+				`<p class="gm-resposta gm-dados-adicionais"><span class="gm-resposta--indefinida">${honorario.tipo}</span> &mdash; <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valorTotal.principal)}</span> + <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valorTotal.juros)}</span> = <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valorTotal.total)}</span> em <span class="gm-resposta--indefinida">${ConversorMesAno.converter(honorario.dataBase)}</span></p>`
+			].join('\n'));
 		});
 	}
 
 	exibirDocumentosProcesso(dadosProcesso) {
 		const areaDocumentos = this.doc.querySelector('.gm-documentos');
 		areaDocumentos.insertAdjacentHTML('beforeend', '<br><br><span class="atencao">&nbsp;&nbsp;Documentos do processo</span>');
-		let tabela = `
-<table class="infraTable">
-	<thead>
-		<tr>
-			<th class="infraTh">Evento</th>
-			<th class="infraTh">Data</th>
-			<th class="infraTh">Descrição</th>
-			<th class="infraTh">Documentos</th>
-		</tr>
-	</thead>
-	<tbody>
-		`;
+		let tabela = [
+			`<table class="infraTable">`,
+			`<thead>`,
+			`<tr>`,
+			`<th class="infraTh">Evento</th>`,
+			`<th class="infraTh">Data</th>`,
+			`<th class="infraTh">Descrição</th>`,
+			`<th class="infraTh">Documentos</th>`,
+			`</tr>`,
+			`</thead>`,
+			`<tbody>`
+		].join('\n');
 		let css = 0;
 		const eventos = Array.concat(dadosProcesso.calculos, dadosProcesso.contratos, dadosProcesso.honorarios, dadosProcesso.sentencas)
 			.sort((eventoA, eventoB) => eventoB.evento - eventoA.evento)
@@ -1304,27 +1326,25 @@ p.gm-dados-adicionais {
 				return map;
 			}, new Map());
 		Array.from(eventos.values()).forEach(evento => {
-			tabela += `
-		<tr class="${css++ % 2 === 0 ? 'infraTrClara' : 'infraTrEscura'}">
-			<td>${evento.evento}</td>
-			<td>${ConversorDataHora.converter(new Date(evento.data))}</td>
-			<td>${evento.descricao}</td>
-			<td><table><tbody>
-			`;
+			tabela += [
+				`<tr class="${css++ % 2 === 0 ? 'infraTrClara' : 'infraTrEscura'}">`,
+				`<td>${evento.evento}</td>`,
+				`<td>${ConversorDataHora.converter(new Date(evento.data))}</td>`,
+				`<td>${evento.descricao}</td>`,
+				`<td><table><tbody>`,
+			].join('\n');
 			evento.documentos.forEach(documento => {
-				tabela += `
-				<tr><td><a id="gm-documento-ev${evento.evento}-doc${documento.ordem}" data-evento="${evento.evento}" data-documento="${documento.ordem}" href="#">${documento.nome}</a></td></tr>
-				`;
+				tabela += `<tr><td><a id="gm-documento-ev${evento.evento}-doc${documento.ordem}" data-evento="${evento.evento}" data-documento="${documento.ordem}" href="#">${documento.nome}</a></td></tr>`;
 			});
-			tabela += `
-			</tbody></table></td>
-		</tr>
-			`;
+			tabela += [
+				`</tbody></table></td>`,
+				`</tr>`
+			].join('\n');
 		});
-		tabela += `
-			</tbody>
-		</table>
-		`;
+		tabela += [
+			`</tbody>`,
+			`</table>`
+		].join('\n');
 		areaDocumentos.insertAdjacentHTML('beforeend', tabela);
 		eventos.forEach(evento => {
 			evento.documentos.forEach(documento => {
@@ -1543,7 +1563,9 @@ p.gm-dados-adicionais {
 	}
 }
 
-class PaginaRequisicaoEditar extends Pagina {
+class PaginaRequisicao extends PaginaRequisicaoAntiga {}
+
+class PaginaRequisicaoAntigaEditar extends Pagina {
 
 	get numero() {
 		const [str] = this.doc.location.search.split(/^\?/).slice(1);
@@ -1561,7 +1583,7 @@ class PaginaRequisicaoEditar extends Pagina {
 	confirmarRecebimentoOrdem(janela, origem) {
 		const data = {
 			acao: Acoes.ORDEM_CONFIRMADA,
-			ordem: Acoes.PREPARAR_INTIMACAO,
+			ordem: Acoes.PREPARAR_INTIMACAO_ANTIGA,
 			requisicao: this.numero
 		};
 		this.enviarSolicitacao(janela, data, origem);
@@ -1595,7 +1617,7 @@ class PaginaRequisicaoEditar extends Pagina {
 		console.info('Mensagem recebida', evt);
 		if (evt.origin.match(/^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br$/)) {
 			const data = JSON.parse(evt.data);
-			if (data.acao === Acoes.PREPARAR_INTIMACAO) {
+			if (data.acao === Acoes.PREPARAR_INTIMACAO_ANTIGA) {
 				if (data.requisicao === this.numero) {
 					this.confirmarRecebimentoOrdem(evt.source, evt.origin);
 					this.prepararIntimacao();
@@ -1618,7 +1640,7 @@ class PaginaRequisicaoEditar extends Pagina {
 	}
 }
 
-class PaginaRequisicaoPreparada extends Pagina {
+class PaginaRequisicaoAntigaPreparada extends Pagina {
 
 	adicionarAlteracoes() {
 		const win = this.doc.defaultView;
@@ -1643,7 +1665,7 @@ class PaginaRequisicaoPreparada extends Pagina {
 
 	informarRequisicaoPreparada(requisicao) {
 		const data = {
-			acao: Acoes.REQUISICAO_PREPARADA,
+			acao: Acoes.REQUISICAO_ANTIGA_PREPARADA,
 			requisicao: requisicao
 		};
 		const win = this.doc.defaultView;
@@ -1667,7 +1689,7 @@ class PaginaRequisicaoPreparada extends Pagina {
 		console.info('Mensagem recebida', evt);
 		if (evt.origin.match(/^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br$/)) {
 			const data = JSON.parse(evt.data);
-			if (data.acao === Acoes.PREPARAR_INTIMACAO) {
+			if (data.acao === Acoes.PREPARAR_INTIMACAO_ANTIGA) {
 				if (data.requisicao === this.numero) {
 					this.confirmarRecebimentoOrdem(evt.source, evt.origin);
 					this.prepararIntimacao();
@@ -1702,6 +1724,20 @@ class Requisicao {
 }
 
 class Utils {
+	static css(obj) {
+		return Array.from(Object.keys(obj)).map(selector => {
+			const rules = obj[selector];
+			return [
+				`${selector} {`,
+				Array.from(Object.keys(rules)).map(property => {
+					const value = rules[property];
+					return `\t${property}: ${value};`;
+				}).join('\n'),
+				`}`
+			].join('\n');
+		}).join('\n');
+	}
+
 	static round(num, digits = 0) {
 		const exp = Math.pow(10, digits);
 		return Math.round(num * exp) / exp;
