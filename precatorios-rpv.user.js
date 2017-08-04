@@ -148,7 +148,7 @@ class Conversor {
 class ConversorAno extends Conversor {
 	static analisar(texto) {
 		let [y] = texto.match(/^(\d\d\d\d)$/).slice(1);
-		return new Date(parseInt(y), 0, 1);
+		return new Date(Utils.parseDecimalInt(y), 0, 1);
 	}
 
 	static converter(valor) {
@@ -169,7 +169,7 @@ class ConversorBool extends Conversor {
 class ConversorData extends Conversor {
 	static analisar(texto) {
 		let [d, m, y] = texto.match(/^(\d\d)\/(\d\d)\/(\d\d\d\d)$/).slice(1);
-		return new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+		return new Date(Utils.parseDecimalInt(y), Utils.parseDecimalInt(m) - 1, Utils.parseDecimalInt(d));
 	}
 
 	static converter(valor) {
@@ -180,7 +180,7 @@ class ConversorData extends Conversor {
 class ConversorDataHora extends Conversor {
 	static analisar(texto) {
 		let [d, m, y, h, i, s] = texto.match(/^(\d\d)\/(\d\d)\/(\d\d\d\d) (\d\d):(\d\d):(\d\d)$/).slice(1);
-		return new Date(parseInt(y), parseInt(m) - 1, parseInt(d), parseInt(h), parseInt(i), parseInt(s));
+		return new Date(Utils.parseDecimalInt(y), Utils.parseDecimalInt(m) - 1, Utils.parseDecimalInt(d), Utils.parseDecimalInt(h), Utils.parseDecimalInt(i), Utils.parseDecimalInt(s));
 	}
 
 	static converter(valor) {
@@ -190,7 +190,7 @@ class ConversorDataHora extends Conversor {
 
 class ConversorInt extends Conversor {
 	static analisar(texto) {
-		return parseInt(texto);
+		return Utils.parseDecimalInt('0' + texto);
 	}
 
 	static converter(valor) {
@@ -201,7 +201,7 @@ class ConversorInt extends Conversor {
 class ConversorMesAno extends Conversor {
 	static analisar(texto) {
 		let [m, y] = texto.match(/^(\d\d)\/(\d\d\d\d)$/).slice(1);
-		return new Date(parseInt(y), parseInt(m) - 1, 1);
+		return new Date(Utils.parseDecimalInt(y), Utils.parseDecimalInt(m) - 1, 1);
 	}
 
 	static converter(valor) {
@@ -240,6 +240,11 @@ class ConversorValores extends Conversor {
 }
 
 class Padrao {
+	/**
+	 * 
+	 * @param {RegExp} re 
+	 * @param {string} props 
+	 */
 	constructor(re, ...props) {
 		this.regularExpression = re;
 		this.properties = props;
@@ -332,7 +337,7 @@ class PaginaListar extends Pagina {
 		return linhas.map(linha => {
 			const requisicao = new Requisicao();
 			requisicao.linha = linha;
-			requisicao.numero = parseInt(linha.cells[0].textContent.trim());
+			requisicao.numero = Utils.parseDecimalInt(linha.cells[0].textContent.trim());
 			requisicao.status = linha.cells[1].textContent.trim();
 			const links = Array.from(linha.cells[2].querySelectorAll('a[href]'));
 			links.filter(link => link.href.match(/&numRequis=\d+$/)).forEach(link => {
@@ -522,10 +527,10 @@ class PaginaProcesso extends Pagina {
 			const eventosDecisoesTerminativas = linhasEventos.filter(linha => linha.cells[3].textContent.match(reDecisoesTerminativas));
 			if (eventosDecisoesTerminativas.length > 0) {
 				const eventoDecisaoTerminativa = eventosDecisoesTerminativas[0];
-				const numeroEventoDecisaoTerminativa = parseInt(eventoDecisaoTerminativa.cells[1].textContent);
+				const numeroEventoDecisaoTerminativa = Utils.parseDecimalInt(eventoDecisaoTerminativa.cells[1].textContent);
 				const reReferenteDecisao = new RegExp('^Intimação Eletrônica - Expedida/Certificada - Julgamento|Refer\\. ao Evento: ' + numeroEventoDecisaoTerminativa.toString() + '(\\D|$)');
 				const eventosIntimacao = linhasEventos.filter(linha => {
-					if (parseInt(linha.cells[1].textContent) <= numeroEventoDecisaoTerminativa) return false;
+					if (Utils.parseDecimalInt(linha.cells[1].textContent) <= numeroEventoDecisaoTerminativa) return false;
 					if (! linha.cells[3].textContent.match(reReferenteDecisao)) return false;
 					const parte = linha.cells[3].querySelector('.infraEventoPrazoParte');
 					if (! parte) return false;
@@ -551,14 +556,14 @@ class PaginaProcesso extends Pagina {
 						const informacaoEvento = textos[indice + 2];
 						const [numeroEvento, descricaoEvento] = informacaoEvento.match(/^(\d+) - (.+)$/).slice(1);
 						return {
-							numero: parseInt(numeroEvento),
+							numero: Utils.parseDecimalInt(numeroEvento),
 							data: informacaoDataHora,
 							descricao: descricaoEvento
 						};
 					}).filter(informacao => informacao !== null);
 					if (informacoesFechamentoIntimacoes.length > 0) {
 						const fechamentoMaisRecente = informacoesFechamentoIntimacoes.reduce((anterior, atual) => anterior.numero > atual.numero ? anterior : atual);
-						const [eventoFechamentoMaisRecente] = linhasEventos.filter(linha => parseInt(linha.cells[1].textContent) === fechamentoMaisRecente.numero);
+						const [eventoFechamentoMaisRecente] = linhasEventos.filter(linha => Utils.parseDecimalInt(linha.cells[1].textContent) === fechamentoMaisRecente.numero);
 						eventoFechamentoMaisRecente.classList.add('gmEventoDestacado');
 						if (fechamentoMaisRecente.descricao.match(reDecurso)) {
 							dadosTransito.dataDecurso = fechamentoMaisRecente.data;
@@ -660,7 +665,7 @@ class PaginaProcesso extends Pagina {
 		this.informacoesAdicionais.parentElement.insertBefore(botao, this.informacoesAdicionais.nextSibling);
 		this.informacoesAdicionais.parentElement.insertBefore(this.doc.createElement('br'), botao);
 		this.informacoesAdicionais.parentElement.insertBefore(this.doc.createElement('br'), botao.nextSibling);
-		const ultimoEvento = parseInt(this.tabelaEventos.tBodies[0].rows[0].cells[1].textContent.trim());
+		const ultimoEvento = Utils.parseDecimalInt(this.tabelaEventos.tBodies[0].rows[0].cells[1].textContent.trim());
 		if (ultimoEvento > 100) {
 			botao.insertAdjacentHTML('afterend', ` <div style="display: inline-block;"><span class="gmTextoDestacado">Processo possui mais de 100 eventos.</span> &mdash; <a href="#" onclick="event.preventDefault(); event.stopPropagation(); this.parentElement.style.display = 'none'; carregarTodasPaginas(); return false;">Carregar todos os eventos</a></div>`);
 		}
@@ -687,7 +692,7 @@ class PaginaProcesso extends Pagina {
 			}
 			if (linksDocumentos.length > 0) {
 				let dadosEvento = {
-					evento: parseInt(linha.cells[1].textContent),
+					evento: Utils.parseDecimalInt(linha.cells[1].textContent),
 					data: ConversorDataHora.analisar(linha.cells[2].textContent),
 					descricao: linha.cells[3].querySelector('label.infraEventoDescricao').textContent,
 					documentos: []
@@ -696,7 +701,7 @@ class PaginaProcesso extends Pagina {
 				linksDocumentos.forEach(link => {
 					let [nome, tipo, ordem] = link.textContent.match(/^(.*?)(\d+)$/);
 					dadosEvento.documentos.push({
-						ordem: parseInt(ordem),
+						ordem: Utils.parseDecimalInt(ordem),
 						nome: nome,
 						tipo: tipo
 					});
@@ -841,6 +846,10 @@ class PaginaProcesso extends Pagina {
 					this.enviarRespostaJanelaAberta(evt.source, evt.origin);
 				} else if (data.acao === Acoes.ABRIR_REQUISICAO_ANTIGA) {
 					this.abrirJanelaRequisicao(data.requisicao.urlConsultarAntiga, data.requisicao.numero);
+				} else if (data.acao === Acoes.ABRIR_DOCUMENTO) {
+					this.abrirDocumento(data.evento, data.documento);
+				} else if (data.acao === Acoes.BUSCAR_DADOS) {
+					this.enviarDadosProcesso(evt.source, evt.origin);
 				}
 			}
 		}
@@ -970,7 +979,7 @@ class PaginaRequisicaoAntiga extends Pagina {
 		const requisicao = new Requisicao();
 
 		const linkEditar = this.doc.querySelector('a[href^="frm_requisicao_jf.php?num_requis="]');
-		requisicao.numero = parseInt(linkEditar.textContent.trim());
+		requisicao.numero = Utils.parseDecimalInt(linkEditar.textContent.trim());
 		requisicao.urlEditarAntiga = linkEditar.href;
 
 		const areaDados = this.doc.getElementById('divInfraAreaDadosDinamica');
@@ -1334,7 +1343,7 @@ class PaginaRequisicaoAntiga extends Pagina {
 				`<td><table><tbody>`,
 			].join('\n');
 			evento.documentos.forEach(documento => {
-				tabela += `<tr><td><a id="gm-documento-ev${evento.evento}-doc${documento.ordem}" data-evento="${evento.evento}" data-documento="${documento.ordem}" href="#">${documento.nome}</a></td></tr>`;
+				tabela += `<tr><td><a class="infraLinkDocumento" id="gm-documento-ev${evento.evento}-doc${documento.ordem}" data-evento="${evento.evento}" data-documento="${documento.ordem}" href="#">${documento.nome}</a></td></tr>`;
 			});
 			tabela += [
 				`</tbody></table></td>`,
@@ -1563,14 +1572,473 @@ class PaginaRequisicaoAntiga extends Pagina {
 	}
 }
 
-class PaginaRequisicao extends PaginaRequisicaoAntiga {}
+class PaginaRequisicao extends Pagina {
+
+	get requisicao() {
+		if (! this._requisicao) {
+			this._requisicao = this.analisarDadosRequisicao();
+		}
+		return this._requisicao;
+	}
+
+	adicionarAlteracoes() {
+		const style = this.doc.createElement('style');
+		style.innerHTML = Utils.css({
+			"table a": {
+				"font-size": "1em"
+			},
+			".gm-requisicao__tabela tr::before": {
+				"content": "''",
+				"font-size": "1.2em",
+				"font-weight": "bold",
+			},
+			".gm-resposta": {},
+			"p.gm-resposta": {
+				"font-size": "1.2em",
+				"margin": "1em 0 0",
+			},
+			".gm-resposta--correta": {
+				"color": "green",
+			},
+			".gm-resposta--incorreta": {
+				"color": "red",
+			},
+			".gm-resposta--indefinida": {
+				"color": "#e70",
+			},
+			".gm-requisicao__tabela .gm-resposta--correta::before": {
+				"content": "'✓'",
+				"color": "green",
+			},
+			".gm-requisicao__tabela .gm-resposta--incorreta::before": {
+				"content": "'✗'",
+				"color": "red",
+			},
+			".gm-requisicao__tabela .gm-resposta--indefinida::before": {
+				"content": "'?'",
+				"color": "#e70",
+			},
+			"p.gm-dados-adicionais": {
+				"margin-top": "0",
+				"margin-left": "2ex",
+			},
+			".gm-botoes": {
+				"margin": "4em 0",
+				"display": "flex",
+				"justify-content": "space-around",
+			}
+		});
+		this.doc.querySelector('head').appendChild(style);
+		const win = this.doc.defaultView;
+		win.addEventListener('message', this.onMensagemRecebida.bind(this));
+		// this.linkEditar.addEventListener('click', this.onLinkEditarClicado.bind(this));
+		this.enviarSolicitacaoDados(win.opener);
+	}
+
+	adicionarAreaDocumentosProcesso() {
+		const areaTabela = this.doc.getElementById('divInfraAreaTabela');
+		areaTabela.insertAdjacentHTML('beforeend', '<div class="gm-documentos"></div>');
+	}
+
+	adicionarBotoesPreparar() {
+		// return PaginaRequisicaoAntiga.prototype.adicionarBotoesPreparar.call(this);
+	}
+
+	analisarDadosProcesso(dadosProcesso) {
+		console.log('Dados do processo:', dadosProcesso);
+		this.validarDadosProcesso(dadosProcesso);
+		this.exibirDocumentosProcesso(dadosProcesso);
+	}
+
+	analisarDadosRequisicao() {
+		const analisador = new AnalisadorLinhasTabela(
+			new Padrao(/^<span class="titBold">Status:<\/span> (.*?)$/, 'status'),
+			new Padrao(/^<span class="titBold">Total Requisitado \(R\$\):<\/span> (.*)$/, 'valorTotalRequisitado'),
+			new Padrao(/^<span class="titBold">Assunto Judicial:<\/span> (\d+)\s+- (.*)\s*$/, 'codigoAssunto', 'assunto'),
+			new Padrao(/^<span class="titBold">Data do trânsito em julgado do processo de conhecimento:<\/span> (\d\d\/\d\d\/\d\d\d\d)$/, 'dataTransito'),
+			new Padrao(/^<span class="titBold">Data do trânsito em julgado da sentença ou acórdão\(JEF\):<\/span> (\d\d\/\d\d\/\d\d\d\d)$/, 'dataTransito')
+		);
+		analisador.definirConversores({
+			dataHora: ConversorDataHora,
+			valorTotalRequisitado: ConversorMoeda,
+			naturezaTributaria: ConversorBool,
+			dataTransito: ConversorData
+		});
+		analisador.prefixo = 'gm-requisicao__dados';
+
+		const requisicao = new Requisicao();
+
+		const titulo = this.doc.querySelector('.titReq').textContent.trim();
+		const numero = titulo.match(/^Requisição Nº: (\d+)$/)[1];
+		requisicao.numero = Utils.parseDecimalInt(numero);
+		// requisicao.urlEditarAntiga = linkEditar.href;
+
+		const tabela = this.doc.querySelector('#divInfraAreaTabela > table:nth-child(2)');
+		tabela.classList.add('gm-requisicao__tabela');
+		analisador.analisarInto(tabela, requisicao);
+
+		let elementoAtual = tabela.nextElementSibling;
+		let modo = null;
+		let ordinal = 0;
+		while (elementoAtual) {
+			switch (elementoAtual.tagName.toLowerCase()) {
+				case 'table':
+					if (elementoAtual.textContent.trim() === 'Beneficiários') {
+						modo = 'Beneficiários';
+						ordinal = 0;
+					} else if (elementoAtual.textContent.trim() === 'Honorários') {
+						modo = 'Honorários';
+						ordinal = 0;
+					} else if (modo === 'Beneficiários') {
+						requisicao.beneficiarios.push(this.analisarTabelaBeneficiarios(elementoAtual, ordinal++));
+					} else if (modo === 'Honorários') {
+						requisicao.honorarios.push(this.analisarTabelaHonorarios(elementoAtual, ordinal++));
+					} else {
+						console.error('Tabela não analisada!', elementoAtual);
+						throw new Error('Tabela não analisada!');
+					}
+					break;
+			}
+			elementoAtual = elementoAtual.nextElementSibling;
+		}
+
+		return requisicao;
+	}
+
+	/**
+	 * Analisa uma tabela para extrair os elementos necessários
+	 * @param {HTMLTableElement} tabela Tabela a ser analisada
+	 * @param {string} prefixo Prefixo para as classes CSS a serem incluídas nos elementos
+	 */
+	analisarTabela(tabela, prefixo) {
+		tabela.classList.add('gm-requisicao__tabela');
+		const analisador = new AnalisadorLinhasTabela(
+			new Padrao(/^<span class="titBoldUnder">(.+) \(([\d./-]+)\)<\/span>$/, 'nome', 'cpfCnpj'),
+			new Padrao(/^<span class="titBold">Espécie:<\/span> (.*)$/, 'especie'),
+			new Padrao(/^<span class="titBold">Tipo Honorário<\/span> (.+)$/, 'tipoHonorario'),
+			new Padrao(/^<span class="titBold">Data Base:<\/span> (\d\d\/\d\d\d\d)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Requisitado \(Principal Corrigido \+ Juros\):<\/span> ([\d.,]+ \([\d.,]+ \+ [\d.,]+\))$/, 'dataBase', 'valor'),
+			new Padrao(/^<span class="titBold">(VALOR LIBERADO)<\/span>$/, 'bloqueado'),
+			new Padrao(/^<span class="titBold">Tipo de Despesa:<\/span> (?:.*) \((\d+)\)$/, 'codigoTipoDespesa'),
+			new Padrao(/^<span class="titBold">Doença Grave:<\/span> (Sim|Não)?&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Renuncia Valor:<\/span> (Sim|Não)$/, 'doencaGrave', 'renunciaValor'),
+			new Padrao(/^<span class="titBold">IRPF- RRA a deduzir:<\/span> (Sim|Não)$/, 'irpf'),
+			new Padrao(/^<span class="titBold">Ano Exercicio Corrente:<\/span> (\d\d\d\d)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Meses Exercicio Corrente:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Corrente:<\/span> ([\d.,]+)$/, 'anoCorrente', 'mesesCorrente', 'valorCorrente'),
+			new Padrao(/^<span class="titBold">Meses Exercicio Anterior:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Anterior:<\/span> ([\d.,]+)$/, 'mesesAnterior', 'valorAnterior')
+		);
+		analisador.definirConversores({
+			dataBase: ConversorMesAno,
+			valor: ConversorValores,
+			bloqueado: class extends Conversor {
+				static analisar(texto) { return texto !== 'VALOR LIBERADO'; }
+				static converter(valor) { return valor ? '???' : 'VALOR LIBERADO'; }
+			},
+			doencaGrave: ConversorBool,
+			renunciaValor: ConversorBool,
+			irpf: ConversorBool,
+			anoCorrente: ConversorAno,
+			mesesCorrente: ConversorInt,
+			valorCorrente: ConversorMoeda,
+			mesesAnterior: ConversorInt,
+			valorAnterior: ConversorMoeda
+		});
+		analisador.prefixo = prefixo;
+
+		return analisador.analisar(tabela);
+	}
+
+	/**
+	 * @param {HTMLTableElement} tabela Tabela a analisar
+	 * @returns {Object[]} Coleção de dados de beneficiários
+	 */
+	analisarTabelaBeneficiarios(tabela, ordinal) {
+		tabela.classList.add('gm-requisicao__beneficiarios__tabela');
+		return this.analisarTabela(tabela, `gm-requisicao__beneficiario--${ordinal}`);
+	}
+
+	analisarTabelaHonorarios(tabela, ordinal) {
+		tabela.classList.add('gm-requisicao__honorarios__tabela');
+		return this.analisarTabela(tabela, `gm-requisicao__honorario--${ordinal}`);
+	}
+
+	enviarSolicitacao(janela, data) {
+		janela.postMessage(JSON.stringify(data), this.doc.location.origin);
+	}
+
+	enviarSolicitacaoAberturaDocumento(janela, evento, documento) {
+		return PaginaRequisicaoAntiga.prototype.enviarSolicitacaoAberturaDocumento.call(this, janela, evento, documento);
+	}
+
+	enviarSolicitacaoDados(janela) {
+		const data = {
+			acao: Acoes.BUSCAR_DADOS
+		};
+		return this.enviarSolicitacao(janela, data);
+	}
+
+	exibirDocumentosProcesso(dadosProcesso) {
+		return PaginaRequisicaoAntiga.prototype.exibirDocumentosProcesso.call(this, dadosProcesso);
+	}
+
+	exibirValoresCalculados() {
+		const requisicao = this.requisicao;
+		const areaTabela = this.doc.getElementById('divInfraAreaTabela');
+		areaTabela.insertAdjacentHTML('beforeend', '<br><br><table width="100%"><tbody><tr><td><span class="titSecao">Conferência dos cálculos</span></td></tr></tbody></table>');
+
+		requisicao.beneficiarios.forEach(beneficiario => {
+			const nome = beneficiario.nome;
+			let principal = beneficiario.valor.principal,
+				juros = beneficiario.valor.juros,
+				total = beneficiario.valor.total;
+			const honorarios = requisicao.honorarios
+				.filter(honorario => honorario.tipoHonorario === 'Honorários Contratuais')
+				.filter(honorario => honorario.beneficiario.cpfCnpj === beneficiario.cpfCnpj);
+			honorarios.forEach(honorario => {
+				principal += honorario.valor.principal;
+				juros += honorario.valor.juros;
+				total += honorario.valor.total;
+			});
+			let porcentagemAdvogado = 1 - beneficiario.valor.total / total;
+			let porcentagemArredondada = Utils.round(porcentagemAdvogado * 100, 0);
+			let calculoAdvogado = Utils.round(total * porcentagemArredondada / 100, 2);
+			let pagoAdvogado = Utils.round(total - beneficiario.valor.total, 2);
+			let diferenca = pagoAdvogado - calculoAdvogado;
+			if (Math.abs(diferenca) > 0.01) {
+				porcentagemArredondada = porcentagemAdvogado * 100;
+			}
+			[principal, juros, total] = [principal, juros, total].map(valor => ConversorMoeda.converter(valor));
+			areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta">${nome} &mdash; <span class="gm-resposta--indefinida">${principal}</span> + <span class="gm-resposta--indefinida">${juros}</span> = <span class="gm-resposta--indefinida">${total}</span> em <span class="gm-resposta--indefinida">${ConversorMesAno.converter(beneficiario.dataBase)}</span></p>`);
+			if (beneficiario.irpf) {
+				// if (beneficiario.irpf.anterior) {
+				let mesesAnterior = beneficiario.mesesAnterior;
+				let valorAnterior = beneficiario.valorAnterior;
+				if (porcentagemAdvogado > 0) {
+					valorAnterior = valorAnterior / (1 - porcentagemAdvogado);
+				}
+				areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">IRPF &mdash; Exercício Anterior &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(mesesAnterior)} ${mesesAnterior > 1 ? 'meses' : 'mês'}</span> &mdash; <span class="gm-resposta--indefinida">${ConversorMoeda.converter(valorAnterior)}</span></p>`);
+				// }
+				// if (beneficiario.irpf.corrente) {
+				let mesesCorrente = beneficiario.mesesCorrente;
+				let valorCorrente = beneficiario.valorCorrente;
+				if (porcentagemAdvogado > 0) {
+					valorCorrente = valorCorrente / (1 - porcentagemAdvogado);
+				}
+				areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">IRPF &mdash; Exercício Corrente (<span class="gm-resposta--indefinida">${ConversorAno.converter(beneficiario.anoCorrente)}</span>) &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(mesesCorrente)} ${mesesCorrente > 1 ? 'meses' : 'mês'}</span> &mdash; <span class="gm-resposta--indefinida">${ConversorMoeda.converter(valorCorrente)}</span></p>`);
+				// }
+			}
+			if (beneficiario.pss) {
+				if (beneficiario.pss.semIncidencia) {
+					areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais"><span class="gm-resposta--indefinida">SEM</span> incidência de PSS</p>`);
+				} else {
+					areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais"><span class="gm-resposta--indefinida">COM</span> incidência de PSS</p>`);
+					if (beneficiario.irpf) {
+						areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais"><span class="gm-resposta--incorreta">Verificar se é caso de deduzir PSS da base de cálculo do IRPF</span></p>`);
+					}
+				}
+			}
+			if (porcentagemAdvogado > 0) {
+				areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">Honorários Contratuais &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(porcentagemArredondada)}%</span></p>`);
+			}
+		});
+
+		requisicao.honorarios.filter(honorario => honorario.tipoHonorario !== 'Honorários Contratuais').forEach(honorario => {
+			areaTabela.insertAdjacentHTML('beforeend', [
+				`<p class="gm-resposta">${honorario.nome}</p>`,
+				`<p class="gm-resposta gm-dados-adicionais"><span class="gm-resposta--indefinida">${honorario.tipoHonorario}</span> &mdash; <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valor.principal)}</span> + <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valor.juros)}</span> = <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valor.total)}</span> em <span class="gm-resposta--indefinida">${ConversorMesAno.converter(honorario.dataBase)}</span></p>`
+			].join('\n'));
+		});
+	}
+
+	onLinkDocumentoClicado(evt) {
+		return PaginaRequisicaoAntiga.prototype.onLinkDocumentoClicado.call(this, evt);
+	}
+
+	onMensagemRecebida(evt) {
+		console.info('Mensagem recebida', evt);
+		if (evt.origin === this.doc.location.origin) {
+			const data = JSON.parse(evt.data);
+			if (data.acao === Acoes.RESPOSTA_DADOS) {
+				console.log('Dados da requisicação:', this.requisicao);
+				this.validarDadosRequisicao();
+				this.exibirValoresCalculados();
+				this.adicionarAreaDocumentosProcesso();
+				this.adicionarBotoesPreparar();
+				this.analisarDadosProcesso(data.dados);
+			}
+		}
+	}
+
+	validarDadosProcesso(dadosProcesso) {
+		const requisicao = this.requisicao;
+
+		// Conferir data de trânsito em julgado
+		let dataTransito = ConversorData.converter(new Date(dadosProcesso.transito.data || 0));
+		let dataEvento = ConversorData.converter(new Date(dadosProcesso.transito.dataEvento || 0));
+		let dataDecurso = ConversorData.converter(new Date(dadosProcesso.transito.dataDecurso || 0));
+		let dataFechamento = ConversorData.converter(new Date(dadosProcesso.transito.dataFechamento || 0));
+		let dataTransitoRequisicao = ConversorData.converter(requisicao.dataTransito);
+		let isTrue = dataTransito === dataTransitoRequisicao || dataDecurso === dataTransitoRequisicao;
+		let isUndefined = dataEvento === dataTransitoRequisicao || dataFechamento === dataTransitoRequisicao;
+		this.validarElemento('.gm-requisicao__dados__dataTransito', isTrue || isUndefined && undefined);
+
+		// Conferir se beneficiário é autor da ação
+		requisicao.beneficiarios.forEach((beneficiario, ordinal) => {
+			const prefixo = `gm-requisicao__beneficiario--${ordinal}`;
+			const autoresMesmoCPF = dadosProcesso.autores.filter(autor => autor.cpfCnpj === beneficiario.cpfCnpj.replace(/[./-]/g, ''));
+			// const autoresMesmoCPFeNome = autoresMesmoCPF.filter(autor => autor.nome.toUpperCase() === beneficiario.nome.toUpperCase());
+			this.validarElemento(`.${prefixo}__cpfCnpj`, autoresMesmoCPF.length === 1);
+			// this.validarElemento(`.${prefixo}__nome`, autoresMesmoCPFeNome.length === 1);
+		});
+
+		// Conferir se advogados representam autores da ação
+		const advogados = dadosProcesso.autores.reduce((set, autor) => {
+			autor.advogados.forEach(advogado => set.add(advogado.toUpperCase()));
+			return set;
+		}, new Set());
+		requisicao.honorarios.forEach((honorario, ordinal) => {
+			const prefixo = `gm-requisicao__honorario--${ordinal}`;
+			if (honorario.tipoHonorario === 'Honorários Contratuais') {
+				// const autor = dadosProcesso.autores.find(autor => autor.cpfCnpj === honorario.beneficiario.cpfCnpj);
+				// if (autor) {
+				// 	const advogadosAutorMesmoNome = autor.advogados.filter(advogado => advogado.toUpperCase() === honorario.nome.toUpperCase());
+				// 	this.validarElemento(`.${prefixo}__nome`, advogadosAutorMesmoNome.length === 1);
+				// } else {
+				// 	this.validarElemento(`.${prefixo}__nome`, false);
+				// }
+			} else if (honorario.tipoHonorario === 'Honorários de Sucumbência') {
+				this.validarElemento(`.${prefixo}__nome`, advogados.has(honorario.nome.toUpperCase()));
+			} else {
+				this.validarElemento(`.${prefixo}__tipoHonorario`, undefined);
+			}
+		});
+	}
+
+	validarDadosRequisicao() {
+		const requisicao = this.requisicao;
+
+		// Status da requisição deve ser "Finalizada"
+		this.validarElemento('.gm-requisicao__dados__status', requisicao.status === 'Finalizada');
+
+		// 11.NATUREZA ALIMENTÍCIA - Salários, vencimentos, proventos, pensões e suas complementações
+		// 12.NATUREZA ALIMENTÍCIA - Benefícios previdenciários e indenizações por morte ou invalidez
+		// 21.NATUREZA NÃO ALIMENTÍCIA
+		// 31.DESAPROPRIAÇÕES - Único imóvel residencial do credor
+		// 39.DESAPROPRIAÇÕES - Demais
+		const ehPrevidenciario = requisicao.codigoAssunto.match(/^04/) !== null;
+		const ehServidor = requisicao.codigoAssunto.match(/^011[012]/) !== null;
+		const ehDesapropriacao = requisicao.codigoAssunto.match(/^0106/) !== null;
+		let codigoNaturezaCorreto = undefined;
+
+		// Conferir valor total requisitado
+		let total = 0;
+
+		requisicao.beneficiarios.forEach((beneficiario, ordinal) => {
+			const prefixo = `gm-requisicao__beneficiario--${ordinal}`;
+			total += beneficiario.valor.total;
+
+			// Destacar campos que requerem atenção
+			if (beneficiario.especie.match(/^RPV/) !== null) {
+				this.validarElemento(`.${prefixo}__renunciaValor`, undefined);
+			}
+			this.validarElemento(`.${prefixo}__bloqueado`, undefined);
+
+			switch (beneficiario.codigoTipoDespesa) {
+				case '11':
+					codigoNaturezaCorreto = ehServidor;
+					break;
+
+				case '12':
+					codigoNaturezaCorreto = ehPrevidenciario;
+					break;
+
+				case '31':
+				case '39':
+					codigoNaturezaCorreto = ehDesapropriacao;
+					break;
+			}
+			this.validarElemento(`.${prefixo}__codigoTipoDespesa`, codigoNaturezaCorreto);
+
+			// Conferir se valor do IRPF corresponde à quantia que o beneficiário irá receber
+			if (beneficiario.irpf) {
+				let irpf = 0;
+				if (beneficiario.valorAnterior) {
+					irpf += beneficiario.valorAnterior;
+				}
+				if (beneficiario.valorCorrente) {
+					irpf += beneficiario.valorCorrente;
+				}
+				const valorIRPFConfere = Utils.round(irpf, 2) === beneficiario.valor.total;
+				this.validarElemento(`.${prefixo}__valorCorrente`, valorIRPFConfere);
+				this.validarElemento(`.${prefixo}__valorAnterior`, valorIRPFConfere);
+			}
+
+			// Conferir se os honorários destacados estão na requisição
+			// let honorarios = requisicao.honorarios
+			// 	.filter(honorario => honorario.tipo === 'Honorários Contratuais')
+			// 	.filter(honorario => honorario.beneficiario.cpfCnpj === beneficiario.cpfCnpj);
+			// if (beneficiario.honorariosDestacados) {
+			// 	this.validarElemento(`.${prefixo}__honorariosDestacados`, honorarios.length >= 1);
+			// } else {
+			// 	this.validarElemento(`.${prefixo}__honorariosDestacados`, honorarios.length === 0);
+			// }
+		});
+
+		requisicao.honorarios.forEach((honorario, ordinal) => {
+			const prefixo = `gm-requisicao__honorario--${ordinal}`;
+			total += honorario.valor.total;
+
+			// Destacar campos que requerem atenção
+			if (honorario.especie.match(/^RPV/) !== null) {
+				this.validarElemento(`.${prefixo}__renunciaValor`, undefined);
+			}
+			this.validarElemento(`.${prefixo}__bloqueado`, undefined);
+
+			switch (honorario.codigoTipoDespesa) {
+				case '11':
+					codigoNaturezaCorreto = ehServidor;
+					break;
+
+				case '12':
+					codigoNaturezaCorreto = ehPrevidenciario;
+					break;
+
+				case '31':
+				case '39':
+					codigoNaturezaCorreto = ehDesapropriacao;
+					break;
+			}
+			this.validarElemento(`.${prefixo}__codigoTipoDespesa`, codigoNaturezaCorreto);
+
+			if (honorario.tipoHonorario === 'Honorários Contratuais') {
+				// Conferir se os dados do contratante estão corretos
+				let beneficiarios = requisicao.beneficiarios
+					.filter(beneficiario => beneficiario.cpfCnpj === honorario.beneficiario.cpfCnpj);
+				this.validarElemento(`.${prefixo}__beneficiario`, beneficiarios.length === 1);
+
+				if (beneficiarios.length === 1) {
+					let beneficiario = beneficiarios[0];
+					// Conferir se houve destaque de honorários
+					this.validarElemento(`.${prefixo}__tipo`, beneficiario.honorariosDestacados);
+					// Conferir se data-base dos honorários contratuais é a mesma do valor principal
+					this.validarElemento(`.${prefixo}__dataBase`, beneficiario.dataBase.getTime() === honorario.dataBase.getTime());
+					// Conferir se razão entre principal e juros dos honorários contratuais é a mesma do valor do beneficiário
+					this.validarElemento(`.${prefixo}__valor`, Math.abs(beneficiario.valor.juros / beneficiario.valor.principal - honorario.valor.juros / honorario.valor.principal) <= 0.0001);
+					// Conferir se razão entre total e atualizado dos honorários contratuais é a mesma do valor do beneficiário
+					this.validarElemento(`.${prefixo}__valorAtualizado`, Math.abs(beneficiario.valorAtualizado.total / beneficiario.valorTotal.total - honorario.valorAtualizado.total / honorario.valorTotal.total) < 0.0001);
+				}
+			} else if (honorario.tipoHonorario === 'Honorários de Sucumbência') {
+				// Destacar tipo
+				this.validarElemento(`.${prefixo}__tipoHonorario`, undefined);
+			}
+		});
+		this.validarElemento('.gm-requisicao__dados__valorTotalRequisitado', requisicao.valorTotalRequisitado === Utils.round(total, 2));
+	}
+}
 
 class PaginaRequisicaoAntigaEditar extends Pagina {
 
 	get numero() {
 		const [str] = this.doc.location.search.split(/^\?/).slice(1);
 		const parametros = new Map(str.split('&').map(par => par.split('=').map(texto => decodeURIComponent(texto))));
-		return parseInt(parametros.get('num_requis'));
+		return Utils.parseDecimalInt(parametros.get('num_requis'));
 	}
 
 	adicionarAlteracoes() {
@@ -1654,7 +2122,7 @@ class PaginaRequisicaoAntigaPreparada extends Pagina {
 		const textos = Array.from(areaTabela.querySelectorAll('.infraText'))
 			.map(texto => texto.textContent.trim())
 			.filter(texto => rePreparada.test(texto));
-		const preparadas = textos.map(texto => parseInt(texto.match(rePreparada)[1]));
+		const preparadas = textos.map(texto => Utils.parseDecimalInt(texto.match(rePreparada)[1]));
 		if (preparadas.length !== 1) {
 			console.error('Número de requisições preparadas para intimação não corresponde ao esperado!', preparadas);
 			throw new Error('Número de requisições preparadas para intimação não corresponde ao esperado!');
@@ -1736,6 +2204,10 @@ class Utils {
 				`}`
 			].join('\n');
 		}).join('\n');
+	}
+
+	static parseDecimalInt(texto) {
+		return parseInt(texto, 10);
 	}
 
 	static round(num, digits = 0) {
