@@ -16,7 +16,7 @@ const SALARIO_MINIMO = 937;
 
 const Acoes = {
 	ABRIR_DOCUMENTO: 'abrirDocumento',
-	ABRIR_REQUISICAO_ANTIGA: 'abrirRequisicaoAntiga',
+	ABRIR_REQUISICAO: 'abrirRequisicao',
 	BUSCAR_DADOS: 'buscarDados',
 	EDITAR_REQUISICAO_ANTIGA: 'editarRequisicaoAntiga',
 	ORDEM_CONFIRMADA: 'ordemConfirmada',
@@ -378,7 +378,7 @@ class PaginaListar extends Pagina {
 
 	solicitarAberturaRequisicao(janela, requisicao) {
 		const data = {
-			acao: Acoes.ABRIR_REQUISICAO_ANTIGA,
+			acao: Acoes.ABRIR_REQUISICAO,
 			requisicao: requisicao
 		};
 		janela.postMessage(JSON.stringify(data), this.doc.location.origin);
@@ -844,8 +844,13 @@ class PaginaProcesso extends Pagina {
 			} else if (evt.origin === this.doc.location.origin) {
 				if (data.acao === Acoes.VERIFICAR_JANELA) {
 					this.enviarRespostaJanelaAberta(evt.source, evt.origin);
-				} else if (data.acao === Acoes.ABRIR_REQUISICAO_ANTIGA) {
-					this.abrirJanelaRequisicao(data.requisicao.urlConsultarAntiga, data.requisicao.numero);
+				} else if (data.acao === Acoes.ABRIR_REQUISICAO) {
+					console.log('Pediram-me para abrir uma requisicao', data.requisicao);
+					if (data.requisicao.tipo === 'antiga') {
+						this.abrirJanelaRequisicao(data.requisicao.urlConsultarAntiga, data.requisicao.numero);
+					} else if (data.requisicao.tipo === 'nova') {
+						this.abrirJanelaRequisicao(data.requisicao.urlConsultar, data.requisicao.numero);
+					}
 				} else if (data.acao === Acoes.ABRIR_DOCUMENTO) {
 					this.abrirDocumento(data.evento, data.documento);
 				} else if (data.acao === Acoes.BUSCAR_DADOS) {
@@ -1246,7 +1251,7 @@ class PaginaRequisicaoAntiga extends Pagina {
 	exibirValoresCalculados() {
 		const requisicao = this.requisicao;
 		const areaDados = this.doc.getElementById('divInfraAreaDadosDinamica');
-		areaDados.insertAdjacentHTML('beforeend', '<br><br><span class="atencao">&nbsp;&nbsp;Conferência dos cálculos</span>');
+		this.exibirTitulo('Conferência dos cálculos', areaDados);
 
 		requisicao.beneficiarios.forEach(beneficiario => {
 			const nome = beneficiario.nome;
@@ -1312,9 +1317,18 @@ class PaginaRequisicaoAntiga extends Pagina {
 		});
 	}
 
+	/**
+	 * Insere um texto formatado como título no elemento
+	 * @param {string} texto Texto a inserir
+	 * @param {HTMLElement} elemento Elemento que conterá o título
+	 */
+	exibirTitulo(texto, elemento) {
+		elemento.insertAdjacentHTML('beforeend', `<br><br><span class="atencao">&nbsp;&nbsp;${texto}</span>`);
+	}
+
 	exibirDocumentosProcesso(dadosProcesso) {
 		const areaDocumentos = this.doc.querySelector('.gm-documentos');
-		areaDocumentos.insertAdjacentHTML('beforeend', '<br><br><span class="atencao">&nbsp;&nbsp;Documentos do processo</span>');
+		this.exibirTitulo('Documentos do processo', areaDocumentos);
 		let tabela = [
 			`<table class="infraTable">`,
 			`<thead>`,
@@ -1361,7 +1375,7 @@ class PaginaRequisicaoAntiga extends Pagina {
 				link.addEventListener('click', this.onLinkDocumentoClicado.bind(this));
 			});
 		});
-		areaDocumentos.insertAdjacentHTML('beforeend', '<br><br><span class="atencao">&nbsp;&nbsp;Justiça Gratuita</span>');
+		this.exibirTitulo('Justiça Gratuita', areaDocumentos);
 		areaDocumentos.insertAdjacentHTML('beforeend', `<p class="gm-resposta">${dadosProcesso.justicaGratuita}</p>`);
 	}
 
@@ -1722,7 +1736,8 @@ class PaginaRequisicao extends Pagina {
 			new Padrao(/^<span class="titBold">Doença Grave:<\/span> (Sim|Não)?&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Renuncia Valor:<\/span> (Sim|Não)$/, 'doencaGrave', 'renunciaValor'),
 			new Padrao(/^<span class="titBold">IRPF- RRA a deduzir:<\/span> (Sim|Não)$/, 'irpf'),
 			new Padrao(/^<span class="titBold">Ano Exercicio Corrente:<\/span> (\d\d\d\d)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Meses Exercicio Corrente:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Corrente:<\/span> ([\d.,]+)$/, 'anoCorrente', 'mesesCorrente', 'valorCorrente'),
-			new Padrao(/^<span class="titBold">Meses Exercicio Anterior:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Anterior:<\/span> ([\d.,]+)$/, 'mesesAnterior', 'valorAnterior')
+			new Padrao(/^<span class="titBold">Meses Exercicio Anterior:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Anterior:<\/span> ([\d.,]+)$/, 'mesesAnterior', 'valorAnterior'),
+			new Padrao(/^<span class="titBold">Beneficiário:<\/span> (.+)$/, 'beneficiario')
 		);
 		analisador.definirConversores({
 			dataBase: ConversorMesAno,
@@ -1778,10 +1793,19 @@ class PaginaRequisicao extends Pagina {
 		return PaginaRequisicaoAntiga.prototype.exibirDocumentosProcesso.call(this, dadosProcesso);
 	}
 
+	/**
+	 * Insere um texto formatado como título no elemento
+	 * @param {string} texto Texto a inserir
+	 * @param {HTMLElement} elemento Elemento que conterá o título
+	 */
+	exibirTitulo(texto, elemento) {
+		elemento.insertAdjacentHTML('beforeend', `<br><br><table width="100%"><tbody><tr><td><span class="titSecao">${texto}</span></td></tr></tbody></table>`);
+	}
+
 	exibirValoresCalculados() {
 		const requisicao = this.requisicao;
 		const areaTabela = this.doc.getElementById('divInfraAreaTabela');
-		areaTabela.insertAdjacentHTML('beforeend', '<br><br><table width="100%"><tbody><tr><td><span class="titSecao">Conferência dos cálculos</span></td></tr></tbody></table>');
+		this.exibirTitulo('Conferência dos cálculos', areaTabela);
 
 		requisicao.beneficiarios.forEach(beneficiario => {
 			const nome = beneficiario.nome;
@@ -1790,7 +1814,7 @@ class PaginaRequisicao extends Pagina {
 				total = beneficiario.valor.total;
 			const honorarios = requisicao.honorarios
 				.filter(honorario => honorario.tipoHonorario === 'Honorários Contratuais')
-				.filter(honorario => honorario.beneficiario.cpfCnpj === beneficiario.cpfCnpj);
+				.filter(honorario => honorario.beneficiario.toUpperCase() === beneficiario.nome.toUpperCase());
 			honorarios.forEach(honorario => {
 				principal += honorario.valor.principal;
 				juros += honorario.valor.juros;
@@ -1896,13 +1920,14 @@ class PaginaRequisicao extends Pagina {
 		requisicao.honorarios.forEach((honorario, ordinal) => {
 			const prefixo = `gm-requisicao__honorario--${ordinal}`;
 			if (honorario.tipoHonorario === 'Honorários Contratuais') {
-				// const autor = dadosProcesso.autores.find(autor => autor.cpfCnpj === honorario.beneficiario.cpfCnpj);
-				// if (autor) {
-				// 	const advogadosAutorMesmoNome = autor.advogados.filter(advogado => advogado.toUpperCase() === honorario.nome.toUpperCase());
-				// 	this.validarElemento(`.${prefixo}__nome`, advogadosAutorMesmoNome.length === 1);
-				// } else {
-				// 	this.validarElemento(`.${prefixo}__nome`, false);
-				// }
+				const autor = dadosProcesso.autores.find(autor => autor.nome.toUpperCase() === honorario.beneficiario);
+				if (autor) {
+					const advogadosAutorMesmoNome = autor.advogados.filter(advogado => advogado.toUpperCase() === honorario.nome.toUpperCase());
+					console.log('advogados', advogadosAutorMesmoNome.length, advogadosAutorMesmoNome);
+					this.validarElemento(`.${prefixo}__nome`, advogadosAutorMesmoNome.length === 1);
+				} else {
+					this.validarElemento(`.${prefixo}__nome`, false);
+				}
 			} else if (honorario.tipoHonorario === 'Honorários de Sucumbência') {
 				this.validarElemento(`.${prefixo}__nome`, advogados.has(honorario.nome.toUpperCase()));
 			} else {
@@ -2010,19 +2035,15 @@ class PaginaRequisicao extends Pagina {
 			if (honorario.tipoHonorario === 'Honorários Contratuais') {
 				// Conferir se os dados do contratante estão corretos
 				let beneficiarios = requisicao.beneficiarios
-					.filter(beneficiario => beneficiario.cpfCnpj === honorario.beneficiario.cpfCnpj);
+					.filter(beneficiario => beneficiario.nome.toUpperCase() === honorario.beneficiario.toUpperCase());
 				this.validarElemento(`.${prefixo}__beneficiario`, beneficiarios.length === 1);
 
 				if (beneficiarios.length === 1) {
 					let beneficiario = beneficiarios[0];
-					// Conferir se houve destaque de honorários
-					this.validarElemento(`.${prefixo}__tipo`, beneficiario.honorariosDestacados);
 					// Conferir se data-base dos honorários contratuais é a mesma do valor principal
 					this.validarElemento(`.${prefixo}__dataBase`, beneficiario.dataBase.getTime() === honorario.dataBase.getTime());
 					// Conferir se razão entre principal e juros dos honorários contratuais é a mesma do valor do beneficiário
 					this.validarElemento(`.${prefixo}__valor`, Math.abs(beneficiario.valor.juros / beneficiario.valor.principal - honorario.valor.juros / honorario.valor.principal) <= 0.0001);
-					// Conferir se razão entre total e atualizado dos honorários contratuais é a mesma do valor do beneficiário
-					this.validarElemento(`.${prefixo}__valorAtualizado`, Math.abs(beneficiario.valorAtualizado.total / beneficiario.valorTotal.total - honorario.valorAtualizado.total / honorario.valorTotal.total) < 0.0001);
 				}
 			} else if (honorario.tipoHonorario === 'Honorários de Sucumbência') {
 				// Destacar tipo
