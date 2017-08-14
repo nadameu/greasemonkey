@@ -828,6 +828,7 @@ var LocalizadoresFactory = (function() {
 				data.set('selLocalizadorPrincipalSelecionados', self.id);
 				data.set('optchkcClasse', 'S');
 				data.set('hdnInfraPaginaAtual', pagina);
+					data.set('selRpvPrecatorio', 'null');
 				return new Promise(function(resolve, reject) {
 					var xml = new XMLHttpRequest();
 					xml.open(method, url);
