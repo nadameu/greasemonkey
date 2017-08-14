@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 23
+// @version 24
 // @grant none
 // ==/UserScript==
 
@@ -111,8 +111,8 @@ var GUI = (function() {
 						conteudo.push(localizador.nome);
 					} else {
 						conteudo.push(localizador.sigla + ' (' + localizador.nome + ')');
-				}
-			} else {
+					}
+				} else {
 					conteudo.push(localizador.sigla);
 				}
 			} else {
@@ -736,8 +736,8 @@ var LocalizadoresFactory = (function() {
 	var obterFormularioRelatorioGeral = function() {
 		var promiseRelatorioGeral = new Promise(function(resolve, reject) {
 			var url = Array.from(document.querySelectorAll('#main-menu a[href]'))
-			.filter(link => /^\?acao=relatorio_geral_listar&/.test(link.search))
-							.map(link => link.href)[0];
+				.filter(link => /^\?acao=relatorio_geral_listar&/.test(link.search))
+				.map(link => link.href)[0];
 			var xml = new XMLHttpRequest();
 			xml.open('GET', url);
 			xml.responseType = 'document';
@@ -828,7 +828,7 @@ var LocalizadoresFactory = (function() {
 				data.set('selLocalizadorPrincipalSelecionados', self.id);
 				data.set('optchkcClasse', 'S');
 				data.set('hdnInfraPaginaAtual', pagina);
-					data.set('selRpvPrecatorio', 'null');
+				data.set('selRpvPrecatorio', 'null');
 				return new Promise(function(resolve, reject) {
 					var xml = new XMLHttpRequest();
 					xml.open(method, url);
