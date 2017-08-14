@@ -106,9 +106,14 @@ var GUI = (function() {
 			if (! (localizador.sigla || localizador.nome)) {
 				conteudo.push(localizador.siglaNome);
 			} else if (localizador.sigla) {
-				conteudo.push(localizador.sigla);
 				if (localizador.nome !== localizador.sigla) {
-					conteudo.push(' (' + localizador.nome + ')');
+					if (isContained(localizador.sigla, localizador.nome)) {
+						conteudo.push(localizador.nome);
+					} else {
+						conteudo.push(localizador.sigla + ' (' + localizador.nome + ')');
+				}
+			} else {
+					conteudo.push(localizador.sigla);
 				}
 			} else {
 				conteudo.push(localizador.nome);
@@ -904,9 +909,13 @@ var LocalizadoresFactory = (function() {
 			var localizador = new Localizador();
 			localizador.linha = linha;
 			var siglaNome = linha.cells[0].textContent.split(' - ');
-			if (siglaNome.length === 2) {
-				localizador.sigla = siglaNome[0];
-				localizador.nome = siglaNome[1];
+			if (siglaNome.length % 2 === 0) {
+				let sigla = siglaNome.slice(0, siglaNome.length / 2).join(' - ');
+				let nome = siglaNome.slice(siglaNome.length / 2).join(' - ');
+				if (isContained(sigla, nome)) {
+					localizador.sigla = sigla;
+					localizador.nome = nome;
+				}
 			}
 			localizador.siglaNome = siglaNome.join(' - ');
 			var link = localizador.link = linha.querySelector('a');
@@ -1237,6 +1246,15 @@ function definirPropriedades(target, ...sources) {
 		}, {}));
 	});
 	return target;
+}
+
+function isContained(contained, container) {
+	const ignored = /[./]/;
+	let indexFrom = -1;
+	return Array.prototype.every.call(contained, char =>
+		ignored.test(char) ||
+		!! (indexFrom = container.indexOf(char, indexFrom) + 1)
+	);
 }
 
 function parseCookies(texto) {
