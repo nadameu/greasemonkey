@@ -1731,7 +1731,7 @@ class PaginaRequisicao extends Pagina {
 			new Padrao(/^<span class="titBold">Espécie:<\/span> (.*)$/, 'especie'),
 			new Padrao(/^<span class="titBold">Tipo Honorário<\/span> (.+)$/, 'tipoHonorario'),
 			new Padrao(/^<span class="titBold">Data Base:<\/span> (\d\d\/\d\d\d\d)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Requisitado \(Principal Corrigido \+ Juros\):<\/span> ([\d.,]+ \([\d.,]+ \+ [\d.,]+\))$/, 'dataBase', 'valor'),
-			new Padrao(/^<span class="titBold">(VALOR LIBERADO)<\/span>$/, 'bloqueado'),
+			new Padrao(/^<span class="titBold">(VALOR (?:BLOQUEADO|LIBERADO))<\/span>$/, 'bloqueado'),
 			new Padrao(/^<span class="titBold">Tipo de Despesa:<\/span> (?:.*) \((\d+)\)$/, 'codigoTipoDespesa'),
 			new Padrao(/^<span class="titBold">Doença Grave:<\/span> (Sim|Não)?&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Renuncia Valor:<\/span> (Sim|Não)$/, 'doencaGrave', 'renunciaValor'),
 			new Padrao(/^<span class="titBold">IRPF- RRA a deduzir:<\/span> (Sim|Não)$/, 'irpf'),
@@ -1743,8 +1743,8 @@ class PaginaRequisicao extends Pagina {
 			dataBase: ConversorMesAno,
 			valor: ConversorValores,
 			bloqueado: class extends Conversor {
-				static analisar(texto) { return texto !== 'VALOR LIBERADO'; }
-				static converter(valor) { return valor ? '???' : 'VALOR LIBERADO'; }
+				static analisar(texto) { return texto === 'VALOR BLOQUEADO'; }
+				static converter(valor) { return valor ? 'VALOR BLOQUEADO' : 'VALOR LIBERADO'; }
 			},
 			doencaGrave: ConversorBool,
 			renunciaValor: ConversorBool,
@@ -2130,17 +2130,9 @@ class PaginaRequisicaoAntigaEditar extends Pagina {
 }
 
 class PaginaRequisicaoAntigaPreparada extends Pagina {
-
 	adicionarAlteracoes() {
-		const win = this.doc.defaultView;
-		win.addEventListener('message', this.onMensagemRecebida.bind(this));
-		this.analisarRequisicoesPreparadas();
-	}
-
-	analisarRequisicoesPreparadas() {
 		const rePreparada = /^(\d+)\s+-\s+Requisição preparada para intimação.$/;
-		const areaTabela = this.doc.getElementById('divInfraAreaTabela');
-		const textos = Array.from(areaTabela.querySelectorAll('.infraText'))
+		const textos = Array.from(this.doc.querySelectorAll('#divInfraAreaTabela .infraText'))
 			.map(texto => texto.textContent.trim())
 			.filter(texto => rePreparada.test(texto));
 		const preparadas = textos.map(texto => Utils.parseDecimalInt(texto.match(rePreparada)[1]));
@@ -2148,56 +2140,17 @@ class PaginaRequisicaoAntigaPreparada extends Pagina {
 			console.error('Número de requisições preparadas para intimação não corresponde ao esperado!', preparadas);
 			throw new Error('Número de requisições preparadas para intimação não corresponde ao esperado!');
 		}
-		const preparada = preparadas[0];
-		this.informarRequisicaoPreparada(preparada);
-	}
-
-	informarRequisicaoPreparada(requisicao) {
+		const requisicao = preparadas[0];
 		const data = {
 			acao: Acoes.REQUISICAO_ANTIGA_PREPARADA,
-			requisicao: requisicao
+			requisicao
 		};
-		const win = this.doc.defaultView;
-		const opener = win.opener;
+		const opener = this.doc.defaultView.opener;
 		const possiveisDestinos = ['trf4', 'jfpr', 'jfrs', 'jfsc'];
 		possiveisDestinos.forEach(destino => {
 			const url = `https://eproc.${destino}.jus.br`;
 			opener.postMessage(JSON.stringify(data), url);
 		});
-	}
-
-	informarAbertura(janela) {
-		const data = {
-			acao: Acoes.VERIFICAR_JANELA,
-			requisicao: this.numero
-		};
-		return this.enviarSolicitacao(janela, data);
-	}
-
-	onMensagemRecebida(evt) {
-		console.info('Mensagem recebida', evt);
-		if (evt.origin.match(/^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br$/)) {
-			const data = JSON.parse(evt.data);
-			if (data.acao === Acoes.PREPARAR_INTIMACAO_ANTIGA) {
-				if (data.requisicao === this.numero) {
-					this.confirmarRecebimentoOrdem(evt.source, evt.origin);
-					this.prepararIntimacao();
-				} else {
-					console.info('Ignorando ordem para preparar intimação da requisição, número não confere:', data.requisicao, this.numero);
-				}
-			}
-		}
-	}
-
-	prepararIntimacao() {
-		const botoes = Array.from(this.doc.querySelectorAll('.infraButton'));
-		const botoesPreparar = botoes.filter(botao => botao.value.trim() === 'Preparar Requisição para Intimação');
-		if (botoesPreparar.length !== 1) {
-			console.error('Número de botões não corresponde ao esperado!', botoesPreparar);
-			throw new Error('Número de botões não corresponde ao esperado!');
-		}
-		const botaoPreparar = botoesPreparar[0];
-		botaoPreparar.click();
 	}
 }
 
