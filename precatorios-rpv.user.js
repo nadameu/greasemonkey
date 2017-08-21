@@ -241,11 +241,6 @@ class ConversorValores extends Conversor {
 }
 
 class Padrao {
-	/**
-	 * 
-	 * @param {RegExp} re 
-	 * @param {string} props 
-	 */
 	constructor(re, ...props) {
 		this.regularExpression = re;
 		this.properties = props;
@@ -1326,11 +1321,6 @@ class PaginaRequisicaoAntiga extends Pagina {
 		});
 	}
 
-	/**
-	 * Insere um texto formatado como título no elemento
-	 * @param {string} texto Texto a inserir
-	 * @param {HTMLElement} elemento Elemento que conterá o título
-	 */
 	exibirTitulo(texto, elemento) {
 		elemento.insertAdjacentHTML('beforeend', `<br><br><span class="atencao">&nbsp;&nbsp;${texto}</span>`);
 	}
@@ -1733,11 +1723,6 @@ class PaginaRequisicao extends Pagina {
 		return requisicao;
 	}
 
-	/**
-	 * Analisa uma tabela para extrair os elementos necessários
-	 * @param {HTMLTableElement} tabela Tabela a ser analisada
-	 * @param {string} prefixo Prefixo para as classes CSS a serem incluídas nos elementos
-	 */
 	analisarTabela(tabela, prefixo) {
 		tabela.classList.add('gm-requisicao__tabela');
 		const analisador = new AnalisadorLinhasTabela(
@@ -1774,10 +1759,6 @@ class PaginaRequisicao extends Pagina {
 		return analisador.analisar(tabela);
 	}
 
-	/**
-	 * @param {HTMLTableElement} tabela Tabela a analisar
-	 * @returns {Object[]} Coleção de dados de beneficiários
-	 */
 	analisarTabelaBeneficiarios(tabela, ordinal) {
 		tabela.classList.add('gm-requisicao__beneficiarios__tabela');
 		return this.analisarTabela(tabela, `gm-requisicao__beneficiario--${ordinal}`);
@@ -1815,11 +1796,6 @@ class PaginaRequisicao extends Pagina {
 		return PaginaRequisicaoAntiga.prototype.exibirDocumentosProcesso.call(this, dadosProcesso);
 	}
 
-	/**
-	 * Insere um texto formatado como título no elemento
-	 * @param {string} texto Texto a inserir
-	 * @param {HTMLElement} elemento Elemento que conterá o título
-	 */
 	exibirTitulo(texto, elemento) {
 		elemento.insertAdjacentHTML('beforeend', `<br><br><table width="100%"><tbody><tr><td><span class="titSecao">${texto}</span></td></tr></tbody></table>`);
 	}
