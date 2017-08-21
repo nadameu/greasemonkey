@@ -19,6 +19,7 @@ const Acoes = {
 	ABRIR_REQUISICAO: 'abrirRequisicao',
 	BUSCAR_DADOS: 'buscarDados',
 	EDITAR_REQUISICAO_ANTIGA: 'editarRequisicaoAntiga',
+	EDITAR_REQUISICAO: 'editarRequisicao',
 	ORDEM_CONFIRMADA: 'ordemConfirmada',
 	PREPARAR_INTIMACAO_ANTIGA: 'prepararIntimacaoAntiga',
 	REQUISICAO_ANTIGA_PREPARADA: 'requisicaoAntigaPreparada',
@@ -581,6 +582,7 @@ class PaginaProcesso extends Pagina {
 	constructor(doc) {
 		super(doc);
 		this.janelasDependentes = new Map();
+		this.urlEditarRequisicoes = new Map();
 	}
 
 	abrirDocumento(evento, documento) {
@@ -656,7 +658,9 @@ class PaginaProcesso extends Pagina {
 				}
 				const requisicoes = paginaListar.requisicoes.filter(requisicao => requisicao.tipo === 'nova' && requisicao.status === 'Finalizada');
 				if (requisicoes.length === 1) {
-					return void this.abrirJanelaRequisicao(requisicoes[0].urlConsultar);
+					const requisicao = requisicoes[0];
+					this.urlEditarRequisicoes.set(requisicao.numero, requisicao.urlEditar);
+					return void this.abrirJanelaRequisicao(requisicao.urlConsultar, requisicao.numero);
 				}
 				this.abrirJanelaListar();
 
@@ -851,6 +855,11 @@ class PaginaProcesso extends Pagina {
 					} else if (data.requisicao.tipo === 'nova') {
 						this.abrirJanelaRequisicao(data.requisicao.urlConsultar, data.requisicao.numero);
 					}
+				} else if (data.acao === Acoes.EDITAR_REQUISICAO) {
+					const numero = data.requisicao;
+					this.fecharJanelaRequisicao(numero);
+					const urlEditar = this.urlEditarRequisicoes.get(numero);
+					this.abrirJanelaEditarRequisicao(urlEditar, numero);
 				} else if (data.acao === Acoes.ABRIR_DOCUMENTO) {
 					this.abrirDocumento(data.evento, data.documento);
 				} else if (data.acao === Acoes.BUSCAR_DADOS) {
@@ -1654,8 +1663,13 @@ class PaginaRequisicao extends Pagina {
 		areaTabela.insertAdjacentHTML('beforeend', '<div class="gm-documentos"></div>');
 	}
 
-	adicionarBotoesPreparar() {
-		// return PaginaRequisicaoAntiga.prototype.adicionarBotoesPreparar.call(this);
+	adicionarBotaoTelaIntimacao() {
+		const botaoTelaIntimacao = BotaoAcao.criar('Ir para tela de intimação', this.onBotaoTelaIntimacaoClicado.bind(this));
+
+		const areaTabela = this.doc.getElementById('divInfraAreaTabela');
+		areaTabela.insertAdjacentHTML('beforeend', '<div class="gm-botoes"></div>');
+		const areaBotoes = this.doc.querySelector('.gm-botoes');
+		areaBotoes.appendChild(botaoTelaIntimacao);
 	}
 
 	analisarDadosProcesso(dadosProcesso) {
@@ -1789,6 +1803,14 @@ class PaginaRequisicao extends Pagina {
 		return this.enviarSolicitacao(janela, data);
 	}
 
+	enviarSolicitacaoEditarRequisicao(janela, requisicao) {
+		const data = {
+			acao: Acoes.EDITAR_REQUISICAO,
+			requisicao
+		};
+		return this.enviarSolicitacao(janela, data);
+	}
+
 	exibirDocumentosProcesso(dadosProcesso) {
 		return PaginaRequisicaoAntiga.prototype.exibirDocumentosProcesso.call(this, dadosProcesso);
 	}
@@ -1871,6 +1893,13 @@ class PaginaRequisicao extends Pagina {
 		});
 	}
 
+	onBotaoTelaIntimacaoClicado(evt) {
+		evt.preventDefault();
+		evt.stopPropagation();
+		const opener = this.doc.defaultView.opener;
+		this.enviarSolicitacaoEditarRequisicao(opener, this.requisicao.numero);
+	}
+
 	onLinkDocumentoClicado(evt) {
 		return PaginaRequisicaoAntiga.prototype.onLinkDocumentoClicado.call(this, evt);
 	}
@@ -1884,7 +1913,7 @@ class PaginaRequisicao extends Pagina {
 				this.validarDadosRequisicao();
 				this.exibirValoresCalculados();
 				this.adicionarAreaDocumentosProcesso();
-				this.adicionarBotoesPreparar();
+				this.adicionarBotaoTelaIntimacao();
 				this.analisarDadosProcesso(data.dados);
 			}
 		}
