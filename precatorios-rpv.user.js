@@ -8,7 +8,7 @@
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
-// @version     8
+// @version     9
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -1730,6 +1730,7 @@ class PaginaRequisicao extends Pagina {
 			new Padrao(/^<span class="titBold">Espécie:<\/span> (.*)$/, 'especie'),
 			new Padrao(/^<span class="titBold">Tipo Honorário<\/span> (.+)$/, 'tipoHonorario'),
 			new Padrao(/^<span class="titBold">Data Base:<\/span> (\d\d\/\d\d\d\d)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Requisitado \(Principal Corrigido \+ Juros\):<\/span> ([\d.,]+ \([\d.,]+ \+ [\d.,]+\))$/, 'dataBase', 'valor'),
+			new Padrao(/^<span class="titBold">Data Base:<\/span> (\d\d\/\d\d\d\d)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Requisitado \(Principal \+ Valor Selic\):<\/span> ([\d.,]+ \([\d.,]+ \+ [\d.,]+\))$/, 'dataBase', 'valor'),
 			new Padrao(/^<span class="titBold">(VALOR (?:BLOQUEADO|LIBERADO))<\/span>$/, 'bloqueado'),
 			new Padrao(/^<span class="titBold">Tipo de Despesa:<\/span> (?:.*) \((\d+)\)$/, 'codigoTipoDespesa'),
 			new Padrao(/^<span class="titBold">Doença Grave:<\/span> (Sim|Não)?&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Renuncia Valor:<\/span> (Sim|Não)$/, 'doencaGrave', 'renunciaValor'),
