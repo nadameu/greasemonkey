@@ -8,7 +8,7 @@
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
-// @version     9
+// @version     10
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -1309,7 +1309,8 @@ class PaginaRequisicaoAntiga extends Pagina {
 				}
 			}
 			if (porcentagemAdvogado > 0) {
-				areaDados.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">Honorários Contratuais &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(porcentagemArredondada)}%</span></p>`);
+				const advogados = honorarios.map(honorario => honorario.nome).join(', ');
+				areaDados.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">Honorários Contratuais &mdash; ${advogados} &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(porcentagemArredondada)}%</span></p>`);
 			}
 		});
 
@@ -1736,6 +1737,7 @@ class PaginaRequisicao extends Pagina {
 			new Padrao(/^<span class="titBold">Doença Grave:<\/span> (Sim|Não)?&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Renuncia Valor:<\/span> (Sim|Não)$/, 'doencaGrave', 'renunciaValor'),
 			new Padrao(/^<span class="titBold">IRPF- RRA a deduzir:<\/span> (Sim|Não)$/, 'irpf'),
 			new Padrao(/^<span class="titBold">Ano Exercicio Corrente:<\/span> (\d\d\d\d)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Meses Exercicio Corrente:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Corrente:<\/span> ([\d.,]+)$/, 'anoCorrente', 'mesesCorrente', 'valorCorrente'),
+			new Padrao(/^<span class="titBold">Ano Exercicio Corrente:<\/span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Meses Exercicio Corrente:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Corrente:<\/span> ([\d.,]+)$/, 'mesesCorrente', 'valorCorrente'),
 			new Padrao(/^<span class="titBold">Meses Exercicio Anterior:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Anterior:<\/span> ([\d.,]+)$/, 'mesesAnterior', 'valorAnterior'),
 			new Padrao(/^<span class="titBold">Beneficiário:<\/span> (.+)$/, 'beneficiario')
 		);
@@ -1844,7 +1846,7 @@ class PaginaRequisicao extends Pagina {
 				if (porcentagemAdvogado > 0) {
 					valorCorrente = valorCorrente / (1 - porcentagemAdvogado);
 				}
-				areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">IRPF &mdash; Exercício Corrente (<span class="gm-resposta--indefinida">${ConversorAno.converter(beneficiario.anoCorrente)}</span>) &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(mesesCorrente)} ${mesesCorrente > 1 ? 'meses' : 'mês'}</span> &mdash; <span class="gm-resposta--indefinida">${ConversorMoeda.converter(valorCorrente)}</span></p>`);
+				areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">IRPF &mdash; Exercício Corrente (<span class="gm-resposta--indefinida">${beneficiario.anoCorrente ? ConversorAno.converter(beneficiario.anoCorrente) : ''}</span>) &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(mesesCorrente)} ${mesesCorrente > 1 ? 'meses' : 'mês'}</span> &mdash; <span class="gm-resposta--indefinida">${ConversorMoeda.converter(valorCorrente)}</span></p>`);
 				// }
 			}
 			if (beneficiario.pss) {
@@ -1858,7 +1860,8 @@ class PaginaRequisicao extends Pagina {
 				}
 			}
 			if (porcentagemAdvogado > 0) {
-				areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">Honorários Contratuais &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(porcentagemArredondada)}%</span></p>`);
+				const advogados = honorarios.map(honorario => honorario.nome).join(', ');
+				areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">Honorários Contratuais &mdash; ${advogados} &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(porcentagemArredondada)}%</span></p>`);
 			}
 		});
 
