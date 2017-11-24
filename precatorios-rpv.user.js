@@ -8,7 +8,7 @@
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
-// @version     10
+// @version     11
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -159,7 +159,7 @@ class ConversorAno extends Conversor {
 
 class ConversorBool extends Conversor {
 	static analisar(texto) {
-		return texto === 'Sim';
+		return texto === '' ? undefined : texto === 'Sim';
 	}
 
 	static converter(valor) {
@@ -226,6 +226,15 @@ class ConversorMoeda extends Conversor {
 		let centavos = Math.round(valorArredondado * 100 % 100).toString();
 		if (centavos.length < 2) centavos = `0${centavos}`;
 		return `${reais},${centavos}`;
+	}
+}
+
+class ConversorPorcentagem extends Conversor {
+	static converter(valor) {
+		return Number(valor).toLocaleString('pt-BR', {
+			style: 'percent',
+			maximumFractionDigits: 6
+		});
 	}
 }
 
@@ -409,6 +418,14 @@ class PaginaListar extends Pagina {
 
 class PaginaProcesso extends Pagina {
 
+	get assuntos() {
+		const tabela = this.doc.querySelector('table[summary="Assuntos"]');
+		return Array.from(tabela.rows)
+			.filter((linha, i) => i > 0)
+			.map(linha => linha.cells[0])
+			.map(celula => celula.textContent);
+	}
+
 	get autores() {
 		const links = Array.from(this.doc.querySelectorAll('a[data-parte="AUTOR"]'));
 		const autores = links.map(link => {
@@ -427,6 +444,11 @@ class PaginaProcesso extends Pagina {
 			};
 		});
 		return autores;
+	}
+
+	get autuacao() {
+		const texto = this.doc.getElementById('txtAutuacao').textContent;
+		return ConversorDataHora.analisar(texto);
 	}
 
 	get calculos() {
@@ -728,7 +750,9 @@ class PaginaProcesso extends Pagina {
 		const data = {
 			acao: Acoes.RESPOSTA_DADOS,
 			dados: {
+				assuntos: this.assuntos,
 				autores: this.autores,
+				autuacao: this.autuacao,
 				calculos: this.calculos,
 				contratos: this.contratos,
 				honorarios: this.honorarios,
@@ -906,25 +930,38 @@ class PaginaRequisicaoAntiga extends Pagina {
 				"margin": "1em 0 0",
 			},
 			".gm-resposta--correta": {
-				"color": "green",
+				"color": "hsl(120, 25%, 75%)",
 			},
 			".gm-resposta--incorreta": {
-				"color": "red",
+				"color": "hsl(0, 100%, 40%)",
+				"text-shadow": "0 2px 2px hsl(0, 75%, 60%)",
 			},
 			".gm-resposta--indefinida": {
-				"color": "#e70",
+				"color": "hsl(30, 100%, 40%)",
+				"text-shadow": "0 2px 3px hsl(30, 75%, 60%)",
+			},
+			".gm-requisicao__dados__tabela .gm-resposta--correta td": {
+				"color": "hsl(0, 0%, 75%)",
 			},
 			".gm-requisicao__dados__tabela .gm-resposta--correta::before": {
 				"content": "'✓'",
-				"color": "green",
+				"color": "hsl(120, 25%, 75%)",
+			},
+			".gm-requisicao__dados__tabela .gm-resposta--incorreta td": {
+				"color": "hsl(0, 100%, 40%)",
 			},
 			".gm-requisicao__dados__tabela .gm-resposta--incorreta::before": {
 				"content": "'✗'",
-				"color": "red",
+				"color": "hsl(0, 100%, 40%)",
+				"text-shadow": "none",
+			},
+			".gm-requisicao__dados__tabela .gm-resposta--indefinida td": {
+				"color": "hsl(30, 100%, 40%)",
 			},
 			".gm-requisicao__dados__tabela .gm-resposta--indefinida::before": {
 				"content": "'?'",
-				"color": "#e70",
+				"color": "hsl(30, 100%, 40%)",
+				"text-shadow": "none",
 			},
 			"p.gm-dados-adicionais": {
 				"margin-top": "0",
@@ -1310,7 +1347,7 @@ class PaginaRequisicaoAntiga extends Pagina {
 			}
 			if (porcentagemAdvogado > 0) {
 				const advogados = honorarios.map(honorario => honorario.nome).join(', ');
-				areaDados.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">Honorários Contratuais &mdash; ${advogados} &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(porcentagemArredondada)}%</span></p>`);
+				areaDados.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">Honorários Contratuais &mdash; ${advogados} &mdash; <span class="gm-resposta--indefinida">${ConversorPorcentagem.converter(porcentagemArredondada / 100)}</span></p>`);
 			}
 		});
 
@@ -1330,7 +1367,7 @@ class PaginaRequisicaoAntiga extends Pagina {
 		const areaDocumentos = this.doc.querySelector('.gm-documentos');
 		this.exibirTitulo('Documentos do processo', areaDocumentos);
 		let tabela = [
-			`<table class="infraTable">`,
+			`<table class="infraTable gm-tabela-eventos">`,
 			`<thead>`,
 			`<tr>`,
 			`<th class="infraTh">Evento</th>`,
@@ -1345,7 +1382,14 @@ class PaginaRequisicaoAntiga extends Pagina {
 		const eventos = Array.concat(dadosProcesso.calculos, dadosProcesso.contratos, dadosProcesso.honorarios, dadosProcesso.sentencas)
 			.sort((eventoA, eventoB) => eventoB.evento - eventoA.evento)
 			.reduce((map, evento) => {
-				map.set(evento.evento, evento);
+				if (map.has(evento.evento)) {
+					evento.documentos.forEach(documento => {
+						map.get(evento.evento).documentos.set(documento.ordem, documento);
+					});
+				} else {
+					evento.documentos = new Map(evento.documentos.map(documento => [documento.ordem, documento]));
+					map.set(evento.evento, evento);
+				}
 				return map;
 			}, new Map());
 		Array.from(eventos.values()).forEach(evento => {
@@ -1356,7 +1400,7 @@ class PaginaRequisicaoAntiga extends Pagina {
 				`<td>${evento.descricao}</td>`,
 				`<td><table><tbody>`,
 			].join('\n');
-			evento.documentos.forEach(documento => {
+			Array.from(evento.documentos.values()).slice().sort((a, b) => a.ordem - b.ordem).forEach(documento => {
 				tabela += `<tr><td><a class="infraLinkDocumento" id="gm-documento-ev${evento.evento}-doc${documento.ordem}" data-evento="${evento.evento}" data-documento="${documento.ordem}" href="#">${documento.nome}</a></td></tr>`;
 			});
 			tabela += [
@@ -1612,25 +1656,38 @@ class PaginaRequisicao extends Pagina {
 				"margin": "1em 0 0",
 			},
 			".gm-resposta--correta": {
-				"color": "green",
+				"color": "hsl(120, 25%, 75%)"
 			},
 			".gm-resposta--incorreta": {
-				"color": "red",
+				"color": "hsl(0, 100%, 40%)",
+				"text-shadow": "0 2px 2px hsl(0, 75%, 60%)",
 			},
 			".gm-resposta--indefinida": {
-				"color": "#e70",
+				"color": "hsl(30, 100%, 40%)",
+				"text-shadow": "0 2px 3px hsl(30, 75%, 60%)",
+			},
+			".gm-requisicao__tabela .gm-resposta--correta td, .gm-requisicao__tabela .gm-resposta--correta span": {
+				"color": "hsl(240, 10%, 65%)",
 			},
 			".gm-requisicao__tabela .gm-resposta--correta::before": {
 				"content": "'✓'",
-				"color": "green",
+				"color": "hsl(120, 25%, 65%)",
+			},
+			".gm-requisicao__tabela .gm-resposta--incorreta td, .gm-requisicao__tabela .gm-resposta--incorreta span": {
+				"color": "hsl(0, 100%, 40%)",
 			},
 			".gm-requisicao__tabela .gm-resposta--incorreta::before": {
 				"content": "'✗'",
-				"color": "red",
+				"color": "hsl(0, 100%, 40%)",
+				"text-shadow": "none"
+			},
+			".gm-requisicao__tabela .gm-resposta--indefinida td, .gm-requisicao__tabela .gm-resposta--indefinida span": {
+				"color": "hsl(30, 100%, 40%)",
 			},
 			".gm-requisicao__tabela .gm-resposta--indefinida::before": {
 				"content": "'?'",
-				"color": "#e70",
+				"color": "hsl(30, 100%, 40%)",
+				"text-shadow": "none",
 			},
 			"p.gm-dados-adicionais": {
 				"margin-top": "0",
@@ -1640,6 +1697,9 @@ class PaginaRequisicao extends Pagina {
 				"margin": "4em 0",
 				"display": "flex",
 				"justify-content": "space-around",
+			},
+			"table.gm-tabela-eventos td": {
+				"padding": "0 0.5ex"
 			}
 		});
 		this.doc.querySelector('head').appendChild(style);
@@ -1672,15 +1732,27 @@ class PaginaRequisicao extends Pagina {
 	analisarDadosRequisicao() {
 		const analisador = new AnalisadorLinhasTabela(
 			new Padrao(/^<span class="titBold">Status:<\/span> (.*?)$/, 'status'),
+			new Padrao(/^<span class="titBold">Originário Jef:<\/span> (.*?)$/, 'originarioJEF'),
+			new Padrao(/^<span class="titBold">Extra Orçamentária:<\/span> (.*?)$/, 'extraorcamentaria'),
+			new Padrao(/^<span class="titBold">Processo Eletrônico:<\/span> (.*?)$/, 'processoEletronico'),
+			new Padrao(/^<span class="titBold">Juízo:<\/span> (.*?)$/, 'juizo'),
+			new Padrao(/^<span class="titBold">Ação de Execução:<\/span> (.*?)$/, 'acaoDeExecucao'),
+			new Padrao(/^<span class="titBold">Ação Originária:<\/span> (.*?)$/, 'acaoOriginaria'),
 			new Padrao(/^<span class="titBold">Total Requisitado \(R\$\):<\/span> (.*)$/, 'valorTotalRequisitado'),
+			new Padrao(/^<span class="titBold">Advogado:<\/span> (.*?)$/, 'advogado'),
 			new Padrao(/^<span class="titBold">Assunto Judicial:<\/span> (\d+)\s+- (.*)\s*$/, 'codigoAssunto', 'assunto'),
+			new Padrao(/^<span class="titBold">Data do ajuizamento do processo de conhecimento:<\/span> (\d\d\/\d\d\/\d\d\d\d)$/, 'dataAjuizamento'),
 			new Padrao(/^<span class="titBold">Data do trânsito em julgado do processo de conhecimento:<\/span> (\d\d\/\d\d\/\d\d\d\d)$/, 'dataTransito'),
 			new Padrao(/^<span class="titBold">Data do trânsito em julgado da sentença ou acórdão\(JEF\):<\/span> (\d\d\/\d\d\/\d\d\d\d)$/, 'dataTransito')
 		);
 		analisador.definirConversores({
+			originarioJEF: ConversorBool,
+			extraorcamentaria: ConversorBool,
+			processoEletronico: ConversorBool,
 			dataHora: ConversorDataHora,
 			valorTotalRequisitado: ConversorMoeda,
 			naturezaTributaria: ConversorBool,
+			dataAjuizamento: ConversorData,
 			dataTransito: ConversorData
 		});
 		analisador.prefixo = 'gm-requisicao__dados';
@@ -1733,8 +1805,9 @@ class PaginaRequisicao extends Pagina {
 			new Padrao(/^<span class="titBold">Data Base:<\/span> (\d\d\/\d\d\d\d)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Requisitado \(Principal Corrigido \+ Juros\):<\/span> ([\d.,]+ \([\d.,]+ \+ [\d.,]+\))$/, 'dataBase', 'valor'),
 			new Padrao(/^<span class="titBold">Data Base:<\/span> (\d\d\/\d\d\d\d)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Requisitado \(Principal \+ Valor Selic\):<\/span> ([\d.,]+ \([\d.,]+ \+ [\d.,]+\))$/, 'dataBase', 'valor'),
 			new Padrao(/^<span class="titBold">(VALOR (?:BLOQUEADO|LIBERADO))<\/span>$/, 'bloqueado'),
+			new Padrao(/^<span class="titBold">Juros de Mora Fix.no Tít. Executivo:<\/span> (.*)$/, 'tipoJuros'),
 			new Padrao(/^<span class="titBold">Tipo de Despesa:<\/span> (?:.*) \((\d+)\)$/, 'codigoTipoDespesa'),
-			new Padrao(/^<span class="titBold">Doença Grave:<\/span> (Sim|Não)?&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Renuncia Valor:<\/span> (Sim|Não)$/, 'doencaGrave', 'renunciaValor'),
+			new Padrao(/^<span class="titBold">Doença Grave:<\/span> (Sim|Não|)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Renuncia Valor:<\/span> ?(Sim|Não|)$/, 'doencaGrave', 'renunciaValor'),
 			new Padrao(/^<span class="titBold">IRPF- RRA a deduzir:<\/span> (Sim|Não)$/, 'irpf'),
 			new Padrao(/^<span class="titBold">Ano Exercicio Corrente:<\/span> (\d\d\d\d)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Meses Exercicio Corrente:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Corrente:<\/span> ([\d.,]+)$/, 'anoCorrente', 'mesesCorrente', 'valorCorrente'),
 			new Padrao(/^<span class="titBold">Ano Exercicio Corrente:<\/span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Meses Exercicio Corrente:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Corrente:<\/span> ([\d.,]+)$/, 'mesesCorrente', 'valorCorrente'),
@@ -1808,15 +1881,20 @@ class PaginaRequisicao extends Pagina {
 		const areaTabela = this.doc.getElementById('divInfraAreaTabela');
 		this.exibirTitulo('Conferência dos cálculos', areaTabela);
 
-		requisicao.beneficiarios.forEach(beneficiario => {
+		requisicao.beneficiarios.forEach((beneficiario, ordinal) => {
+			const prefixo = `.gm-requisicao__beneficiario--${ordinal}`;
+			this.validarElemento(`${prefixo}__valor`, true);
 			const nome = beneficiario.nome;
 			let principal = beneficiario.valor.principal,
 				juros = beneficiario.valor.juros,
 				total = beneficiario.valor.total;
 			const honorarios = requisicao.honorarios
+				.map((honorario, ordinal) => Object.assign({}, honorario, { ordinal }))
 				.filter(honorario => honorario.tipoHonorario === 'Honorários Contratuais')
 				.filter(honorario => honorario.beneficiario.toUpperCase() === beneficiario.nome.toUpperCase());
 			honorarios.forEach(honorario => {
+				const prefixo = `.gm-requisicao__honorario--${ordinal}`;
+				this.validarElemento(`${prefixo}__tipoHonorario`, true);
 				principal += honorario.valor.principal;
 				juros += honorario.valor.juros;
 				total += honorario.valor.total;
@@ -1832,7 +1910,7 @@ class PaginaRequisicao extends Pagina {
 			[principal, juros, total] = [principal, juros, total].map(valor => ConversorMoeda.converter(valor));
 			areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta">${nome} &mdash; <span class="gm-resposta--indefinida">${principal}</span> + <span class="gm-resposta--indefinida">${juros}</span> = <span class="gm-resposta--indefinida">${total}</span> em <span class="gm-resposta--indefinida">${ConversorMesAno.converter(beneficiario.dataBase)}</span></p>`);
 			if (beneficiario.irpf) {
-				// if (beneficiario.irpf.anterior) {
+				this.validarElemento(`${prefixo}__irpf`, true);
 				let mesesAnterior = beneficiario.mesesAnterior;
 				let valorAnterior = beneficiario.valorAnterior;
 				if (porcentagemAdvogado > 0) {
@@ -1861,16 +1939,23 @@ class PaginaRequisicao extends Pagina {
 			}
 			if (porcentagemAdvogado > 0) {
 				const advogados = honorarios.map(honorario => honorario.nome).join(', ');
-				areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">Honorários Contratuais &mdash; ${advogados} &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(porcentagemArredondada)}%</span></p>`);
+				areaTabela.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">Honorários Contratuais &mdash; ${advogados} &mdash; <span class="gm-resposta--indefinida">${ConversorPorcentagem.converter(porcentagemArredondada / 100)}</span></p>`);
 			}
 		});
 
-		requisicao.honorarios.filter(honorario => honorario.tipoHonorario !== 'Honorários Contratuais').forEach(honorario => {
-			areaTabela.insertAdjacentHTML('beforeend', [
-				`<p class="gm-resposta">${honorario.nome}</p>`,
-				`<p class="gm-resposta gm-dados-adicionais"><span class="gm-resposta--indefinida">${honorario.tipoHonorario}</span> &mdash; <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valor.principal)}</span> + <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valor.juros)}</span> = <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valor.total)}</span> em <span class="gm-resposta--indefinida">${ConversorMesAno.converter(honorario.dataBase)}</span></p>`
-			].join('\n'));
-		});
+		requisicao.honorarios
+			.map((honorario, ordinal) => Object.assign({}, honorario, { ordinal }))
+			.filter(honorario => honorario.tipoHonorario !== 'Honorários Contratuais')
+			.forEach(honorario => {
+				const prefixo = `.gm-requisicao__honorario--${honorario.ordinal}`;
+				this.validarElemento(`${prefixo}__nome`, true);
+				this.validarElemento(`${prefixo}__tipoHonorario`, true);
+				this.validarElemento(`${prefixo}__valor`, true);
+				areaTabela.insertAdjacentHTML('beforeend', [
+					`<p class="gm-resposta gm-resposta--indefinida">${honorario.nome}</p>`,
+					`<p class="gm-resposta gm-dados-adicionais"><span class="gm-resposta--indefinida">${honorario.tipoHonorario}</span> &mdash; <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valor.principal)}</span> + <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valor.juros)}</span> = <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valor.total)}</span> em <span class="gm-resposta--indefinida">${ConversorMesAno.converter(honorario.dataBase)}</span></p>`
+				].join('\n'));
+			});
 	}
 
 	onBotaoTelaIntimacaoClicado(evt) {
@@ -1902,6 +1987,10 @@ class PaginaRequisicao extends Pagina {
 	validarDadosProcesso(dadosProcesso) {
 		const requisicao = this.requisicao;
 
+		this.validarElemento('.gm-requisicao__dados__codigoAssunto', dadosProcesso.assuntos.indexOf(requisicao.codigoAssunto) > -1);
+		const dataAutuacao = ConversorData.converter(new Date(dadosProcesso.autuacao));
+		this.validarElemento('.gm-requisicao__dados__dataAjuizamento', dataAutuacao === ConversorData.converter(requisicao.dataAjuizamento) || undefined);
+
 		// Conferir data de trânsito em julgado
 		let dataTransito = ConversorData.converter(new Date(dadosProcesso.transito.data || 0));
 		let dataEvento = ConversorData.converter(new Date(dadosProcesso.transito.dataEvento || 0));
@@ -1932,15 +2021,12 @@ class PaginaRequisicao extends Pagina {
 				const autor = dadosProcesso.autores.find(autor => autor.nome.toUpperCase() === honorario.beneficiario);
 				if (autor) {
 					const advogadosAutorMesmoNome = autor.advogados.filter(advogado => advogado.toUpperCase() === honorario.nome.toUpperCase());
-					console.log('advogados', advogadosAutorMesmoNome.length, advogadosAutorMesmoNome);
 					this.validarElemento(`.${prefixo}__nome`, advogadosAutorMesmoNome.length === 1);
 				} else {
 					this.validarElemento(`.${prefixo}__nome`, false);
 				}
 			} else if (honorario.tipoHonorario === 'Honorários de Sucumbência') {
 				this.validarElemento(`.${prefixo}__nome`, advogados.has(honorario.nome.toUpperCase()));
-			} else {
-				this.validarElemento(`.${prefixo}__tipoHonorario`, undefined);
 			}
 		});
 	}
@@ -1950,6 +2036,14 @@ class PaginaRequisicao extends Pagina {
 
 		// Status da requisição deve ser "Finalizada"
 		this.validarElemento('.gm-requisicao__dados__status', requisicao.status === 'Finalizada');
+
+		this.validarElemento('.gm-requisicao__dados__originarioJEF', true);
+		this.validarElemento('.gm-requisicao__dados__extraorcamentaria', true);
+		this.validarElemento('.gm-requisicao__dados__processoEletronico', true);
+		this.validarElemento('.gm-requisicao__dados__juizo', true);
+		this.validarElemento('.gm-requisicao__dados__acaoDeExecucao', true);
+		this.validarElemento('.gm-requisicao__dados__acaoOriginaria', true);
+		this.validarElemento('.gm-requisicao__dados__advogado', true);
 
 		// 11.NATUREZA ALIMENTÍCIA - Salários, vencimentos, proventos, pensões e suas complementações
 		// 12.NATUREZA ALIMENTÍCIA - Benefícios previdenciários e indenizações por morte ou invalidez
@@ -1961,105 +2055,134 @@ class PaginaRequisicao extends Pagina {
 		const ehDesapropriacao = requisicao.codigoAssunto.match(/^0106/) !== null;
 		let codigoNaturezaCorreto = undefined;
 
-		// Conferir valor total requisitado
-		let total = 0;
-
-		requisicao.beneficiarios.forEach((beneficiario, ordinal) => {
-			const prefixo = `gm-requisicao__beneficiario--${ordinal}`;
-			total += beneficiario.valor.total;
-
-			// Destacar campos que requerem atenção
-			if (beneficiario.especie.match(/^RPV/) !== null) {
-				this.validarElemento(`.${prefixo}__renunciaValor`, undefined);
-			}
-			this.validarElemento(`.${prefixo}__bloqueado`, undefined);
-
-			switch (beneficiario.codigoTipoDespesa) {
-				case '11':
-					codigoNaturezaCorreto = ehServidor;
-					break;
-
-				case '12':
-					codigoNaturezaCorreto = ehPrevidenciario;
-					break;
-
-				case '31':
-				case '39':
-					codigoNaturezaCorreto = ehDesapropriacao;
-					break;
-			}
-			this.validarElemento(`.${prefixo}__codigoTipoDespesa`, codigoNaturezaCorreto);
-
-			// Conferir se valor do IRPF corresponde à quantia que o beneficiário irá receber
-			if (beneficiario.irpf) {
-				let irpf = 0;
-				if (beneficiario.valorAnterior) {
-					irpf += beneficiario.valorAnterior;
+		const pagamentos = Array.concat(...['beneficiario', 'honorario'].map(tipo => {
+			const colecao = `${tipo}s`;
+			return requisicao[colecao].map((pagamento, ordinal) => {
+				if (tipo === 'beneficiario') {
+					pagamento.ordinaisContratuais = requisicao.honorarios
+						.map((honorario, ordinal) => ({ ordinal, honorario }))
+						.filter(({ honorario: { tipoHonorario } }) => tipoHonorario === 'Honorários Contratuais')
+						.filter(({ honorario: { beneficiario: nomeBeneficiarioContratuais } }) => pagamento.nome.toUpperCase() === nomeBeneficiarioContratuais.toUpperCase())
+						.map(({ ordinal }) => ordinal);
+				} else if (tipo === 'honorario') {
+					if (pagamento.tipoHonorario === 'Honorários Contratuais') {
+						pagamento.maybeOrdinalBeneficiario = requisicao.beneficiarios
+							.map((beneficiario, ordinal) => ({ ordinal, beneficiario }))
+							.filter(({ beneficiario: { nome } }) => pagamento.beneficiario.toUpperCase() === nome.toUpperCase())
+							.map(({ ordinal }) => ordinal);
+					}
 				}
-				if (beneficiario.valorCorrente) {
-					irpf += beneficiario.valorCorrente;
-				}
-				const valorIRPFConfere = Utils.round(irpf, 2) === beneficiario.valor.total;
-				this.validarElemento(`.${prefixo}__valorCorrente`, valorIRPFConfere);
-				this.validarElemento(`.${prefixo}__valorAnterior`, valorIRPFConfere);
-			}
+				return {
+					tipo,
+					ordinal,
+					pagamento,
+					prefixo: `gm-requisicao__${tipo}--${ordinal}`
+				};
+			});
+		}));
 
-			// Conferir se os honorários destacados estão na requisição
-			// let honorarios = requisicao.honorarios
-			// 	.filter(honorario => honorario.tipo === 'Honorários Contratuais')
-			// 	.filter(honorario => honorario.beneficiario.cpfCnpj === beneficiario.cpfCnpj);
-			// if (beneficiario.honorariosDestacados) {
-			// 	this.validarElemento(`.${prefixo}__honorariosDestacados`, honorarios.length >= 1);
-			// } else {
-			// 	this.validarElemento(`.${prefixo}__honorariosDestacados`, honorarios.length === 0);
-			// }
-		});
-
-		requisicao.honorarios.forEach((honorario, ordinal) => {
-			const prefixo = `gm-requisicao__honorario--${ordinal}`;
-			total += honorario.valor.total;
-
-			// Destacar campos que requerem atenção
-			if (honorario.especie.match(/^RPV/) !== null) {
-				this.validarElemento(`.${prefixo}__renunciaValor`, undefined);
-			}
-			this.validarElemento(`.${prefixo}__bloqueado`, undefined);
-
-			switch (honorario.codigoTipoDespesa) {
-				case '11':
-					codigoNaturezaCorreto = ehServidor;
-					break;
-
-				case '12':
-					codigoNaturezaCorreto = ehPrevidenciario;
-					break;
-
-				case '31':
-				case '39':
-					codigoNaturezaCorreto = ehDesapropriacao;
-					break;
-			}
-			this.validarElemento(`.${prefixo}__codigoTipoDespesa`, codigoNaturezaCorreto);
-
-			if (honorario.tipoHonorario === 'Honorários Contratuais') {
-				// Conferir se os dados do contratante estão corretos
-				let beneficiarios = requisicao.beneficiarios
-					.filter(beneficiario => beneficiario.nome.toUpperCase() === honorario.beneficiario.toUpperCase());
-				this.validarElemento(`.${prefixo}__beneficiario`, beneficiarios.length === 1);
-
-				if (beneficiarios.length === 1) {
-					let beneficiario = beneficiarios[0];
-					// Conferir se data-base dos honorários contratuais é a mesma do valor principal
-					this.validarElemento(`.${prefixo}__dataBase`, beneficiario.dataBase.getTime() === honorario.dataBase.getTime());
-					// Conferir se razão entre principal e juros dos honorários contratuais é a mesma do valor do beneficiário
-					this.validarElemento(`.${prefixo}__valor`, Math.abs(beneficiario.valor.juros / beneficiario.valor.principal - honorario.valor.juros / honorario.valor.principal) <= 0.0001);
-				}
-			} else if (honorario.tipoHonorario === 'Honorários de Sucumbência') {
-				// Destacar tipo
-				this.validarElemento(`.${prefixo}__tipoHonorario`, undefined);
-			}
-		});
+		const total = pagamentos.reduce((soma, { pagamento }) => soma + pagamento.valor.total, 0);
 		this.validarElemento('.gm-requisicao__dados__valorTotalRequisitado', requisicao.valorTotalRequisitado === Utils.round(total, 2));
+
+		const LIMITE = 60 * SALARIO_MINIMO;
+
+		pagamentos.forEach(({ tipo, pagamento, prefixo }) => {
+
+			// Destacar campos que requerem atenção
+			this.validarElemento(`.${prefixo}__bloqueado`, undefined);
+			if ('tipoJuros' in pagamento) {
+				this.validarElemento(`.${prefixo}__tipoJuros`, undefined);
+			}
+
+			switch (pagamento.codigoTipoDespesa) {
+				case '11':
+					codigoNaturezaCorreto = ehServidor;
+					break;
+
+				case '12':
+					codigoNaturezaCorreto = ehPrevidenciario;
+					break;
+
+				case '31':
+				case '39':
+					codigoNaturezaCorreto = ehDesapropriacao;
+					break;
+			}
+			this.validarElemento(`.${prefixo}__codigoTipoDespesa`, codigoNaturezaCorreto);
+
+			if (pagamento.especie.match(/^RPV/) === null) {
+				this.validarElemento(`.${prefixo}__doencaGrave`, undefined);
+			}
+			if (tipo === 'beneficiario') {
+			// Conferir se valor do IRPF corresponde à quantia que o beneficiário irá receber
+				if (pagamento.irpf) {
+					let irpf = 0;
+					if (pagamento.valorAnterior) {
+						irpf += pagamento.valorAnterior;
+					}
+					if (pagamento.valorCorrente) {
+						irpf += pagamento.valorCorrente;
+					}
+					const valorIRPFConfere = Utils.round(irpf, 2) === pagamento.valor.total;
+					this.validarElemento(`.${prefixo}__valorCorrente`, valorIRPFConfere);
+					this.validarElemento(`.${prefixo}__valorAnterior`, valorIRPFConfere);
+				}
+
+				const valorIncluindoContratuais = [pagamento.valor.total]
+					.concat(
+						...pagamento.ordinaisContratuais
+							.map(ordinal => requisicao.honorarios[ordinal])
+							.map(honorario => honorario.valor.total)
+					)
+					.reduce((soma, valor) => soma + valor, 0);
+				const ultrapassaLimite = valorIncluindoContratuais / LIMITE > 0.99;
+
+				if (pagamento.especie.match(/^RPV/) !== null) {
+					this.validarElemento(`.${prefixo}__renunciaValor`, pagamento.renunciaValor === ultrapassaLimite);
+					this.validarElemento(`.${prefixo}__especie`, ! ultrapassaLimite);
+				} else {
+					this.validarElemento(`.${prefixo}__especie`, ultrapassaLimite || undefined);
+				}
+			} else if (tipo === 'honorario') {
+				if (pagamento.tipoHonorario === 'Honorários Contratuais') {
+					// Conferir se os dados do contratante estão corretos
+					this.validarElemento(`.${prefixo}__beneficiario`, pagamento.maybeOrdinalBeneficiario.length === 1);
+					pagamento.maybeOrdinalBeneficiario
+						.map(ord => requisicao.beneficiarios[ord])
+						.forEach(beneficiario => {
+							// Conferir se data-base dos honorários contratuais é a mesma do valor principal
+							this.validarElemento(`.${prefixo}__dataBase`, beneficiario.dataBase.getTime() === pagamento.dataBase.getTime());
+							// Conferir se razão entre principal e juros dos honorários contratuais é a mesma do valor do beneficiário
+							this.validarElemento(`.${prefixo}__valor`, Math.abs(beneficiario.valor.juros / beneficiario.valor.principal - pagamento.valor.juros / pagamento.valor.principal) <= 0.0001);
+						});
+
+					const valorIncluindoBeneficiario = [pagamento.valor.total]
+						.concat(
+							...pagamento.maybeOrdinalBeneficiario
+								.map(ord => requisicao.beneficiarios[ord])
+								.map(beneficiario => beneficiario.valor.total)
+						)
+						.reduce((soma, valor) => soma + valor, 0);
+					const ultrapassaLimite = valorIncluindoBeneficiario / LIMITE > 0.99;
+
+					if (pagamento.especie.match(/^RPV/) !== null) {
+						this.validarElemento(`.${prefixo}__renunciaValor`, pagamento.renunciaValor === ultrapassaLimite);
+						this.validarElemento(`.${prefixo}__especie`, ! ultrapassaLimite);
+					} else {
+						this.validarElemento(`.${prefixo}__especie`, ultrapassaLimite || undefined);
+					}
+				} else {
+					const ultrapassaLimite = pagamento.valor.total / LIMITE > 0.99;
+					if (pagamento.especie.match(/^RPV/) !== null) {
+						this.validarElemento(`.${prefixo}__renunciaValor`, pagamento.renunciaValor === ultrapassaLimite);
+						this.validarElemento(`.${prefixo}__especie`, ! ultrapassaLimite);
+					} else {
+						this.validarElemento(`.${prefixo}__especie`, ultrapassaLimite || undefined);
+					}
+				}
+			}
+
+		});
 	}
 }
 
