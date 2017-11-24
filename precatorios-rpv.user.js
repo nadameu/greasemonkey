@@ -8,7 +8,7 @@
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
-// @version     11
+// @version     12
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -1893,7 +1893,7 @@ class PaginaRequisicao extends Pagina {
 				.filter(honorario => honorario.tipoHonorario === 'Honorários Contratuais')
 				.filter(honorario => honorario.beneficiario.toUpperCase() === beneficiario.nome.toUpperCase());
 			honorarios.forEach(honorario => {
-				const prefixo = `.gm-requisicao__honorario--${ordinal}`;
+				const prefixo = `.gm-requisicao__honorario--${honorario.ordinal}`;
 				this.validarElemento(`${prefixo}__tipoHonorario`, true);
 				principal += honorario.valor.principal;
 				juros += honorario.valor.juros;
