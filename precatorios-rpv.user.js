@@ -8,7 +8,7 @@
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
-// @version     13
+// @version     14
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -2092,7 +2092,11 @@ class PaginaRequisicao extends Pagina {
 		pagamentos.forEach(({ tipo, pagamento, prefixo }) => {
 
 			// Destacar campos que requerem atenção
-			this.validarElemento(`.${prefixo}__bloqueado`, undefined);
+			this.validarElemento(
+				`.${prefixo}__bloqueado`,
+				tipo === 'honorario' && pagamento.tipoHonorario === 'Devolução à Seção Judiciária' ||
+					undefined
+			);
 			if ('tipoJuros' in pagamento) {
 				this.validarElemento(`.${prefixo}__tipoJuros`, ehPrevidenciario && pagamento.tipoJuros === 'Poupança' || undefined);
 			}
@@ -2116,7 +2120,9 @@ class PaginaRequisicao extends Pagina {
 					break;
 
 				case '21':
-					codigoNaturezaCorreto = ehTributario || undefined;
+					codigoNaturezaCorreto = ehTributario ||
+						tipo === 'honorario' && pagamento.tipoHonorario === 'Devolução à Seção Judiciária' ||
+						undefined;
 					break;
 			}
 			this.validarElemento(`.${prefixo}__codigoTipoDespesa`, codigoNaturezaCorreto);
