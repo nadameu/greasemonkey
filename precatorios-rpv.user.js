@@ -8,7 +8,7 @@
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
-// @version     12
+// @version     13
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -1812,7 +1812,8 @@ class PaginaRequisicao extends Pagina {
 			new Padrao(/^<span class="titBold">Ano Exercicio Corrente:<\/span> (\d\d\d\d)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Meses Exercicio Corrente:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Corrente:<\/span> ([\d.,]+)$/, 'anoCorrente', 'mesesCorrente', 'valorCorrente'),
 			new Padrao(/^<span class="titBold">Ano Exercicio Corrente:<\/span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Meses Exercicio Corrente:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Corrente:<\/span> ([\d.,]+)$/, 'mesesCorrente', 'valorCorrente'),
 			new Padrao(/^<span class="titBold">Meses Exercicio Anterior:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Anterior:<\/span> ([\d.,]+)$/, 'mesesAnterior', 'valorAnterior'),
-			new Padrao(/^<span class="titBold">Beneficiário:<\/span> (.+)$/, 'beneficiario')
+			new Padrao(/^<span class="titBold">Beneficiário:<\/span> (.+)$/, 'beneficiario'),
+			new Padrao(/^<span class="titBold">Requisição de Natureza Tributária \(ATUALIZADA PELA SELIC\):<\/span> (Sim|Não)$/, 'naturezaTributaria')
 		);
 		analisador.definirConversores({
 			dataBase: ConversorMesAno,
@@ -1828,7 +1829,8 @@ class PaginaRequisicao extends Pagina {
 			mesesCorrente: ConversorInt,
 			valorCorrente: ConversorMoeda,
 			mesesAnterior: ConversorInt,
-			valorAnterior: ConversorMoeda
+			valorAnterior: ConversorMoeda,
+			naturezaTributaria: ConversorBool,
 		});
 		analisador.prefixo = prefixo;
 
@@ -2053,6 +2055,7 @@ class PaginaRequisicao extends Pagina {
 		const ehPrevidenciario = requisicao.codigoAssunto.match(/^04/) !== null;
 		const ehServidor = requisicao.codigoAssunto.match(/^011[012]/) !== null;
 		const ehDesapropriacao = requisicao.codigoAssunto.match(/^0106/) !== null;
+		const ehTributario = requisicao.codigoAssunto.match(/^03/) !== null;
 		let codigoNaturezaCorreto = undefined;
 
 		const pagamentos = Array.concat(...['beneficiario', 'honorario'].map(tipo => {
@@ -2091,7 +2094,11 @@ class PaginaRequisicao extends Pagina {
 			// Destacar campos que requerem atenção
 			this.validarElemento(`.${prefixo}__bloqueado`, undefined);
 			if ('tipoJuros' in pagamento) {
-				this.validarElemento(`.${prefixo}__tipoJuros`, undefined);
+				this.validarElemento(`.${prefixo}__tipoJuros`, ehPrevidenciario && pagamento.tipoJuros === 'Poupança' || undefined);
+			}
+
+			if ('naturezaTributaria' in pagamento) {
+				this.validarElemento(`.${prefixo}__naturezaTributaria`, ehTributario === pagamento.naturezaTributaria);
 			}
 
 			switch (pagamento.codigoTipoDespesa) {
@@ -2106,6 +2113,10 @@ class PaginaRequisicao extends Pagina {
 				case '31':
 				case '39':
 					codigoNaturezaCorreto = ehDesapropriacao;
+					break;
+
+				case '21':
+					codigoNaturezaCorreto = ehTributario || undefined;
 					break;
 			}
 			this.validarElemento(`.${prefixo}__codigoTipoDespesa`, codigoNaturezaCorreto);
