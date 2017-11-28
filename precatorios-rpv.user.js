@@ -8,7 +8,7 @@
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
-// @version     14
+// @version     15
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -509,6 +509,12 @@ class PaginaProcesso extends Pagina {
 		return this._requisicoesAPreparar;
 	}
 
+	get reus() {
+		return Array
+			.from(this.doc.querySelectorAll('[id^="spnNomeParteReu"]'))
+			.map(elt => elt.textContent);
+	}
+
 	get sentencas() {
 		return this.destacarDocumentosPorEvento(/(^(Julgamento|Sentença))|Voto/);
 	}
@@ -758,6 +764,7 @@ class PaginaProcesso extends Pagina {
 				honorarios: this.honorarios,
 				justicaGratuita: this.justicaGratuita,
 				magistrado: this.magistrado,
+				reus: this.reus,
 				sentencas: this.sentencas,
 				transito: this.transito
 			}
@@ -1739,6 +1746,7 @@ class PaginaRequisicao extends Pagina {
 			new Padrao(/^<span class="titBold">Ação de Execução:<\/span> (.*?)$/, 'acaoDeExecucao'),
 			new Padrao(/^<span class="titBold">Ação Originária:<\/span> (.*?)$/, 'acaoOriginaria'),
 			new Padrao(/^<span class="titBold">Total Requisitado \(R\$\):<\/span> (.*)$/, 'valorTotalRequisitado'),
+			new Padrao(/^<span class="titBold">Requerido:<\/span> (.*)$/, 'requerido'),
 			new Padrao(/^<span class="titBold">Advogado:<\/span> (.*?)$/, 'advogado'),
 			new Padrao(/^<span class="titBold">Assunto Judicial:<\/span> (\d+)\s+- (.*)\s*$/, 'codigoAssunto', 'assunto'),
 			new Padrao(/^<span class="titBold">Data do ajuizamento do processo de conhecimento:<\/span> (\d\d\/\d\d\/\d\d\d\d)$/, 'dataAjuizamento'),
@@ -2003,6 +2011,9 @@ class PaginaRequisicao extends Pagina {
 		let isUndefined = dataEvento === dataTransitoRequisicao || dataFechamento === dataTransitoRequisicao;
 		this.validarElemento('.gm-requisicao__dados__dataTransito', isTrue || isUndefined && undefined);
 
+		// Conferir se requerido é réu na ação
+		this.validarElemento(`.gm-requisicao__dados__requerido`, dadosProcesso.reus.indexOf(requisicao.requerido) > -1 && (dadosProcesso.reus.length === 1 || undefined));
+
 		// Conferir se beneficiário é autor da ação
 		requisicao.beneficiarios.forEach((beneficiario, ordinal) => {
 			const prefixo = `gm-requisicao__beneficiario--${ordinal}`;
@@ -2098,7 +2109,12 @@ class PaginaRequisicao extends Pagina {
 					undefined
 			);
 			if ('tipoJuros' in pagamento) {
-				this.validarElemento(`.${prefixo}__tipoJuros`, ehPrevidenciario && pagamento.tipoJuros === 'Poupança' || undefined);
+				this.validarElemento(
+					`.${prefixo}__tipoJuros`,
+					ehPrevidenciario && pagamento.tipoJuros === 'Poupança' ||
+						tipo === 'honorario' && pagamento.tipoHonorario === 'Devolução à Seção Judiciária' && pagamento.tipoJuros === 'Não fixados' ||
+						undefined
+				);
 			}
 
 			if ('naturezaTributaria' in pagamento) {
