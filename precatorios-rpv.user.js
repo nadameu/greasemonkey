@@ -8,7 +8,7 @@
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
-// @version     15
+// @version     16
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -1747,7 +1747,7 @@ class PaginaRequisicao extends Pagina {
 			new Padrao(/^<span class="titBold">Ação Originária:<\/span> (.*?)$/, 'acaoOriginaria'),
 			new Padrao(/^<span class="titBold">Total Requisitado \(R\$\):<\/span> (.*)$/, 'valorTotalRequisitado'),
 			new Padrao(/^<span class="titBold">Requerido:<\/span> (.*)$/, 'requerido'),
-			new Padrao(/^<span class="titBold">Advogado:<\/span> (.*?)$/, 'advogado'),
+			new Padrao(/^<span class="titBold">Advogado:<\/span> ?(.*)$/, 'advogado'),
 			new Padrao(/^<span class="titBold">Assunto Judicial:<\/span> (\d+)\s+- (.*)\s*$/, 'codigoAssunto', 'assunto'),
 			new Padrao(/^<span class="titBold">Data do ajuizamento do processo de conhecimento:<\/span> (\d\d\/\d\d\/\d\d\d\d)$/, 'dataAjuizamento'),
 			new Padrao(/^<span class="titBold">Data do trânsito em julgado do processo de conhecimento:<\/span> (\d\d\/\d\d\/\d\d\d\d)$/, 'dataTransito'),
