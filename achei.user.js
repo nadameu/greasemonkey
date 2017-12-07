@@ -4,7 +4,7 @@
 // @description Link para informações da Intra na página do Achei!
 // @include     http://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar*
 // @include     http://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar*
-// @version     11
+// @version     12
 // @grant       none
 // ==/UserScript==
 
@@ -16,12 +16,6 @@ const Sequence = {
 	},
 	filter: p => Sequence.chain(item => p(item) ? [item] : []),
 	map: f => Sequence.chain(item => [f(item)]),
-	reduce: (reducer, acc) => iterable => {
-		for (let item of iterable) {
-			acc = reducer(acc, item);
-		}
-		return acc;
-	}
 };
 
 const fromNullable = msg => obj => obj == null ?
@@ -70,9 +64,9 @@ const nextSiblingsOf = function *(elt) {
 	}
 };
 
-const queryTableChildNodes = function *(node) {
+const flattenTable = function *(node) {
 	if ('tagName' in node && /^table$/i.test(node.tagName)) {
-		yield* node.querySelector('td:nth-child(2)').childNodes;
+		yield *node.querySelector('td:nth-child(2)').childNodes;
 	} else {
 		yield node;
 	}
@@ -101,17 +95,24 @@ const makeAppendFragment = (doc, dominio) => {
 };
 
 const main = doc => queryDominio(doc)
-	.then(dominio => {
-		const appendFragment = makeAppendFragment(doc, dominio);
-		return queryFormulario(doc)
-			.then(nextSiblingsOf)
-			.then(Sequence.chain(queryTableChildNodes))
-			.then(Sequence.filter(matchesSigla))
-			.then(Sequence.map(node => appendFragment(node)))
-			.then(xs => [...xs].length)
-			.then(qtd => ({ qtd, plural: qtd > 1 ? 's' : '' }))
-			.then(({ qtd, plural }) => `${qtd} link${plural} criado${plural}.`);
-	});
+	.then(dominio => queryFormulario(doc)
+		.then(form => [
+			nextSiblingsOf,
+			Sequence.chain(flattenTable),
+			Sequence.filter(matchesSigla),
+			Sequence.map(makeAppendFragment(doc, dominio)),
+			fragments => Array.from(fragments).length,
+			qtd => {
+				const s = qtd > 1 ? 's' : '';
+				const links = `link${s}`;
+				const criados = `criado${s}`;
+				return `${qtd} ${links} ${criados}`;
+			}
+		].reduce(
+			(result, f) => f(result),
+			form
+		))
+	);
 
 main(document).then(
 	x => { console.log('Resultado:', x); },
