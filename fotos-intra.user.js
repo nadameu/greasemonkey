@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Fotos Intra
 // @namespace    http://nadameu.com.br/fotos-intra
-// @version      1.0.0
+// @version      2.0.0
 // @author       nadameu
 // @description  Corrige a distorção nas fotos da Intra
 // @website      http://www.nadameu.com.br/
@@ -11,6 +11,6 @@
 // ==/UserScript==
 
 [...document.querySelectorAll('.photo')].forEach(foto => {
-	foto.width = foto.naturalWidth;
-	foto.height = foto.naturalHeight;
+  foto.removeAttribute('width');
+  foto.removeAttribute('height');
 });
