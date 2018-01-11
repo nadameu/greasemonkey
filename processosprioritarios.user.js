@@ -6,25 +6,25 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 24
+// @version 25
 // @grant none
 // ==/UserScript==
+
+/* eslint-env es6, browser */
 
 const CompetenciasCorregedoria = {
 	JUIZADO: 1,
 	CIVEL: 2,
 	CRIMINAL: 3,
-	EXECUCAO_FISCAL: 4
+	EXECUCAO_FISCAL: 4,
 };
-
 const Situacoes = {
-	'MOVIMENTO': 3,
+	MOVIMENTO: 3,
 	'MOVIMENTO-AGUARDA DESPACHO': 2,
 	'MOVIMENTO-AGUARDA SENTENÇA': 4,
-	'INICIAL': 1,
-	'INDEFINIDA': 5
+	INICIAL: 1,
+	INDEFINIDA: 5,
 };
-
 var GUI = (function() {
 	var instance = null,
 		construindo = false,
@@ -32,20 +32,24 @@ var GUI = (function() {
 		progresso = null,
 		saida = null;
 	var invalidSymbols = /[&<>"]/g;
-	var replacementSymbols = {
-		'&': 'amp',
-		'<': 'lt',
-		'>': 'gt',
-		'"': 'quot'
-	};
-
+	var replacementSymbols = { '&': 'amp', '<': 'lt', '>': 'gt', '"': 'quot' };
 	function safeHTML(strings, ...vars) {
-		return vars.reduce((result, variable, i) => result + variable.replace(invalidSymbols, sym => '&' + replacementSymbols[sym] + ';') + strings[i + 1], strings[0]);
+		return vars.reduce(
+			(result, variable, i) =>
+				result +
+				variable.replace(
+					invalidSymbols,
+					sym => `&${replacementSymbols[sym]};`
+				) +
+				strings[i + 1],
+			strings[0]
+		);
 	}
-
 	function GUI() {
 		if (! construindo) {
-			throw new Error('Classe deve ser instanciada usando o método .getInstance().');
+			throw new Error(
+				'Classe deve ser instanciada usando o método .getInstance().'
+			);
 		}
 		var estilos = document.createElement('style');
 		estilos.innerHTML = [
@@ -74,7 +78,7 @@ var GUI = (function() {
 			'.gmLembreteProcessoVazio { opacity: 0; pointer-events: none; }',
 			'.gmPorcentagem { display: inline-block; width: 6ex; text-align: right; }',
 			'.gmPrioridade { display: none; color: red; }',
-			'.gmPrazoMetade .gmPrioridade { display: inline; }'
+			'.gmPrazoMetade .gmPrioridade { display: inline; }',
 		].join('\n');
 		document.querySelector('head').appendChild(estilos);
 	}
@@ -87,20 +91,44 @@ var GUI = (function() {
 				'Processos com prazo excedido em dobro',
 				'Processos com prazo vencido',
 				`Processos com prazo a vencer nos próximos ${DIAS_A_FRENTE} dias`,
-				'Processos no prazo'
+				'Processos no prazo',
 			];
 			const MILISSEGUNDOS_EM_UM_DIA = 864e5;
+			const ULTIMA_HORA = 23;
+			const ULTIMO_MINUTO = 59;
+			const ULTIMO_SEGUNDO = 59;
+			const ULTIMO_MILISSEGUNDO = 999;
 			const agora = new Date();
-			const aVencer = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + DIAS_A_FRENTE, 23, 59, 59, 999);
-			const atrasoAVencer = (agora.getTime() - aVencer.getTime()) / MILISSEGUNDOS_EM_UM_DIA;
+			const aVencer = new Date(
+				agora.getFullYear(),
+				agora.getMonth(),
+				agora.getDate() + DIAS_A_FRENTE,
+				ULTIMA_HORA,
+				ULTIMO_MINUTO,
+				ULTIMO_SEGUNDO,
+				ULTIMO_MILISSEGUNDO
+			);
+			const atrasoAVencer =
+				(agora.getTime() - aVencer.getTime()) / MILISSEGUNDOS_EM_UM_DIA;
 			var prioridades = [
-				localizador.processos.filter(processo => processo.atrasoPorcentagem >= 1),
-				localizador.processos.filter(processo => processo.atraso >= 0 && processo.atrasoPorcentagem < 1),
-				localizador.processos.filter(processo => processo.atraso < 0 && processo.atraso >= atrasoAVencer),
-				localizador.processos.filter(processo => processo.atraso < atrasoAVencer)
+				localizador.processos.filter(
+					processo => processo.atrasoPorcentagem >= 1
+				),
+				localizador.processos.filter(
+					processo => processo.atraso >= 0 && processo.atrasoPorcentagem < 1
+				),
+				localizador.processos.filter(
+					processo => processo.atraso < 0 && processo.atraso >= atrasoAVencer
+				),
+				localizador.processos.filter(
+					processo => processo.atraso < atrasoAVencer
+				),
 			];
 			var baloes = prioridades.map(function(processos, indicePrioridade) {
-				return '<span id="gmLocalizador' + localizador.id + 'Prioridade' + indicePrioridade + '" class="gmProcessos gmPrioridade' + indicePrioridade + (processos.length > 0 ? '' : ' gmVazio') + '" onmouseover="infraTooltipMostrar(&quot;' + avisos[indicePrioridade] + '&quot;);" onmouseout="infraTooltipOcultar();">' + processos.length + '</span>';
+				return `<span id="gmLocalizador${localizador.id}Prioridade${indicePrioridade}" class="gmProcessos gmPrioridade${indicePrioridade}${processos.length >
+				0
+					? ''
+					: ' gmVazio'}" onmouseover="infraTooltipMostrar(&quot;${avisos[indicePrioridade]}&quot;);" onmouseout="infraTooltipOcultar();">${processos.length}</span>`;
 			});
 			var conteudo = [];
 			if (! (localizador.sigla || localizador.nome)) {
@@ -110,7 +138,7 @@ var GUI = (function() {
 					if (isContained(localizador.sigla, localizador.nome)) {
 						conteudo.push(localizador.nome);
 					} else {
-						conteudo.push(localizador.sigla + ' (' + localizador.nome + ')');
+						conteudo.push(`${localizador.sigla} (${localizador.nome})`);
 					}
 				} else {
 					conteudo.push(localizador.sigla);
@@ -120,13 +148,28 @@ var GUI = (function() {
 			}
 			if (localizador.lembrete) {
 				conteudo.push(' ');
-				conteudo.push('<img class="infraImgNormal" src="../../../infra_css/imagens/balao.gif" style="width:0.9em; height:0.9em; opacity:1; border-width:0;" onmouseover="' + safeHTML`return infraTooltipMostrar('${localizador.lembrete}','',400);` + '" onmouseout="return infraTooltipOcultar();"/>');
+				conteudo.push(
+					`<img class="infraImgNormal" src="../../../infra_css/imagens/balao.gif" style="width:0.9em; height:0.9em; opacity:1; border-width:0;" onmouseover="${safeHTML`return infraTooltipMostrar('${localizador.lembrete}','',400);`}" onmouseout="return infraTooltipOcultar();"/>`
+				);
 			}
 			var processosComPeticao = localizador.processos.filter(processo => {
-				let localizadoresPeticao = processo.localizadores.filter(localizadorProcesso => localizadorProcesso.sigla === 'PETIÇÃO');
+				let localizadoresPeticao = processo.localizadores.filter(
+					localizadorProcesso =>
+						localizadorProcesso.sigla === 'PETIÇÃO' ||
+						localizadorProcesso.sigla === 'SUSPENSOS-RETORNO'
+				);
 				return localizadoresPeticao.length > 0;
 			});
-			baloes.unshift('<span id="gmLocalizador' + localizador.id + 'Peticoes" class="gmPeticoes' + (processosComPeticao.length > 0 ? '' : ' gmVazio') + '" onmouseover="infraTooltipMostrar(&quot;Processos com localizador PETIÇÃO&quot;);" onmouseout="infraTooltipOcultar();">' + (processosComPeticao.length > 99 ? '+' : processosComPeticao.length) + '</span>');
+			const OCULTAR_BALOES_COM_MAIS_DE = 99;
+			baloes.unshift(
+				`<span id="gmLocalizador${localizador.id}Peticoes" class="gmPeticoes${processosComPeticao.length >
+				0
+					? ''
+					: ' gmVazio'}" onmouseover="infraTooltipMostrar(&quot;Processos com localizador PETIÇÃO ou SUSPENSOS-RETORNO&quot;);" onmouseout="infraTooltipOcultar();">${processosComPeticao.length >
+				OCULTAR_BALOES_COM_MAIS_DE
+					? '+'
+					: processosComPeticao.length}</span>`
+			);
 			conteudo.push('<div class="gmBaloes">');
 			conteudo.push(baloes.join(''));
 			conteudo.push('</div>');
@@ -139,90 +182,127 @@ var GUI = (function() {
 				} else {
 					linha.classList.remove('gmFiltrado');
 					var filtrar = document.createElement('a');
-					filtrar.setAttribute('onmouseover', 'infraTooltipMostrar("Excluir processos com prazos em aberto.");');
+					filtrar.setAttribute(
+						'onmouseover',
+						'infraTooltipMostrar("Excluir processos com prazos em aberto.");'
+					);
 					filtrar.setAttribute('onmouseout', 'infraTooltipOcultar();');
 					filtrar.setAttribute('onclick', 'infraTooltipOcultar();');
 					filtrar.className = 'gmFiltrar';
 					filtrar.textContent = 'Filtrar';
-					filtrar.addEventListener('click', function(evt) {
-						evt.preventDefault();
-						evt.stopPropagation();
-						[...document.getElementsByClassName('gmDetalhesAberto')].forEach(function(balaoAberto) {
-							let linhaAberta = balaoAberto.parentElement;
-							while (linhaAberta && linhaAberta.tagName.toLowerCase() !== 'tr') linhaAberta = linhaAberta.parentElement;
-							if (linhaAberta && linhaAberta === linha) {
-								balaoAberto.classList.remove('gmDetalhesAberto');
-								[...document.getElementsByClassName('gmDetalhes')].forEach(function(linhaAntiga) {
-									linha.parentElement.removeChild(linhaAntiga);
-								});
-							}
-						});
-						var gui = GUI.getInstance();
-						gui.avisoCarregando.exibir('Filtrando processos com prazo em aberto...');
-						gui.avisoCarregando.atualizar(0, localizador.quantidadeProcessos);
-						localizador.excluirPrazosAbertos().then(function() {
-							gui.avisoCarregando.ocultar();
-							gui.atualizarVisualizacao(localizador, true);
-							gui.atualizarGrafico();
-						});
-					}, false);
+					filtrar.addEventListener(
+						'click',
+						function(evt) {
+							evt.preventDefault();
+							evt.stopPropagation();
+							Array.from(
+								document.getElementsByClassName('gmDetalhesAberto')
+							).forEach(function(balaoAberto) {
+								let linhaAberta = balaoAberto.parentElement;
+								while (
+									linhaAberta &&
+									linhaAberta.tagName.toLowerCase() !== 'tr'
+								)
+									linhaAberta = linhaAberta.parentElement;
+								if (linhaAberta && linhaAberta === linha) {
+									balaoAberto.classList.remove('gmDetalhesAberto');
+									Array.from(
+										document.getElementsByClassName('gmDetalhes')
+									).forEach(function(linhaAntiga) {
+										linha.parentElement.removeChild(linhaAntiga);
+									});
+								}
+							});
+							var gui = GUI.getInstance();
+							gui.avisoCarregando.exibir(
+								'Filtrando processos com prazo em aberto...'
+							);
+							gui.avisoCarregando.atualizar(0, localizador.quantidadeProcessos);
+							localizador.excluirPrazosAbertos().then(function() {
+								gui.avisoCarregando.ocultar();
+								gui.atualizarVisualizacao(localizador, true);
+								gui.atualizarGrafico();
+							});
+						},
+						false
+					);
 					container.appendChild(filtrar);
 				}
 				var atualizar = document.createElement('a');
 				atualizar.className = 'gmAtualizar';
 				atualizar.textContent = 'Atualizar';
-				atualizar.addEventListener('click', function(evt) {
-					evt.preventDefault();
-					evt.stopPropagation();
-					[...document.getElementsByClassName('gmDetalhesAberto')].forEach(function(balaoAberto) {
-						let linhaAberta = balaoAberto.parentElement;
-						while (linhaAberta && linhaAberta.tagName.toLowerCase() !== 'tr') linhaAberta = linhaAberta.parentElement;
-						if (linhaAberta && linhaAberta === linha) {
-							balaoAberto.classList.remove('gmDetalhesAberto');
-							[...document.getElementsByClassName('gmDetalhes')].forEach(function(linhaAntiga) {
-								linha.parentElement.removeChild(linhaAntiga);
-							});
-						}
-					});
-					var gui = GUI.getInstance();
-					gui.avisoCarregando.exibir('Atualizando...');
-					gui.avisoCarregando.atualizar(0, localizador.quantidadeProcessosNaoFiltrados);
-					localizador.obterProcessos().then(function() {
-						gui.avisoCarregando.ocultar();
-						gui.atualizarVisualizacao(localizador);
-						gui.atualizarGrafico();
-					});
-				}, false);
+				atualizar.addEventListener(
+					'click',
+					function(evt) {
+						evt.preventDefault();
+						evt.stopPropagation();
+						Array.from(
+							document.getElementsByClassName('gmDetalhesAberto')
+						).forEach(function(balaoAberto) {
+							let linhaAberta = balaoAberto.parentElement;
+							while (linhaAberta && linhaAberta.tagName.toLowerCase() !== 'tr')
+								linhaAberta = linhaAberta.parentElement;
+							if (linhaAberta && linhaAberta === linha) {
+								balaoAberto.classList.remove('gmDetalhesAberto');
+								Array.from(
+									document.getElementsByClassName('gmDetalhes')
+								).forEach(function(linhaAntiga) {
+									linha.parentElement.removeChild(linhaAntiga);
+								});
+							}
+						});
+						var gui = GUI.getInstance();
+						gui.avisoCarregando.exibir('Atualizando...');
+						gui.avisoCarregando.atualizar(
+							0,
+							localizador.quantidadeProcessosNaoFiltrados
+						);
+						localizador.obterProcessos().then(function() {
+							gui.avisoCarregando.ocultar();
+							gui.atualizarVisualizacao(localizador);
+							gui.atualizarGrafico();
+						});
+					},
+					false
+				);
 				container.appendChild(atualizar);
 				var divExistente = linha.cells[0].querySelector('div');
 				divExistente.insertBefore(container, divExistente.firstChild);
 			}
-
 			function alternarDetalhes(balao, processos, indicePrioridade) {
-				[...document.getElementsByClassName('gmDetalhes')].forEach(function(linhaAntiga) {
+				Array.from(
+					document.getElementsByClassName('gmDetalhes')
+				).forEach(function(linhaAntiga) {
 					linha.parentElement.removeChild(linhaAntiga);
 				});
 				if (balao.classList.contains('gmDetalhesAberto')) {
 					balao.classList.remove('gmDetalhesAberto');
 					return;
 				}
-				[...document.getElementsByClassName('gmDetalhesAberto')].forEach(function(balaoAberto) {
+				Array.from(
+					document.getElementsByClassName('gmDetalhesAberto')
+				).forEach(function(balaoAberto) {
 					balaoAberto.classList.remove('gmDetalhesAberto');
 				});
 				balao.classList.add('gmDetalhesAberto');
+				const MENOR = -1, MAIOR = +1;
 				processos.sort((a, b) => {
-					if (a.atrasoPorcentagem < b.atrasoPorcentagem) return +1;
-					if (a.atrasoPorcentagem > b.atrasoPorcentagem) return -1;
+					if (a.termoPrazoCorregedoria < b.termoPrazoCorregedoria) return MENOR;
+					if (a.termoPrazoCorregedoria > b.termoPrazoCorregedoria) return MAIOR;
 					return 0;
 				});
 				processos.forEach(function(processo, indiceProcesso) {
-					var linhaNova = linha.parentElement.insertRow(linha.rowIndex + 1 + indiceProcesso);
+					var linhaNova = linha.parentElement.insertRow(
+						linha.rowIndex + 1 + indiceProcesso
+					);
 					var atraso = Math.round(processo.atraso);
 					linhaNova.className = 'infraTrClara gmDetalhes';
 					const DIGITOS_CLASSE = 6,
 						DIGITOS_COMPETENCIA = 2;
-					linhaNova.dataset.classe = ('0'.repeat(DIGITOS_CLASSE) + processo.numClasse).substr(-DIGITOS_CLASSE);
-					linhaNova.dataset.competencia = ('0'.repeat(DIGITOS_COMPETENCIA) + processo.numCompetencia).substr(-DIGITOS_COMPETENCIA);
+					linhaNova.dataset.classe = ('0'.repeat(DIGITOS_CLASSE) +
+						processo.numClasse).substr(-DIGITOS_CLASSE);
+					linhaNova.dataset.competencia = ('0'.repeat(DIGITOS_COMPETENCIA) +
+						processo.numCompetencia).substr(-DIGITOS_COMPETENCIA);
 					var textoData;
 					switch (processo.campoDataConsiderada) {
 						case 'dataSituacao':
@@ -230,25 +310,20 @@ var GUI = (function() {
 								case 'MOVIMENTO-AGUARDA DESPACHO':
 									textoData = 'Data da conclusão para despacho';
 									break;
-
 								case 'MOVIMENTO-AGUARDA SENTENÇA':
 									textoData = 'Data da conclusão para sentença';
 									break;
-
 								default:
 									textoData = 'Data de alteração da situação';
 									break;
 							}
 							break;
-
 						case 'dataUltimoEvento':
 							textoData = 'Data do último evento';
 							break;
-
 						case 'dataInclusaoLocalizador':
 							textoData = 'Data de inclusão no localizador';
 							break;
-
 						default:
 							throw new Error('Campo "data considerada" desconhecido.');
 					}
@@ -266,51 +341,99 @@ var GUI = (function() {
 					}
 					var esperado = processo.prazoCorregedoria;
 					var minimo = 0;
-					var maximo = esperado * (indicePrioridadeProcesso > 1 ? MAXIMO_PRIORIDADE_DOIS_OU_MAIOR : MAXIMO_PRIORIDADE_MENOR_OU_IGUAL_A_UM);
+					var maximo =
+						esperado *
+						(indicePrioridadeProcesso > 1
+							? MAXIMO_PRIORIDADE_DOIS_OU_MAIOR
+							: MAXIMO_PRIORIDADE_MENOR_OU_IGUAL_A_UM);
 					var baixo = esperado - DIAS_BAIXO;
 					var alto = esperado;
 					var ideal = esperado * IDEAL;
 					var valor = esperado + atraso;
 					const PCT = 100;
-					var porcentagem = Math.round(PCT + processo.atrasoPorcentagem * PCT) + '%';
-					var localizadoresExtra = processo.localizadores.filter(loc => loc.id !== localizador.id).map(loc => loc.sigla);
+					var porcentagem = `${Math.round(
+						PCT + processo.atrasoPorcentagem * PCT
+					)}%`;
+					var localizadoresExtra = processo.localizadores
+						.filter(loc => loc.id !== localizador.id)
+						.map(loc => loc.sigla);
 					linhaNova.innerHTML = [
 						'<td>',
-						safeHTML`<img class="gmLembreteProcesso${processo.lembretes.length === 0 ? ' gmLembreteProcessoVazio' : ''}" src="../../../infra_css/imagens/balao.gif" onmouseover="return infraTooltipMostrar('${processo.lembretes.map(lembrete => lembrete.replace(/\n/g, '<br>')).join('<hr style="border-width: 0 0 1px 0;">')}', 'Lembretes', 400);" onmouseout="return infraTooltipOcultar();">`,
+						safeHTML`<img class="gmLembreteProcesso${processo.lembretes
+							.length === 0
+							? ' gmLembreteProcessoVazio'
+							: ''}" src="../../../infra_css/imagens/balao.gif" onmouseover="return infraTooltipMostrar('${processo.lembretes
+							.map(lembrete => lembrete.replace(/\n/g, '<br>'))
+							.join(
+								'<hr style="border-width: 0 0 1px 0;">'
+							)}', 'Lembretes', 400);" onmouseout="return infraTooltipOcultar();">`,
 						[
 							`<a href="${processo.link}">${processo.numprocFormatado}</a>`,
-							`<abbr title="${textoData}">${processo[processo.campoDataConsiderada].toLocaleString().substr(0, 10)}</abbr> + ${esperado.toString().replace(/\.5$/, '&half;')}${esperado >= 2 ? ' dias' : ' dia'} = ${processo.termoPrazoCorregedoria.toLocaleString().substr(0, 10)}`,
+							`<abbr title="${textoData}">${processo[
+								processo.campoDataConsiderada
+							]
+								.toLocaleString()
+								.substr(0, 10)}</abbr> + ${esperado
+								.toString()
+								.replace(/\.5$/, '&half;')}${esperado >= 2
+								? ' dias'
+								: ' dia'} = ${processo.termoPrazoCorregedoria
+								.toLocaleString()
+								.substr(0, 10)}`,
 						].join(' | '),
 						`<span class="gmDetalheClasse"> | ${processo.classe.toUpperCase()}</span>`,
-						localizadoresExtra.length > 0 ? localizadoresExtra.map(loc => `<span class="gmLocalizadorExtra">${loc}</span>`).join(' ') : '',
+						localizadoresExtra.length > 0
+							? localizadoresExtra
+								.map(loc => `<span class="gmLocalizadorExtra">${loc}</span>`)
+								.join(' ')
+							: '',
 						'</td>',
 						'<td>',
-						`<meter ${indicePrioridadeProcesso < 2 ? ' class="gmExcesso"' : ''} min="${minimo}" max="${maximo}" low="${baixo}" high="${alto}" optimum="${ideal}" value="${valor}">${atraso}</meter>`,
-						`<span class="gmPorcentagem">${porcentagem}</span><span class="gmDiasParaFim"> | ${processo.atraso >= 0 ? 'Prazo excedido há ' : ''}`,
-						Math.abs(atraso),
+						`<meter ${indicePrioridadeProcesso < 2
+							? ' class="gmExcesso"'
+							: ''} min="${minimo}" max="${maximo}" low="${baixo}" high="${alto}" optimum="${ideal}" value="${valor}">${atraso}</meter>`,
+						`<span class="gmPorcentagem">${porcentagem}</span><span class="gmDiasParaFim"> | ${processo.atraso >=
+						0
+							? 'Prazo excedido há '
+							: ''}`,
+						Math.abs(atraso) < 1
+							? processo.atraso >= 0 ? 'menos de um' : 'Menos de um'
+							: Math.abs(atraso),
 						Math.abs(atraso) > 1 ? ' dias ' : ' dia ',
 						processo.atraso < 0 ? 'até o fim do prazo' : '',
-						processo.prioridade ? '</span> <span class="gmPrioridade">(Prioridade)</span>' : '',
-						'</td>'
+						processo.prioridade
+							? '</span> <span class="gmPrioridade">(Prioridade)</span>'
+							: '',
+						'</td>',
 					].join('');
 				});
 			}
-
 			prioridades.forEach(function(processos, indicePrioridade) {
-				var balao = document.getElementById('gmLocalizador' + localizador.id + 'Prioridade' + indicePrioridade);
-				balao.addEventListener('click', function(evt) {
+				var balao = document.getElementById(
+					`gmLocalizador${localizador.id}Prioridade${indicePrioridade}`
+				);
+				balao.addEventListener(
+					'click',
+					function(evt) {
+						evt.preventDefault();
+						evt.stopPropagation();
+						alternarDetalhes(balao, processos, indicePrioridade);
+					},
+					false
+				);
+			});
+			const balaoPeticoes = document.getElementById(
+				`gmLocalizador${localizador.id}Peticoes`
+			);
+			balaoPeticoes.addEventListener(
+				'click',
+				function(evt) {
 					evt.preventDefault();
 					evt.stopPropagation();
-					alternarDetalhes(balao, processos, indicePrioridade);
-				}, false);
-			});
-			const balaoPeticoes = document.getElementById('gmLocalizador' + localizador.id + 'Peticoes');
-			balaoPeticoes.addEventListener('click', function(evt) {
-				evt.preventDefault();
-				evt.stopPropagation();
-				alternarDetalhes(balaoPeticoes, processosComPeticao);
-			}, false);
-
+					alternarDetalhes(balaoPeticoes, processosComPeticao);
+				},
+				false
+			);
 		},
 		avisoCarregando: {
 			acrescentar(qtd) {
@@ -327,10 +450,19 @@ var GUI = (function() {
 				}
 				progresso.max = total;
 				progresso.value = atual;
-				saida.textContent = atual + ' / ' + total;
+				saida.textContent = `${atual} / ${total}`;
 			},
 			exibir(texto = 'Carregando dados dos processos...') {
-				window.infraExibirAviso(false, ['<center>', `${texto}<br/>`, '<progress id="gmProgresso" value="0" max="1"></progress><br/>', '<output id="gmSaida"></output>', '</center>'].join(''));
+				window.infraExibirAviso(
+					false,
+					[
+						'<center>',
+						`${texto}<br/>`,
+						'<progress id="gmProgresso" value="0" max="1"></progress><br/>',
+						'<output id="gmSaida"></output>',
+						'</center>',
+					].join('')
+				);
 				progresso = document.getElementById('gmProgresso');
 				saida = document.getElementById('gmSaida');
 			},
@@ -338,7 +470,7 @@ var GUI = (function() {
 				window.infraOcultarAviso();
 				progresso = null;
 				saida = null;
-			}
+			},
 		},
 		criarBotaoAcao(localizadores) {
 			var frag = document.createDocumentFragment();
@@ -347,11 +479,14 @@ var GUI = (function() {
 			button.textContent = 'Analisar conteúdo dos localizadores';
 			frag.appendChild(button);
 			frag.appendChild(document.createElement('br'));
-
-			function criarCheckboxMostrar(id, padrao, [classeTrue, classeFalse], texto) {
+			function criarCheckboxMostrar(
+				id,
+				padrao,
+				[classeTrue, classeFalse],
+				texto
+			) {
 				var input = document.createElement('input');
 				input.type = 'checkbox';
-
 				function onChange() {
 					localStorage.setItem(id, input.checked ? 'S' : 'N');
 					if (input.checked) {
@@ -361,15 +496,21 @@ var GUI = (function() {
 						if (classeTrue !== '') document.body.classList.remove(classeTrue);
 						if (classeFalse !== '') document.body.classList.add(classeFalse);
 					}
-
 				}
-				input.checked = localStorage.hasOwnProperty(id) ? localStorage.getItem(id) === 'S' : padrao;
+				input.checked = localStorage.hasOwnProperty(id)
+					? localStorage.getItem(id) === 'S'
+					: padrao;
 				input.addEventListener('click', onChange);
 				var gui = GUI.getInstance();
 				input.addEventListener('click', () => {
-					Array.from(document.querySelectorAll('.gmDetalhes')).forEach(detalhe => detalhe.parentNode.removeChild(detalhe));
-					localizadores.forEach(localizador => gui.atualizarVisualizacao(localizador));
-					if (typeof gui.atualizarGrafico === 'function') gui.atualizarGrafico();
+					Array.from(
+						document.querySelectorAll('.gmDetalhes')
+					).forEach(detalhe => detalhe.parentNode.removeChild(detalhe));
+					localizadores.forEach(localizador =>
+						gui.atualizarVisualizacao(localizador)
+					);
+					if (typeof gui.atualizarGrafico === 'function')
+						gui.atualizarGrafico();
 				});
 				onChange();
 				var label = document.createElement('label');
@@ -377,17 +518,36 @@ var GUI = (function() {
 				label.insertBefore(input, label.firstChild);
 				return label;
 			}
-
-			var labelClasses = criarCheckboxMostrar('mostrarClasses', true, ['', 'gmNaoMostrarClasses'], ' Mostrar classe dos processos');
+			var labelClasses = criarCheckboxMostrar(
+				'mostrarClasses',
+				true,
+				['', 'gmNaoMostrarClasses'],
+				' Mostrar classe dos processos'
+			);
 			frag.appendChild(labelClasses);
 			frag.appendChild(document.createElement('br'));
-			var labelDias = criarCheckboxMostrar('mostrarDiasParaFim', true, ['', 'gmNaoMostrarDiasParaFim'], ' Mostrar dias para o fim do prazo');
+			var labelDias = criarCheckboxMostrar(
+				'mostrarDiasParaFim',
+				true,
+				['', 'gmNaoMostrarDiasParaFim'],
+				' Mostrar dias para o fim do prazo'
+			);
 			frag.appendChild(labelDias);
 			frag.appendChild(document.createElement('br'));
-			var labelConsiderarDataInclusaoLocalizador = criarCheckboxMostrar('considerarDataInclusaoLocalizador', false, ['gmConsiderarDataInclusaoLocalizador', ''], 'Entre data do último evento e da inclusão no localizador, considerar a mais antiga');
+			var labelConsiderarDataInclusaoLocalizador = criarCheckboxMostrar(
+				'considerarDataInclusaoLocalizador',
+				false,
+				['gmConsiderarDataInclusaoLocalizador', ''],
+				'Entre data do último evento e da inclusão no localizador, considerar a mais antiga'
+			);
 			frag.appendChild(labelConsiderarDataInclusaoLocalizador);
 			frag.appendChild(document.createElement('br'));
-			var labelPrazoMetade = criarCheckboxMostrar('prazoMetade', true, ['gmPrazoMetade', ''], 'Conceder metade do prazo normal para processos prioritários');
+			var labelPrazoMetade = criarCheckboxMostrar(
+				'prazoMetade',
+				true,
+				['gmPrazoMetade', ''],
+				'Conceder metade do prazo normal para processos prioritários'
+			);
 			frag.appendChild(labelPrazoMetade);
 			frag.appendChild(document.createElement('br'));
 			area.insertBefore(frag, area.firstChild);
@@ -399,29 +559,33 @@ var GUI = (function() {
 			}
 		},
 		criarGrafico(localizadores) {
-
 			function excluirCanvasAntigo() {
 				const canvases = document.getElementsByTagName('canvas');
 				if (canvases.length > 0) {
 					console.log('Excluindo canvas antigo');
-					Array.from(canvases).forEach(canvas => canvas.parentNode.removeChild(canvas));
+					Array.from(canvases).forEach(canvas =>
+						canvas.parentNode.removeChild(canvas)
+					);
 				}
 			}
-
 			function extrairProcessos(localizadores) {
 				const processos = new Map();
-
 				const agora = new Date(),
-					hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-
+					hoje = new Date(
+						agora.getFullYear(),
+						agora.getMonth(),
+						agora.getDate()
+					);
 				localizadores.forEach(localizador => {
 					localizador.processos.forEach(processo => {
 						const numproc = processo.numproc;
-
 						const termo = processo.termoPrazoCorregedoria,
-							dataTermo = new Date(termo.getFullYear(), termo.getMonth(), termo.getDate());
-						const timestamp = Math.max(hoje, dataTermo);
-
+							dataTermo = new Date(
+								termo.getFullYear(),
+								termo.getMonth(),
+								termo.getDate()
+							);
+						const timestamp = Math.max(hoje.getTime(), dataTermo.getTime());
 						if (processos.has(numproc)) {
 							const timestampAntigo = processos.get(numproc),
 								timestampNovo = Math.min(timestampAntigo, timestamp);
@@ -431,115 +595,102 @@ var GUI = (function() {
 						}
 					});
 				});
-
 				return processos;
 			}
-
 			function extrairDatas(processos) {
 				const datas = new Map();
-
 				for (let timestamp of processos.values()) {
 					let valorAtual = datas.get(timestamp) || 0;
 					datas.set(timestamp, valorAtual + 1);
 				}
-
 				return datas;
 			}
-
 			const Grafico = (function() {
-
 				class Grafico {
-
 					get area() {
 						var area = {
 							corFundo: 'rgba(102, 102, 102, 0.25)',
-							linha: {
-								espessura: 1,
-								cor: '#666'
-							}
+							linha: { espessura: 1, cor: '#666' },
 						};
-						const margemExterna = this.dimensoes.margem + this.linha.espessura / 2 + this.dimensoes.espacamento + area.linha.espessura / 2;
+						const margemExterna =
+							this.dimensoes.margem +
+							this.linha.espessura / 2 +
+							this.dimensoes.espacamento +
+							area.linha.espessura / 2;
 						area.margens = {
 							t: margemExterna + this.texto.altura / 2,
 							r: margemExterna,
 							b: margemExterna + this.texto.altura + this.dimensoes.espacamento,
-							l: margemExterna + this.escala.largura + 2 * this.dimensoes.espacamento
+							l:
+								margemExterna +
+								this.escala.largura +
+								2 * this.dimensoes.espacamento,
 						};
 						area.dimensoes = {
 							largura: this.dimensoes.largura - area.margens.l - area.margens.r,
-							altura: this.dimensoes.altura - area.margens.t - area.margens.b
+							altura: this.dimensoes.altura - area.margens.t - area.margens.b,
 						};
 						return area;
 					}
-
 					constructor() {
 						this.dimensoes = {
 							get largura() {
-								return Math.min(1024, document.querySelector('#divInfraAreaTelaD').clientWidth);
+								return Math.min(
+									1024,
+									document.querySelector('#divInfraAreaTelaD').clientWidth
+								);
 							},
 							altura: 400,
 							margem: 3,
-							espacamento: 5
+							espacamento: 5,
 						};
-						this.linha = {
-							espessura: 1,
-							cor: 'rgba(255, 255, 255, 0.9)'
-						};
+						this.linha = { espessura: 1, cor: 'rgba(255, 255, 255, 0.9)' };
 						this.corFundo = 'rgb(51, 51, 51)';
 						this.texto = {
 							altura: 10,
 							cor: 'hsla(180, 100%, 87%, 0.87)',
-							corSecundaria: 'hsla(180, 100%, 87%, 0.5)'
+							corSecundaria: 'hsla(180, 100%, 87%, 0.5)',
 						};
 						this.escala = {
 							maximo: 20,
 							unidadePrimaria: 10,
 							unidadeSecundaria: 5,
 							largura: 2 * this.texto.altura,
-							linhaPrimaria: {
-								espessura: 2,
-								cor: '#888'
-							},
-							linhaSecundaria: {
-								espessura: 0.5,
-								cor: '#666'
-							}
+							linhaPrimaria: { espessura: 2, cor: '#888' },
+							linhaSecundaria: { espessura: 0.5, cor: '#666' },
 						};
 						let self = this;
 						this.categorias = {
 							quantidade: 1,
 							get distancia() {
 								return self.area.dimensoes.largura / self.categorias.quantidade;
-							}
+							},
 						};
 						this.barras = {
 							corVencido: 'hsla(15, 80%, 75%, 1)',
 							corProximosDias: 'hsla(60, 100%, 75%, 1)',
 							corNoPrazo: 'hsla(120, 75%, 80%, 1)',
-							espacamento: 0.2, // valor entre 0 e 1, proporcional à largura disponível
-							get largura() {
-								return self.categorias.distancia * (1 - self.barras.espacamento);
-							}
+							espacamento: 0.2,
+							/* valor entre 0 e 1, proporcional à largura disponível */ get largura() {
+								return (
+									self.categorias.distancia * (1 - self.barras.espacamento)
+								);
+							},
 						};
-
 						const canvas = document.createElement('canvas');
 						canvas.width = this.dimensoes.largura;
 						canvas.height = this.dimensoes.altura;
 						this.canvas = canvas;
-
 						this.context = this.canvas.getContext('2d');
 						this.dados = new Map();
 					}
-
 					inserirDados(dados) {
 						this.dados = dados;
 					}
-
 					render() {
 						this.calcularEscala();
 						this.calcularLarguraEscala();
 						this.calcularCategorias();
-
 						this.desenharFundo();
 						this.desenharArea();
 						this.desenharEscala();
@@ -547,11 +698,15 @@ var GUI = (function() {
 						this.desenharBarras();
 						return this.canvas;
 					}
-
 					desenharFundo() {
 						const context = this.context;
 						context.fillStyle = this.corFundo;
-						context.fillRect(0, 0, this.dimensoes.largura, this.dimensoes.altura);
+						context.fillRect(
+							0,
+							0,
+							this.dimensoes.largura,
+							this.dimensoes.altura
+						);
 						context.beginPath();
 						let x = this.dimensoes.margem;
 						let y = x;
@@ -562,24 +717,37 @@ var GUI = (function() {
 						context.strokeStyle = this.linha.cor;
 						context.stroke();
 					}
-
 					desenharArea() {
 						const context = this.context;
 						context.beginPath();
-						context.rect(this.area.margens.l, this.area.margens.t, this.area.dimensoes.largura, this.area.dimensoes.altura);
+						context.rect(
+							this.area.margens.l,
+							this.area.margens.t,
+							this.area.dimensoes.largura,
+							this.area.dimensoes.altura
+						);
 						context.fillStyle = this.area.corFundo;
 						context.fill();
 						context.lineWidth = this.area.linha.espessura;
 						context.strokeStyle = this.area.linha.cor;
 						context.stroke();
 					}
-
 					desenharEscala() {
 						const context = this.context;
-						const xTexto = this.dimensoes.margem + this.linha.espessura / 2 + this.dimensoes.espacamento + this.escala.largura / 2;
-						const xLinha = xTexto + this.escala.largura / 2 + this.dimensoes.espacamento;
-						const wLinha = this.area.dimensoes.largura + this.dimensoes.espacamento;
-						for (let i = 0; i <= this.escala.maximo; i += this.escala.unidadeSecundaria) {
+						const xTexto =
+							this.dimensoes.margem +
+							this.linha.espessura / 2 +
+							this.dimensoes.espacamento +
+							this.escala.largura / 2;
+						const xLinha =
+							xTexto + this.escala.largura / 2 + this.dimensoes.espacamento;
+						const wLinha =
+							this.area.dimensoes.largura + this.dimensoes.espacamento;
+						for (
+							let i = 0;
+							i <= this.escala.maximo;
+							i += this.escala.unidadeSecundaria
+						) {
 							if (i % this.escala.unidadePrimaria === 0) {
 								context.fillStyle = this.texto.cor;
 								context.strokeStyle = this.escala.linhaPrimaria.cor;
@@ -590,35 +758,58 @@ var GUI = (function() {
 								context.lineWidth = this.escala.linhaSecundaria.espessura;
 							}
 							let proporcao = i / this.escala.maximo;
-							let y = this.dimensoes.altura - this.area.margens.b - proporcao * this.area.dimensoes.altura;
-							context.fillText(i, xTexto, y);
+							let y =
+								this.dimensoes.altura -
+								this.area.margens.b -
+								proporcao * this.area.dimensoes.altura;
+							context.fillText(i.toString(), xTexto, y);
 							context.beginPath();
 							context.moveTo(xLinha, y);
 							context.lineTo(xLinha + wLinha, y);
 							context.stroke();
 						}
 					}
-
 					desenharCategorias() {
 						const context = this.context;
 						const larguraPossivelTexto = context.measureText('99').width;
-						const step = Math.ceil((larguraPossivelTexto + this.dimensoes.espacamento) / this.categorias.distancia);
-						const agora = new Date(), hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-
+						const step = Math.ceil(
+							(larguraPossivelTexto + this.dimensoes.espacamento) /
+								this.categorias.distancia
+						);
+						const agora = new Date(),
+							hoje = new Date(
+								agora.getFullYear(),
+								agora.getMonth(),
+								agora.getDate()
+							);
 						context.fillStyle = this.texto.cor;
-						const y = this.dimensoes.altura - (this.dimensoes.margem + this.linha.espessura / 2 + this.area.margens.b) / 2;
+						const y =
+							this.dimensoes.altura -
+							(this.dimensoes.margem +
+								this.linha.espessura / 2 +
+								this.area.margens.b) /
+								2;
 						for (let i = 0; i < this.categorias.quantidade; i += step) {
-							let dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
-							let x = this.area.margens.l + (i + 0.5) * this.categorias.distancia;
-							context.fillText(dia.getDate(), x, y);
+							let dia = new Date(
+								hoje.getFullYear(),
+								hoje.getMonth(),
+								hoje.getDate() + i
+							);
+							let x =
+								this.area.margens.l + (i + 0.5) * this.categorias.distancia;
+							context.fillText(dia.getDate().toString(), x, y);
 						}
 					}
-
 					desenharBarras() {
 						const context = this.context;
-						const agora = new Date(), hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-						const larguraBarra = this.categorias.distancia * (1 - this.barras.espacamento);
-
+						const agora = new Date(),
+							hoje = new Date(
+								agora.getFullYear(),
+								agora.getMonth(),
+								agora.getDate()
+							);
+						const larguraBarra =
+							this.categorias.distancia * (1 - this.barras.espacamento);
 						for (let i = 0; i < this.categorias.quantidade; i++) {
 							if (i === 0) {
 								context.fillStyle = this.barras.corVencido;
@@ -627,55 +818,67 @@ var GUI = (function() {
 							} else {
 								context.fillStyle = this.barras.corNoPrazo;
 							}
-							let dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
+							let dia = new Date(
+								hoje.getFullYear(),
+								hoje.getMonth(),
+								hoje.getDate() + i
+							);
 							if (this.dados.has(dia.getTime())) {
-								let x = this.area.margens.l + (i + 0.5) * this.categorias.distancia - larguraBarra / 2;
+								let x =
+									this.area.margens.l +
+									(i + 0.5) * this.categorias.distancia -
+									larguraBarra / 2;
 								let valor = this.dados.get(dia.getTime());
-								let altura = valor / this.escala.maximo * this.area.dimensoes.altura;
+								let altura =
+									valor / this.escala.maximo * this.area.dimensoes.altura;
 								let y = this.dimensoes.altura - this.area.margens.b - altura;
 								context.fillRect(x, y, larguraBarra, altura);
 							}
 						}
 					}
-
 					calcularEscala() {
-
 						const quantidades = Array.from(this.dados.values());
 						const maximo = Math.max.apply(null, quantidades);
 						this.calcularDadosEscala(maximo);
-
-						const distanciaMinima = 2 * this.dimensoes.espacamento + 2 * this.texto.altura;
-
-						let secundariaOk = this.assegurarDistanciaMinima('unidadeSecundaria', distanciaMinima);
+						const distanciaMinima =
+							2 * this.dimensoes.espacamento + 2 * this.texto.altura;
+						let secundariaOk = this.assegurarDistanciaMinima(
+							'unidadeSecundaria',
+							distanciaMinima
+						);
 						if (secundariaOk) return;
-
-						let primariaOk = this.assegurarDistanciaMinima('unidadePrimaria', distanciaMinima);
+						let primariaOk = this.assegurarDistanciaMinima(
+							'unidadePrimaria',
+							distanciaMinima
+						);
 						if (primariaOk) {
 							this.escala.unidadeSecundaria = this.escala.unidadePrimaria;
 						} else {
 							throw new Error('Não sei o que fazer');
 						}
-
 					}
-
 					calcularLarguraEscala() {
 						const context = this.context;
 						context.textBaseline = 'middle';
 						context.textAlign = 'center';
 						context.font = `${this.texto.altura}px Arial`;
-						const largura = context.measureText(this.escala.maximo.toString()).width;
+						const largura = context.measureText(this.escala.maximo.toString())
+							.width;
 						this.escala.largura = largura;
 					}
-
 					calcularCategorias() {
 						const dias = Array.from(this.dados.keys());
-						const agora = new Date(), hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-						const minimo = hoje;
+						const agora = new Date(),
+							hoje = new Date(
+								agora.getFullYear(),
+								agora.getMonth(),
+								agora.getDate()
+							);
+						const minimo = hoje.getTime();
 						const maximo = Math.max.apply(null, dias);
 						const UM_DIA = 864e5;
 						this.categorias.quantidade = (maximo - minimo) / UM_DIA + 1;
 					}
-
 					calcularDadosEscala(maximo) {
 						if (maximo <= 10) {
 							this.escala.unidadePrimaria = 10;
@@ -684,17 +887,22 @@ var GUI = (function() {
 							this.escala.unidadePrimaria = Math.pow(10, ordem);
 						}
 						this.escala.unidadeSecundaria = this.escala.unidadePrimaria / 10;
-						this.escala.maximo = Math.ceil(maximo / this.escala.unidadeSecundaria) * this.escala.unidadeSecundaria;
+						this.escala.maximo =
+							Math.ceil(maximo / this.escala.unidadeSecundaria) *
+							this.escala.unidadeSecundaria;
 					}
-
 					assegurarDistanciaMinima(unidade, distancia) {
 						let tamanhoIdealEncontrado = false;
 						[1, 2, 2.5, 5, 10].forEach(mult => {
 							if (tamanhoIdealEncontrado) return;
 							let novoIntervalo = this.escala[unidade] * mult;
 							if (novoIntervalo % 1 !== 0) return;
-							let novoMaximo = Math.ceil(this.escala.maximo / novoIntervalo) * novoIntervalo;
-							if (novoMaximo / novoIntervalo * distancia <= this.area.dimensoes.altura) {
+							let novoMaximo =
+								Math.ceil(this.escala.maximo / novoIntervalo) * novoIntervalo;
+							if (
+								novoMaximo / novoIntervalo * distancia <=
+								this.area.dimensoes.altura
+							) {
 								tamanhoIdealEncontrado = true;
 								if (mult !== 1) {
 									this.escala[unidade] *= mult;
@@ -704,23 +912,21 @@ var GUI = (function() {
 						});
 						return tamanhoIdealEncontrado;
 					}
-
 				}
-
 				return Grafico;
 			})();
-
 			excluirCanvasAntigo();
 			const processos = extrairProcessos(localizadores);
 			const tabelaDatas = extrairDatas(processos);
 			var grafico = new Grafico();
 			grafico.inserirDados(tabelaDatas);
-			document.getElementById('divInfraAreaTelaD').appendChild(grafico.render());
+			document
+				.getElementById('divInfraAreaTelaD')
+				.appendChild(grafico.render());
 		},
 		visitLocalizador(pvtVars) {
 			return pvtVars;
-		}
-
+		},
 	};
 	GUI.getInstance = function() {
 		if (! instance) {
@@ -735,8 +941,13 @@ var GUI = (function() {
 var LocalizadoresFactory = (function() {
 	var obterFormularioRelatorioGeral = function() {
 		var promiseRelatorioGeral = new Promise(function(resolve, reject) {
-			var url = Array.from(document.querySelectorAll('#main-menu a[href]'))
-				.filter(link => /^\?acao=relatorio_geral_listar&/.test(link.search))
+			var links = document.querySelectorAll('#main-menu a[href]');
+			var url = Array.from(links)
+				.filter(
+					link =>
+						new URL(link.href).searchParams.get('acao') ===
+						'relatorio_geral_listar'
+				)
 				.map(link => link.href)[0];
 			var xml = new XMLHttpRequest();
 			xml.open('GET', url);
@@ -753,13 +964,18 @@ var LocalizadoresFactory = (function() {
 		obterFormularioRelatorioGeral = () => promiseRelatorioGeral;
 		return obterFormularioRelatorioGeral();
 	};
-
 	function trataHTML({ target: { response: doc } }) {
 		var pagina = Number(doc.getElementById('hdnInfraPaginaAtual').value);
-		var quantidadeProcessosCarregados = parseInt(doc.getElementById('hdnInfraNroItens').value);
+		var quantidadeProcessosCarregados = parseInt(
+			doc.getElementById('hdnInfraNroItens').value
+		);
 		var gui = GUI.getInstance();
 		gui.avisoCarregando.acrescentar(quantidadeProcessosCarregados);
-		var linhas = [...doc.querySelectorAll('#divInfraAreaTabela > table > tbody > tr[class^="infraTr"]')];
+		var linhas = [
+			...doc.querySelectorAll(
+				'#divInfraAreaTabela > table > tbody > tr[class^="infraTr"]'
+			),
+		];
 		linhas.forEach(function(linha) {
 			this.processos.push(ProcessoFactory.fromLinha(linha));
 		}, this);
@@ -770,20 +986,18 @@ var LocalizadoresFactory = (function() {
 		}
 		return this;
 	}
-
 	function Localizador() {
+		this.id = null;
+		this.linha = null;
+		this.link = null;
+		this.nome = null;
 		this.processos = [];
+		this.quantidadeProcessosNaoFiltrados = null;
+		this.sigla = null;
+		this.siglaNome = null;
 	}
 	Localizador.prototype = {
 		constructor: Localizador,
-		id: null,
-		lembrete: null,
-		link: null,
-		nome: null,
-		processos: null,
-		quantidadeProcessosNaoFiltrados: null,
-		sigla: null,
-		siglaNome: null,
 		obterPagina(pagina, doc) {
 			var self = this;
 			return new Promise(function(resolve, reject) {
@@ -791,7 +1005,15 @@ var LocalizadoresFactory = (function() {
 				if (pagina === 0) {
 					url = self.link.href;
 					data = new FormData();
-					var camposPost = ['optchkcClasse', 'optDataAutuacao', 'optchkcUltimoEvento', 'optNdiasSituacao', 'optJuizo', 'optPrioridadeAtendimento', 'chkStatusProcesso'];
+					var camposPost = [
+						'optchkcClasse',
+						'optDataAutuacao',
+						'optchkcUltimoEvento',
+						'optNdiasSituacao',
+						'optJuizo',
+						'optPrioridadeAtendimento',
+						'chkStatusProcesso',
+					];
 					camposPost.forEach(campo => data.set(campo, 'S'));
 					data.set('paginacao', '100');
 					data.set('hdnInfraPaginaAtual', pagina);
@@ -818,47 +1040,58 @@ var LocalizadoresFactory = (function() {
 		},
 		obterPrazosPagina(pagina = 0) {
 			const self = this;
-			return obterFormularioRelatorioGeral().then(function(form) {
-				const url = form.action;
-				const method = form.method;
-				const data = new FormData();
-				data.set('paginacao', '100');
-				data.set('selPrazo', 'A');
-				data.set('selLocalizadorPrincipal', self.id);
-				data.set('selLocalizadorPrincipalSelecionados', self.id);
-				data.set('optchkcClasse', 'S');
-				data.set('hdnInfraPaginaAtual', pagina);
-				data.set('selRpvPrecatorio', 'null');
-				return new Promise(function(resolve, reject) {
-					var xml = new XMLHttpRequest();
-					xml.open(method, url);
-					xml.responseType = 'document';
-					xml.onerror = reject;
-					xml.onload = resolve;
-					xml.send(data);
-				});
-			})
+			return obterFormularioRelatorioGeral()
+				.then(function(form) {
+					const url = form.action;
+					const method = form.method;
+					const data = new FormData();
+					data.set('paginacao', '100');
+					data.set('selPrazo', 'A');
+					data.set('selLocalizadorPrincipal', self.id);
+					data.set('selLocalizadorPrincipalSelecionados', self.id);
+					data.set('optchkcClasse', 'S');
+					data.set('hdnInfraPaginaAtual', pagina.toString());
+					data.set('selRpvPrecatorio', 'null');
+					return new Promise(function(resolve, reject) {
+						var xml = new XMLHttpRequest();
+						xml.open(method, url);
+						xml.responseType = 'document';
+						xml.onerror = reject;
+						xml.onload = resolve;
+						xml.send(data);
+					});
+				})
 				.then(function({ target: { response: doc } }) {
 					const tabela = doc.getElementById('tabelaLocalizadores');
-					const quantidadeProcessosCarregados = parseInt(doc.getElementById('hdnInfraNroItens').value);
+					const quantidadeProcessosCarregados = parseInt(
+						doc.getElementById('hdnInfraNroItens').value
+					);
 					if (tabela) {
-						console.log(pagina, self.sigla, tabela.querySelector('caption').textContent);
-						const linhas = Array.from(tabela.querySelectorAll('tr[data-classe]'));
+						console.log(
+							pagina,
+							self.sigla,
+							tabela.querySelector('caption').textContent
+						);
+						const linhasList = tabela.querySelectorAll('tr[data-classe]');
+						const linhas = Array.from(linhasList);
 						const processosComPrazoAberto = new Set();
 						linhas.forEach(linha => {
-							const numproc = linha.cells[1].querySelector('a[href]').search.match(/&num_processo=(\d+)&/)[1];
+							const link = linha.cells[1].querySelector('a[href]');
+							const numproc = new URL(link.href).searchParams.get(
+								'num_processo'
+							);
 							processosComPrazoAberto.add(numproc);
 						});
-						for (let i = self.processos.length - 1; i >= 0; i--) {
-							if (processosComPrazoAberto.has(self.processos[i].numproc)) {
-								self.processos.splice(i, 1);
-							}
-						}
+						self.processos = self.processos.filter(
+							processo => ! processosComPrazoAberto.has(processo.numproc)
+						);
 					} else {
 						console.log(pagina, self.sigla, quantidadeProcessosCarregados);
 					}
 					if (doc.getElementById('lnkProximaPaginaSuperior')) {
-						const paginaAtual = parseInt(doc.getElementById('selInfraPaginacaoSuperior').value);
+						const paginaAtual = parseInt(
+							doc.getElementById('selInfraPaginacaoSuperior').value
+						);
 						const paginaNova = paginaAtual < 2 ? 2 : paginaAtual + 1;
 						return self.obterPrazosPagina.call(self, paginaNova);
 					}
@@ -872,10 +1105,12 @@ var LocalizadoresFactory = (function() {
 			if (! link.href) {
 				return Promise.resolve(this);
 			}
-			return this.obterPrazosPagina(0).then(function() {
-				this.link.textContent = this.processos.length;
-				return this;
-			}.bind(this));
+			return this.obterPrazosPagina(0).then(
+				function() {
+					this.link.textContent = this.processos.length;
+					return this;
+				}.bind(this)
+			);
 		},
 		obterProcessos() {
 			this.processos = [];
@@ -883,27 +1118,31 @@ var LocalizadoresFactory = (function() {
 			if (! link.href) {
 				return Promise.resolve(this);
 			}
-			return this.obterPagina(0).then(function() {
-				this.quantidadeProcessosNaoFiltrados = this.processos.length;
-				this.link.textContent = this.processos.length;
-				if (this.processos.length > 0) {
-					var localizadorProcesso = this.processos[0].localizadores.filter(localizador => localizador.id === this.id)[0];
-					if (! this.sigla) {
-						this.sigla = localizadorProcesso.sigla;
+			return this.obterPagina(0).then(
+				function() {
+					this.quantidadeProcessosNaoFiltrados = this.processos.length;
+					this.link.textContent = this.processos.length;
+					if (this.processos.length > 0) {
+						var localizadorProcesso = this.processos[0].localizadores.filter(
+							localizador => localizador.id === this.id
+						)[0];
+						if (! this.sigla) {
+							this.sigla = localizadorProcesso.sigla;
+						}
+						if (this.sigla && this.nome) {
+							this.siglaNome = [this.sigla, this.nome].join(' - ');
+						}
+						var siglaComSeparador = `${this.sigla} - `;
+						this.nome = this.siglaNome.substr(siglaComSeparador.length);
+						this.lembrete = localizadorProcesso.lembrete;
 					}
-					if (this.sigla && this.nome) {
-						this.siglaNome = [this.sigla, this.nome].join(' - ');
-					}
-					var siglaComSeparador = this.sigla + ' - ';
-					this.nome = this.siglaNome.substr(siglaComSeparador.length);
-					this.lembrete = localizadorProcesso.lembrete;
-				}
-				return this;
-			}.bind(this));
+					return this;
+				}.bind(this)
+			);
 		},
 		get quantidadeProcessos() {
 			return Number(this.link.textContent);
-		}
+		},
 	};
 	var LocalizadorFactory = {
 		fromLinha(linha) {
@@ -930,7 +1169,9 @@ var LocalizadoresFactory = (function() {
 		fromLinhaPainel(linha) {
 			var localizador = new Localizador();
 			localizador.linha = linha;
-			localizador.nome = linha.cells[0].textContent.match(/^Processos com Localizador\s+"(.*)"$/)[1];
+			localizador.nome = linha.cells[0].textContent.match(
+				/^Processos com Localizador\s+"(.*)"$/
+			)[1];
 			var link = localizador.link = linha.querySelector('a,u');
 			localizador.quantidadeProcessosNaoFiltrados = parseInt(link.textContent);
 			if (link && link.href) {
@@ -938,9 +1179,8 @@ var LocalizadoresFactory = (function() {
 				localizador.id = camposGet.selLocalizador;
 			}
 			return localizador;
-		}
+		},
 	};
-
 	function paraCadaLocalizador(fn) {
 		var cookiesAntigos = parseCookies(document.cookie);
 		var promises = this.map(fn);
@@ -949,27 +1189,43 @@ var LocalizadoresFactory = (function() {
 			var expira = new Date();
 			expira.setFullYear(expira.getFullYear() + 1);
 			for (let key in cookiesNovos) {
-				if (typeof cookiesAntigos[key] !== 'undefined' && cookiesNovos[key] !== cookiesAntigos[key]) {
-					document.cookie = encodeURIComponent(key) + '=' + encodeURIComponent(cookiesAntigos[key]) + '; expires=' + expira.toUTCString();
+				if (
+					typeof cookiesAntigos[key] !== 'undefined' &&
+					cookiesNovos[key] !== cookiesAntigos[key]
+				) {
+					document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(
+						cookiesAntigos[key]
+					)}; expires=${expira.toUTCString()}`;
 				}
 			}
 		});
 	}
-
 	function Localizadores() {}
-	Localizadores.prototype = definirPropriedades(Object.create(Array.prototype), {
-		constructor: Localizadores,
-		tabela: null,
-		obterProcessos() {
-			return paraCadaLocalizador.call(this, localizador => localizador.obterProcessos());
-		},
-		get quantidadeProcessos() {
-			return this.reduce((soma, localizador) => soma + localizador.quantidadeProcessos, 0);
-		},
-		get quantidadeProcessosNaoFiltrados() {
-			return this.reduce((soma, localizador) => soma + localizador.quantidadeProcessosNaoFiltrados, 0);
+	Localizadores.prototype = definirPropriedades(
+		Object.create(Array.prototype),
+		{
+			constructor: Localizadores,
+			tabela: null,
+			obterProcessos() {
+				return paraCadaLocalizador.call(this, localizador =>
+					localizador.obterProcessos()
+				);
+			},
+			get quantidadeProcessos() {
+				return this.reduce(
+					(soma, localizador) => soma + localizador.quantidadeProcessos,
+					0
+				);
+			},
+			get quantidadeProcessosNaoFiltrados() {
+				return this.reduce(
+					(soma, localizador) =>
+						soma + localizador.quantidadeProcessosNaoFiltrados,
+					0
+				);
+			},
 		}
-	});
+	);
 	var LocalizadoresFactory = {
 		fromTabela(tabela) {
 			var localizadores = new Localizadores();
@@ -988,7 +1244,7 @@ var LocalizadoresFactory = (function() {
 				localizadores.push(LocalizadorFactory.fromLinhaPainel(linha));
 			});
 			return localizadores;
-		}
+		},
 	};
 	return LocalizadoresFactory;
 })();
@@ -999,7 +1255,7 @@ var ProcessoFactory = (function() {
 		id: null,
 		lembrete: null,
 		principal: null,
-		sigla: null
+		sigla: null,
 	};
 	var LocalizadorProcessoFactory = {
 		fromInput(input) {
@@ -1011,17 +1267,18 @@ var ProcessoFactory = (function() {
 			var linkLembrete = elementoNome.nextElementSibling;
 			if (linkLembrete.attributes.hasOwnProperty('onmouseover')) {
 				var onmouseover = linkLembrete.attributes.onmouseover.value;
-				localizador.lembrete = onmouseover.match(/^return infraTooltipMostrar\('Obs: (.*) \/ ([^(]+)\(([^)]+)\)','',400\);$/)[1];
+				localizador.lembrete = onmouseover.match(
+					/^return infraTooltipMostrar\('Obs: (.*) \/ ([^(]+)\(([^)]+)\)','',400\);$/
+				)[1];
 			}
 			return localizador;
-		}
+		},
 	};
-
 	function LocalizadoresProcesso() {}
-	LocalizadoresProcesso.prototype = definirPropriedades(Object.create(Array.prototype), {
-		constructor: LocalizadoresProcesso,
-		principal: null
-	});
+	LocalizadoresProcesso.prototype = definirPropriedades(
+		Object.create(Array.prototype),
+		{ constructor: LocalizadoresProcesso, principal: null }
+	);
 	var LocalizadoresProcessoFactory = {
 		fromCelula(celula) {
 			var localizadores = new LocalizadoresProcesso();
@@ -1034,9 +1291,8 @@ var ProcessoFactory = (function() {
 				localizadores.push(localizador);
 			});
 			return localizadores;
-		}
+		},
 	};
-
 	const MILISSEGUNDOS_EM_UM_DIA = 864e5;
 	const COMPETENCIA_JUIZADO_MIN = 9,
 		COMPETENCIA_JUIZADO_MAX = 20,
@@ -1046,44 +1302,119 @@ var ProcessoFactory = (function() {
 		COMPETENCIA_EF_MAX = 43,
 		CLASSE_EF = 99,
 		CLASSE_CARTA_PRECATORIA = 60;
-
 	function Processo() {
+		this.classe = null;
 		this.dadosComplementares = new Set();
+		this.dataAutuacao = null;
+		this.dataInclusaoLocalizador = null;
+		this.dataSituacao = null;
+		this.dataUltimoEvento = null;
+		this.juizo = null;
 		this.lembretes = [];
+		this.linha = null;
+		this.link = null;
 		this.localizadores = [];
+		this.numClasse = null;
+		this.numCompetencia = null;
+		this.numproc = null;
+		this.numprocFormatado = null;
+		this.sigilo = null;
+		this.situacao = null;
+		this.ultimoEvento = null;
 	}
+
+	const memoize = fn => {
+		const store = new Map();
+		return x => {
+			if (! store.has(x)) {
+				store.set(x, fn(x));
+			}
+			return store.get(x);
+		};
+	};
+
+	const DOMINGO = 0;
+	const SEGUNDA = 1;
+	const SABADO = 6;
+
+	const adiantarParaSabado = data => {
+		const diaDaSemana = data.getDay();
+		if (diaDaSemana === DOMINGO) {
+			return new Date(data.getFullYear(), data.getMonth(), data.getDate() - 1);
+		}
+		if (diaDaSemana === SEGUNDA) {
+			return new Date(data.getFullYear(), data.getMonth(), data.getDate() - 2);
+		}
+		return new Date(data.getTime());
+	};
+
+	const prorrogarParaSegunda = data => {
+		const diaDaSemana = data.getDay();
+		if (diaDaSemana === DOMINGO) {
+			return new Date(data.getFullYear(), data.getMonth(), data.getDate() + 1);
+		}
+		if (diaDaSemana === SABADO) {
+			return new Date(data.getFullYear(), data.getMonth(), data.getDate() + 2);
+		}
+		return new Date(data.getTime());
+	};
+
+	const JANEIRO = 0;
+	const DEZEMBRO = 11;
+	const calcularRecesso = memoize(ano => {
+		const inicio = adiantarParaSabado(new Date(ano, DEZEMBRO, 20));
+		const retorno = prorrogarParaSegunda(new Date(ano + 1, JANEIRO, 7));
+		return { inicio, retorno };
+	});
+
+	const calcularRecessoData = data => {
+		let { inicio, retorno } = calcularRecesso(data.getFullYear() - 1);
+		while (data > retorno) {
+			const recesso = calcularRecesso(retorno.getFullYear());
+			inicio = recesso.inicio;
+			retorno = recesso.retorno;
+		}
+		return { inicio, retorno };
+	};
+
+	const calcularAtraso = (a, b) => {
+		const { inicio, retorno } = calcularRecessoData(a);
+		return (
+			Math.max(0, inicio - a) -
+			Math.max(0, inicio - b) +
+			Math.max(0, b - retorno)
+		);
+	};
+
 	Processo.prototype = {
 		constructor: Processo,
-		classe: null,
-		dadosComplementares: null,
-		dataAutuacao: null,
-		dataInclusaoLocalizador: null,
-		dataSituacao: null,
-		dataUltimoEvento: null,
-		juizo: null,
-		lembretes: null,
-		link: null,
-		localizadores: null,
-		numClasse: null,
-		numCompetencia: null,
-		numproc: null,
-		numprocFormatado: null,
-		sigilo: null,
-		situacao: null,
-		ultimoEvento: null,
 		get atraso() {
 			var hoje = new Date();
-			return (hoje.getTime() - this.termoPrazoCorregedoria.getTime()) / MILISSEGUNDOS_EM_UM_DIA;
+			return (
+				calcularAtraso(this.termoPrazoCorregedoria, hoje) /
+				MILISSEGUNDOS_EM_UM_DIA
+			);
 		},
 		get atrasoPorcentagem() {
 			return this.atraso / this.prazoCorregedoria;
 		},
 		get competenciaCorregedoria() {
-			if (this.numCompetencia >= COMPETENCIA_JUIZADO_MIN && this.numCompetencia <= COMPETENCIA_JUIZADO_MAX) {
+			if (
+				this.numCompetencia >= COMPETENCIA_JUIZADO_MIN &&
+				this.numCompetencia <= COMPETENCIA_JUIZADO_MAX
+			) {
 				return CompetenciasCorregedoria.JUIZADO;
-			} else if (this.numCompetencia >= COMPETENCIA_CRIMINAL_MIN && this.numCompetencia <= COMPETENCIA_CRIMINAL_MAX) {
+			} else if (
+				this.numCompetencia >= COMPETENCIA_CRIMINAL_MIN &&
+				this.numCompetencia <= COMPETENCIA_CRIMINAL_MAX
+			) {
 				return CompetenciasCorregedoria.CRIMINAL;
-			} else if ((this.numCompetencia >= COMPETENCIA_EF_MIN || this.numCompetencia <= COMPETENCIA_EF_MAX) && (this.numClasse === CLASSE_EF || this.numClasse === CLASSE_CARTA_PRECATORIA)) {
+			} else if (
+				(this.numCompetencia >= COMPETENCIA_EF_MIN ||
+					this.numCompetencia <= COMPETENCIA_EF_MAX) &&
+				(this.numClasse === CLASSE_EF ||
+					this.numClasse === CLASSE_CARTA_PRECATORIA)
+			) {
 				return CompetenciasCorregedoria.EXECUCAO_FISCAL;
 			}
 			return CompetenciasCorregedoria.CIVEL;
@@ -1095,7 +1426,6 @@ var ProcessoFactory = (function() {
 				case 'MOVIMENTO-AGUARDA SENTENÇA':
 					ret = 'dataSituacao';
 					break;
-
 				case 'MOVIMENTO':
 					ret = 'dataUltimoEvento';
 					if (this.dataInclusaoLocalizador < this.dataUltimoEvento) {
@@ -1104,7 +1434,6 @@ var ProcessoFactory = (function() {
 						}
 					}
 					break;
-
 				default:
 					ret = 'dataSituacao';
 					break;
@@ -1118,15 +1447,25 @@ var ProcessoFactory = (function() {
 			return dias;
 		},
 		get prioridade() {
-			return this.dadosComplementares.has('Prioridade Atendimento') || this.dadosComplementares.has('Réu Preso');
-			//return this.dadosComplementares.has('Prioridade Atendimento') || this.dadosComplementares.has('Réu Preso') || this.dadosComplementares.has('Doença Grave') || this.dadosComplementares.has('Idoso');
+			return (
+				this.dadosComplementares.has('Prioridade Atendimento') ||
+				this.dadosComplementares.has('Réu Preso')
+			);
 		},
 		get termoPrazoCorregedoria() {
-			var dataConsiderada = this[this.campoDataConsiderada];
+			var dataConsiderada = new Date(this[this.campoDataConsiderada].getTime());
+			let recesso = calcularRecessoData(dataConsiderada);
+			if (dataConsiderada >= recesso.inicio) {
+				dataConsiderada.setTime(recesso.retorno.getTime());
+			}
 			var dataTermo = new Date(dataConsiderada.getTime());
 			dataTermo.setDate(dataTermo.getDate() + this.prazoCorregedoria);
+			while (dataTermo >= recesso.inicio) {
+				dataTermo.setTime(dataTermo.getTime() + (recesso.retorno - recesso.inicio));
+				recesso = calcularRecesso(recesso.retorno.getFullYear());
+			}
 			return dataTermo;
-		}
+		},
 	};
 	var ProcessoFactory = {
 		fromLinha(linha) {
@@ -1139,18 +1478,24 @@ var ProcessoFactory = (function() {
 			processo.numproc = numprocFormatado.replace(/[-.]/g, '');
 			var links = linha.cells[1].getElementsByTagName('a');
 			if (links.length === 2) {
-				var onmouseover = [...links[1].attributes].filter(attr => attr.name === 'onmouseover')[0].value;
-				var [, codigoLembrete] = onmouseover.match(/^return infraTooltipMostrar\('([^']+)','Lembretes',400\);$/);
+				var onmouseover = [...links[1].attributes].filter(
+					attr => attr.name === 'onmouseover'
+				)[0].value;
+				var [, codigoLembrete] = onmouseover.match(
+					/^return infraTooltipMostrar\('([^']+)','Lembretes',400\);$/
+				);
 				var div = document.createElement('div');
 				div.innerHTML = codigoLembrete;
-				var linhas = [...div.childNodes[0].rows].reverse();
+				var tabela = div.childNodes[0];
+				var linhas = Array.from(tabela.rows).reverse();
 				processo.lembretes = linhas.map(linha => {
 					let celula = linha.cells[2];
 					celula.innerHTML = celula.innerHTML.replace(/<br.*?>/g, '\0\n');
 					return celula.textContent;
 				});
 			}
-			var textoSigilo = linha.cells[1].getElementsByTagName('br')[0].nextSibling.textContent;
+			var textoSigilo = linha.cells[1].getElementsByTagName('br')[0].nextSibling
+				.textContent;
 			processo.sigilo = Number(textoSigilo.match(/Nível ([0-5])/)[1]);
 			processo.situacao = linha.cells[2].textContent;
 			processo.juizo = linha.cells[3].textContent;
@@ -1159,24 +1504,34 @@ var ProcessoFactory = (function() {
 			var dataSituacao = new Date();
 			dataSituacao.setDate(dataSituacao.getDate() - diasNaSituacao);
 			processo.dataSituacao = dataSituacao;
-			var labelsDadosComplementares = [...linha.cells[6].getElementsByTagName('label')];
+			var labelsDadosComplementares = [
+				...linha.cells[6].getElementsByTagName('label'),
+			];
 			if (labelsDadosComplementares.length === 0) {
 				processo.classe = linha.cells[6].textContent;
 			} else {
 				processo.classe = linha.cells[6].firstChild.textContent;
-				labelsDadosComplementares.forEach(label => processo.dadosComplementares.add(label.textContent));
+				labelsDadosComplementares.forEach(label =>
+					processo.dadosComplementares.add(label.textContent)
+				);
 			}
-			processo.localizadores = LocalizadoresProcessoFactory.fromCelula(linha.cells[7]);
+			processo.localizadores = LocalizadoresProcessoFactory.fromCelula(
+				linha.cells[7]
+			);
 			var breakUltimoEvento = linha.cells[8].querySelector('br');
-			processo.dataUltimoEvento = parseDataHora(breakUltimoEvento.previousSibling.textContent);
+			processo.dataUltimoEvento = parseDataHora(
+				breakUltimoEvento.previousSibling.textContent
+			);
 			processo.ultimoEvento = breakUltimoEvento.nextSibling.textContent;
-			processo.dataInclusaoLocalizador = parseDataHora(linha.cells[9].textContent);
+			processo.dataInclusaoLocalizador = parseDataHora(
+				linha.cells[9].textContent
+			);
 			var textoPrioridade = linha.cells[10].textContent;
 			if (textoPrioridade === 'Sim') {
 				processo.dadosComplementares.add('Prioridade Atendimento');
 			}
 			return processo;
-		}
+		},
 	};
 	return ProcessoFactory;
 })();
@@ -1186,88 +1541,102 @@ var RegrasCorregedoria = {
 		[Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 15,
 		[Situacoes['MOVIMENTO']]: 10,
 		[Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 45,
-		[Situacoes['INDEFINIDA']]: 30
+		[Situacoes['INDEFINIDA']]: 30,
 	},
 	[CompetenciasCorregedoria.CIVEL]: {
 		[Situacoes['INICIAL']]: 10,
 		[Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 20,
 		[Situacoes['MOVIMENTO']]: 15,
 		[Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60,
-		[Situacoes['INDEFINIDA']]: 60
+		[Situacoes['INDEFINIDA']]: 60,
 	},
 	[CompetenciasCorregedoria.CRIMINAL]: {
 		[Situacoes['INICIAL']]: 15,
 		[Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 20,
 		[Situacoes['MOVIMENTO']]: 15,
 		[Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60,
-		[Situacoes['INDEFINIDA']]: 30
+		[Situacoes['INDEFINIDA']]: 30,
 	},
 	[CompetenciasCorregedoria.EXECUCAO_FISCAL]: {
 		[Situacoes['INICIAL']]: 10,
 		[Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 60,
 		[Situacoes['MOVIMENTO']]: 25,
 		[Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60,
-		[Situacoes['INDEFINIDA']]: 120
-	}
+		[Situacoes['INDEFINIDA']]: 120,
+	},
 };
-
 function adicionarBotaoComVinculo(localizadores) {
 	var gui = GUI.getInstance();
 	var botao = gui.criarBotaoAcao(localizadores);
-	botao.addEventListener('click', function() {
-		gui.avisoCarregando.atualizar(0, localizadores.quantidadeProcessosNaoFiltrados);
-		localizadores.obterProcessos().then(function() {
-			gui.avisoCarregando.ocultar();
-			gui.atualizarBotaoAcao();
-			localizadores.forEach(function(localizador) {
-				gui.atualizarVisualizacao(localizador);
+	botao.addEventListener(
+		'click',
+		function() {
+			gui.avisoCarregando.atualizar(
+				0,
+				localizadores.quantidadeProcessosNaoFiltrados
+			);
+			localizadores.obterProcessos().then(function() {
+				gui.avisoCarregando.ocultar();
+				gui.atualizarBotaoAcao();
+				localizadores.forEach(function(localizador) {
+					gui.atualizarVisualizacao(localizador);
+				});
+				gui.criarGrafico(localizadores);
+				gui.atualizarGrafico = gui.criarGrafico.bind(null, localizadores);
 			});
-			gui.criarGrafico(localizadores);
-			gui.atualizarGrafico = gui.criarGrafico.bind(null, localizadores);
-		});
-	}, false);
+		},
+		false
+	);
 }
-if (/\?acao=usuario_tipo_monitoramento_localizador_listar&/.test(location.search)) {
-	let tabela = document.getElementById('divInfraAreaTabela').querySelector('table');
+if (
+	/\?acao=usuario_tipo_monitoramento_localizador_listar&/.test(location.search)
+) {
+	let tabela = document
+		.getElementById('divInfraAreaTabela')
+		.querySelector('table');
 	let localizadores = LocalizadoresFactory.fromTabela(tabela);
 	adicionarBotaoComVinculo(localizadores);
 } else if (/\?acao=localizador_processos_lista&/.test(location.search)) {
-	// do nothing
+	/* do nothing */
 } else if (/&acao_origem=principal&/.test(location.search)) {
-	let tabela = document.getElementById('fldLocalizadores').querySelector('table');
+	let tabela = document
+		.getElementById('fldLocalizadores')
+		.querySelector('table');
 	let localizadores = LocalizadoresFactory.fromTabelaPainel(tabela);
 	adicionarBotaoComVinculo(localizadores);
 }
-
 function definirPropriedades(target, ...sources) {
 	sources.forEach(source => {
-		Object.defineProperties(target, Object.getOwnPropertyNames(source).reduce((descriptors, key) => {
-			descriptors[key] = Object.getOwnPropertyDescriptor(source, key);
-			return descriptors;
-		}, {}));
+		Object.defineProperties(
+			target,
+			Object.getOwnPropertyNames(source).reduce((descriptors, key) => {
+				descriptors[key] = Object.getOwnPropertyDescriptor(source, key);
+				return descriptors;
+			}, {})
+		);
 	});
 	return target;
 }
-
-function isContained(contained, container) {
+function isContained(origContained, origContainer) {
+	const contained = origContained.toLowerCase();
+	const container = origContainer.toLowerCase();
 	const ignored = /[./]/;
 	let indexFrom = -1;
-	return Array.prototype.every.call(contained, char =>
-		ignored.test(char) ||
-		!! (indexFrom = container.indexOf(char, indexFrom) + 1)
+	return Array.prototype.every.call(
+		contained,
+		char =>
+			ignored.test(char) ||
+			!! (indexFrom = container.indexOf(char, indexFrom) + 1)
 	);
 }
-
 function parseCookies(texto) {
 	var pares = texto.split(/\s*;\s*/);
 	return parsePares(pares);
 }
-
 function parseDataHora(texto) {
 	let [d, m, y, h, i, s] = texto.split(/\W/g);
 	return new Date(y, m - 1, d, h, i, s);
 }
-
 function parsePares(pares) {
 	var obj = {};
 	pares.forEach(function(par) {
