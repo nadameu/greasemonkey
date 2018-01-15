@@ -8,7 +8,7 @@
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
-// @version     16
+// @version     17
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
@@ -1815,7 +1815,8 @@ class PaginaRequisicao extends Pagina {
 			new Padrao(/^<span class="titBold">(VALOR (?:BLOQUEADO|LIBERADO))<\/span>$/, 'bloqueado'),
 			new Padrao(/^<span class="titBold">Juros de Mora Fix.no Tít. Executivo:<\/span> (.*)$/, 'tipoJuros'),
 			new Padrao(/^<span class="titBold">Tipo de Despesa:<\/span> (?:.*) \((\d+)\)$/, 'codigoTipoDespesa'),
-			new Padrao(/^<span class="titBold">Doença Grave:<\/span> (Sim|Não|)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Renuncia Valor:<\/span> ?(Sim|Não|)$/, 'doencaGrave', 'renunciaValor'),
+			new Padrao(/^<span class="titBold">Doença Grave:<\/span> (Sim|Não|)$/, 'doencaGrave'),
+			new Padrao(/^<span class="titBold">Renuncia Valor:<\/span> ?(Sim|Não|)$/, 'renunciaValor'),
 			new Padrao(/^<span class="titBold">IRPF- RRA a deduzir:<\/span> (Sim|Não)$/, 'irpf'),
 			new Padrao(/^<span class="titBold">Ano Exercicio Corrente:<\/span> (\d\d\d\d)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Meses Exercicio Corrente:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Corrente:<\/span> ([\d.,]+)$/, 'anoCorrente', 'mesesCorrente', 'valorCorrente'),
 			new Padrao(/^<span class="titBold">Ano Exercicio Corrente:<\/span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Meses Exercicio Corrente:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Corrente:<\/span> ([\d.,]+)$/, 'mesesCorrente', 'valorCorrente'),
