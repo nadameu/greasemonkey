@@ -21,7 +21,7 @@ const Armazem = (function() {
 	 * @returns {Set} Observadores deste objectStore
 	 */
 	function obterListeners(store) {
-		if (!listeners.has(store)) {
+		if (! listeners.has(store)) {
 			listeners.set(store, new Set());
 		}
 		return listeners.get(store);
@@ -38,11 +38,11 @@ const Armazem = (function() {
 			});
 		},
 		apagar(store, keys) {
-			if (!(keys instanceof Array)) keys = [keys];
+			if (! (keys instanceof Array)) keys = [keys];
 			return Armazem.abrir().then(db => {
 				const t = db.transaction([store], 'readwrite');
 				const os = t.objectStore(store);
-				return new Promise((resolve) => {
+				return new Promise(resolve => {
 					keys.forEach(key => os.delete(key));
 					t.addEventListener('complete', () => {
 						Armazem.obter(store);
@@ -66,21 +66,19 @@ const Armazem = (function() {
 			obterListeners(store).add(listener);
 		},
 		obter(store) {
-			return Armazem.abrir().then(db => {
-				return new Promise((resolve) => {
-					const t = db.transaction([store]);
-					const os = t.objectStore(store);
-					const map = new Map();
-					os.getAll().addEventListener('success', ({ target: { result: objs } }) => {
-						objs.forEach(obj => {
-							let key = obj[os.keyPath];
-							map.set(key, obj);
-						});
-						Armazem.disparar(store, map);
-						resolve(map);
+			return Armazem.abrir().then(db => new Promise(resolve => {
+				const t = db.transaction([store]);
+				const os = t.objectStore(store);
+				const map = new Map();
+				os.getAll().addEventListener('success', ({ target: { result: objs } }) => {
+					objs.forEach(obj => {
+						let key = obj[os.keyPath];
+						map.set(key, obj);
 					});
+					Armazem.disparar(store, map);
+					resolve(map);
 				});
-			});
+			}));
 		},
 		salvar(store, obj) {
 			return Armazem.abrir().then(db => {
@@ -95,7 +93,7 @@ const Armazem = (function() {
 			return Armazem.abrir().then(db => {
 				const t = db.transaction([store], 'readwrite');
 				const os = t.objectStore(store);
-				return new Promise((resolve) => {
+				return new Promise(resolve => {
 					os.getAll().addEventListener('success', ({ target: { result: oldObjs } }) => {
 						oldObjs.forEach(oldObj => {
 							let key = oldObj[os.keyPath];
@@ -167,13 +165,12 @@ const Eproc = {
 			const tabela = doc.querySelector(
 				'table[summary="Tabela de Usuários Ativos do Órgão"]'
 			);
-			const linhas = Array.from(tabela.rows).filter(linha => {
-				return linha.classList.contains('infraTrClara') || linha.classList.contains('infraTrEscura');
-			});
+			const linhas = Array.from(tabela.rows).filter((linha, indice) => indice > 0);
+			console.log(linhas);
 			linhas.forEach(linha => {
 				let nome = linha.cells[0].textContent;
 				let sigla = linha.cells[1].textContent;
-				if (!pessoas.has(sigla)) {
+				if (! pessoas.has(sigla)) {
 					pessoas.set(sigla, new Pessoa({ sigla, nome }));
 				}
 			});
@@ -290,7 +287,7 @@ const PessoasDecorator = (function() {
 	const elements = new WeakMap();
 
 	function getElement(doc) {
-		if (!elements.has(this)) {
+		if (! elements.has(this)) {
 			const template = doc.querySelector('#pessoa-template').content;
 			const elt = doc.importNode(template, true).firstElementChild;
 			if (this.ativa) {
@@ -322,7 +319,7 @@ const SetoresDecorator = (function() {
 	const setorElements = new WeakMap();
 
 	function getPessoaElement(doc) {
-		if (!pessoaElements.has(this)) {
+		if (! pessoaElements.has(this)) {
 			const template = doc.querySelector('#integrante-template').content;
 			const elt = doc.importNode(template, true).firstElementChild;
 			elt.querySelector('.integrante__nome').textContent = this.exibirComo;
@@ -335,7 +332,7 @@ const SetoresDecorator = (function() {
 	}
 
 	function getSetorElement(doc) {
-		if (!setorElements.has(this)) {
+		if (! setorElements.has(this)) {
 			const template = doc.querySelector('#setor-template').content;
 			const elt = doc.importNode(template, true).firstElementChild;
 			if (this.id !== null) {
@@ -465,14 +462,14 @@ Clique sobre o nome das pessoas para adicioná-las a um setor.
 </div>
 </div>
 </div>
-`).then((win) => {
+`).then(win => {
 		const doc = win.document;
 
 		function lidarComEventoEspecifico(evt, nomeClasse, nomeClasseParent, callback) {
-			if (!evt.target.classList.contains(nomeClasse)) return;
+			if (! evt.target.classList.contains(nomeClasse)) return;
 			let parent = evt.target.parentNode;
-			while (parent && !parent.classList.contains(nomeClasseParent)) parent = parent.parentNode;
-			if (!parent) return;
+			while (parent && ! parent.classList.contains(nomeClasseParent)) parent = parent.parentNode;
+			if (! parent) return;
 			const obj = parent.associatedObject;
 			callback(obj);
 		}
@@ -492,7 +489,7 @@ Clique sobre o nome das pessoas para adicioná-las a um setor.
 			pessoasOrdenadas.forEach(pessoa => pessoasContainer.appendChild(pessoa.getElement()));
 			pessoasAtualizarElement.disabled = false;
 		});
-		pessoasContainer.addEventListener('click', (evt) => {
+		pessoasContainer.addEventListener('click', evt => {
 
 			lidarComEventoEspecifico(evt, 'pessoa__ativa', 'pessoa', pessoa => {
 				const ativa = evt.target.checked;
@@ -500,7 +497,7 @@ Clique sobre o nome das pessoas para adicioná-las a um setor.
 				evt.target.disabled = true;
 				pessoa.getElement().classList.add('pessoa-desativada');
 				pessoa.ativa = ativa;
-				if (!ativa) {
+				if (! ativa) {
 					pessoa.setor = null;
 				} else {
 					// DEBUG
@@ -542,8 +539,8 @@ Clique sobre o nome das pessoas para adicioná-las a um setor.
 				containerIntegrantes.insertBefore(pessoa.getElement(), containerIntegrantes.lastElementChild);
 			});
 
-			if (alterado === 'setores' && (id !== null || !botaoNovoSetorPrincipalInicializado)) {
-				botaoNovo.addEventListener('click', evt => {
+			if (alterado === 'setores' && (id !== null || ! botaoNovoSetorPrincipalInicializado)) {
+				botaoNovo.addEventListener('click', () => {
 					const nome = prompt('Nome do novo setor?');
 					if (nome === null) return;
 					Armazem.salvar('setores', new Setor({ nome, parent: id }));
@@ -552,7 +549,7 @@ Clique sobre o nome das pessoas para adicioná-las a um setor.
 					botaoNovoSetorPrincipalInicializado = true;
 				} else {
 					let botaoExcluir = setor.getElement().excluir;
-					botaoExcluir.addEventListener('click', evt => {
+					botaoExcluir.addEventListener('click', () => {
 						const confirmar = confirm(`Deseja excluir o setor "${setor.nome}"?`);
 						if (confirmar) {
 							let apagarSetor = function(setor) {
@@ -580,9 +577,7 @@ Clique sobre o nome das pessoas para adicioná-las a um setor.
 		Armazem.observar('setores', dadosSetores => {
 			Array.from(doc.querySelectorAll('.setores .setor')).forEach(setor => setor.parentNode.removeChild(setor));
 			// DEBUG
-			window.setores = Array.from(dadosSetores.values()).map(dados => {
-				return [dados.id, dados.nome].join(' = ');
-			}).join('\n');
+			window.setores = Array.from(dadosSetores.values()).map(dados => [dados.id, dados.nome].join(' = ')).join('\n');
 			setores = Array.from(dadosSetores.values()).map(dadosSetor => SetoresDecorator.decorateSetor(new Setor(dadosSetor), doc));
 			atualizarPainelSetores('setores');
 		});
@@ -600,7 +595,7 @@ Clique sobre o nome das pessoas para adicioná-las a um setor.
 }
 
 function abrirIframe(title, style = '', body = '') {
-	return new Promise((resolve) => {
+	return new Promise(resolve => {
 		const id = gerarIdAleatorio();
 		const blob = new Blob([`
 <!doctype html>
@@ -634,7 +629,7 @@ function gerarIdAleatorio() {
 
 function sobreporIframe(url, id) {
 	var fundo = document.getElementById('carppFundo');
-	if (!fundo) {
+	if (! fundo) {
 		const estilos = document.createElement('style');
 		estilos.textContent = `
 #carppFundo { position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: rgba(0,0,0,0.5); z-index: 2000; transition: opacity 150ms; }
@@ -692,7 +687,7 @@ const replacementSymbols = {
 };
 
 function safeHTML(strings, ...vars) {
-	return vars.reduce((result, variable, i) => result + variable.replace(invalidSymbols, (sym) => `&${replacementSymbols[sym]};`) + strings[i + 1], strings[0]);
+	return vars.reduce((result, variable, i) => result + variable.replace(invalidSymbols, sym => `&${replacementSymbols[sym]};`) + strings[i + 1], strings[0]);
 }
 
 function estender(dest, orig) {
