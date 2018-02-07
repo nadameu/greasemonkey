@@ -8,7 +8,7 @@
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
 // @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
-// @version     17
+// @version     18
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
