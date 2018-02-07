@@ -12,7 +12,7 @@
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
-const SALARIO_MINIMO = 937;
+const SALARIO_MINIMO = 954;
 
 const Acoes = {
 	ABRIR_DOCUMENTO: 'abrirDocumento',
