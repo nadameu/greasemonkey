@@ -2113,7 +2113,7 @@ class PaginaRequisicao extends Pagina {
 				this.validarElemento(
 					`.${prefixo}__tipoJuros`,
 					ehPrevidenciario && pagamento.tipoJuros === 'Poupança' ||
-						tipo === 'honorario' && pagamento.tipoHonorario === 'Devolução à Seção Judiciária' && pagamento.tipoJuros === 'Não fixados' ||
+						tipo === 'honorario' && pagamento.tipoHonorario === 'Devolução à Seção Judiciária' && pagamento.tipoJuros === 'Não incidem' ||
 						undefined
 				);
 			}
