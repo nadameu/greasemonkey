@@ -5,9 +5,6 @@
 // @include     /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=processo_selecionar\&/
 // @include     /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=processo_precatorio_rpv\&/
 // @include     /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=oficio_requisitorio_visualizar\&/
-// @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/visualizar_requisicao_jf\.php\?num_requis=\d+$/
-// @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/frm_requisicao_jf\.php\?num_requis=\d+$/
-// @include     /^http:\/\/sap\.trf4\.gov\.br\/requisicao\/jf\/preparar_intimacao_jf\.php$/
 // @version     18
 // @grant       GM_xmlhttpRequest
 // ==/UserScript==
@@ -51,32 +48,6 @@ class Analisador {
 }
 Analisador.prototype.prefixo = null;
 
-class AnalisadorCelulas extends Analisador {
-	constructor(...nomes) {
-		super();
-		this.nomes = nomes;
-	}
-
-	analisarInto(linha, obj) {
-		if (this.prefixo) {
-			linha.classList.add(`${this.prefixo}__linha`);
-		}
-		const changed = {};
-		this.nomes.forEach((nome, indice) => {
-			if (! nome) return;
-			const celula = linha.cells[indice];
-			let valor = celula.textContent.trim();
-			changed[nome] = valor;
-			if (this.prefixo) {
-				celula.classList.add(`${this.prefixo}__${nome}`);
-			}
-		});
-		this.aplicarConversores(changed);
-		Object.assign(obj, changed);
-		return changed;
-	}
-}
-
 class AnalisadorLinhasTabela extends Analisador {
 	constructor(...padroes) {
 		super();
@@ -103,30 +74,6 @@ class AnalisadorLinhasTabela extends Analisador {
 		this.aplicarConversores(changed);
 		Object.assign(obj, changed);
 		return changed;
-	}
-}
-
-class AnalisadorMultiplo extends Analisador {
-	constructor(...padroes) {
-		super();
-		this.padroes = padroes;
-	}
-
-	analisarInto(texto, obj) {
-		const changed = {};
-		let houveCorrespondencia = false;
-		this.padroes.forEach(padrao => {
-			const match = padrao.matchInto(texto, changed);
-			if (match) {
-				houveCorrespondencia = true;
-			}
-		});
-		if (houveCorrespondencia) {
-			this.aplicarConversores(changed);
-			Object.assign(obj, changed);
-			return changed;
-		}
-		return null;
 	}
 }
 
@@ -298,15 +245,7 @@ class Pagina {
 
 		let classe = null;
 
-		if (doc.domain === 'sap.trf4.gov.br') {
-			if (doc.location.pathname === '/requisicao/jf/visualizar_requisicao_jf.php') {
-				classe = PaginaRequisicaoAntiga;
-			} else if (doc.location.pathname === '/requisicao/jf/frm_requisicao_jf.php') {
-				classe = PaginaRequisicaoAntigaEditar;
-			} else if (doc.location.pathname === '/requisicao/jf/preparar_intimacao_jf.php') {
-				classe = PaginaRequisicaoAntigaPreparada;
-			}
-		} else if (doc.domain.match(/^eproc\.(trf4|jf(pr|rs|sc))\.jus\.br$/)) {
+		if (doc.domain.match(/^eproc\.(trf4|jf(pr|rs|sc))\.jus\.br$/)) {
 			if (doc.location.search.match(/^\?acao=processo_selecionar&/)) {
 				classe = PaginaProcesso;
 			} else if (doc.location.search.match(/^\?acao=processo_precatorio_rpv&/)) {
@@ -908,735 +847,6 @@ class PaginaRedirecionamento extends Pagina {
 	}
 }
 
-class PaginaRequisicaoAntiga extends Pagina {
-	get linkEditar() {
-		return this.doc.querySelector('a[href^="frm_requisicao_jf.php?num_requis="]');
-	}
-
-	get requisicao() {
-		if (! this._requisicao) {
-			this._requisicao = this.analisarDadosRequisicao();
-		}
-		return this._requisicao;
-	}
-
-	adicionarAlteracoes() {
-		const style = this.doc.createElement('style');
-		style.innerHTML = Utils.css({
-			"table a": {
-				"font-size": "1em"
-			},
-			".gm-requisicao__dados__tabela tr::before": {
-				"content": "''",
-				"font-size": "1.2em",
-				"font-weight": "bold",
-			},
-			".gm-resposta": {},
-			"p.gm-resposta": {
-				"font-size": "1.2em",
-				"margin": "1em 0 0",
-			},
-			".gm-resposta--correta": {
-				"color": "hsl(120, 25%, 75%)",
-			},
-			".gm-resposta--incorreta": {
-				"color": "hsl(0, 100%, 40%)",
-				"text-shadow": "0 2px 2px hsl(0, 75%, 60%)",
-			},
-			".gm-resposta--indefinida": {
-				"color": "hsl(30, 100%, 40%)",
-				"text-shadow": "0 2px 3px hsl(30, 75%, 60%)",
-			},
-			".gm-requisicao__dados__tabela .gm-resposta--correta td": {
-				"color": "hsl(0, 0%, 75%)",
-			},
-			".gm-requisicao__dados__tabela .gm-resposta--correta::before": {
-				"content": "'✓'",
-				"color": "hsl(120, 25%, 75%)",
-			},
-			".gm-requisicao__dados__tabela .gm-resposta--incorreta td": {
-				"color": "hsl(0, 100%, 40%)",
-			},
-			".gm-requisicao__dados__tabela .gm-resposta--incorreta::before": {
-				"content": "'✗'",
-				"color": "hsl(0, 100%, 40%)",
-				"text-shadow": "none",
-			},
-			".gm-requisicao__dados__tabela .gm-resposta--indefinida td": {
-				"color": "hsl(30, 100%, 40%)",
-			},
-			".gm-requisicao__dados__tabela .gm-resposta--indefinida::before": {
-				"content": "'?'",
-				"color": "hsl(30, 100%, 40%)",
-				"text-shadow": "none",
-			},
-			"p.gm-dados-adicionais": {
-				"margin-top": "0",
-				"margin-left": "2ex",
-			},
-			".gm-botoes": {
-				"margin": "4em 0",
-				"display": "flex",
-				"justify-content": "space-around",
-			}
-		});
-		this.doc.querySelector('head').appendChild(style);
-		const win = this.doc.defaultView;
-		win.addEventListener('message', this.onMensagemRecebida.bind(this));
-		this.linkEditar.addEventListener('click', this.onLinkEditarClicado.bind(this));
-		this.enviarSolicitacaoDados(win.opener);
-	}
-
-	adicionarAreaDocumentosProcesso() {
-		const areaDados = this.doc.getElementById('divInfraAreaDadosDinamica');
-		areaDados.insertAdjacentHTML('beforeend', '<div class="gm-documentos"></div>');
-	}
-
-	adicionarBotoesPreparar() {
-		const botaoPrepararVoltar = BotaoAcao.criar('Preparar para intimação e manter aberta', this.onBotaoPrepararVoltarClicado.bind(this));
-		const botaoPrepararFechar = BotaoAcao.criar('Preparar para intimação e fechar', this.onBotaoPrepararFecharClicado.bind(this));
-
-		const areaDados = this.doc.getElementById('divInfraAreaDadosDinamica');
-		areaDados.insertAdjacentHTML('beforeend', '<div class="gm-botoes"></div>');
-		const areaBotoes = this.doc.querySelector('.gm-botoes');
-		areaBotoes.appendChild(botaoPrepararVoltar);
-		areaBotoes.appendChild(botaoPrepararFechar);
-	}
-
-	analisarDadosProcesso(dadosProcesso) {
-		console.log('Dados do processo:', dadosProcesso);
-		this.validarDadosProcesso(dadosProcesso);
-		this.exibirDocumentosProcesso(dadosProcesso);
-	}
-
-	analisarDadosRequisicao() {
-		const analisador = new AnalisadorLinhasTabela(
-			new Padrao(/^Status:&nbsp;(.*?)\s+- (\d\d\/\d\d\/\d\d\d\d \d\d:\d\d:\d\d)$/, 'status', 'dataHora'),
-			new Padrao(/^Magistrado:&nbsp;(.*)$/, 'magistrado'),
-			new Padrao(/^Total Requisitado \(R\$\):&nbsp;(.*)$/, 'valorTotalRequisitado'),
-			new Padrao(/^Espécie da Requisição:&nbsp;(.*?)\s*$/, 'especie'),
-			new Padrao(/^Natureza:&nbsp;(\d+)\s+- (.*)\s*$/, 'codigoAssunto', 'assunto'),
-			new Padrao(/^Natureza Tributária\(ATUALIZADA PELA SELIC\):&nbsp;(.*)$/, 'naturezaTributaria'),
-			new Padrao(/^Natureza do Crédito:&nbsp;(\d+)\. (.*?)\s*$/, 'codigoNatureza', 'natureza'),
-			new Padrao(/^Data do trânsito em julgado da sentença ou acórdão:&nbsp;(\d\d\/\d\d\/\d\d\d\d)$/, 'dataTransito'),
-			new Padrao(/^Data do trânsito em julgado do processo de conhecimento:&nbsp;(\d\d\/\d\d\/\d\d\d\d)$/, 'dataTransito')
-		);
-		analisador.definirConversores({
-			dataHora: ConversorDataHora,
-			valorTotalRequisitado: ConversorMoeda,
-			naturezaTributaria: ConversorBool,
-			dataTransito: ConversorData
-		});
-		analisador.prefixo = 'gm-requisicao__dados';
-
-		const requisicao = new Requisicao();
-
-		const linkEditar = this.doc.querySelector('a[href^="frm_requisicao_jf.php?num_requis="]');
-		requisicao.numero = Utils.parseDecimalInt(linkEditar.textContent.trim());
-		requisicao.urlEditarAntiga = linkEditar.href;
-
-		const areaDados = this.doc.getElementById('divInfraAreaDadosDinamica');
-		const tabela = areaDados.querySelector('form > table');
-		analisador.analisarInto(tabela, requisicao);
-
-		let elementoAtual = tabela.nextElementSibling;
-		let modo = null;
-		while (elementoAtual) {
-			switch (elementoAtual.tagName.toLowerCase()) {
-				case 'span':
-					modo = elementoAtual.textContent.trim();
-					break;
-
-				case 'table':
-					if (modo === 'Beneficiários') {
-						requisicao.beneficiarios = this.analisarTabelaBeneficiarios(elementoAtual, requisicao.isPrecatorio);
-					} else if (modo === 'Honorários') {
-						requisicao.honorarios = this.analisarTabelaHonorarios(elementoAtual, requisicao.isPrecatorio);
-					} else {
-						console.error('Tabela não analisada!', elementoAtual);
-						throw new Error('Tabela não analisada!');
-					}
-					break;
-			}
-			elementoAtual = elementoAtual.nextElementSibling;
-		}
-
-		return requisicao;
-	}
-
-	analisarTabelaBeneficiarios(tabela, precatorio = false) {
-		tabela.classList.add('gm-requisicao__beneficiarios__tabela');
-
-		let analisadorBeneficiario = new AnalisadorCelulas('ordinal', 'nome', 'expressaRenuncia', 'bloqueado', 'cpfCnpj', 'dataBase', 'honorariosDestacados', 'valorTotal', 'valorAtualizado');
-		if (precatorio) {
-			analisadorBeneficiario = new AnalisadorCelulas('ordinal', 'nome', 'bloqueado', 'cpfCnpj', 'dataBase', 'honorariosDestacados', 'valorTotal', 'valorAtualizado');
-		}
-		analisadorBeneficiario.definirConversores({
-			ordinal: ConversorInt,
-			expressaRenuncia: ConversorBool,
-			bloqueado: ConversorBool,
-			dataBase: ConversorMesAno,
-			honorariosDestacados: ConversorBool,
-			valorTotal: ConversorValores,
-			valorAtualizado: ConversorValores
-		});
-
-		let analisadorCorrente = new AnalisadorMultiplo(
-			new Padrao(/^Exercício Corrente\s+-\s+Num. Meses:\s+(\d+)\s+Valor:\s+([\d,.]+)\s+Atualizado:\s+([\d,.]+)\s+Ano:\s+(\d{4})$/, 'meses', 'valorTotal', 'valorAtualizado', 'ano')
-		);
-		if (precatorio) {
-			analisadorCorrente = new AnalisadorMultiplo(
-				new Padrao(/^Exercício Corrente\s+-\s+Num. Meses:\s+(\d+)\s+Valor:\s+([\d,.]+)\s+Atualizado:\s+([\d,.]+)\s+Ano:\s+(\d{4})$/, 'meses', 'valorTotal', 'valorAtualizado', 'ano')
-			);
-			analisadorCorrente.analisar = function(texto) {
-				if (texto.match(/Exercício Corrente/))
-					throw new Error('Definir padrão para exercício corrente em precatórios');
-			};
-		}
-		analisadorCorrente.definirConversores({
-			meses: ConversorInt,
-			valorTotal: ConversorMoeda,
-			valorAtualizado: ConversorMoeda,
-			ano: ConversorAno
-		});
-		let analisadorAnterior = new AnalisadorMultiplo(
-			new Padrao(/^Exercício Anterior\s+-\s+Num. Meses:\s+(\d+)\s+Valor:\s+([\d,.]+)\s+Atualizado:\s+([\d,.]+)$/, 'meses', 'valorTotal', 'valorAtualizado')
-		);
-		if (precatorio) {
-			analisadorAnterior = new AnalisadorMultiplo(
-				new Padrao(/^Exercício Anterior\s+-\s+Num. Meses:\s+(\d+)$/, 'meses')
-			);
-		}
-		analisadorAnterior.definirConversores({
-			meses: ConversorInt,
-			valorTotal: ConversorMoeda,
-			valorAtualizado: ConversorMoeda
-		});
-		function analisarLinhaIRPF(linha) {
-			const dadosIRPF = {};
-			const linhasIRPF = linha.cells[1].innerHTML.replace(/&nbsp;/g, ' ').trim().split('<br>');
-			linhasIRPF.forEach(linhaIRPF => {
-				const dadosCorrente = analisadorCorrente.analisar(linhaIRPF);
-				if (dadosCorrente) {
-					dadosIRPF.corrente = dadosCorrente;
-				}
-				const dadosAnterior = analisadorAnterior.analisar(linhaIRPF);
-				if (dadosAnterior) {
-					dadosIRPF.anterior = dadosAnterior;
-				}
-			});
-			return dadosIRPF;
-		}
-
-		const analisadorPSS = new AnalisadorMultiplo(
-			new Padrao(/^Incidência de PSS - Servidor:\s+(.*?)\s+Data Base:\s+(\d\d\/\d\d\d\d)\s+Valor:\s+([\d,.]+)\s+Valor Atualizado:\s+([\d,.]+)$/, 'servidor', 'dataBase', 'valorTotal', 'valorAtualizado')
-		);
-		analisadorPSS.definirConversores({
-			dataBase: ConversorMesAno,
-			valorTotal: ConversorMoeda,
-			valorAtualizado: ConversorMoeda
-		});
-		function analisarLinhaPSS(linha) {
-			const texto = linha.cells[1].innerHTML.replace(/&nbsp;/g, ' ').trim();
-			return analisadorPSS.analisar(texto);
-		}
-
-		const analisadorPrecatorio = new AnalisadorMultiplo(
-			new Padrao(/^Data nasc\.:\s+(\d\d\/\d\d\/\d\d\d\d)\s+Portador doença grave:\s+(Sim|Não)\s+Débito com a Fazenda:\s+(Sim|Não)$/, 'dataNascimento', 'doencaGrave', 'debitoComFazenda')
-		);
-		analisadorPrecatorio.definirConversores({
-			dataNascimento: ConversorData,
-			doencaGrave: ConversorBool,
-			debitoComFazenda: ConversorBool
-		});
-		function analisarLinhaPrecatorio(linha) {
-			const texto = linha.cells[1].innerHTML.replace(/&nbsp;/g, ' ').trim();
-			return analisadorPrecatorio.analisar(texto);
-		}
-
-		const beneficiarios = [];
-		let ultimoBeneficiario = null;
-		for (let i = 1, len = tabela.rows.length; i < len; i++) {
-			let linha = tabela.rows[i];
-			let ordinal = linha.cells[0].textContent.trim();
-			if (ordinal !== '') {
-				analisadorBeneficiario.prefixo = `gm-requisicao__beneficiario--${ordinal}`;
-				let beneficiario = analisadorBeneficiario.analisar(linha);
-				beneficiarios.push(beneficiario);
-				ultimoBeneficiario = beneficiario;
-			} else if (ultimoBeneficiario && linha.cells[1].textContent.match(/IRPF/)) {
-				linha.cells[1].classList.add(`gm-requisicao__beneficiario--${ultimoBeneficiario.ordinal}__irpf`);
-				ultimoBeneficiario.irpf = analisarLinhaIRPF(linha);
-			} else if (ultimoBeneficiario && linha.cells[1].textContent.match(/^Incidência de PSS/)) {
-				linha.cells[1].classList.add(`gm-requisicao__beneficiario--${ultimoBeneficiario.ordinal}__pss`);
-				ultimoBeneficiario.pss = analisarLinhaPSS(linha);
-			} else if (ultimoBeneficiario && linha.cells[1].textContent.match(/^SEM incidência de PSS/)) {
-				linha.cells[1].classList.add(`gm-requisicao__beneficiario--${ultimoBeneficiario.ordinal}__pss`);
-				ultimoBeneficiario.pss = {
-					semIncidencia: true
-				};
-			} else if (ultimoBeneficiario && linha.cells[1].textContent.match(/^Data nasc\./)) {
-				linha.cells[1].classList.add(`gm-requisicao__beneficiario--${ultimoBeneficiario.ordinal}__precatorio`);
-				ultimoBeneficiario.precatorio = analisarLinhaPrecatorio(linha);
-			} else {
-				console.error('Linha não analisada', ultimoBeneficiario, linha);
-				throw new Error('Linha não analisada');
-			}
-		}
-
-		return beneficiarios;
-	}
-
-	analisarTabelaHonorarios(tabela, precatorio = false) {
-		tabela.classList.add('gm-requisicao__honorarios__tabela');
-
-		let analisadorHonorario = new AnalisadorCelulas('ordinal', 'tipo', 'nome', 'oab', 'expressaRenuncia', 'cpfCnpj', 'bloqueado', 'dataBase', 'valorTotal', 'valorAtualizado');
-		if (precatorio) {
-			analisadorHonorario = new AnalisadorCelulas('ordinal', 'tipo', 'nome', 'oab', 'cpfCnpj', 'bloqueado', 'dataBase', 'valorTotal', 'valorAtualizado');
-		}
-		analisadorHonorario.definirConversores({
-			ordinal: ConversorInt,
-			expressaRenuncia: ConversorBool,
-			bloqueado: ConversorBool,
-			dataBase: ConversorMesAno,
-			valorTotal: ConversorValores,
-			valorAtualizado: ConversorValores
-		});
-
-		const padraoBeneficiario = new Padrao(/^Beneficiário:\s+(.*?)\s+CPF\/CNPJ:\s+(\d{11}|\d{14})$/, 'beneficiario', 'cpfCnpj');
-		function analisarLinhaBeneficiario(linha) {
-			let dadosBeneficiario = {};
-			const linhasBeneficiario = linha.cells[1].innerHTML.replace(/&nbsp;/g, ' ').trim().split('<br>');
-			linhasBeneficiario.forEach(linhaIRPF => {
-				const dados = padraoBeneficiario.match(linhaIRPF);
-				if (dados) {
-					dadosBeneficiario = dados;
-				}
-			});
-			return dadosBeneficiario;
-		}
-
-		const analisadorPrecatorio = new AnalisadorMultiplo(
-			new Padrao(/^Data nasc\.:\s+(\d\d\/\d\d\/\d\d\d\d)\s+Portador doença grave:\s+(Sim|Não)\s+Débito com a Fazenda:\s+(Sim|Não)$/, 'dataNascimento', 'doencaGrave', 'debitoComFazenda')
-		);
-		analisadorPrecatorio.definirConversores({
-			dataNascimento: ConversorData,
-			doencaGrave: ConversorBool,
-			debitoComFazenda: ConversorBool
-		});
-		function analisarLinhaPrecatorio(linha) {
-			const texto = linha.cells[1].innerHTML.replace(/&nbsp;/g, ' ').trim();
-			return analisadorPrecatorio.analisar(texto);
-		}
-
-		const honorarios = [];
-		let ultimoHonorario = null;
-		for (let i = 1, len = tabela.rows.length; i < len; i++) {
-			let linha = tabela.rows[i];
-			let ordinal = linha.cells[0].textContent.trim();
-			if (ordinal !== '') {
-				analisadorHonorario.prefixo = `gm-requisicao__honorario--${ordinal}`;
-				let honorario = analisadorHonorario.analisar(linha);
-				honorarios.push(honorario);
-				ultimoHonorario = honorario;
-			} else if (ultimoHonorario && linha.cells[1].textContent.match(/Beneficiário:/)) {
-				linha.cells[1].classList.add(`gm-requisicao__honorario--${ultimoHonorario.ordinal}__beneficiario`);
-				ultimoHonorario.beneficiario = analisarLinhaBeneficiario(linha);
-			} else if (ultimoHonorario && linha.cells[1].textContent.match(/^Data nasc\./)) {
-				linha.cells[1].classList.add(`gm-requisicao__honorario--${ultimoHonorario.ordinal}__precatorio`);
-				ultimoHonorario.precatorio = analisarLinhaPrecatorio(linha);
-			} else {
-				console.error('Linha não analisada', ultimoHonorario, linha);
-				throw new Error('Linha não analisada');
-			}
-		}
-		return honorarios;
-	}
-
-	enviarSolicitacao(janela, data) {
-		const possiveisDestinos = ['trf4', 'jfpr', 'jfrs', 'jfsc'];
-		possiveisDestinos.forEach(destino => {
-			const url = `https://eproc.${destino}.jus.br`;
-			janela.postMessage(JSON.stringify(data), url);
-		});
-	}
-
-	enviarSolicitacaoAberturaDocumento(janela, evento, documento) {
-		const data = {
-			acao: Acoes.ABRIR_DOCUMENTO,
-			evento: evento,
-			documento: documento
-		};
-		return this.enviarSolicitacao(janela, data);
-	}
-
-	enviarSolicitacaoDados(janela) {
-		const data = {
-			acao: Acoes.BUSCAR_DADOS
-		};
-		return this.enviarSolicitacao(janela, data);
-	}
-
-	enviarSolicitacaoPrepararIntimacao(janela, fecharAposPreparar) {
-		const data = {
-			acao: Acoes.PREPARAR_INTIMACAO_ANTIGA,
-			requisicao: this.requisicao.numero,
-			urlEditarAntiga: this.requisicao.urlEditarAntiga,
-			fecharProcesso: fecharAposPreparar
-		};
-		return this.enviarSolicitacao(janela, data);
-	}
-
-	enviarSolicitacaoEditarRequisicao(janela) {
-		const data = {
-			acao: Acoes.EDITAR_REQUISICAO_ANTIGA,
-			requisicao: this.requisicao.numero,
-			urlEditarAntiga: this.requisicao.urlEditarAntiga
-		};
-		return this.enviarSolicitacao(janela, data);
-	}
-
-	exibirValoresCalculados() {
-		const requisicao = this.requisicao;
-		const areaDados = this.doc.getElementById('divInfraAreaDadosDinamica');
-		this.exibirTitulo('Conferência dos cálculos', areaDados);
-
-		requisicao.beneficiarios.forEach(beneficiario => {
-			const nome = beneficiario.nome;
-			let principal = beneficiario.valorTotal.principal,
-				juros = beneficiario.valorTotal.juros,
-				total = beneficiario.valorTotal.total;
-			const honorarios = requisicao.honorarios
-				.filter(honorario => honorario.tipo === 'Honorários Contratuais')
-				.filter(honorario => honorario.beneficiario.cpfCnpj === beneficiario.cpfCnpj);
-			honorarios.forEach(honorario => {
-				principal += honorario.valorTotal.principal;
-				juros += honorario.valorTotal.juros;
-				total += honorario.valorTotal.total;
-			});
-			let porcentagemAdvogado = 1 - beneficiario.valorTotal.total / total;
-			let porcentagemArredondada = Utils.round(porcentagemAdvogado * 100, 0);
-			let calculoAdvogado = Utils.round(total * porcentagemArredondada / 100, 2);
-			let pagoAdvogado = Utils.round(total - beneficiario.valorTotal.total, 2);
-			let diferenca = pagoAdvogado - calculoAdvogado;
-			if (Math.abs(diferenca) > 0.01) {
-				porcentagemArredondada = porcentagemAdvogado * 100;
-			}
-			[principal, juros, total] = [principal, juros, total].map(valor => ConversorMoeda.converter(valor));
-			areaDados.insertAdjacentHTML('beforeend', `<p class="gm-resposta">${nome} &mdash; <span class="gm-resposta--indefinida">${principal}</span> + <span class="gm-resposta--indefinida">${juros}</span> = <span class="gm-resposta--indefinida">${total}</span> em <span class="gm-resposta--indefinida">${ConversorMesAno.converter(beneficiario.dataBase)}</span></p>`);
-			if (beneficiario.irpf) {
-				if (beneficiario.irpf.anterior) {
-					let meses = beneficiario.irpf.anterior.meses;
-					let valor = beneficiario.irpf.anterior.valorTotal;
-					if (porcentagemAdvogado > 0) {
-						valor = valor / (1 - porcentagemAdvogado);
-					}
-					areaDados.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">IRPF &mdash; Exercício Anterior &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(meses)} ${meses > 1 ? 'meses' : 'mês'}</span> &mdash; <span class="gm-resposta--indefinida">${ConversorMoeda.converter(valor)}</span></p>`);
-				}
-				if (beneficiario.irpf.corrente) {
-					let meses = beneficiario.irpf.corrente.meses;
-					let valor = beneficiario.irpf.corrente.valorTotal;
-					if (porcentagemAdvogado > 0) {
-						valor = valor / (1 - porcentagemAdvogado);
-					}
-					areaDados.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">IRPF &mdash; Exercício Corrente (<span class="gm-resposta--indefinida">${ConversorAno.converter(beneficiario.irpf.corrente.ano)}</span>) &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(meses)} ${meses > 1 ? 'meses' : 'mês'}</span> &mdash; <span class="gm-resposta--indefinida">${ConversorMoeda.converter(valor)}</span></p>`);
-				}
-			}
-			if (beneficiario.pss) {
-				if (beneficiario.pss.semIncidencia) {
-					areaDados.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais"><span class="gm-resposta--indefinida">SEM</span> incidência de PSS</p>`);
-				} else {
-					areaDados.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais"><span class="gm-resposta--indefinida">COM</span> incidência de PSS</p>`);
-					if (beneficiario.irpf) {
-						areaDados.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais"><span class="gm-resposta--incorreta">Verificar se é caso de deduzir PSS da base de cálculo do IRPF</span></p>`);
-					}
-				}
-			}
-			if (porcentagemAdvogado > 0) {
-				const advogados = honorarios.map(honorario => honorario.nome).join(', ');
-				areaDados.insertAdjacentHTML('beforeend', `<p class="gm-resposta gm-dados-adicionais">Honorários Contratuais &mdash; ${advogados} &mdash; <span class="gm-resposta--indefinida">${ConversorPorcentagem.converter(porcentagemArredondada / 100)}</span></p>`);
-			}
-		});
-
-		requisicao.honorarios.filter(honorario => honorario.tipo !== 'Honorários Contratuais').forEach(honorario => {
-			areaDados.insertAdjacentHTML('beforeend', [
-				`<p class="gm-resposta">${honorario.nome}</p>`,
-				`<p class="gm-resposta gm-dados-adicionais"><span class="gm-resposta--indefinida">${honorario.tipo}</span> &mdash; <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valorTotal.principal)}</span> + <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valorTotal.juros)}</span> = <span class="gm-resposta--indefinida">${ConversorMoeda.converter(honorario.valorTotal.total)}</span> em <span class="gm-resposta--indefinida">${ConversorMesAno.converter(honorario.dataBase)}</span></p>`
-			].join('\n'));
-		});
-	}
-
-	exibirTitulo(texto, elemento) {
-		elemento.insertAdjacentHTML('beforeend', `<br><br><span class="atencao">&nbsp;&nbsp;${texto}</span>`);
-	}
-
-	exibirDocumentosProcesso(dadosProcesso) {
-		const areaDocumentos = this.doc.querySelector('.gm-documentos');
-		this.exibirTitulo('Documentos do processo', areaDocumentos);
-		let tabela = [
-			`<table class="infraTable gm-tabela-eventos">`,
-			`<thead>`,
-			`<tr>`,
-			`<th class="infraTh">Evento</th>`,
-			`<th class="infraTh">Data</th>`,
-			`<th class="infraTh">Descrição</th>`,
-			`<th class="infraTh">Documentos</th>`,
-			`</tr>`,
-			`</thead>`,
-			`<tbody>`
-		].join('\n');
-		let css = 0;
-		const eventos = Array.concat(dadosProcesso.calculos, dadosProcesso.contratos, dadosProcesso.honorarios, dadosProcesso.sentencas)
-			.sort((eventoA, eventoB) => eventoB.evento - eventoA.evento)
-			.reduce((map, evento) => {
-				if (map.has(evento.evento)) {
-					evento.documentos.forEach(documento => {
-						map.get(evento.evento).documentos.set(documento.ordem, documento);
-					});
-				} else {
-					evento.documentos = new Map(evento.documentos.map(documento => [documento.ordem, documento]));
-					map.set(evento.evento, evento);
-				}
-				return map;
-			}, new Map());
-		Array.from(eventos.values()).forEach(evento => {
-			tabela += [
-				`<tr class="${css++ % 2 === 0 ? 'infraTrClara' : 'infraTrEscura'}">`,
-				`<td>${evento.evento}</td>`,
-				`<td>${ConversorDataHora.converter(new Date(evento.data))}</td>`,
-				`<td>${evento.descricao}</td>`,
-				`<td><table><tbody>`,
-			].join('\n');
-			Array.from(evento.documentos.values()).slice().sort((a, b) => a.ordem - b.ordem).forEach(documento => {
-				tabela += `<tr><td><a class="infraLinkDocumento" id="gm-documento-ev${evento.evento}-doc${documento.ordem}" data-evento="${evento.evento}" data-documento="${documento.ordem}" href="#">${documento.nome}</a></td></tr>`;
-			});
-			tabela += [
-				`</tbody></table></td>`,
-				`</tr>`
-			].join('\n');
-		});
-		tabela += [
-			`</tbody>`,
-			`</table>`
-		].join('\n');
-		areaDocumentos.insertAdjacentHTML('beforeend', tabela);
-		eventos.forEach(evento => {
-			evento.documentos.forEach(documento => {
-				const link = this.doc.getElementById(`gm-documento-ev${evento.evento}-doc${documento.ordem}`);
-				link.addEventListener('click', this.onLinkDocumentoClicado.bind(this));
-			});
-		});
-		this.exibirTitulo('Justiça Gratuita', areaDocumentos);
-		areaDocumentos.insertAdjacentHTML('beforeend', `<p class="gm-resposta">${dadosProcesso.justicaGratuita}</p>`);
-	}
-
-	onBotaoPrepararClicado(evt, fecharAposPreparar = false) {
-		evt.preventDefault();
-		evt.stopPropagation();
-		const opener = this.doc.defaultView.opener;
-		this.enviarSolicitacaoPrepararIntimacao(opener, fecharAposPreparar);
-	}
-
-	onBotaoPrepararFecharClicado(evt) {
-		this.onBotaoPrepararClicado.call(this, evt, true);
-	}
-
-	onBotaoPrepararVoltarClicado(evt) {
-		this.onBotaoPrepararClicado.call(this, evt, false);
-	}
-
-	onLinkDocumentoClicado(evt) {
-		evt.preventDefault();
-		const elemento = evt.target;
-		const evento = elemento.dataset.evento;
-		const documento = elemento.dataset.documento;
-		const win = this.doc.defaultView;
-		this.enviarSolicitacaoAberturaDocumento(win.opener, evento, documento);
-	}
-
-	onLinkEditarClicado(evt) {
-		evt.preventDefault();
-		const win = this.doc.defaultView;
-		this.enviarSolicitacaoEditarRequisicao(win.opener);
-	}
-
-	onMensagemRecebida(evt) {
-		console.info('Mensagem recebida', evt);
-		if (evt.origin.match(/^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br$/)) {
-			const data = JSON.parse(evt.data);
-			if (data.acao === Acoes.RESPOSTA_DADOS) {
-				console.log('Dados da requisicação:', this.requisicao);
-				this.validarDadosRequisicao();
-				this.exibirValoresCalculados();
-				this.adicionarAreaDocumentosProcesso();
-				this.adicionarBotoesPreparar();
-				this.analisarDadosProcesso(data.dados);
-			}
-		}
-	}
-
-	validarDadosProcesso(dadosProcesso) {
-		const requisicao = this.requisicao;
-
-		// Conferir magistrado do processo
-		this.validarElemento('.gm-requisicao__dados__magistrado', requisicao.magistrado === dadosProcesso.magistrado);
-
-		// Conferir data de trânsito em julgado
-		let dataTransito = ConversorData.converter(new Date(dadosProcesso.transito.data || 0));
-		let dataEvento = ConversorData.converter(new Date(dadosProcesso.transito.dataEvento || 0));
-		let dataDecurso = ConversorData.converter(new Date(dadosProcesso.transito.dataDecurso || 0));
-		let dataFechamento = ConversorData.converter(new Date(dadosProcesso.transito.dataFechamento || 0));
-		let dataTransitoRequisicao = ConversorData.converter(requisicao.dataTransito);
-		let isTrue = dataTransito === dataTransitoRequisicao || dataDecurso === dataTransitoRequisicao;
-		let isUndefined = dataEvento === dataTransitoRequisicao || dataFechamento === dataTransitoRequisicao;
-		this.validarElemento('.gm-requisicao__dados__dataTransito', isTrue || isUndefined && undefined);
-
-		// Conferir se beneficiário é autor da ação
-		requisicao.beneficiarios.forEach(beneficiario => {
-			const prefixo = `gm-requisicao__beneficiario--${beneficiario.ordinal}`;
-			const autoresMesmoCPF = dadosProcesso.autores.filter(autor => autor.cpfCnpj === beneficiario.cpfCnpj);
-			const autoresMesmoCPFeNome = autoresMesmoCPF.filter(autor => autor.nome.toUpperCase() === beneficiario.nome.toUpperCase());
-			this.validarElemento(`.${prefixo}__cpfCnpj`, autoresMesmoCPF.length === 1);
-			this.validarElemento(`.${prefixo}__nome`, autoresMesmoCPFeNome.length === 1);
-		});
-
-		// Conferir se advogados representam autores da ação
-		const advogados = dadosProcesso.autores.reduce((set, autor) => {
-			autor.advogados.forEach(advogado => set.add(advogado.toUpperCase()));
-			return set;
-		}, new Set());
-		requisicao.honorarios.forEach(honorario => {
-			const prefixo = `gm-requisicao__honorario--${honorario.ordinal}`;
-			if (honorario.tipo === 'Honorários Contratuais') {
-				const autor = dadosProcesso.autores.find(autor => autor.cpfCnpj === honorario.beneficiario.cpfCnpj);
-				if (autor) {
-					const advogadosAutorMesmoNome = autor.advogados.filter(advogado => advogado.toUpperCase() === honorario.nome.toUpperCase());
-					this.validarElemento(`.${prefixo}__nome`, advogadosAutorMesmoNome.length === 1);
-				} else {
-					this.validarElemento(`.${prefixo}__nome`, false);
-				}
-			} else if (honorario.tipo === 'Honorários de Sucumbência') {
-				this.validarElemento(`.${prefixo}__nome`, advogados.has(honorario.nome.toUpperCase()));
-			} else {
-				this.validarElemento(`.${prefixo}__tipo`, undefined);
-			}
-		});
-	}
-
-	validarDadosRequisicao() {
-		const requisicao = this.requisicao;
-
-		// Status da requisição deve ser "Digitada"
-		this.validarElemento('.gm-requisicao__dados__status', requisicao.status === 'Digitada');
-
-		// Destacar campos que requerem atenção
-		this.validarElemento('.gm-requisicao__dados__especie', requisicao.valorTotalRequisitado < 60 * SALARIO_MINIMO || undefined);
-
-		// Natureza tributária somente para processos com assunto de direito tributário
-		const ehDireitoTributario = requisicao.codigoAssunto.match(/^03/) !== null;
-		this.validarElemento('.gm-requisicao__dados__naturezaTributaria', requisicao.naturezaTributaria === ehDireitoTributario);
-
-		// 11.NATUREZA ALIMENTÍCIA - Salários, vencimentos, proventos, pensões e suas complementações
-		// 12.NATUREZA ALIMENTÍCIA - Benefícios previdenciários e indenizações por morte ou invalidez
-		// 21.NATUREZA NÃO ALIMENTÍCIA
-		// 31.DESAPROPRIAÇÕES - Único imóvel residencial do credor
-		// 39.DESAPROPRIAÇÕES - Demais
-		const ehPrevidenciario = requisicao.codigoAssunto.match(/^04/) !== null;
-		const ehServidor = requisicao.codigoAssunto.match(/^011[012]/) !== null;
-		const ehDesapropriacao = requisicao.codigoAssunto.match(/^0106/) !== null;
-		let codigoNaturezaCorreto = undefined;
-		switch (requisicao.codigoNatureza) {
-			case '11':
-				codigoNaturezaCorreto = ehServidor;
-				break;
-
-			case '12':
-				codigoNaturezaCorreto = ehPrevidenciario;
-				break;
-
-			case '31':
-			case '39':
-				codigoNaturezaCorreto = ehDesapropriacao;
-				break;
-		}
-		this.validarElemento('.gm-requisicao__dados__natureza', codigoNaturezaCorreto);
-
-		// Conferir valor total requisitado
-		let total = 0;
-
-		requisicao.beneficiarios.forEach(beneficiario => {
-			const prefixo = `gm-requisicao__beneficiario--${beneficiario.ordinal}`;
-			total += beneficiario.valorTotal.total;
-
-			// Destacar campos que requerem atenção
-			if (! requisicao.isPrecatorio) {
-				this.validarElemento(`.${prefixo}__expressaRenuncia`, undefined);
-			}
-			this.validarElemento(`.${prefixo}__bloqueado`, undefined);
-
-			// Conferir se valor do IRPF corresponde à quantia que o beneficiário irá receber
-			if (beneficiario.irpf) {
-				if (requisicao.isPrecatorio) {
-					this.validarElemento(`.${prefixo}__irpf`, undefined);
-				} else {
-					let irpf = 0;
-					if (beneficiario.irpf.anterior) {
-						irpf += beneficiario.irpf.anterior.valorTotal;
-					}
-					if (beneficiario.irpf.corrente) {
-						irpf += beneficiario.irpf.corrente.valorTotal;
-					}
-					this.validarElemento(`.${prefixo}__irpf`, Utils.round(irpf, 2) === beneficiario.valorTotal.total);
-				}
-			}
-
-			// Conferir se os honorários destacados estão na requisição
-			let honorarios = requisicao.honorarios
-				.filter(honorario => honorario.tipo === 'Honorários Contratuais')
-				.filter(honorario => honorario.beneficiario.cpfCnpj === beneficiario.cpfCnpj);
-			if (beneficiario.honorariosDestacados) {
-				this.validarElemento(`.${prefixo}__honorariosDestacados`, honorarios.length >= 1);
-			} else {
-				this.validarElemento(`.${prefixo}__honorariosDestacados`, honorarios.length === 0);
-			}
-		});
-
-		requisicao.honorarios.forEach(honorario => {
-			const prefixo = `gm-requisicao__honorario--${honorario.ordinal}`;
-			total += honorario.valorTotal.total;
-
-			// Destacar campos que requerem atenção
-			if (! requisicao.isPrecatorio) {
-				this.validarElemento(`.${prefixo}__expressaRenuncia`, undefined);
-			}
-			this.validarElemento(`.${prefixo}__bloqueado`, undefined);
-
-			if (honorario.tipo === 'Honorários Contratuais') {
-				// Conferir se os dados do contratante estão corretos
-				let beneficiarios = requisicao.beneficiarios
-					.filter(beneficiario => beneficiario.cpfCnpj === honorario.beneficiario.cpfCnpj);
-				this.validarElemento(`.${prefixo}__beneficiario`, beneficiarios.length === 1);
-
-				if (beneficiarios.length === 1) {
-					let beneficiario = beneficiarios[0];
-					// Conferir se houve destaque de honorários
-					this.validarElemento(`.${prefixo}__tipo`, beneficiario.honorariosDestacados);
-					// Conferir se data-base dos honorários contratuais é a mesma do valor principal
-					this.validarElemento(`.${prefixo}__dataBase`, beneficiario.dataBase.getTime() === honorario.dataBase.getTime());
-					// Conferir se razão entre principal e juros dos honorários contratuais é a mesma do valor do beneficiário
-					this.validarElemento(`.${prefixo}__valorTotal`, Math.abs(beneficiario.valorTotal.juros / beneficiario.valorTotal.principal - honorario.valorTotal.juros / honorario.valorTotal.principal) <= 0.0001);
-					// Conferir se razão entre total e atualizado dos honorários contratuais é a mesma do valor do beneficiário
-					this.validarElemento(`.${prefixo}__valorAtualizado`, Math.abs(beneficiario.valorAtualizado.total / beneficiario.valorTotal.total - honorario.valorAtualizado.total / honorario.valorTotal.total) < 0.0001);
-				}
-			} else if (honorario.tipo === 'Honorários de Sucumbência') {
-				// Destacar tipo
-				this.validarElemento(`.${prefixo}__tipo`, undefined);
-			}
-		});
-		this.validarElemento('.gm-requisicao__dados__valorTotalRequisitado', requisicao.valorTotalRequisitado === Utils.round(total, 2));
-	}
-}
-
 class PaginaRequisicao extends Pagina {
 
 	get requisicao() {
@@ -1861,7 +1071,12 @@ class PaginaRequisicao extends Pagina {
 	}
 
 	enviarSolicitacaoAberturaDocumento(janela, evento, documento) {
-		return PaginaRequisicaoAntiga.prototype.enviarSolicitacaoAberturaDocumento.call(this, janela, evento, documento);
+		const data = {
+			acao: Acoes.ABRIR_DOCUMENTO,
+			evento: evento,
+			documento: documento
+		};
+		return this.enviarSolicitacao(janela, data);
 	}
 
 	enviarSolicitacaoDados(janela) {
@@ -1880,7 +1095,63 @@ class PaginaRequisicao extends Pagina {
 	}
 
 	exibirDocumentosProcesso(dadosProcesso) {
-		return PaginaRequisicaoAntiga.prototype.exibirDocumentosProcesso.call(this, dadosProcesso);
+		const areaDocumentos = this.doc.querySelector('.gm-documentos');
+		this.exibirTitulo('Documentos do processo', areaDocumentos);
+		let tabela = [
+			`<table class="infraTable gm-tabela-eventos">`,
+			`<thead>`,
+			`<tr>`,
+			`<th class="infraTh">Evento</th>`,
+			`<th class="infraTh">Data</th>`,
+			`<th class="infraTh">Descrição</th>`,
+			`<th class="infraTh">Documentos</th>`,
+			`</tr>`,
+			`</thead>`,
+			`<tbody>`
+		].join('\n');
+		let css = 0;
+		const eventos = Array.concat(dadosProcesso.calculos, dadosProcesso.contratos, dadosProcesso.honorarios, dadosProcesso.sentencas)
+			.sort((eventoA, eventoB) => eventoB.evento - eventoA.evento)
+			.reduce((map, evento) => {
+				if (map.has(evento.evento)) {
+					evento.documentos.forEach(documento => {
+						map.get(evento.evento).documentos.set(documento.ordem, documento);
+					});
+				} else {
+					evento.documentos = new Map(evento.documentos.map(documento => [documento.ordem, documento]));
+					map.set(evento.evento, evento);
+				}
+				return map;
+			}, new Map());
+		Array.from(eventos.values()).forEach(evento => {
+			tabela += [
+				`<tr class="${css++ % 2 === 0 ? 'infraTrClara' : 'infraTrEscura'}">`,
+				`<td>${evento.evento}</td>`,
+				`<td>${ConversorDataHora.converter(new Date(evento.data))}</td>`,
+				`<td>${evento.descricao}</td>`,
+				`<td><table><tbody>`,
+			].join('\n');
+			Array.from(evento.documentos.values()).slice().sort((a, b) => a.ordem - b.ordem).forEach(documento => {
+				tabela += `<tr><td><a class="infraLinkDocumento" id="gm-documento-ev${evento.evento}-doc${documento.ordem}" data-evento="${evento.evento}" data-documento="${documento.ordem}" href="#">${documento.nome}</a></td></tr>`;
+			});
+			tabela += [
+				`</tbody></table></td>`,
+				`</tr>`
+			].join('\n');
+		});
+		tabela += [
+			`</tbody>`,
+			`</table>`
+		].join('\n');
+		areaDocumentos.insertAdjacentHTML('beforeend', tabela);
+		eventos.forEach(evento => {
+			evento.documentos.forEach(documento => {
+				const link = this.doc.getElementById(`gm-documento-ev${evento.evento}-doc${documento.ordem}`);
+				link.addEventListener('click', this.onLinkDocumentoClicado.bind(this));
+			});
+		});
+		this.exibirTitulo('Justiça Gratuita', areaDocumentos);
+		areaDocumentos.insertAdjacentHTML('beforeend', `<p class="gm-resposta">${dadosProcesso.justicaGratuita}</p>`);
 	}
 
 	exibirTitulo(texto, elemento) {
@@ -1977,7 +1248,12 @@ class PaginaRequisicao extends Pagina {
 	}
 
 	onLinkDocumentoClicado(evt) {
-		return PaginaRequisicaoAntiga.prototype.onLinkDocumentoClicado.call(this, evt);
+		evt.preventDefault();
+		const elemento = evt.target;
+		const evento = elemento.dataset.evento;
+		const documento = elemento.dataset.documento;
+		const win = this.doc.defaultView;
+		this.enviarSolicitacaoAberturaDocumento(win.opener, evento, documento);
 	}
 
 	onMensagemRecebida(evt) {
@@ -2216,106 +1492,6 @@ class PaginaRequisicao extends Pagina {
 				}
 			}
 
-		});
-	}
-}
-
-class PaginaRequisicaoAntigaEditar extends Pagina {
-
-	get numero() {
-		const [str] = this.doc.location.search.split(/^\?/).slice(1);
-		const parametros = new Map(str.split('&').map(par => par.split('=').map(texto => decodeURIComponent(texto))));
-		return Utils.parseDecimalInt(parametros.get('num_requis'));
-	}
-
-	adicionarAlteracoes() {
-		const win = this.doc.defaultView;
-		win.addEventListener('message', this.onMensagemRecebida.bind(this));
-		const opener = win.opener;
-		this.informarAbertura(opener);
-	}
-
-	confirmarRecebimentoOrdem(janela, origem) {
-		const data = {
-			acao: Acoes.ORDEM_CONFIRMADA,
-			ordem: Acoes.PREPARAR_INTIMACAO_ANTIGA,
-			requisicao: this.numero
-		};
-		this.enviarSolicitacao(janela, data, origem);
-	}
-
-	enviarSolicitacao(janela, data, origem = null) {
-		function enviarDados(urlOrigem) {
-			janela.postMessage(JSON.stringify(data), urlOrigem);
-		}
-
-		if (origem) {
-			enviarDados(origem);
-		} else {
-			const possiveisDestinos = ['trf4', 'jfpr', 'jfrs', 'jfsc'];
-			possiveisDestinos.forEach(destino => {
-				const url = `https://eproc.${destino}.jus.br`;
-				enviarDados(url);
-			});
-		}
-	}
-
-	informarAbertura(janela) {
-		const data = {
-			acao: Acoes.VERIFICAR_JANELA,
-			requisicao: this.numero
-		};
-		return this.enviarSolicitacao(janela, data);
-	}
-
-	onMensagemRecebida(evt) {
-		console.info('Mensagem recebida', evt);
-		if (evt.origin.match(/^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br$/)) {
-			const data = JSON.parse(evt.data);
-			if (data.acao === Acoes.PREPARAR_INTIMACAO_ANTIGA) {
-				if (data.requisicao === this.numero) {
-					this.confirmarRecebimentoOrdem(evt.source, evt.origin);
-					this.prepararIntimacao();
-				} else {
-					console.info('Ignorando ordem para preparar intimação da requisição, número não confere:', data.requisicao, this.numero);
-				}
-			}
-		}
-	}
-
-	prepararIntimacao() {
-		const botoes = Array.from(this.doc.querySelectorAll('.infraButton'));
-		const botoesPreparar = botoes.filter(botao => botao.value.trim() === 'Preparar Requisição para Intimação');
-		if (botoesPreparar.length !== 1) {
-			console.error('Número de botões não corresponde ao esperado!', botoesPreparar);
-			throw new Error('Número de botões não corresponde ao esperado!');
-		}
-		const botaoPreparar = botoesPreparar[0];
-		botaoPreparar.click();
-	}
-}
-
-class PaginaRequisicaoAntigaPreparada extends Pagina {
-	adicionarAlteracoes() {
-		const rePreparada = /^(\d+)\s+-\s+Requisição preparada para intimação.$/;
-		const textos = Array.from(this.doc.querySelectorAll('#divInfraAreaTabela .infraText'))
-			.map(texto => texto.textContent.trim())
-			.filter(texto => rePreparada.test(texto));
-		const preparadas = textos.map(texto => Utils.parseDecimalInt(texto.match(rePreparada)[1]));
-		if (preparadas.length !== 1) {
-			console.error('Número de requisições preparadas para intimação não corresponde ao esperado!', preparadas);
-			throw new Error('Número de requisições preparadas para intimação não corresponde ao esperado!');
-		}
-		const requisicao = preparadas[0];
-		const data = {
-			acao: Acoes.REQUISICAO_ANTIGA_PREPARADA,
-			requisicao
-		};
-		const opener = this.doc.defaultView.opener;
-		const possiveisDestinos = ['trf4', 'jfpr', 'jfrs', 'jfsc'];
-		possiveisDestinos.forEach(destino => {
-			const url = `https://eproc.${destino}.jus.br`;
-			opener.postMessage(JSON.stringify(data), url);
 		});
 	}
 }
