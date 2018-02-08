@@ -1421,7 +1421,7 @@ class PaginaRequisicao extends Pagina {
 			}
 			this.validarElemento(`.${prefixo}__codigoTipoDespesa`, codigoNaturezaCorreto);
 
-			if (pagamento.especie.match(/^RPV/) === null) {
+			if (tipo === 'beneficiario' && pagamento.especie.match(/^RPV/) === null) {
 				this.validarElemento(`.${prefixo}__doencaGrave`, undefined);
 			}
 			if (tipo === 'beneficiario') {
