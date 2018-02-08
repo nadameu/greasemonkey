@@ -262,6 +262,7 @@ class Pagina {
 
 	validarElemento(selector, condicao, classeTrue = 'gm-resposta--correta', classeFalse = 'gm-resposta--incorreta', classeUndefined = 'gm-resposta--indefinida') {
 		const elemento = this.doc.querySelector(selector);
+		if (! elemento) throw new Error(`Elemento não encontrado: ${selector}`);
 		elemento.classList.add('gm-resposta');
 		if (condicao === true) {
 			elemento.classList.add(classeTrue);
