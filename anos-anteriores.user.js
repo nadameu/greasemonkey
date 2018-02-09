@@ -13,7 +13,6 @@
 const NOME_FLAG = 'ALTERAR_ANOS_ANTERIORES';
 
 const addAjaxSuccessListener = (() => {
-
 	let listeners = [];
 
 	const listen = (filtrosGet, listener) => {
@@ -44,10 +43,13 @@ const addAjaxSuccessListener = (() => {
 	return listen;
 })();
 
+const queryAll = selector => Array.from(document.querySelectorAll(selector));
+
 const url = new URL(location.href);
-const acao = url.searchParams
+const matchAcao = url.searchParams
 	.get('acao')
-	.match(/^oficio_requisitorio_(.*)$/)[1];
+	.match(/^oficio_requisitorio_(.*)$/);
+const acao = (matchAcao || [])[1];
 
 if (acao === 'requisicoes_editar') {
 	const unsubscribe = addAjaxSuccessListener(
@@ -81,56 +83,45 @@ if (acao === 'requisicoes_editar') {
 					'txtNumMesesExCorrente',
 					'txtValorExCorrente',
 					'txtNumMesesExAnterior',
-					'txtValorExAnterior'
+					'txtValorExAnterior',
 				];
-				const elementos = nomesCampos.map(nome => jQuery(`#${nome}`));
-				const todosMesmoTamanho =
-					elementos
-						.map(el => el.length)
-						.reduce((last, current) => last === current && current) !== false;
-				if (! todosMesmoTamanho) {
-					console.error('Tamanhos não coincidem:', elementos);
-					throw new Error('Tamanhos não coincidem');
+				const elementos = nomesCampos.map(nome => queryAll(`#${nome}`));
+				const umDeCada = elementos.every(el => el.length === 1);
+				if (! umDeCada) {
+					console.error('Quantidade de campos inesperada:', elementos);
+					throw new Error('Quantidade de campos inesperada');
 				}
-				const beneficiarios = elementos[0]
-					.toArray()
-					.map((_, indiceBeneficiario) =>
-						nomesCampos.reduce((beneficiario, nomeCampo, indiceCampo) => {
-							beneficiario[nomeCampo] =
-								elementos[indiceCampo][indiceBeneficiario];
-							return beneficiario;
-						}, {})
-					);
-				console.log(beneficiarios);
+				const beneficiario = nomesCampos.reduce(
+					(obj, nomeCampo, indiceCampo) => {
+						obj[nomeCampo] = elementos[indiceCampo][0];
+						return obj;
+					},
+					{}
+				);
+				const meses = ['txtNumMesesExAnterior', 'txtNumMesesExCorrente']
+					.map(campo => Number(beneficiario[campo].value))
+					.reduce((a, b) => a + b);
+
+				const valor =
+					['txtValorExAnterior', 'txtValorExCorrente']
+						.map(campo =>
+							Number(beneficiario[campo].value.replace(/[\D]/g, ''))
+						)
+						.reduce((a, b) => a + b) / 100;
+
 				const agora = new Date(),
 					anoCorrente = agora.getFullYear(),
 					txtAnoCorrente = anoCorrente.toString();
-				beneficiarios.forEach(beneficiario => {
-					beneficiario.txtAnoExCorrente.disabled = false;
-					beneficiario.txtAnoExCorrente.value = txtAnoCorrente;
-					const mesesAnoAnterior = Number(
-						beneficiario.txtNumMesesExCorrente.value
-					);
-					beneficiario.txtNumMesesExCorrente.value = '';
-					const centavosAnoAnterior = Number(
-						beneficiario.txtValorExCorrente.value.replace(/[\D]/g, '')
-					);
-					beneficiario.txtValorExCorrente.value = '';
-					const mesesAnosAnteriores = Number(
-						beneficiario.txtNumMesesExAnterior.value
-					);
-					beneficiario.txtNumMesesExAnterior.value = (mesesAnoAnterior +
-						mesesAnosAnteriores).toString();
-					const centavosAnosAnteriores = Number(
-						beneficiario.txtValorExAnterior.value.replace(/[\D]/g, '')
-					);
-					beneficiario.txtValorExAnterior.value = ((centavosAnoAnterior +
-						centavosAnosAnteriores) /
-						100).toLocaleString('pt-br', {
-						useGrouping: true,
-						minimumFractionDigits: 2,
-						maximumFractionDigits: 2
-					});
+
+				beneficiario.txtAnoExCorrente.disabled = false;
+				beneficiario.txtAnoExCorrente.value = txtAnoCorrente;
+				beneficiario.txtNumMesesExCorrente.value = '';
+				beneficiario.txtValorExCorrente.value = '';
+				beneficiario.txtNumMesesExAnterior.value = meses.toString();
+				beneficiario.txtValorExAnterior.value = valor.toLocaleString('pt-br', {
+					useGrouping: true,
+					minimumFractionDigits: 2,
+					maximumFractionDigits: 2,
 				});
 
 				jQuery(document).ajaxStop(() => {
@@ -138,11 +129,10 @@ if (acao === 'requisicoes_editar') {
 					salvo = true;
 					jQuery('#btnSalvarFecharBeneficiario').click();
 				});
-
 			}
 		);
 	}
 	sessionStorage.removeItem(NOME_FLAG);
 } else {
-	console.log(acao);
+	console.log('Ação não reconhecida: ', acao);
 }
