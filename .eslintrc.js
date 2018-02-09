@@ -199,11 +199,14 @@ module.exports = {
 		"block-spacing": "warn",
 		// "brace-style": "off",
 		// "capitalized-comments": "off",
-		// "comma-dangle": "off",
+		"comma-dangle": ["warn", {
+			"arrays": "always-multiline",
+			"objects": "always-multiline"
+		}],
 		"comma-spacing": "warn",
 		// "comma-style": "off",
 		// "computed-property-spacing": "off",
-		// "eol-last": "off",
+		"eol-last": "warn",
 		"func-call-spacing": "warn",
 		"indent": ["warn", "tab", {
 			"SwitchCase": 1
@@ -218,7 +221,7 @@ module.exports = {
 		// "newline-after-var": "off",
 		// "newline-before-return": "off",
 		// "no-lonely-if": "off",
-		// "no-multiple-empty-lines": "off",
+		"no-multiple-empty-lines": "warn",
 		"no-trailing-spaces": "warn",
 		// "no-unneeded-ternary": "off",
 		"no-whitespace-before-property": "warn",
@@ -231,7 +234,7 @@ module.exports = {
 		// "operator-linebreak": "off",
 		// "padded-blocks": "off",
 		// "quote-props": "off",
-		// "quotes": "off",
+		"quotes": ["warn", "single"],
 		"semi": "warn",
 		"semi-spacing": "warn",
 		"space-before-blocks": "warn",
@@ -267,7 +270,7 @@ module.exports = {
 		// "max-statements-per-line": "off",
 		// "multiline-ternary": "off",
 		// "new-cap": "off",
-		// "newline-per-chained-call": "off",
+		"newline-per-chained-call": "warn",
 		// "no-array-constructor": "off",
 		// "no-bitwise": "off",
 		// "no-continue": "off",
