@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Anos anteriores
 // @namespace    http://nadameu.com.br/
-// @version      1.0.0
+// @version      2.0.0
 // @description  Altera os dados dos ofícios requisitórios
 // @author       nadameu
 // @include      /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eprocV2\/controlador\.php\?acao=oficio_/
@@ -106,6 +106,7 @@ if (acao === 'requisicoes_editar') {
 					anoCorrente = agora.getFullYear(),
 					txtAnoCorrente = anoCorrente.toString();
 				beneficiarios.forEach(beneficiario => {
+					beneficiario.txtAnoExCorrente.disabled = false;
 					beneficiario.txtAnoExCorrente.value = txtAnoCorrente;
 					const mesesAnoAnterior = Number(
 						beneficiario.txtNumMesesExCorrente.value
