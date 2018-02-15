@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Anos anteriores
 // @namespace    http://nadameu.com.br/
-// @version      2.0.0
+// @version      3.0.0
 // @description  Altera os dados dos ofícios requisitórios
 // @author       nadameu
 // @include      /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eprocV2\/controlador\.php\?acao=oficio_/
@@ -51,18 +51,16 @@ const Callback = then => ({
 Callback.of = x => Callback(res => res(x));
 
 const pauseBetween = (intervalo, fs) =>
-	fs
-		.map(f => 'then' in f ? f : Callback(res => res(f())))
-		.reduce((cb, f) =>
-			cb.chain(() =>
-				Callback(resolve => {
-					const timer = setTimeout(() => {
-						clearTimeout(timer);
-						f.then(resolve);
-					}, intervalo);
-				})
-			)
-		);
+	fs.map(f => 'then' in f ? f : Callback(res => res(f()))).reduce((cb, f) =>
+		cb.chain(() =>
+			Callback(resolve => {
+				const timer = setTimeout(() => {
+					clearTimeout(timer);
+					f.then(resolve);
+				}, intervalo);
+			})
+		)
+	);
 
 const queryAll = selector => Array.from(document.querySelectorAll(selector));
 
