@@ -1564,8 +1564,20 @@ class PaginaRequisicao extends Pagina {
 				}
 			}
 			if (porcentagemAdvogado > 0) {
+				const valoresHonorarios = honorarios.map(
+					honorario => honorario.valor.total
+				);
+				const somaHonorarios = valoresHonorarios.reduce((a, b) => a + b, 0);
+				const porcentagens = valoresHonorarios
+					.map(valor => valor / somaHonorarios)
+					.map(pct => pct * porcentagemArredondada / 100)
+					.map(pct => ConversorPorcentagem.converter(pct));
 				const advogados = honorarios
 					.map(honorario => honorario.nome)
+					.map(
+						(nome, i) =>
+							porcentagens.length < 2 ? nome : `${nome} (${porcentagens[i]})`
+					)
 					.join(', ');
 				areaTabela.insertAdjacentHTML(
 					'beforeend',
