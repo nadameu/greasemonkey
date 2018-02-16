@@ -1526,11 +1526,15 @@ class PaginaRequisicao extends Pagina {
 				if (porcentagemAdvogado > 0) {
 					valorCorrente = valorCorrente / (1 - porcentagemAdvogado);
 				}
+				const anoCorrente =
+					beneficiario.anoCorrente === undefined
+						? ''
+						: `(<span class="gm-resposta--indefinida">${beneficiario.anoCorrente
+							? ConversorAno.converter(beneficiario.anoCorrente)
+							: ''}</span>)`;
 				areaTabela.insertAdjacentHTML(
 					'beforeend',
-					`<p class="gm-resposta gm-dados-adicionais">IRPF &mdash; Exercício Corrente (<span class="gm-resposta--indefinida">${beneficiario.anoCorrente
-						? ConversorAno.converter(beneficiario.anoCorrente)
-						: ''}</span>) &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(
+					`<p class="gm-resposta gm-dados-adicionais">IRPF &mdash; Exercício Corrente ${anoCorrente} &mdash; <span class="gm-resposta--indefinida">${ConversorInt.converter(
 						mesesCorrente
 					)} ${mesesCorrente > 1
 						? 'meses'
