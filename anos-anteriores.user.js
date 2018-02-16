@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Anos anteriores
 // @namespace    http://nadameu.com.br/
-// @version      3.0.0
+// @version      3.1.0
 // @description  Altera os dados dos ofícios requisitórios
 // @author       nadameu
 // @include      /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eprocV2\/controlador\.php\?acao=oficio_/
@@ -17,6 +17,7 @@ const addAjaxSuccessListener = (() => {
 
 	const listen = (filtrosGet, listener) => {
 		listeners.push({ filtrosGet, listener });
+		if (listeners.length === 1) startListening();
 		return () => {
 			listeners = listeners.filter(
 				({ filtrosGet: f, listener: l }) => filtrosGet !== f || listener !== l
@@ -24,43 +25,47 @@ const addAjaxSuccessListener = (() => {
 		};
 	};
 
-	jQuery(document).ajaxSuccess((evt, xhr, settings) => {
+	let isListening = false;
+	const startListening = () => {
+		if (isListening) return;
 		const link = document.createElement('a');
-
-		link.href = settings.url;
-		const url = new URL(link.href);
-		const parametrosGet = url.searchParams;
-
-		listeners
-			.filter(({ filtrosGet }) =>
-				Object.keys(filtrosGet).every(
-					parametro => parametrosGet.get(parametro) === filtrosGet[parametro]
+		const onAjaxSuccess = (evt, xhr, settings) => {
+			link.href = settings.url;
+			const url = new URL(link.href);
+			const parametrosGet = url.searchParams;
+			listeners
+				.filter(({ filtrosGet }) =>
+					Object.keys(filtrosGet).every(
+						parametro => parametrosGet.get(parametro) === filtrosGet[parametro]
+					)
 				)
-			)
-			.forEach(({ listener }) => listener());
-	});
-
+				.forEach(({ listener }) => listener());
+		};
+		jQuery(document).ajaxSuccess(onAjaxSuccess);
+		isListening = true;
+	};
 	return listen;
 })();
 
-const Callback = then => ({
-	then,
-	chain: f => Callback(res => then(x => f(x).then(res))),
-	map: f => Callback(res => then(x => res(f(x)))),
-});
-Callback.of = x => Callback(res => res(x));
+const pause = int => () =>
+	new Promise(res => {
+		const timer = setTimeout(() => {
+			clearTimeout(timer);
+			res();
+		}, int);
+	});
 
-const pauseBetween = (intervalo, fs) =>
-	fs.map(f => 'then' in f ? f : Callback(res => res(f()))).reduce((cb, f) =>
-		cb.chain(() =>
-			Callback(resolve => {
-				const timer = setTimeout(() => {
-					clearTimeout(timer);
-					f.then(resolve);
-				}, intervalo);
-			})
-		)
-	);
+const pauseBetween = (int, fs) =>
+	fs
+		.reduce((arr, f, i) => {
+			if (i > 0) arr.push(pause(int));
+			arr.push(f);
+			return arr;
+		}, [])
+		.reduce(
+			(promiseThunk, f) => () => promiseThunk().then(f),
+			() => Promise.resolve()
+		);
 
 const queryAll = selector => Array.from(document.querySelectorAll(selector));
 
@@ -146,12 +151,11 @@ if (acao === 'requisicoes_editar') {
 						maximumFractionDigits: 2,
 					})
 				),
-				() => {
-					if (salvo) return;
-					salvo = true;
-					jQuery('#btnSalvarFecharBeneficiario').click();
-				},
-			]).then(() => {});
+			])().then(() => {
+				if (salvo) return;
+				salvo = true;
+				jQuery('#btnSalvarFecharBeneficiario').click();
+			});
 		});
 	}
 	sessionStorage.removeItem(NOME_FLAG);
