@@ -1162,8 +1162,8 @@ var LocalizadoresFactory = (function() {
 			var link = localizador.link = linha.querySelector('a');
 			localizador.quantidadeProcessosNaoFiltrados = parseInt(link.textContent);
 			if (link.href) {
-				var camposGet = parsePares(link.search.split(/^\?/)[1].split('&'));
-				localizador.id = camposGet.selLocalizador;
+				var camposGet = new URL(link.href).searchParams;
+				localizador.id = camposGet.get('selLocalizador');
 			}
 			return localizador;
 		},
@@ -1176,8 +1176,8 @@ var LocalizadoresFactory = (function() {
 			var link = localizador.link = linha.querySelector('a,u');
 			localizador.quantidadeProcessosNaoFiltrados = parseInt(link.textContent);
 			if (link && link.href) {
-				var camposGet = parsePares(link.search.split(/^\?/)[1].split('&'));
-				localizador.id = camposGet.selLocalizador;
+				var camposGet = new URL(link.href).searchParams;
+				localizador.id = camposGet.get('selLocalizador');
 			}
 			return localizador;
 		},
@@ -1187,16 +1187,20 @@ var LocalizadoresFactory = (function() {
 		var promises = this.map(fn);
 		return Promise.all(promises).then(function() {
 			var cookiesNovos = parseCookies(document.cookie);
-			var expira = new Date();
-			expira.setFullYear(expira.getFullYear() + 1);
+			var expira = [new Date()]
+				.map(d => {
+					d.setFullYear(d.getFullYear() + 1);
+					return d;
+				})
+				.map(d => d.toUTCString())
+				.reduce((_, x) => x);
 			for (let key in cookiesNovos) {
-				if (
-					typeof cookiesAntigos[key] !== 'undefined' &&
-					cookiesNovos[key] !== cookiesAntigos[key]
-				) {
-					document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(
-						cookiesAntigos[key]
-					)}; expires=${expira.toUTCString()}`;
+				const valorAntigo = cookiesAntigos[key];
+				const valorNovo = cookiesNovos[key];
+				if (typeof valorAntigo !== 'undefined' && valorNovo !== valorAntigo) {
+					document.cookie = `${escape(key)}=${escape(
+						valorAntigo
+					)}; expires=${expira}`;
 				}
 			}
 		});
@@ -1641,12 +1645,12 @@ function parseDataHora(texto) {
 	return new Date(y, m - 1, d, h, i, s);
 }
 function parsePares(pares) {
-	var obj = {};
-	pares.forEach(function(par) {
-		var partes = par.split('=');
-		var nome = decodeURIComponent(partes.splice(0, 1));
-		var valor = decodeURIComponent(partes.join('='));
+	return pares.reduce((obj, par) => {
+		let nome, valores, valor;
+		[nome, ...valores] = par.split('=');
+		nome = unescape(nome);
+		valor = unescape(valores.join('='));
 		obj[nome] = valor;
-	});
-	return obj;
+		return obj;
+	}, {});
 }
