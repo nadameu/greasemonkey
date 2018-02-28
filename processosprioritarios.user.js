@@ -285,7 +285,8 @@ var GUI = (function() {
 					balaoAberto.classList.remove('gmDetalhesAberto');
 				});
 				balao.classList.add('gmDetalhesAberto');
-				const MENOR = -1, MAIOR = +1;
+				const MENOR = -1,
+					MAIOR = +1;
 				processos.sort((a, b) => {
 					if (a.termoPrazoCorregedoria < b.termoPrazoCorregedoria) return MENOR;
 					if (a.termoPrazoCorregedoria > b.termoPrazoCorregedoria) return MAIOR;
@@ -1461,7 +1462,9 @@ var ProcessoFactory = (function() {
 			var dataTermo = new Date(dataConsiderada.getTime());
 			dataTermo.setDate(dataTermo.getDate() + this.prazoCorregedoria);
 			while (dataTermo >= recesso.inicio) {
-				dataTermo.setTime(dataTermo.getTime() + (recesso.retorno - recesso.inicio));
+				dataTermo.setTime(
+					dataTermo.getTime() + (recesso.retorno - recesso.inicio)
+				);
 				recesso = calcularRecesso(recesso.retorno.getFullYear());
 			}
 			return dataTermo;
