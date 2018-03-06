@@ -1149,16 +1149,18 @@ var LocalizadoresFactory = (function() {
 		fromLinha(linha) {
 			var localizador = new Localizador();
 			localizador.linha = linha;
-			var siglaNome = linha.cells[0].textContent.split(' - ');
-			if (siglaNome.length % 2 === 0) {
-				let sigla = siglaNome.slice(0, siglaNome.length / 2).join(' - ');
-				let nome = siglaNome.slice(siglaNome.length / 2).join(' - ');
+			const separador = ' - ';
+			var siglaNome = linha.cells[0].textContent.split(separador);
+			siglaNome.forEach((_, i) => {
+				const qtdPartesSigla = i + 1;
+				const sigla = siglaNome.slice(0, qtdPartesSigla).join(separador);
+				const nome = siglaNome.slice(qtdPartesSigla).join(separador);
 				if (isContained(sigla, nome)) {
 					localizador.sigla = sigla;
 					localizador.nome = nome;
 				}
-			}
-			localizador.siglaNome = siglaNome.join(' - ');
+			});
+			localizador.siglaNome = siglaNome.join(separador);
 			var link = localizador.link = linha.querySelector('a');
 			localizador.quantidadeProcessosNaoFiltrados = parseInt(link.textContent);
 			if (link.href) {
