@@ -9,7 +9,7 @@
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-retirar.jsf
 // @connect     www.trf4.jus.br
-// @version     19
+// @version     20
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -651,7 +651,7 @@ var ServicoWSDL = (function() {
 				reject(new Error(erros.join('\n')));
 			} else {
 				var docs = [...processo.querySelectorAll('Partes Parte CPF_CGC')]
-				.filter(doc => doc.parentNode.querySelectorAll('Reu').length > 0)
+				.filter(doc => doc.parentNode.querySelectorAll('Réu').length > 0)
 				.map(doc => doc.textContent);
 				dadosSalvos.set(GUI.estado + GUI.numproc, docs);
 				resolve(docs);
