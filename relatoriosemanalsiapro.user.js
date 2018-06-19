@@ -99,9 +99,7 @@ var DB = {
       req.addEventListener('upgradeneeded', function(evt) {
         var db = evt.target.result;
 
-        switch (evt.oldVersion) {
-
-          case 0:
+        if (evt.oldVersion < 1) {
             var processos = db.createObjectStore('processos', {keyPath: 'numproc'});
             processos.createIndex('classe', 'classe');
             processos.createIndex('situacao', 'situacao');
@@ -120,9 +118,9 @@ var DB = {
             var jlocs = db.createObjectStore('jlocs', {keyPath: 'id', autoIncrement: true});
             jlocs.createIndex('jloc', ['juizo', 'localizador', 'competencia', 'classe'], {unique: true});
             jlocs.createIndex('localizador', 'localizador');
-            // break intencionalmente omitido
+        }
 
-          case 1:
+        if (evt.oldVersion < 2) {
             processos.createIndex('orgao', 'orgao');
 
             jlocs.createIndex('setor', 'setor');
@@ -137,7 +135,6 @@ var DB = {
             var julgse = db.createObjectStore('julgse', {keyPath: 'id', autoIncrement: true});
             julgse.createIndex('julg', ['juizo', 'localizador', 'grupo'], {unique: true});
             julgse.createIndex('setor', 'setor');
-            // break intencionalmente omitido
         }
       });
     });
