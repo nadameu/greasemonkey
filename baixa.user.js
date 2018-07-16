@@ -2,7 +2,7 @@
 // @name        Preenchimento dados baixa
 // @namespace   http://nadameu.com.br/baixa
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=baixa_arquivamento_processo_etapa_(1|3)&/
-// @version     3
+// @version     4
 // @grant       none
 // ==/UserScript==
 
@@ -242,11 +242,12 @@ if (etapa === '1') {
       for (let id in abertos) {
         let janela = abertos[id];
         if (janela && ! janela.closed) {
-          janela.close();
+          janela.setTimeout(() => janela.close(), 1);
         }
       }
     }
-    window.opener.close();
+    const opener = window.opener;
+    opener.setTimeout(() => opener.close(), 1);
     window.close();
   }
 }
