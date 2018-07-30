@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 25
+// @version 25.0.1
 // @grant none
 // ==/UserScript==
 
@@ -149,7 +149,7 @@ var GUI = (function() {
 			if (localizador.lembrete) {
 				conteudo.push(' ');
 				conteudo.push(
-					`<img class="infraImgNormal" src="../../../infra_css/imagens/balao.gif" style="width:0.9em; height:0.9em; opacity:1; border-width:0;" onmouseover="${safeHTML`return infraTooltipMostrar('${localizador.lembrete}','',400);`}" onmouseout="return infraTooltipOcultar();"/>`
+					`<img class="infraImgNormal" src="infra_css/imagens/balao.gif" style="width:0.9em; height:0.9em; opacity:1; border-width:0;" onmouseover="${safeHTML`return infraTooltipMostrar('${localizador.lembrete}','',400);`}" onmouseout="return infraTooltipOcultar();"/>`
 				);
 			}
 			var processosComPeticao = localizador.processos.filter(processo => {
@@ -363,7 +363,7 @@ var GUI = (function() {
 						safeHTML`<img class="gmLembreteProcesso${processo.lembretes
 							.length === 0
 							? ' gmLembreteProcessoVazio'
-							: ''}" src="../../../infra_css/imagens/balao.gif" onmouseover="return infraTooltipMostrar('${processo.lembretes
+							: ''}" src="infra_css/imagens/balao.gif" onmouseover="return infraTooltipMostrar('${processo.lembretes
 							.map(lembrete => lembrete.replace(/\n/g, '<br>'))
 							.join(
 								'<hr style="border-width: 0 0 1px 0;">'
