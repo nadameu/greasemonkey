@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 25.0.1
+// @version 26.0.0
 // @grant none
 // ==/UserScript==
 
@@ -980,6 +980,16 @@ var LocalizadoresFactory = (function() {
 		linhas.forEach(function(linha) {
 			this.processos.push(ProcessoFactory.fromLinha(linha));
 		}, this);
+		if (pagina > 0) return this;
+		var todas = doc.getElementById('selInfraPaginacaoSuperior');
+		if (todas) {
+			console.info('Buscando próximas páginas', this.nome || this.siglaNome);
+			return Promise.all(
+				Array.from({ length: todas.options.length - 1 }, (_, i) => i + 1).map(
+					p => this.obterPagina(p, doc)
+				)
+			);
+		}
 		var proxima = doc.getElementById('lnkInfraProximaPaginaSuperior');
 		if (proxima) {
 			console.info('Buscando próxima página', this.nome || this.siglaNome);
