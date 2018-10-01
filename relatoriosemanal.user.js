@@ -143,7 +143,8 @@ if (acao === 'relatorio_geral_listar') {
 				if (campo === 'localizador') {
 					processo[indiceCampo] = localizador;
 				} else if (campo === 'data' || campo === 'autuacao' || campo === 'dataEstatistica') {
-					processo[indiceCampo] = dadosProcesso[campo].toLocaleFormat('%Y-%m-%d %H:%M:%S');
+					const data = dadosProcesso[campo];
+					processo[indiceCampo] = `${data.getFullYear()}-${numeroDoisDigitos(data.getMonth() + 1)}-${numeroDoisDigitos(data.getDate())} ${numeroDoisDigitos(data.getHours())}:${numeroDoisDigitos(data.getMinutes())}:${numeroDoisDigitos(data.getSeconds())}`;
 				} else if (campo === '') {
 					// não faz nada
 				} else {
@@ -312,4 +313,8 @@ if (acao === 'relatorio_geral_listar') {
 			$('#btnVoltar').click();
 		}
 	}).catch(err => console.error(err));
+}
+
+function numeroDoisDigitos(num) {
+  return String(num).padStart(2, '0');
 }
