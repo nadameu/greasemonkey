@@ -9,7 +9,7 @@
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-retirar.jsf
 // @connect     www.trf4.jus.br
-// @version     21
+// @version     22
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -578,7 +578,7 @@ var Pagina = (function() {
 		obterCelulaRestricaoVeiculo(ord) {
 			console.debug('Pagina.obterCelulaRestricaoVeiculo(ord)', ord);
 			var linha = Pagina.obterLinhaVeiculo(ord);
-			return linha.cells[7];
+			return linha.cells[8];
 		},
 		obterLinhaVeiculo(ord) {
 			console.debug('Pagina.obterLinhaVeiculo(ord)', ord);
