@@ -3,7 +3,7 @@
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_consultar\&/
-// @version     5
+// @version     6.0.0
 // @grant       none
 // ==/UserScript==
 
@@ -174,18 +174,32 @@ if (acao === 'relatorio_geral_listar') {
 				'<col style="mso-number-format: \'0.00%\';"/>', // Atraso
 				'<col style="mso-number-format: \'@\';"/>' // Incluir?
 			].join(''));
-			const tRow = table.createTHead().insertRow();
+			table.createTHead();
+			table.tHead.insertRow();
+			Array.from({length: 11}).forEach(() => {
+				table.tHead.rows[0].insertCell()
+			});
+			table.tHead.rows[0].insertCell().setAttribute('x:fmla', "=TODAY()");
+			const tRow = table.tHead.insertRow();
 			const camposExcel = ['Processo', 'Competência Corregedoria', 'Competência', 'Classe', 'Localizador', 'Situação', 'Data autuação', 'Data Estat.', 'Data Últ. Fase', 'Regra', 'Campo a considerar', 'Data considerada', 'Motivo', 'Esperado', 'Dias', 'Setor', 'Atraso', 'Incluir?'];
 			for (let i = 0; i < camposExcel.length; i++) tRow.insertCell();
 			camposExcel.forEach((campo, i) => tRow.cells[i].innerHTML = '<strong>' + campo + '</strong>');
 			const tBody = table.createTBody();
-			processos.forEach(processo => {
+			processos.forEach((processo, p) => {
 				const row = tBody.insertRow();
 				for (let i = 0; i < camposExcel.length; i++) row.insertCell();
 				processo.forEach((campo, i) => {
 					row.cells[i].textContent = campo;
 					if (i === 0) row.cells[i].setAttribute('x:str', campo);
 				});
+				row.cells[9].setAttribute('x:fmla', "=VLOOKUP(E" + (p + 3) + ", '[regras.xls]localizador_situacao_regra'!$A$2:$D$999, 1 + MATCH(F" + (p + 3) + ", '[regras.xls]localizador_situacao_regra'!$B$1:$D$1), FALSE)");
+				row.cells[10].setAttribute('x:fmla', "=VLOOKUP(J" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$A$2:$D$99, 4, FALSE)");
+				row.cells[11].setAttribute('x:fmla', "=OFFSET(F" + (p + 3) + ", 0, MATCH(K" + (p + 3) + ", $G$2:$I$2), 1, 1)");
+				row.cells[12].setAttribute('x:fmla', "=VLOOKUP(J" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$A$2:$C$99, 3, FALSE)");
+				row.cells[13].setAttribute('x:fmla', "=VLOOKUP(J" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$A$2:$H$99, 4 + MATCH(B" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$E$1:$H$1), FALSE)");
+				row.cells[14].setAttribute('x:fmla', "=$L$1 - L" + (p + 3) + "");
+				row.cells[16].setAttribute('x:fmla', "=O" + (p + 3) + " / N" + (p + 3) + " - 1");
+				row.cells[17].setAttribute('x:fmla', "=IF(Q" + (p + 3) + " > 0, \"S\", \"N\")");
 			});
 			const blob = new Blob([
 				'<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head>',
