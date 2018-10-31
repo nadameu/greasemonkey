@@ -3,7 +3,7 @@
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_consultar\&/
-// @version     6.0.0
+// @version     6.0.1
 // @grant       none
 // ==/UserScript==
 
@@ -192,11 +192,11 @@ if (acao === 'relatorio_geral_listar') {
 					row.cells[i].textContent = campo;
 					if (i === 0) row.cells[i].setAttribute('x:str', campo);
 				});
-				row.cells[9].setAttribute('x:fmla', "=VLOOKUP(E" + (p + 3) + ", '[regras.xls]localizador_situacao_regra'!$A$2:$D$999, 1 + MATCH(F" + (p + 3) + ", '[regras.xls]localizador_situacao_regra'!$B$1:$D$1), FALSE)");
+				row.cells[9].setAttribute('x:fmla', "=VLOOKUP(E" + (p + 3) + ", '[regras.xls]localizador_situacao_regra'!$A$2:$D$999, 1 + MATCH(F" + (p + 3) + ", '[regras.xls]localizador_situacao_regra'!$B$1:$D$1, 0), FALSE)");
 				row.cells[10].setAttribute('x:fmla', "=VLOOKUP(J" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$A$2:$D$99, 4, FALSE)");
-				row.cells[11].setAttribute('x:fmla', "=OFFSET(F" + (p + 3) + ", 0, MATCH(K" + (p + 3) + ", $G$2:$I$2), 1, 1)");
+				row.cells[11].setAttribute('x:fmla', "=OFFSET(F" + (p + 3) + ", 0, MATCH(K" + (p + 3) + ", $G$2:$I$2, 0), 1, 1)");
 				row.cells[12].setAttribute('x:fmla', "=VLOOKUP(J" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$A$2:$C$99, 3, FALSE)");
-				row.cells[13].setAttribute('x:fmla', "=VLOOKUP(J" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$A$2:$H$99, 4 + MATCH(B" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$E$1:$H$1), FALSE)");
+				row.cells[13].setAttribute('x:fmla', "=VLOOKUP(J" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$A$2:$H$99, 4 + MATCH(B" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$E$1:$H$1, 0), FALSE)");
 				row.cells[14].setAttribute('x:fmla', "=$L$1 - L" + (p + 3) + "");
 				row.cells[16].setAttribute('x:fmla', "=O" + (p + 3) + " / N" + (p + 3) + " - 1");
 				row.cells[17].setAttribute('x:fmla', "=IF(Q" + (p + 3) + " > 0, \"S\", \"N\")");
