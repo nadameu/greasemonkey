@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name Precatórios/RPVs
 // @description Auxilia a conferência de RPVs e precatórios.
-// @version 21.0.0
+// @version 21.0.1
 // @author nadameu
 // @namespace http://nadameu.com.br/precatorios-rpv
 // @include /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=processo_selecionar\&/
