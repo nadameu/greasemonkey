@@ -8,8 +8,8 @@
 // @supportURL  https://github.com/nadameu/greasemonkey/issues
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-retirar.jsf
-// @connect     www.trf4.jus.br
-// @version     22
+// @connect     www2.trf4.jus.br
+// @version     22.0.1
 // @grant       GM_addStyle
 // @grant       GM_xmlhttpRequest
 // @grant       unsafeWindow
@@ -671,7 +671,7 @@ var ServicoWSDL = (function() {
 			var promise = new Promise(function(resolve, reject) {
 				var options = {
 					method: 'POST',
-					url: 'http://www.trf4.jus.br/trf4/processos/acompanhamento/consultaws.php',
+					url: 'https://www2.trf4.jus.br/trf4/processos/acompanhamento/consultaws.php',
 					data: [
 						'<?xml version="1.0" encoding="UTF-8"?>',
 						'<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">',
