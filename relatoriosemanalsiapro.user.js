@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php*
-// @version     18
+// @version     18.0.1
 // @grant       none
 // ==/UserScript==
 
@@ -12,6 +12,21 @@ const COMPETENCIAS_CORREGEDORIA = {
   EF: 2,
   JEF: 3
 };
+
+function dateToISO(data) {
+  const ano = data.getFullYear();
+  let mes = pad(data.getMonth() + 1);
+  let dia = pad(data.getDay());
+  return `${ano}-${mes}-${dia}`;
+}
+
+function pad(num) {
+  let txt = String(num);
+  while (txt.length < 2) {
+    txt = `0${txt}`;
+  }
+  return txt;
+}
 
 function parseData(texto) {
   var [d,m,y] = texto.split('/');
@@ -628,7 +643,7 @@ var XLSFactory = {
         } else if (campo === 'autuacao' ||
                    campo === 'dataEstatistica' ||
                    campo === 'dataUltimaFase') {
-          celula.textContent = processo[campo].toLocaleFormat('%Y-%m-%d');
+          celula.textContent = dateToISO(processo[campo]);
         } else if (campo === 'competenciaCorregedoria') {
           celula.textContent = [
             'Cível',
