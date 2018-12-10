@@ -2,7 +2,7 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php*
-// @version     18.0.1
+// @version     18.0.2
 // @grant       none
 // ==/UserScript==
 
@@ -16,7 +16,7 @@ const COMPETENCIAS_CORREGEDORIA = {
 function dateToISO(data) {
   const ano = data.getFullYear();
   let mes = pad(data.getMonth() + 1);
-  let dia = pad(data.getDay());
+  let dia = pad(data.getDate());
   return `${ano}-${mes}-${dia}`;
 }
 
