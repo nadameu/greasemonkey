@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 26.0.0
+// @version 26.0.1
 // @grant none
 // ==/UserScript==
 
@@ -300,8 +300,7 @@ var GUI = (function() {
 					linhaNova.className = 'infraTrClara gmDetalhes';
 					const DIGITOS_CLASSE = 6,
 						DIGITOS_COMPETENCIA = 2;
-					linhaNova.dataset.classe = ('0'.repeat(DIGITOS_CLASSE) +
-						processo.numClasse).substr(-DIGITOS_CLASSE);
+					linhaNova.dataset.classe = processo.numClasse;
 					linhaNova.dataset.competencia = ('0'.repeat(DIGITOS_COMPETENCIA) +
 						processo.numCompetencia).substr(-DIGITOS_COMPETENCIA);
 					var textoData;
@@ -1490,7 +1489,7 @@ var ProcessoFactory = (function() {
 		fromLinha(linha) {
 			var processo = new Processo();
 			processo.linha = linha;
-			processo.numClasse = Number(linha.dataset.classe);
+			processo.numClasse = linha.dataset.classe;
 			processo.numCompetencia = Number(linha.dataset.competencia);
 			var link = processo.link = linha.cells[1].querySelector('a');
 			var numprocFormatado = processo.numprocFormatado = link.textContent;
