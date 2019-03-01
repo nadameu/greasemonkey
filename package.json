@@ -1,0 +1,32 @@
+{
+	"name": "greasemonkey",
+	"version": "1.0.0",
+	"description": "Greasemonkey",
+	"private": true,
+	"directories": {},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/nadameu/greasemonkey.git"
+	},
+	"keywords": [],
+	"author": "nadameu",
+	"license": "GPL-3.0",
+	"bugs": {
+		"url": "https://github.com/nadameu/greasemonkey/issues"
+	},
+	"homepage": "https://github.com/nadameu/greasemonkey#readme",
+	"devDependencies": {
+		"@types/jquery": "^3.3.29",
+		"@typescript-eslint/eslint-plugin": "^1.4.2",
+		"@typescript-eslint/parser": "^1.4.2",
+		"eslint": "^5.14.1",
+		"eslint-config-airbnb-base": "^13.1.0",
+		"eslint-config-prettier": "^4.1.0",
+		"eslint-plugin-import": "^2.16.0",
+		"eslint-plugin-prettier": "^3.0.1",
+		"typescript": "^3.3.3333"
+	}
+}
