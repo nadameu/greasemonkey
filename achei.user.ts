@@ -4,11 +4,14 @@
 // @description Link para informações da Intra na página do Achei!
 // @include     http://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar*
 // @include     http://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar*
-// @version     14.0.0
+// @version     14.0.1
 // @grant       none
 // ==/UserScript==
 
 const reSigla = /^Sigla:\s*(\S+)\s*$/;
+
+const safe = <a, b>(f: (_: a) => b) => (x: a | null | undefined): b | null | undefined =>
+	x == null ? (x as null | undefined) : f(x);
 
 const fromNullable = <T>(x: T | null | undefined, msg: string): Promise<T> =>
 	x == null ? Promise.reject(new Error(msg)) : Promise.resolve(x);
@@ -16,84 +19,67 @@ const fromNullable = <T>(x: T | null | undefined, msg: string): Promise<T> =>
 const query = <T extends Element>(selector: string, msg: string): Promise<T> =>
 	fromNullable<T>(document.querySelector<T>(selector), msg);
 
-const formularioPromise = query<HTMLFormElement>(
-	'form[name="formulario"]',
-	'Formulário não encontrado!',
-);
+const getFormulario = () =>
+	query<HTMLFormElement>('form[name="formulario"]', 'Formulário não encontrado!');
+const getDominio = () =>
+	query('[name="local"]:checked', 'Não foi selecionado local!')
+		.then(safe(x => x.nextSibling))
+		.then(safe(txt => txt.textContent))
+		.then(safe(txt => txt.trim().toLowerCase()))
+		.then(x => fromNullable(x, 'Local selecionado não possui texto!'));
 
-const dominioPromise = Promise.resolve().then(async () => {
-	const input = await query('[name="local"]:checked', 'Não foi selecionado local!');
-	const node = await fromNullable(input.nextSibling, 'Local selecionado não possui texto!');
-	const txt = await fromNullable(node.textContent, 'Local selecionado não possui texto!');
-	return txt.trim().toLowerCase();
-});
-
-const createSnippet = (() => {
+let makeCreateSnippet: (url: string) => DocumentFragment;
+{
 	const template = document.createElement('template');
 	template.innerHTML = ' [ <a href="" target="_blank">Abrir na Intra</a> ]';
 	const { content } = template;
 	const link = content.querySelector('a') as HTMLAnchorElement;
-	return (url: string) => {
+	makeCreateSnippet = url => {
 		link.href = url;
 		return document.importNode(content, true);
 	};
-})();
+}
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-const makeReduzirNodes = (dominio: string) => async (soma: Promise<number>, node: Node) => {
-	const txt = await fromNullable(node.textContent, '');
-	const matches = reSigla.exec(txt);
-	if (matches) {
-		const fragment = createSnippet(
-			`https://intra.trf4.jus.br/membros/${matches[1].toLowerCase()}${dominio}-jus-br`,
-		);
-		(node.parentNode as Node).insertBefore(fragment, node.nextSibling);
-		return (await soma) + 1;
-	}
-	return soma;
+const makeInsertSnippet = (dominio: string) => {
+	const createSnippet = (sigla: string) =>
+		makeCreateSnippet(`https://intra.trf4.jus.br/membros/${sigla}${dominio}-jus-br`);
+	return (node: Node): boolean => {
+		const txt = (node.textContent || '').trim();
+		if (txt === '') return false;
+		const [sigla] = reSigla.exec(txt) || [null];
+		if (sigla === null) return false;
+		node.parentNode!.insertBefore(createSnippet(sigla.toLowerCase()), node.nextSibling);
+		return true;
+	};
 };
 
-const unfold = <T, U>(f: (_: T) => [U, T] | null, x: T): U[] => {
-	const result: U[] = [];
-	let current = f(x);
+const nextSiblings = function*(node: Node) {
+	let current = node.nextSibling;
 	while (current !== null) {
-		result.push(current[0]);
-		current = f(current[1]);
+		yield current;
+		current = current.nextSibling;
 	}
-	return result;
 };
 
-const nextSiblings = (node: Node): Node[] =>
-	unfold(currentNode => {
-		const next = currentNode.nextSibling;
-		if (next === null) return null;
-		return [next, next];
-	}, node);
-
-const reduzirTabelas = (nodes: Node[]): Node[] =>
-	nodes.reduce<Node[]>((acc, node) => {
-		if (node instanceof Element && node.matches('table')) {
-			const celula = node.querySelector('td:nth-child(2)');
-			if (celula) {
-				return acc.concat(Array.from(celula.childNodes));
-			}
+const reduzirTabelas = (node: Node) => {
+	if (node instanceof Element && node.matches('table')) {
+		const celula = node.querySelector('td:nth-child(2)');
+		if (celula) {
+			return Array.from(celula.childNodes);
 		}
-		acc.push(node);
-		return acc;
-	}, []);
-
-// @ts-ignore
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-const main = async () => {
-	const dominio = await dominioPromise;
-	const formulario = await formularioPromise;
-	const qtd = await reduzirTabelas(nextSiblings(formulario)).reduce(
-		makeReduzirNodes(dominio),
-		Promise.resolve(0),
-	);
-	const s = qtd > 1 ? 's' : '';
-	return `${qtd} link${s} criado${s}.`;
+	}
+	return [node];
 };
+
+const main = () =>
+	Promise.all([getDominio(), getFormulario()]).then(([dominio, formulario]) => {
+		const insertSnippet = makeInsertSnippet(dominio);
+		const qtd = Array.from(nextSiblings(formulario))
+			.reduce((acc: Node[], x) => acc.concat(reduzirTabelas(x)), [])
+			.reduce((acc, x) => (insertSnippet(x) ? acc + 1 : acc), 0);
+		const s = qtd > 1 ? 's' : '';
+		return `${qtd} link${s} criado${s}.`;
+	});
 
 // eslint-disable-next-line no-console
 main().then(x => console.log('Resultado:', x), e => console.error('Erro:', e));
