@@ -1,5 +1,6 @@
 // ==UserScript==
 // @name Atualizar saldo CEF
+// @description Permite que o navegador salve o nome de usuário e senha de acesso às contas judiciais da CEF
 // @namespace http://nadameu.com.br/
 // @include https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=subfrm_atualizar_saldo_conta&*
 // @include https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=subfrm_atualizar_saldo_conta&*
