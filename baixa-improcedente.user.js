@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-improcedente
-// @version 0.1.0
+// @version 0.2.0
 // @description 3DIR Baixa - sentença de improcedência
 // @namespace http://nadameu.com.br/baixa-improcedente
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -43,7 +43,7 @@ for (const perito of peritos) {
 const capa = document.getElementById('fldCapa');
 if (! capa) return;
 
-capa.insertAdjacentHTML('beforebegin', `<div style="display: inline-block; padding: 4px; border-radius: 4px; font-size: 1.25em; font-weight: bold; background: #848; color: #fff;">Baixar motivo 8</div>`)
+capa.insertAdjacentHTML('beforebegin', `<div style="display: inline-block; padding: 4px; border-radius: 4px; font-size: 1.25em; font-weight: bold; background: #848; color: #fff;">Baixar motivo 6</div>`)
 
 function queryAll(selector) {
   return Array.from(document.querySelectorAll(selector));
