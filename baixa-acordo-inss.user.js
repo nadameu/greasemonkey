@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.2.0
+// @version 0.3.0
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -31,10 +31,10 @@ const sentenca = eventos.find(({ descricao, memos }) =>
 );
 if (! sentenca) return console.log('Não há sentença de acordo ou procedência.');
 
-const intimacaoAPSSentenca = eventos.find(({ descricao, referente }) =>
+const intimacaoAPSSentenca = eventos.find(({ descricao, referente, ordinal }) =>
   descricao.match(/Intimação Eletrônica - Expedida\/Certificada - Requisição/) &&
   descricao.match(/AGÊNCIA DA PREVIDÊNCIA SOCIAL  -  APS DE ATENDIMENTO DEMANDAS JUDICIAIS FLORIANÓPOLIS/) &&
-  referente.some(ref => ref >= sentenca.ordinal)
+  (referente.some(ref => ref >= sentenca.ordinal) || ordinal === sentenca.ordinal + 1)
 );
 if (! intimacaoAPSSentenca) return console.log('APSADJ não foi intimada da sentença.');
 
