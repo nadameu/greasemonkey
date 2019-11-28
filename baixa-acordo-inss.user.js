@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.1.0
+// @version 0.2.0
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -92,7 +92,7 @@ for (const perito of peritos) {
 const capa = document.getElementById('fldCapa');
 if (! capa) return;
 
-capa.insertAdjacentHTML('beforebegin', `<div style="display: inline-block; padding: 4px; border-radius: 4px; font-size: 1.25em; font-weight: bold; background: #848; color: #fff;">Baixar motivo ${peritos.length > 0 ? 3 : 1}</div>`)
+capa.insertAdjacentHTML('beforebegin', `<div style="display: inline-block; padding: 4px; border-radius: 4px; font-size: 1.25em; font-weight: bold; background: #848; color: #fff;">Baixar motivo ${peritos.length > 0 ? 4 : 1}</div>`)
 
 function houveDecursoOuCiencia(eventos, ordinal) {
   return eventos
