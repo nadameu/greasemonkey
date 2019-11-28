@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.3.0
+// @version 0.4.0
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -38,10 +38,21 @@ const intimacaoAPSSentenca = eventos.find(({ descricao, referente, ordinal }) =>
 );
 if (! intimacaoAPSSentenca) return console.log('APSADJ não foi intimada da sentença.');
 
-const resposta = eventos.find(({ descricao, referente }) =>
+let resposta = eventos.find(({ descricao, referente }) =>
   descricao.match(/RESPOSTA/) &&
   referente.some(ref => ref === intimacaoAPSSentenca.ordinal)
 );
+if (resposta) {
+  resposta = eventos.find(({ descricao, ordinal }) =>
+    descricao.match(/RESPOSTA/) &&
+    ordinal >= resposta.ordinal
+  );
+} else {
+  resposta = eventos.find(({ descricao, ordinal }) =>
+    descricao.match(/RESPOSTA/) &&
+    ordinal >= intimacaoAPSSentenca.ordinal
+  );
+}
 if (! resposta) return console.log('APSADJ não juntou resposta.')
 
 const intimacaoAutorResposta = eventos.find(({ descricao, referente }) =>
@@ -49,7 +60,7 @@ const intimacaoAutorResposta = eventos.find(({ descricao, referente }) =>
   descricao.match(/AUTOR|REQUERENTE/) &&
   referente.some(ref => ref === resposta.ordinal)
 );
-if (! intimacaoAutorResposta) return console.log('Autor não foi intimado da resposta.', resposta);
+if (! intimacaoAutorResposta) return console.log('Autor não foi intimado da última resposta.', resposta);
 
 if (! houveDecursoOuCiencia(eventos, intimacaoAutorResposta.ordinal)) return console.log('Não houve decurso ou ciência da resposta pelo autor.');
 
