@@ -1,7 +1,7 @@
 {
   "name": "baixa-acordo-inss",
   "description": "3DIR Baixa - acordo INSS",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "scripts": {
     "build": "rollup -c --environment BUILD:production",
     "start": "rollup -c -w --environment BUILD:development"
