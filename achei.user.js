@@ -4,7 +4,7 @@
 // @description Link para informações da Intra na página do Achei!
 // @include     http://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar*
 // @include     http://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar*
-// @version     13
+// @version     14.0.0
 // @grant       none
 // ==/UserScript==
 
