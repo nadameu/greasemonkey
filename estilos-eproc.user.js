@@ -12,8 +12,7 @@ const tblEventos = document.getElementById('tblEventos');
 tblEventos.removeAttribute('style');
 
 const cabecalhos = tblEventos.querySelectorAll(':scope > thead > tr > th');
-for (const cabecalho of cabecalhos)
-  cabecalho.removeAttribute('width');
+for (const cabecalho of cabecalhos) cabecalho.removeAttribute('width');
 
 const style = document.createElement('style');
 style.textContent = `
