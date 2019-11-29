@@ -1,0 +1,18 @@
+{
+  "name": "baixa-acordo-inss",
+  "description": "3DIR Baixa - acordo INSS",
+  "version": "0.4.0",
+  "scripts": {
+    "build": "rollup -c --environment BUILD:production",
+    "start": "rollup -c -w --environment BUILD:development"
+  },
+  "devDependencies": {
+    "rollup": "^1.27.5",
+    "rollup-plugin-serve": "^1.0.1",
+    "rollup-plugin-typescript": "^1.0.1",
+    "typescript": "^3.7.2"
+  },
+  "dependencies": {
+    "tslib": "^1.10.0"
+  }
+}
