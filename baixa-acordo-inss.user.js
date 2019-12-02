@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.5.0
+// @version 0.6.0
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -90,6 +90,7 @@ function main() {
       }
     },
     Ok(resInterno) {
+      adicionarEstilos();
       matchWith(resInterno, {
         Invalido(erros) {
           for (const erro of erros) {
@@ -241,15 +242,33 @@ function comEventos(eventos) {
     return Ok(perito);
   }
 }
+function adicionarEstilos() {
+  const style = document.createElement('style');
+  style.innerText = /*css*/ `
+.infra-styles .gm-aviso {
+  display: inline-block;
+  margin: 4px;
+  margin-left: 0;
+  padding: 4px;
+  border-radius: 4px;
+  font-size: 1.25em;
+  color: #fff;
+}
+.infra-styles :not(.material-icons).gm-aviso--baixar {
+  font-weight: bold;
+  background: #848;
+}
+.infra-styles .gm-aviso--rejeitar {
+  background: #c72;
+}
+`;
+  document.head.appendChild(style);
+}
 function baixarMotivo(motivo) {
-  inserirAntesDaCapa(
-    `<div style="display: inline-block; padding: 4px; border-radius: 4px; font-size: 1.25em; font-weight: bold; background: #848; color: #fff;">Baixar motivo ${motivo}</div>`
-  );
+  inserirAntesDaCapa(`<div class="gm-aviso gm-aviso--baixar">Baixar motivo ${motivo}</div>`);
 }
 function rejeitarMotivo(motivo) {
-  inserirAntesDaCapa(
-    `<div style="display: inline-block; padding: 4px; border-radius: 4px; font-size: 1.25em; font-weight: regular; background: #c72; color: #fff;">${motivo}</div>`
-  );
+  inserirAntesDaCapa(`<div class="gm-aviso gm-aviso--rejeitar">${motivo}</div>`);
 }
 function inserirAntesDaCapa(html) {
   const capa = document.getElementById('fldCapa');

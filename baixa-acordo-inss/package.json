@@ -1,12 +1,14 @@
 {
   "name": "baixa-acordo-inss",
   "description": "3DIR Baixa - acordo INSS",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "scripts": {
     "build": "rollup -c --environment BUILD:production",
+    "postbuild": "prettier --write ../baixa-acordo-inss.user.js",
     "start": "rollup -c -w --environment BUILD:development"
   },
   "devDependencies": {
+    "prettier": "^1.19.1",
     "rollup": "^1.27.5",
     "rollup-plugin-serve": "^1.0.1",
     "rollup-plugin-typescript": "^1.0.1",
