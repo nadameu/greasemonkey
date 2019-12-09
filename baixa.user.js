@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name Preenchimento dados baixa
-// @version 5.1.0
+// @version 5.1.1
 // @author nadameu
 // @namespace http://nadameu.com.br/baixa
 // @include /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=baixa_arquivamento_processo_etapa_(1|3)&/
@@ -125,7 +125,7 @@ function query(selector, parentNode = document) {
       })(pendencias);
       const osd = ((mensagemInicial, doc = document, win = doc.defaultView) => {
           adicionarEstilos(
-            '.gmResultado {\n\tposition: fixed;\n\tdisplay: flex;\n\ttop: 0;\n\tright: 0;\n\tbottom: 0;\n\tleft: 0;\n\tpadding: 15%;\n\tbackground: rgba(0, 0, 0, 0.5);\n\talign-items: center;\n\tjustify-content: center;\n\ttext-align: center;\n\tfont-size: 32px;\n\tfont-weight: bold;\n\tcolor: white;\n\tpointer-events: none;\n}\n'
+            '.gmResultado {\n\tposition: fixed;\n\tdisplay: flex;\n\ttop: 0;\n\tright: 0;\n\tbottom: 0;\n\tleft: 0;\n\tpadding: 15%;\n\tfont-family: sans-serif;\n\tbackground: rgba(0, 0, 0, 0.5);\n\talign-items: center;\n\tjustify-content: center;\n\ttext-align: center;\n\tfont-size: 32px;\n\tfont-weight: bold;\n\tcolor: white;\n\tpointer-events: none;\n}\n'
           );
           const div = doc.createElement('div');
           div.className = 'gmResultado';
