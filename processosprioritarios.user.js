@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 26.0.1
+// @version 27.0.0
 // @grant none
 // ==/UserScript==
 
@@ -285,6 +285,10 @@ var GUI = (function() {
 					balaoAberto.classList.remove('gmDetalhesAberto');
 				});
 				balao.classList.add('gmDetalhesAberto');
+				window.setTimeout(() => {
+					balao.scrollIntoView();
+					window.scrollBy(0, -document.body.offsetHeight / 2);
+				}, 200);
 				const MENOR = -1,
 					MAIOR = +1;
 				processos.sort((a, b) => {
