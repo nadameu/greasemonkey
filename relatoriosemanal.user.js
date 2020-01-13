@@ -3,7 +3,7 @@
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_consultar\&/
-// @version     7.0.0
+// @version     7.0.1
 // @grant       none
 // ==/UserScript==
 
@@ -91,7 +91,7 @@ if (acao === 'relatorio_geral_listar') {
 		forEachLocalizador(localizador => console.info(localizador));
 	});
 
-	area.prepend($('<button id="gerarArquivo">Gerar arquivo</button>'));
+	area.prepend($('<button id="gerarArquivo" type="button">Gerar arquivo</button>'));
 	$('#gerarArquivo').on('click', evt => {
 		evt.preventDefault();
 
@@ -184,7 +184,7 @@ if (acao === 'relatorio_geral_listar') {
 	});
 	area.prepend(button);
 
-	area.prepend($('<button id="excluirDB">Excluir banco de dados</button>'));
+	area.prepend($('<button id="excluirDB" type="button">Excluir banco de dados</button>'));
 	$('#excluirDB').on('click', function(evt) {
 		evt.preventDefault();
 
@@ -258,7 +258,7 @@ if (acao === 'relatorio_geral_listar') {
 						situacoes.add(valor);
 						break;
 				}
-				processo[campo] = valor;
+				if (campo !== '') processo[campo] = valor;
 			}, this);
 			processos.push(processo);
 		});
