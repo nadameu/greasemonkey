@@ -3,7 +3,7 @@
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_consultar\&/
-// @version     6.0.1
+// @version     7.0.0
 // @grant       none
 // ==/UserScript==
 
@@ -58,39 +58,6 @@ const forEachLocalizador = f => abrirDB().then(db => new Promise((resolve, rejec
 	req.addEventListener('error', ({ target: { error } }) => reject(error));
 }));
 
-const dados = (() => {
-	const PARAM_NAME = 'relatorioSemanal';
-	const DEFAULT = {
-		emAndamento: false,
-		sigilo: {
-			2: false,
-			3: false,
-			4: false,
-			5: false,
-			999: false
-		}
-	};
-	const loadValues = () => JSON.parse(localStorage.getItem(PARAM_NAME));
-	const dados = loadValues() || DEFAULT;
-	const saveValues = () => localStorage.setItem(PARAM_NAME, JSON.stringify(dados));
-	return {
-		emAndamento(val) {
-			if (val === undefined) {
-				return dados.emAndamento;
-			}
-			dados.emAndamento = val;
-			saveValues();
-		},
-		sigilo(key, val) {
-			if (val === undefined) {
-				return dados.sigilo[key];
-			}
-			dados.sigilo[key] = val;
-			saveValues();
-		}
-	};
-})();
-
 const acao = (new URL(window.location.href)).searchParams.get('acao');
 
 if (acao === 'relatorio_geral_listar') {
@@ -98,31 +65,23 @@ if (acao === 'relatorio_geral_listar') {
 	const sigilo = $('#selIdSigilo');
 	sigilo.append('<option value="5">Nível 5</option>');
 
-	const consultarNivel = nivel => {
-		dados.emAndamento(nivel);
+	const preparar = () => {
+		sessionStorage.limpando = true;
 		const limpar = $('#btnLimparCookie');
 		limpar.click();
+	};
+  
 
-		const sigilo = $('#selIdSigilo');
-		sigilo.val(nivel);
-		sigilo.trigger('change');
-
+	if (sessionStorage.limpando) {
+		delete sessionStorage.limpando;
 		$('#optNdiasSituacao').get(0).checked = true;
 		$('#optPaginacao100').get(0).checked = true;
 		$('#optAutoresPrincipais').get(0).checked = false;
 		$('#optReusPrincipais').get(0).checked = false;
+	}
 
-		const consultar = $('#btnConsultar');
-		consultar.click();
-	};
-
-	const buttons = [2, 3, 4, 5, 999]
-		.filter(nivel => ! dados.sigilo(nivel))
-		.map(nivel => {
-			const button = $(`<button>Nível ${nivel}</button>`);
-			button.on('click', consultarNivel.bind(null, nivel));
-			return button;
-		});
+	const button = $(`<button type="button">Preparar</button>`);
+	button.on('click', preparar);
 
 	const area = $('#divInfraAreaTelaD');
 
@@ -136,12 +95,14 @@ if (acao === 'relatorio_geral_listar') {
 	$('#gerarArquivo').on('click', evt => {
 		evt.preventDefault();
 
-		const campos = ['processo', 'competenciaCorregedoria', '', 'classe', 'localizador', 'situacao', 'autuacao', 'dataEstatistica', 'data', '', '', '', '', '', '', 'setor', '', ''];
+		const campos = ['processo', 'competenciaCorregedoria', '', 'classe', 'localizador', 'situacao', 'autuacao', 'dataEstatistica', 'data', '', '', '', '', '', '', 'setor', '', '', 'outrosLocalizadores'];
 		chainProcessos(dadosProcesso => dadosProcesso.localizador.map(localizador => {
 			const processo = [];
 			campos.forEach(function(campo, indiceCampo) {
 				if (campo === 'localizador') {
 					processo[indiceCampo] = localizador;
+                } else if (campo === 'outrosLocalizadores') {
+					processo[indiceCampo] = dadosProcesso.localizador.filter(loc => loc !== localizador).join('; ');
 				} else if (campo === 'data' || campo === 'autuacao' || campo === 'dataEstatistica') {
 					const data = dadosProcesso[campo];
 					processo[indiceCampo] = `${data.getFullYear()}-${numeroDoisDigitos(data.getMonth() + 1)}-${numeroDoisDigitos(data.getDate())} ${numeroDoisDigitos(data.getHours())}:${numeroDoisDigitos(data.getMinutes())}:${numeroDoisDigitos(data.getSeconds())}`;
@@ -172,7 +133,8 @@ if (acao === 'relatorio_geral_listar') {
 				'<col style="mso-number-format: \'0\';"/>', // Dias
 				'<col style="mso-number-format: \'@\';"/>', // Setor
 				'<col style="mso-number-format: \'0.00%\';"/>', // Atraso
-				'<col style="mso-number-format: \'@\';"/>' // Incluir?
+				'<col style="mso-number-format: \'@\';"/>', // Incluir?
+				'<col style="mso-number-format: \'@\';"/>', // Outros localizadores
 			].join(''));
 			table.createTHead();
 			table.tHead.insertRow();
@@ -181,7 +143,7 @@ if (acao === 'relatorio_geral_listar') {
 			});
 			table.tHead.rows[0].insertCell().setAttribute('x:fmla', "=TODAY()");
 			const tRow = table.tHead.insertRow();
-			const camposExcel = ['Processo', 'Competência Corregedoria', 'Competência', 'Classe', 'Localizador', 'Situação', 'Data autuação', 'Data Estat.', 'Data Últ. Fase', 'Regra', 'Campo a considerar', 'Data considerada', 'Motivo', 'Esperado', 'Dias', 'Setor', 'Atraso', 'Incluir?'];
+			const camposExcel = ['Processo', 'Competência Corregedoria', 'Competência', 'Classe', 'Localizador', 'Situação', 'Data autuação', 'Data Estat.', 'Data Últ. Fase', 'Regra', 'Campo a considerar', 'Data considerada', 'Motivo', 'Esperado', 'Dias', 'Setor', 'Atraso', 'Incluir?', 'Outros localizadores'];
 			for (let i = 0; i < camposExcel.length; i++) tRow.insertCell();
 			camposExcel.forEach((campo, i) => tRow.cells[i].innerHTML = '<strong>' + campo + '</strong>');
 			const tBody = table.createTBody();
@@ -220,7 +182,7 @@ if (acao === 'relatorio_geral_listar') {
 			document.body.removeChild(a);
 		});
 	});
-	area.prepend(buttons);
+	area.prepend(button);
 
 	area.prepend($('<button id="excluirDB">Excluir banco de dados</button>'));
 	$('#excluirDB').on('click', function(evt) {
@@ -319,11 +281,9 @@ if (acao === 'relatorio_geral_listar') {
 	});
 	promise.then(() => {
 		const pagina = $('#selInfraPaginacaoSuperior'), paginas = $('option', pagina);
-		if (paginas.size() && pagina.val() < paginas.size()) {
+		if (paginas.length && pagina.val() < paginas.length) {
 			NextPagina('+');
 		} else {
-			dados.sigilo(dados.emAndamento(), true);
-			dados.emAndamento(false);
 			$('#btnVoltar').click();
 		}
 	}).catch(err => console.error(err));
