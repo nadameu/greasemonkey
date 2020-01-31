@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.6.0
+// @version 0.6.1
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -124,7 +124,8 @@ function verificarSentenca(eventos) {
     eventos.find(
       ({ descricao, memos }) =>
         descricao.match(/Sentença com Resolução de Mérito - Conciliação\/Transação Homologada /) &&
-        memos.match(/HOMOLOGO, por sentença, a transação realizada entre as partes/) &&
+        (memos.match(/HOMOLOGO, por sentença, a transação realizada entre as partes/) ||
+          memos.match(/Homologo o acordo, resolvendo o mérito/)) &&
         memos.match(/Caberá ao INSS o pagamento dos honorários periciais/)
     ) ||
     eventos.find(
