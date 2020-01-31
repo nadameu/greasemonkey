@@ -76,7 +76,8 @@ function verificarSentenca(eventos: Evento[]): Resultado<Evento> {
     eventos.find(
       ({ descricao, memos }) =>
         descricao.match(/Sentença com Resolução de Mérito - Conciliação\/Transação Homologada /) &&
-        memos.match(/HOMOLOGO, por sentença, a transação realizada entre as partes/) &&
+        (memos.match(/HOMOLOGO, por sentença, a transação realizada entre as partes/) ||
+          memos.match(/Homologo o acordo, resolvendo o mérito/)) &&
         memos.match(/Caberá ao INSS o pagamento dos honorários periciais/)
     ) ||
     eventos.find(
