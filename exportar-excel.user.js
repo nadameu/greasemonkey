@@ -2,7 +2,7 @@
 // @name exportar-excel
 // @name:pt-br Exportar dados para Excel
 // @namespace http://nadameu.com.br
-// @version 1.0.0
+// @version 1.0.1
 // @include /^https:\/\/eproc\.jf(pr|rs|sc)\.jus\.br\/eprocV2\/controlador\.php\?acao=processo_selecionar&/
 // @require https://unpkg.com/xlsx@0.15.5/dist/xlsx.full.min.js
 // @grant none
@@ -30,7 +30,7 @@ function main() {
   safePipe(
     document.getElementById('divInfraBarraLocalizacao'),
     x => x.insertAdjacentElement('afterend', botao),
-    botao => eventos.length > 100 && botao.insertAdjacentHTML('afterend', '<br>Processo possui mais de 100 eventos, carregue as próximas páginas antes de gerar o arquivo.'),
+    botao => eventos[0].seq > 100 && botao.insertAdjacentHTML('afterend', '<br>Processo possui mais de 100 eventos, carregue as próximas páginas antes de gerar o arquivo.'),
   );
 }
 
