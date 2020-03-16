@@ -4,7 +4,7 @@
 // @namespace http://nadameu.com.br
 // @description Copiar dados importantes do processo para colar em planilhas Excel
 // @author Paulo Roberto Maurici Junior
-// @version 1.0.0
+// @version 1.0.1
 // @include /^https:\/\/eproc\.jf(pr|rs|sc)\.jus\.br\/eprocV2\/controlador\.php\?acao=processo_selecionar&/
 // @grant none
 // ==/UserScript==
@@ -61,7 +61,7 @@ function main() {
   const botao = document.createElement('button');
   botao.type = 'button';
   botao.className = 'infraButton';
-  botao.textContent = 'Copiar dados para área de trabalho';
+  botao.textContent = 'Copiar dados para área de transferência';
   botao.addEventListener('click', whenClicked(eventos), false);
   query('#divInfraBarraLocalizacao')
     .mapNullable(x => x.insertAdjacentElement('afterend', botao))
