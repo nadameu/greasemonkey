@@ -4,7 +4,7 @@
 // @namespace http://nadameu.com.br
 // @description Copiar dados importantes do processo para colar em planilhas Excel
 // @author Paulo Roberto Maurici Junior
-// @version 1.0.1
+// @version 1.0.2
 // @include /^https:\/\/eproc\.jf(pr|rs|sc)\.jus\.br\/eprocV2\/controlador\.php\?acao=processo_selecionar&/
 // @grant none
 // ==/UserScript==
