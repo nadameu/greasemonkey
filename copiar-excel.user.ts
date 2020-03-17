@@ -4,7 +4,7 @@
 // @namespace http://nadameu.com.br
 // @description Copiar dados importantes do processo para colar em planilhas Excel
 // @author Paulo Roberto Maurici Junior
-// @version 1.0.0
+// @version 1.0.1
 // @include /^https:\/\/eproc\.jf(pr|rs|sc)\.jus\.br\/eprocV2\/controlador\.php\?acao=processo_selecionar&/
 // @grant none
 // ==/UserScript==
@@ -14,7 +14,8 @@ interface InfoEvento {
   seq: number;
   data: Date;
   ehSentenca: boolean;
-  ehCitacao: boolean;
+  ehCitacaoExpedida: boolean;
+  ehCitacaoConfirmada: boolean;
 }
 
 interface InfoProcesso {
@@ -91,7 +92,8 @@ function main() {
           seq,
           data,
           ehSentenca: ehSentenca(linha),
-          ehCitacao: ehCitacao(linha),
+          ehCitacaoExpedida: ehCitacaoExpedida(linha),
+          ehCitacaoConfirmada: ehCitacaoConfirmada(linha),
         })
       )
     )
@@ -102,7 +104,7 @@ function main() {
   const botao = document.createElement('button');
   botao.type = 'button';
   botao.className = 'infraButton';
-  botao.textContent = 'Copiar dados para área de trabalho';
+  botao.textContent = 'Copiar dados para área de transferência';
   botao.addEventListener('click', whenClicked(eventos), false);
 
   query('#divInfraBarraLocalizacao')
@@ -193,9 +195,19 @@ function obterDados(eventos: InfoEvento[]): InfoProcesso {
 
   const sentencas = eventos.filter(({ ehSentenca }) => ehSentenca).map(({ data }) => data);
 
+  const citacoesConfirmadas = Maybe.justs(
+    eventos.filter(({ ehCitacaoConfirmada }) => ehCitacaoConfirmada).map(obterDadosReferente)
+  );
+
+  const dataEventos = new Map<number, Date>();
+  for (const { data, eventos } of citacoesConfirmadas)
+    for (const evento of eventos) dataEventos.set(evento, data);
+
   const citacoes = new Map(
     Maybe.justs(
-      eventos.filter(({ ehCitacao }) => ehCitacao).map(obterDadosCitacao)
+      eventos
+        .filter(({ ehCitacaoExpedida }) => ehCitacaoExpedida)
+        .map(obterDadosCitacao(dataEventos))
     ).map(({ reu, data }) => [reu, data])
   );
 
@@ -241,19 +253,38 @@ function ehSentenca(linha: HTMLTableRowElement) {
   return linha.matches('.infraEventoMuitoImportante');
 }
 
-function ehCitacao(linha: HTMLTableRowElement) {
+function ehCitacaoConfirmada(linha: HTMLTableRowElement) {
   return query('td.infraEventoDescricao', linha)
     .mapNullable(x => x.textContent)
-    .mapNullable(x => /citação eletrônica\s+-\s+confirmada/i.test(x))
+    .map(x => /citação eletrônica\s+-\s+confirmada/i.test(x))
     .getOrElse(false);
 }
 
-function obterDadosCitacao({ data, linha }: InfoEvento): Maybe<InfoCitacao> {
+function ehCitacaoExpedida(linha: HTMLTableRowElement) {
   return query('td.infraEventoDescricao', linha)
     .mapNullable(x => x.textContent)
-    .mapNullable(x => x.match(/\(.*?\s+-\s+(.*)\)/))
-    .map(x => x[1])
-    .map(reu => ({ data, reu }));
+    .map(x => /citação eletrônica\s+-\s+expedida/i.test(x))
+    .getOrElse(false);
+}
+
+function obterDadosCitacao(dataEventos: Map<number, Date>) {
+  return function obterDadosCitacao({ seq, linha }: InfoEvento): Maybe<InfoCitacao> {
+    return Maybe.all([
+      Maybe.from(dataEventos.get(seq)),
+      query('td.infraEventoDescricao', linha)
+        .mapNullable(x => x.textContent)
+        .mapNullable(x => x.match(/\(.*?\s+-\s+([^)]+)\)/))
+        .map(x => x[1]),
+    ]).map(([data, reu]) => ({ data, reu }));
+  };
+}
+
+function obterDadosReferente({ data, linha }: InfoEvento) {
+  return query('td.infraEventoDescricao', linha)
+    .mapNullable(x => x.textContent)
+    .mapNullable(x => x.match(/Refer\. aos? Eventos?: ([0-9][0-9, e]+)/))
+    .map(x => x[1].match(/\d+/g)!.map(Number))
+    .map(eventos => ({ data, eventos }));
 }
 
 function dataParaExcel(dt: Date) {

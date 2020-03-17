@@ -53,7 +53,8 @@ function main() {
         seq,
         data,
         ehSentenca: ehSentenca(linha),
-        ehCitacao: ehCitacao(linha),
+        ehCitacaoExpedida: ehCitacaoExpedida(linha),
+        ehCitacaoConfirmada: ehCitacaoConfirmada(linha),
       }))
     )
   ).getOrElse([]);
@@ -144,9 +145,17 @@ function obterDados(eventos) {
     })
     .getOrElse([[], []]);
   const sentencas = eventos.filter(({ ehSentenca }) => ehSentenca).map(({ data }) => data);
+  const citacoesConfirmadas = Maybe.justs(
+    eventos.filter(({ ehCitacaoConfirmada }) => ehCitacaoConfirmada).map(obterDadosReferente)
+  );
+  const dataEventos = new Map();
+  for (const { data, eventos } of citacoesConfirmadas)
+    for (const evento of eventos) dataEventos.set(evento, data);
   const citacoes = new Map(
     Maybe.justs(
-      eventos.filter(({ ehCitacao }) => ehCitacao).map(obterDadosCitacao)
+      eventos
+        .filter(({ ehCitacaoExpedida }) => ehCitacaoExpedida)
+        .map(obterDadosCitacao(dataEventos))
     ).map(({ reu, data }) => [reu, data])
   );
   const valorCausa = query('a[href*="?acao=historico_valor_causa_listar&"]')
@@ -185,18 +194,35 @@ function obterData(linha) {
 function ehSentenca(linha) {
   return linha.matches('.infraEventoMuitoImportante');
 }
-function ehCitacao(linha) {
+function ehCitacaoConfirmada(linha) {
   return query('td.infraEventoDescricao', linha)
     .mapNullable(x => x.textContent)
-    .mapNullable(x => /citação eletrônica\s+-\s+confirmada/i.test(x))
+    .map(x => /citação eletrônica\s+-\s+confirmada/i.test(x))
     .getOrElse(false);
 }
-function obterDadosCitacao({ data, linha }) {
+function ehCitacaoExpedida(linha) {
   return query('td.infraEventoDescricao', linha)
     .mapNullable(x => x.textContent)
-    .mapNullable(x => x.match(/\(.*?\s+-\s+(.*)\)/))
-    .map(x => x[1])
-    .map(reu => ({ data, reu }));
+    .map(x => /citação eletrônica\s+-\s+expedida/i.test(x))
+    .getOrElse(false);
+}
+function obterDadosCitacao(dataEventos) {
+  return function obterDadosCitacao({ seq, linha }) {
+    return Maybe.all([
+      Maybe.from(dataEventos.get(seq)),
+      query('td.infraEventoDescricao', linha)
+        .mapNullable(x => x.textContent)
+        .mapNullable(x => x.match(/\(.*?\s+-\s+([^)]+)\)/))
+        .map(x => x[1]),
+    ]).map(([data, reu]) => ({ data, reu }));
+  };
+}
+function obterDadosReferente({ data, linha }) {
+  return query('td.infraEventoDescricao', linha)
+    .mapNullable(x => x.textContent)
+    .mapNullable(x => x.match(/Refer\. aos? Eventos?: ([0-9][0-9, e]+)/))
+    .map(x => x[1].match(/\d+/g).map(Number))
+    .map(eventos => ({ data, eventos }));
 }
 function dataParaExcel(dt) {
   return `${dt.getFullYear()}-${dt.getMonth() +
