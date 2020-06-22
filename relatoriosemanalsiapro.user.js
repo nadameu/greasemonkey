@@ -2,7 +2,8 @@
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     http://sap.trf4.gov.br/estatistica/controlador.php*
-// @version     18.0.2
+// @include     https://sap.trf4.jus.br/estatistica/controlador.php*
+// @version     18.0.3
 // @grant       none
 // ==/UserScript==
 
