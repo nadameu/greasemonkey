@@ -1,9 +1,8 @@
 // ==UserScript==
 // @name        Relatório semanal SIAPRO
 // @namespace   http://nadameu.com.br/relatorio-semanal
-// @include     http://sap.trf4.gov.br/estatistica/controlador.php*
 // @include     https://sap.trf4.jus.br/estatistica/controlador.php*
-// @version     18.0.3
+// @version     18.0.4
 // @grant       none
 // ==/UserScript==
 
@@ -942,7 +941,7 @@ function abrirJanela(id, titulo, fn) {
     '<title>' + titulo + '</title>',
     '</head><body>',
     '<script>',
-    'window.opener.postMessage("' + id + '", "http://sap.trf4.gov.br/");',
+    'window.opener.postMessage("' + id + '", "https://sap.trf4.jus.br/");',
     '</script>',
     '</body></html>'
   ], {mimeType: 'text/html'});
