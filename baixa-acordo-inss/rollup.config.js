@@ -12,17 +12,17 @@ const config = {
   input: path.resolve(__dirname, 'src', 'index.ts'),
   output: {
     banner: generateBanner(metadata),
-    file: path.resolve('..', scriptFilename),
+    file: path.resolve(__dirname, '..', scriptFilename),
     format: 'es',
   },
   plugins: [
     typescript(),
     process.env.BUILD === 'development' &&
-      serve({
-        contentBase: path.resolve('..'),
-        open: true,
-        openPage: `/${scriptFilename}`,
-      }),
+    serve({
+      contentBase: path.resolve(__dirname, '..'),
+      open: true,
+      openPage: `/${scriptFilename}`,
+    }),
   ],
 };
 
