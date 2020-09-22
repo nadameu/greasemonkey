@@ -152,10 +152,8 @@ function comEventos(eventos) {
   function verificarCumprimentoObricacaoFazer(sentenca) {
     const intimacaoAPSSentenca = eventos.find(
       ({ descricao, referente, ordinal }) =>
-        (
-          descricao.match(/Intimação Eletrônica - Expedida\/Certificada - Requisição/) ||
-          descricao.match(/Expedida\/certificada a intimação eletrônica/)
-        ) &&
+        (descricao.match(/Intimação Eletrônica - Expedida\/Certificada - Requisição/) ||
+          descricao.match(/Expedida\/certificada a intimação eletrônica/)) &&
         descricao.match(/AGÊNCIA DA PREVIDÊNCIA SOCIAL/) &&
         (referente.some(ref => ref >= sentenca.ordinal) || ordinal === sentenca.ordinal + 1)
     );
@@ -170,10 +168,8 @@ function comEventos(eventos) {
     if (!ultimaResposta) return Invalido(['APSADJ não juntou resposta.']);
     const intimacaoAutorResposta = eventos.find(
       ({ descricao, referente }) =>
-        (
-          descricao.match(/Intimação Eletrônica - Expedida\/Certificada/) ||
-          descricao.match(/Expedida\/certificada a intimação eletrônica/)
-        ) &&
+        (descricao.match(/Intimação Eletrônica - Expedida\/Certificada/) ||
+          descricao.match(/Expedida\/certificada a intimação eletrônica/)) &&
         descricao.match(/AUTOR|REQUERENTE/) &&
         referente.some(ref => ref === ultimaResposta.ordinal)
     );
@@ -182,19 +178,19 @@ function comEventos(eventos) {
         `Autor não foi intimado da última resposta (evento ${ultimaResposta.ordinal}).`,
       ]);
     if (!houveDecursoOuCiencia(eventos, intimacaoAutorResposta.ordinal)) {
-      const peticaoAposResposta = eventos.find(({ descricao, referente }) => 
-        descricao.match(/PETIÇÃO/) && referente.some(ref => ref === intimacaoAutorResposta.ordinal)
+      const peticaoAposResposta = eventos.find(
+        ({ descricao, referente }) =>
+          descricao.match(/PETIÇÃO/) &&
+          referente.some(ref => ref === intimacaoAutorResposta.ordinal)
       );
       if (peticaoAposResposta) {
-        const despachoAposPeticao = eventos.find(({ memos, ordinal: o}) =>
-          o > peticaoAposResposta.ordinal && memos.match(/^DESPADEC1/)
+        const despachoAposPeticao = eventos.find(
+          ({ memos, ordinal: o }) => o > peticaoAposResposta.ordinal && memos.match(/^DESPADEC1/)
         );
         if (despachoAposPeticao) {
           return Ok(intimacaoAutorResposta);
         } else {
-          return Invalido([
-            `Analisar petição do autor (evento ${peticaoAposResposta.ordinal}).`
-          ])
+          return Invalido([`Analisar petição do autor (evento ${peticaoAposResposta.ordinal}).`]);
         }
       }
       return Invalido([
@@ -204,49 +200,56 @@ function comEventos(eventos) {
     return Ok(intimacaoAutorResposta);
   }
   function verificarPagamentoAutor(autor) {
-    const pagamento = eventos.find(({ descricao }) =>
-      descricao.match(
-        new RegExp(
-          `Requisição de Pagamento - (Pequeno Valor|Precatório) - Paga - Liberada .*\\(${autor}\\)`,
-          'i'
+    const pagamento = eventos.find(
+      ({ descricao }) =>
+        descricao.match(
+          new RegExp(
+            `Requisição de Pagamento - (Pequeno Valor|Precatório) - Paga - Liberada .*\\(${autor}\\)`,
+            'i'
+          )
+        ) ||
+        descricao.match(
+          new RegExp(
+            `Requisição de pagamento de pequeno valor paga - liberada .*\\(${autor}\\)`,
+            'i'
+          )
         )
-      ) ||
-      descricao.match(
-        new RegExp(
-          `Requisição de pagamento de pequeno valor paga - liberada .*\\(${autor}\\)`,
-          'i'
-        )
-      )
     );
     if (!pagamento) return Invalido([`Não houve pagamento do autor ${autor}.`]);
     const certidaoProcuracao = eventos
       .filter(({ ordinal: o }) => o > pagamento.ordinal)
-      .find(({ memos }) => memos.match(/Certifico que .* atua.* como advogad.* da parte autora, constando na procuração poderes expressos para .* receber.* e dar.* quitação./));
+      .find(({ memos }) =>
+        memos.match(
+          /Certifico que .* atua.* como advogad.* da parte autora, constando na procuração poderes expressos para .* receber.* e dar.* quitação./
+        )
+      );
     if (certidaoProcuracao) return Ok(autor);
     const pedidoTED = eventos
       .filter(({ ordinal: o }) => o > pagamento.ordinal)
       .find(({ descricao }) => descricao.match(/PETIÇÃO - PEDIDO DE TED/));
     if (pedidoTED) {
-      console.log({pedidoTED})
+      console.log({ pedidoTED });
       const despachoTED = eventos
         .filter(({ ordinal: o }) => o > pedidoTED.ordinal)
-        .find(({ descricao, memos }) => 
-          descricao.match(/Despacho/i) &&
-          memos.match(/oficie-se à Agência .* para que proceda à transferência dos valores depositados/)
+        .find(
+          ({ descricao, memos }) =>
+            descricao.match(/Despacho/i) &&
+            memos.match(
+              /oficie-se à Agência .* para que proceda à transferência dos valores depositados/
+            )
         );
       if (despachoTED) {
         const intimacaoAgencia = eventos
           .filter(({ ordinal: o }) => o > despachoTED.ordinal)
-          .find(({ descricao, referente }) =>
-            descricao.match(/[Ii]ntimação [Ee]letrônica.*\(UNIDADE EXTERNA - Agência/) &&
-            referente.some(ref => ref === despachoTED.ordinal)
+          .find(
+            ({ descricao, referente }) =>
+              descricao.match(/[Ii]ntimação [Ee]letrônica.*\(UNIDADE EXTERNA - Agência/) &&
+              referente.some(ref => ref === despachoTED.ordinal)
           );
         if (intimacaoAgencia) {
           const respostaAgencia = eventos
             .filter(({ ordinal: o }) => o > intimacaoAgencia.ordinal)
-            .find(({ referente }) =>
-              referente.some(ref => ref === intimacaoAgencia.ordinal)
-            );
+            .find(({ referente }) => referente.some(ref => ref === intimacaoAgencia.ordinal));
           if (respostaAgencia) {
             if (houveDecursoOuCiencia(eventos, respostaAgencia.ordinal)) {
               return Ok(autor);
@@ -267,10 +270,8 @@ function comEventos(eventos) {
     }
     const intimacao = eventos.find(
       ({ descricao, referente }) =>
-        (
-          descricao.match(/Intimação Eletrônica - Expedida\/Certificada/) ||
-          descricao.match(/Expedida\/certificada a intimação eletrônica/)
-        ) &&
+        (descricao.match(/Intimação Eletrônica - Expedida\/Certificada/) ||
+          descricao.match(/Expedida\/certificada a intimação eletrônica/)) &&
         descricao.match(new RegExp(`(AUTOR|REQUERENTE) -  ${autor}`, 'i')) &&
         referente.some(ref => ref === atoIntimacao.ordinal)
     );
@@ -280,24 +281,28 @@ function comEventos(eventos) {
     return Ok(autor);
   }
   function verificarPagamentoPerito(perito) {
-    const pagamento = eventos.find(({ descricao }) =>
-      descricao.match(
-        new RegExp(
-          `Requisição de Pagamento - (Pequeno Valor|Precatório) - Paga - Liberada .*\\(${perito}\\)`,
-          'i'
+    const pagamento = eventos.find(
+      ({ descricao }) =>
+        descricao.match(
+          new RegExp(
+            `Requisição de Pagamento - (Pequeno Valor|Precatório) - Paga - Liberada .*\\(${perito}\\)`,
+            'i'
+          )
+        ) ||
+        descricao.match(
+          new RegExp(
+            `Requisição de pagamento de pequeno valor paga - liberada .*\\(${perito}\\)`,
+            'i'
+          )
         )
-      ) ||
-      descricao.match(
-        new RegExp(
-          `Requisição de pagamento de pequeno valor paga - liberada .*\\(${perito}\\)`,
-          'i'
-        )
-      )
     );
     if (!pagamento) {
-      const pagamentoAJG = eventos.find(({ descricao, memos }) =>
-        descricao.match(/Expedida Requisição Honorários Perito\/Dativo/) &&
-        memos.match(new RegExp(`^PGTOPERITO1Perito: ${perito}. Documento gerado pelo sistema AJG`, 'i'))
+      const pagamentoAJG = eventos.find(
+        ({ descricao, memos }) =>
+          descricao.match(/Expedida Requisição Honorários Perito\/Dativo/) &&
+          memos.match(
+            new RegExp(`^PGTOPERITO1Perito: ${perito}. Documento gerado pelo sistema AJG`, 'i')
+          )
       );
       if (pagamentoAJG) return Ok(perito);
       return Invalido([`Não houve pagamento do perito ${perito}.`]);
@@ -313,10 +318,8 @@ function comEventos(eventos) {
       return Invalido([`Não houve ato de intimação do perito ${perito} acerca do pagamento.`]);
     const intimacao = eventos.find(
       ({ descricao, referente }) =>
-        (
-          descricao.match(/Intimação Eletrônica - Expedida\/Certificada/) ||
-          descricao.match(/Expedida\/certificada a intimação eletrônica/)
-        ) &&
+        (descricao.match(/Intimação Eletrônica - Expedida\/Certificada/) ||
+          descricao.match(/Expedida\/certificada a intimação eletrônica/)) &&
         descricao.match(new RegExp(`PERITO -  ${perito}`, 'i')) &&
         referente.some(ref => atosIntimacao.some(({ ordinal }) => ref === ordinal))
     );
@@ -365,7 +368,9 @@ function houveDecursoOuCiencia(eventos, ordinal) {
     .filter(({ ordinal: o }) => o > ordinal)
     .find(
       ({ descricao, referente }) =>
-        (descricao.match(/Decurso de Prazo/) || descricao.match(/Decorrido prazo/) || descricao.match(/RENÚNCIA AO PRAZO/)) &&
+        (descricao.match(/Decurso de Prazo/) ||
+          descricao.match(/Decorrido prazo/) ||
+          descricao.match(/RENÚNCIA AO PRAZO/)) &&
         referente.some(ref => ref === ordinal)
     );
 }
