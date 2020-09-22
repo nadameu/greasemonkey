@@ -4,6 +4,8 @@ import typescript from 'rollup-plugin-typescript';
 import { generateBanner } from './generateBanner';
 import metadata from './metadata';
 import pkg from './package.json';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
 
 const scriptFilename = `${pkg.name}.user.js`;
 
@@ -18,11 +20,13 @@ const config = {
   plugins: [
     typescript(),
     process.env.BUILD === 'development' &&
-    serve({
-      contentBase: path.resolve(__dirname, '..'),
-      open: true,
-      openPage: `/${scriptFilename}`,
-    }),
+      serve({
+        contentBase: path.resolve(__dirname, '..'),
+        open: true,
+        openPage: `/${scriptFilename}`,
+      }),
+    nodeResolve(),
+    commonjs(),
   ],
 };
 
