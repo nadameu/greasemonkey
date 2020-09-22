@@ -159,7 +159,7 @@ function comEventos(eventos: Evento[]) {
     return Ok(intimacaoAutorResposta);
   }
 
-  function verificarPagamentoAutor(autor) {
+  function verificarPagamentoAutor(autor: string) {
     const pagamento = eventos.find(
       ({ descricao }) =>
         descricao.match(
