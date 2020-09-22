@@ -34,7 +34,7 @@ function main() {
   R.matchWith(resTotal, {
     Invalido(erros) {
       for (const erro of erros) {
-        console.log(erro);
+        console.log('<baixa-acordo-inss>', erro);
       }
     },
     Ok(resInterno) {
@@ -76,8 +76,9 @@ function verificarSentenca(eventos: Evento[]): Resultado<Evento> {
     eventos.find(
       ({ descricao, memos }) =>
         descricao.match(/Sentença com Resolução de Mérito - Conciliação\/Transação Homologada /) &&
-        (memos.match(/HOMOLOGO, por sentença, a transação realizada entre as partes/) ||
-          memos.match(/Homologo o acordo, resolvendo o mérito/)) &&
+        memos.match(
+          /HOMOLOGO, por sentença, a transação realizada entre as partes|Homologo o acordo, resolvendo o mérito/
+        ) &&
         memos.match(/Caberá ao INSS o pagamento dos honorários periciais/)
     ) ||
     eventos.find(
@@ -107,8 +108,9 @@ function comEventos(eventos: Evento[]) {
   function verificarCumprimentoObricacaoFazer(sentenca: Evento): Resultado<Evento> {
     const intimacaoAPSSentenca = eventos.find(
       ({ descricao, referente, ordinal }) =>
-        (descricao.match(/Intimação Eletrônica - Expedida\/Certificada - Requisição/) ||
-          descricao.match(/Expedida\/certificada a intimação eletrônica/)) &&
+        descricao.match(
+          /Intimação Eletrônica - Expedida\/Certificada - Requisição|Expedida\/certificada a intimação eletrônica/
+        ) &&
         descricao.match(/AGÊNCIA DA PREVIDÊNCIA SOCIAL/) &&
         (referente.some(ref => ref >= sentenca.ordinal) || ordinal === sentenca.ordinal + 1)
     );
@@ -126,8 +128,9 @@ function comEventos(eventos: Evento[]) {
 
     const intimacaoAutorResposta = eventos.find(
       ({ descricao, referente }) =>
-        (descricao.match(/Intimação Eletrônica - Expedida\/Certificada/) ||
-          descricao.match(/Expedida\/certificada a intimação eletrônica/)) &&
+        descricao.match(
+          /Intimação Eletrônica - Expedida\/Certificada|Expedida\/certificada a intimação eletrônica/
+        ) &&
         descricao.match(/AUTOR|REQUERENTE/) &&
         referente.some(ref => ref === ultimaResposta.ordinal)
     );
@@ -160,20 +163,13 @@ function comEventos(eventos: Evento[]) {
   }
 
   function verificarPagamentoAutor(autor: string) {
-    const pagamento = eventos.find(
-      ({ descricao }) =>
-        descricao.match(
-          new RegExp(
-            `Requisição de Pagamento - (Pequeno Valor|Precatório) - Paga - Liberada .*\\(${autor}\\)`,
-            'i'
-          )
-        ) ||
-        descricao.match(
-          new RegExp(
-            `Requisição de pagamento de pequeno valor paga - liberada .*\\(${autor}\\)`,
-            'i'
-          )
+    const pagamento = eventos.find(({ descricao }) =>
+      descricao.match(
+        new RegExp(
+          `Requisição de Pagamento (-|de) Pequeno Valor( -)? Paga - Liberada .*\\(${autor}\\)`,
+          'i'
         )
+      )
     );
     if (!pagamento) return Invalido([`Não houve pagamento do autor ${autor}.`]);
     const certidaoProcuracao = eventos
@@ -188,7 +184,6 @@ function comEventos(eventos: Evento[]) {
       .filter(({ ordinal: o }) => o > pagamento.ordinal)
       .find(({ descricao }) => descricao.match(/PETIÇÃO - PEDIDO DE TED/));
     if (pedidoTED) {
-      console.log({ pedidoTED });
       const despachoTED = eventos
         .filter(({ ordinal: o }) => o > pedidoTED.ordinal)
         .find(
@@ -230,8 +225,9 @@ function comEventos(eventos: Evento[]) {
     }
     const intimacao = eventos.find(
       ({ descricao, referente }) =>
-        (descricao.match(/Intimação Eletrônica - Expedida\/Certificada/) ||
-          descricao.match(/Expedida\/certificada a intimação eletrônica/)) &&
+        descricao.match(
+          /Intimação Eletrônica - Expedida\/Certificada|Expedida\/certificada a intimação eletrônica/
+        ) &&
         descricao.match(new RegExp(`(AUTOR|REQUERENTE) -  ${autor}`, 'i')) &&
         referente.some(ref => ref === atoIntimacao.ordinal)
     );
@@ -244,20 +240,13 @@ function comEventos(eventos: Evento[]) {
   }
 
   function verificarPagamentoPerito(perito: string): Resultado<string> {
-    const pagamento = eventos.find(
-      ({ descricao }) =>
-        descricao.match(
-          new RegExp(
-            `Requisição de Pagamento - (Pequeno Valor|Precatório) - Paga - Liberada .*\\(${perito}\\)`,
-            'i'
-          )
-        ) ||
-        descricao.match(
-          new RegExp(
-            `Requisição de pagamento de pequeno valor paga - liberada .*\\(${perito}\\)`,
-            'i'
-          )
+    const pagamento = eventos.find(({ descricao }) =>
+      descricao.match(
+        new RegExp(
+          `Requisição de Pagamento (-|de) Pequeno Valor( -)? Paga - Liberada .*\\(${perito}\\)`,
+          'i'
         )
+      )
     );
     if (!pagamento) {
       const pagamentoAJG = eventos.find(
@@ -281,8 +270,9 @@ function comEventos(eventos: Evento[]) {
       return Invalido([`Não houve ato de intimação do perito ${perito} acerca do pagamento.`]);
     const intimacao = eventos.find(
       ({ descricao, referente }) =>
-        (descricao.match(/Intimação Eletrônica - Expedida\/Certificada/) ||
-          descricao.match(/Expedida\/certificada a intimação eletrônica/)) &&
+        descricao.match(
+          /Intimação Eletrônica - Expedida\/Certificada|Expedida\/certificada a intimação eletrônica/
+        ) &&
         descricao.match(new RegExp(`PERITO -  ${perito}`, 'i')) &&
         referente.some(ref => atosIntimacao.some(({ ordinal }) => ref === ordinal))
     );
@@ -339,9 +329,7 @@ function houveDecursoOuCiencia(eventos: Evento[], ordinal: number) {
     .filter(({ ordinal: o }) => o > ordinal)
     .find(
       ({ descricao, referente }) =>
-        (descricao.match(/Decurso de Prazo/) ||
-          descricao.match(/Decorrido prazo/) ||
-          descricao.match(/RENÚNCIA AO PRAZO/)) &&
+        descricao.match(/Decurso de Prazo|Decorrido prazo|RENÚNCIA AO PRAZO/) &&
         referente.some(ref => ref === ordinal)
     );
 }
