@@ -1,6 +1,6 @@
+import * as RE from 'descriptive-regexp';
 import { Invalido, Ok, resultado as R, Resultado } from './Resultado';
 import { safePipe } from './safePipe';
-import * as RE from 'descriptive-regexp';
 
 main();
 
@@ -74,25 +74,32 @@ function verificarAutores(): Resultado<string[]> {
 
 function verificarSentenca(eventos: Evento[]): Resultado<Evento> {
   const sentenca =
-    eventos.find(
-      ({ descricao, memos }) =>
-        RE.test(
-          descricao,
-          'Sentença com Resolução de Mérito - Conciliação/Transação Homologada '
-        ) &&
-        RE.test(
-          memos,
-          RE.oneOf(
-            'HOMOLOGO, por sentença, a transação realizada entre as partes',
-            'Homologo o acordo, resolvendo o mérito'
-          )
-        ) &&
-        RE.test(memos, 'Caberá ao INSS o pagamento dos honorários periciais')
+    eventos.find(({ descricao, memos }) =>
+      any(
+        all(
+          RE.test(
+            descricao,
+            RE.oneOf(
+              'Sentença com Resolução de Mérito - Conciliação/Transação Homologada ',
+              'Homologada a Transação'
+            )
+          ),
+          RE.test(
+            memos,
+            RE.oneOf(
+              'HOMOLOGO, por sentença, a transação realizada entre as partes',
+              'Homologo o acordo, resolvendo o mérito'
+            )
+          ),
+          RE.test(memos, 'Caberá ao INSS o pagamento dos honorários periciais')
+        )
+      )
     ) ||
-    eventos.find(
-      ({ descricao, memos }) =>
-        RE.test(descricao, 'Sentença com Resolução de Mérito - Pedido Procedente') &&
+    eventos.find(({ descricao, memos }) =>
+      all(
+        RE.test(descricao, 'Sentença com Resolução de Mérito - Pedido Procedente'),
         RE.test(memos, /ACOLHO(,?\s+em\s+parte,?)?\s+os?\s+pedidos?.*condenar\s+o\s+INSS/i)
+      )
     );
   if (!sentenca) return Invalido(['Não há sentença de acordo ou procedência.']);
   return Ok(sentenca);
@@ -109,23 +116,26 @@ function comEventos(eventos: Evento[]) {
   function verificarTransito(sentenca: Evento): Resultado<Evento> {
     const transito = eventos
       .filter(({ ordinal }) => ordinal > sentenca.ordinal)
-      .find(({ descricao }) => RE.test(descricao, 'Trânsito em Julgado'));
+      .find(({ descricao }) =>
+        RE.test(descricao, RE.oneOf('Trânsito em Julgado', 'Transitado em Julgado'))
+      );
     if (!transito) return Invalido(['Não há trânsito em julgado.']);
     return Ok(transito);
   }
 
   function verificarCumprimentoObricacaoFazer(sentenca: Evento): Resultado<Evento> {
-    const intimacaoAPSSentenca = eventos.find(
-      ({ descricao, referente, ordinal }) =>
+    const intimacaoAPSSentenca = eventos.find(({ descricao, referente, ordinal }) =>
+      all(
         RE.test(
           descricao,
           RE.oneOf(
             'Intimação Eletrônica - Expedida/Certificada - Requisição',
             'Expedida/certificada a intimação eletrônica'
           )
-        ) &&
-        RE.test(descricao, 'AGÊNCIA DA PREVIDÊNCIA SOCIAL') &&
-        (referente.some(ref => ref >= sentenca.ordinal) || ordinal === sentenca.ordinal + 1)
+        ),
+        RE.test(descricao, 'AGÊNCIA DA PREVIDÊNCIA SOCIAL'),
+        referente.some(ref => ref >= sentenca.ordinal) || ordinal === sentenca.ordinal + 1
+      )
     );
     if (!intimacaoAPSSentenca) return Invalido(['APSADJ não foi intimada da sentença.']);
 
@@ -139,17 +149,10 @@ function comEventos(eventos: Evento[]) {
       : eventosAPS.find(({ ordinal }) => ordinal > intimacaoAPSSentenca.ordinal);
     if (!ultimaResposta) return Invalido(['APSADJ não juntou resposta.']);
 
-    const intimacaoAutorResposta = eventos.find(
-      ({ descricao, referente }) =>
-        RE.test(
-          descricao,
-          RE.oneOf(
-            'Intimação Eletrônica - Expedida/Certificada',
-            'Expedida/certificada a intimação eletrônica'
-          )
-        ) &&
-        RE.test(descricao, RE.oneOf('AUTOR', 'REQUERENTE')) &&
-        referente.some(ref => ref === ultimaResposta.ordinal)
+    const intimacaoAutorResposta = houveIntimacao(
+      eventos,
+      ultimaResposta.ordinal,
+      RE.oneOf('AUTOR', 'REQUERENTE')
     );
     if (!intimacaoAutorResposta)
       return Invalido([
@@ -180,23 +183,7 @@ function comEventos(eventos: Evento[]) {
   }
 
   function verificarPagamentoAutor(autor: string) {
-    const pagamento = eventos.find(({ descricao }) =>
-      RE.test(
-        descricao,
-        RE.withFlags(
-          RE.concat(
-            'Requisição de Pagamento ',
-            RE.oneOf('-', 'de'),
-            ' Pequeno Valor',
-            RE.oneOf(' - ', ' '),
-            'Paga - Liberada ',
-            /.*/,
-            `(${autor})`
-          ),
-          'i'
-        )
-      )
-    );
+    const pagamento = houveRPV(eventos, autor);
     if (!pagamento) return Invalido([`Não houve pagamento do autor ${autor}.`]);
     const certidaoProcuracao = eventos
       .filter(({ ordinal: o }) => o > pagamento.ordinal)
@@ -271,20 +258,10 @@ function comEventos(eventos: Evento[]) {
     if (!atoIntimacao) {
       return Invalido([`Não houve ato de intimação do autor ${autor} acerca do pagamento.`]);
     }
-    const intimacao = eventos.find(
-      ({ descricao, referente }) =>
-        RE.test(
-          descricao,
-          RE.oneOf(
-            '/Intimação Eletrônica - Expedida/Certificada',
-            'Expedida/certificada a intimação eletrônica/'
-          )
-        ) &&
-        RE.test(
-          descricao,
-          RE.withFlags(RE.concat(RE.oneOf('AUTOR', 'REQUERENTE'), ' -  ', autor), 'i')
-        ) &&
-        referente.some(ref => ref === atoIntimacao.ordinal)
+    const intimacao = houveIntimacao(
+      eventos,
+      atoIntimacao.ordinal,
+      RE.withFlags(RE.concat(RE.oneOf('AUTOR', 'REQUERENTE'), ' -  ', autor), 'i')
     );
     if (!intimacao) return Invalido([`Não houve intimação do autor ${autor} acerca do pagamento.`]);
 
@@ -337,17 +314,9 @@ function comEventos(eventos: Evento[]) {
       );
     if (atosIntimacao.length === 0)
       return Invalido([`Não houve ato de intimação do perito ${perito} acerca do pagamento.`]);
-    const intimacao = eventos.find(
-      ({ descricao, referente }) =>
-        RE.test(
-          descricao,
-          RE.oneOf(
-            'Intimação Eletrônica - Expedida/Certificada',
-            'Expedida/certificada a intimação eletrônica'
-          )
-        ) &&
-        RE.test(descricao, RE.withFlags(RE.concat('PERITO -  ', perito), 'i')) &&
-        referente.some(ref => atosIntimacao.some(({ ordinal }) => ref === ordinal))
+    const matcher = RE.withFlags(RE.concat('PERITO -  ', perito), 'i');
+    const intimacao = atosIntimacao.find(({ ordinal }) =>
+      houveIntimacao(eventos, ordinal, matcher)
     );
     if (!intimacao)
       return Invalido([`Não houve intimação do perito ${perito} acerca do pagamento.`]);
@@ -395,6 +364,27 @@ function inserirAntesDaCapa(html: string) {
   if (!capa) return;
 
   capa.insertAdjacentHTML('beforebegin', html);
+}
+
+function houveIntimacao(
+  eventos: Evento[],
+  ordinal: number,
+  matcherParte: string | RegExp
+): Evento | undefined {
+  return eventos.find(({ descricao, ordinal: o, referente }) =>
+    all(
+      o > ordinal,
+      referente.some(ref => ref === ordinal),
+      RE.test(
+        descricao,
+        RE.oneOf(
+          'Intimação Eletrônica - Expedida/Certificada',
+          'Expedida/certificada a intimação eletrônica'
+        )
+      ),
+      RE.test(descricao, matcherParte)
+    )
+  );
 }
 
 function houveDecursoOuCiencia(eventos: Evento[], ordinal: number) {
@@ -458,4 +448,34 @@ function intercalate<T>(separator: T, elements: T[]): T[] {
   }
   result.pop();
   return result;
+}
+
+function all(...bools: boolean[]) {
+  for (const x of bools) if (!x) return false;
+  return true;
+}
+
+function any(...bools: boolean[]) {
+  for (const x of bools) if (x) return true;
+  return false;
+}
+
+function houveRPV(eventos: Evento[], nome: string) {
+  return eventos.find(({ descricao }) =>
+    RE.test(
+      descricao,
+      RE.withFlags(
+        RE.concat(
+          'Requisição de Pagamento ',
+          RE.oneOf('-', 'de'),
+          ' Pequeno Valor',
+          RE.oneOf(' - ', ' '),
+          'Paga - Liberada ',
+          /.*/,
+          `(${nome})`
+        ),
+        'i'
+      )
+    )
+  );
 }
