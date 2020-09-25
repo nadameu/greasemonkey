@@ -247,27 +247,17 @@ function comEventos(eventos: Evento[]) {
         }
       }
     }
-    const atoIntimacao = eventos
-      .filter(({ ordinal: o }) => o > pagamento.ordinal)
-      .find(({ memos }) =>
-        RE.test(
-          memos,
-          'concede o prazo de 05 (cinco) dias para que a parte autora/advogado(a)/perito(a) efetue o saque do valor depositado em conta aberta em seu nome'
-        )
-      );
-    if (!atoIntimacao) {
+    const atosIntimacao = houveAtosIntimacaoPagamento(eventos, pagamento.ordinal);
+    if (atosIntimacao.length === 0) {
       return Invalido([`Não houve ato de intimação do autor ${autor} acerca do pagamento.`]);
     }
-    const intimacao = houveIntimacao(
-      eventos,
-      atoIntimacao.ordinal,
-      RE.withFlags(RE.concat(RE.oneOf('AUTOR', 'REQUERENTE'), ' -  ', autor), 'i')
+    const matcher = RE.withFlags(RE.concat(RE.oneOf('AUTOR', 'REQUERENTE'), ' -  ', autor), 'i');
+    const intimacao = atosIntimacao.find(({ ordinal }) =>
+      houveIntimacao(eventos, ordinal, matcher)
     );
     if (!intimacao) return Invalido([`Não houve intimação do autor ${autor} acerca do pagamento.`]);
-
     if (!houveDecursoOuCiencia(eventos, intimacao.ordinal))
       return Invalido([`Não houve decurso ou ciência do autor ${autor} acerca do pagamento.`]);
-
     return Ok(autor);
   }
 
@@ -288,14 +278,7 @@ function comEventos(eventos: Evento[]) {
       if (pagamentoAJG) return Ok(perito);
       return Invalido([`Não houve pagamento do perito ${perito}.`]);
     }
-    const atosIntimacao = eventos
-      .filter(({ ordinal: o }) => o > pagamento.ordinal)
-      .filter(({ memos }) =>
-        RE.test(
-          memos,
-          'concede o prazo de 05 (cinco) dias para que a parte autora/advogado(a)/perito(a) efetue o saque do valor depositado em conta aberta em seu nome'
-        )
-      );
+    const atosIntimacao = houveAtosIntimacaoPagamento(eventos, pagamento.ordinal);
     if (atosIntimacao.length === 0)
       return Invalido([`Não houve ato de intimação do perito ${perito} acerca do pagamento.`]);
     const matcher = RE.withFlags(RE.concat('PERITO -  ', perito), 'i');
@@ -462,4 +445,15 @@ function houvePagamentoLiberado(eventos: Evento[], nome: string) {
       )
     )
   );
+}
+
+function houveAtosIntimacaoPagamento(eventos: Evento[], ordinalPagamento: number) {
+  return eventos
+    .filter(({ ordinal: o }) => o > ordinalPagamento)
+    .filter(({ memos }) =>
+      RE.test(
+        memos,
+        'concede o prazo de 05 (cinco) dias para que a parte autora/advogado(a)/perito(a) efetue o saque do valor depositado em conta aberta em seu nome'
+      )
+    );
 }
