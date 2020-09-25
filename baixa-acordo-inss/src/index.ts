@@ -1,4 +1,5 @@
 import * as RE from 'descriptive-regexp';
+import { compareBy } from './Ordering';
 import { Invalido, Ok, resultado as R, Resultado } from './Resultado';
 import { safePipe } from './safePipe';
 
@@ -124,7 +125,7 @@ function comEventos(eventos: Evento[]) {
   }
 
   function verificarCumprimentoObricacaoFazer(sentenca: Evento): Resultado<Evento> {
-    const intimacaoAPSSentenca = eventos.find(({ descricao, referente, ordinal }) =>
+    const intimacaoAPSSentenca = eventos.find(({ descricao, referenciados, ordinal }) =>
       all(
         RE.test(
           descricao,
@@ -134,15 +135,15 @@ function comEventos(eventos: Evento[]) {
           )
         ),
         RE.test(descricao, 'AGÊNCIA DA PREVIDÊNCIA SOCIAL'),
-        referente.some(ref => ref >= sentenca.ordinal) || ordinal === sentenca.ordinal + 1
+        referenciados.some(ref => ref >= sentenca.ordinal) || ordinal === sentenca.ordinal + 1
       )
     );
     if (!intimacaoAPSSentenca) return Invalido(['APSADJ não foi intimada da sentença.']);
 
     const eventosAPS = eventos.filter(({ aps }) => aps);
 
-    const respostaOriginal = eventosAPS.find(({ referente }) =>
-      referente.some(ref => ref === intimacaoAPSSentenca.ordinal)
+    const respostaOriginal = eventosAPS.find(({ referenciados }) =>
+      referenciados.some(ref => ref === intimacaoAPSSentenca.ordinal)
     );
     const ultimaResposta = respostaOriginal
       ? eventosAPS.find(({ ordinal }) => ordinal >= respostaOriginal.ordinal)
@@ -161,9 +162,9 @@ function comEventos(eventos: Evento[]) {
 
     if (!houveDecursoOuCiencia(eventos, intimacaoAutorResposta.ordinal)) {
       const peticaoAposResposta = eventos.find(
-        ({ descricao, referente }) =>
+        ({ descricao, referenciados }) =>
           RE.test(descricao, 'PETIÇÃO') &&
-          referente.some(ref => ref === intimacaoAutorResposta.ordinal)
+          referenciados.some(ref => ref === intimacaoAutorResposta.ordinal)
       );
       if (peticaoAposResposta) {
         const despachoAposPeticao = eventos.find(
@@ -222,29 +223,34 @@ function comEventos(eventos: Evento[]) {
               )
             )
         );
-      if (despachoTED) {
-        const intimacaoAgencia = eventos
-          .filter(({ ordinal: o }) => o > despachoTED.ordinal)
-          .find(
-            ({ descricao, referente }) =>
-              RE.test(
-                descricao,
-                RE.withFlags(
-                  RE.concat('Intimação Eletrônica', /.*/, '(UNIDADE EXTERNA - Agência'),
-                  'i'
-                )
-              ) && referente.some(ref => ref === despachoTED.ordinal)
-          );
-        if (intimacaoAgencia) {
-          const respostaAgencia = eventos
-            .filter(({ ordinal: o }) => o > intimacaoAgencia.ordinal)
-            .find(({ referente }) => referente.some(ref => ref === intimacaoAgencia.ordinal));
-          if (respostaAgencia) {
-            if (houveDecursoOuCiencia(eventos, respostaAgencia.ordinal)) {
-              return Ok(autor);
-            }
-          }
-        }
+      if (!despachoTED) return Invalido(['Há pedido de TED sem despacho.']);
+
+      const intimacaoAgencia = eventos
+        .filter(({ ordinal: o }) => o > despachoTED.ordinal)
+        .find(({ descricao, referenciados }) =>
+          all(
+            RE.test(
+              descricao,
+              RE.withFlags(
+                RE.concat('Intimação Eletrônica', /.*/, '(UNIDADE EXTERNA - Agência'),
+                'i'
+              )
+            ),
+            referenciados.some(ref => ref === despachoTED.ordinal)
+          )
+        );
+      if (!intimacaoAgencia)
+        return Invalido([`Não houve intimação da agência (evento ${despachoTED.ordinal}).`]);
+
+      const respostaAgencia = eventos
+        .filter(({ ordinal: o }) => o > intimacaoAgencia.ordinal)
+        .find(({ referenciados }) => referenciados.some(ref => ref === intimacaoAgencia.ordinal));
+      if (respostaAgencia) {
+        if (houveDecursoOuCiencia(eventos, respostaAgencia.ordinal)) return Ok(autor);
+        else
+          return Invalido([
+            `Não houve decurso ou ciência sobre a resposta da agência (evento ${respostaAgencia.ordinal}).`,
+          ]);
       }
     }
     const atosIntimacao = houveAtosIntimacaoPagamento(eventos, pagamento.ordinal);
@@ -338,10 +344,10 @@ function houveIntimacao(
   ordinal: number,
   matcherParte: string | RegExp
 ): Evento | undefined {
-  return eventos.find(({ descricao, ordinal: o, referente }) =>
+  return eventos.find(({ descricao, ordinal: o, referenciados }) =>
     all(
       o > ordinal,
-      referente.some(ref => ref === ordinal),
+      referenciados.some(ref => ref === ordinal),
       RE.test(
         descricao,
         RE.oneOf(
@@ -358,34 +364,37 @@ function houveDecursoOuCiencia(eventos: Evento[], ordinal: number) {
   return eventos
     .filter(({ ordinal: o }) => o > ordinal)
     .find(
-      ({ descricao, referente }) =>
+      ({ descricao, referenciados }) =>
         RE.test(descricao, RE.oneOf('Decurso de Prazo', 'Decorrido prazo', 'RENÚNCIA AO PRAZO')) &&
-        referente.some(ref => ref === ordinal)
+        referenciados.some(ref => ref === ordinal)
     );
 }
 
 interface Evento {
   ordinal: number;
   descricao: string;
-  referente: number[];
+  referenciados: number[];
   memos: string;
   aps: boolean;
+  despSent: boolean;
 }
 
 function parseEventos(eventos: HTMLTableRowElement[]): Evento[] {
   return eventos.map(linha => {
     const ordinal = Number(textContent(linha.cells[1]));
+    const lupa = linha.cells[1].querySelector('a[onmouseover]')?.getAttribute('onmouseover') ?? '';
+    const despSent = RE.test(lupa, 'Magistrado(s):');
     const descricao = textContent(linha.cells[3]);
-    let referente: number[] = [];
+    let referenciados: number[] = [];
     const ref1 = RE.match(descricao, RE.concat('Refer. ao Evento: ', RE.capture(/\d+/)));
     if (ref1) {
-      referente = [Number(ref1[1])];
+      referenciados = [Number(ref1[1])];
     }
     const refN = RE.match(descricao, RE.concat('Refer. aos Eventos: ', RE.capture(/\d[\d, e]+\d/)));
     if (refN) {
       const [xs, x] = refN[1].split(' e ');
       const ys = xs.split(', ');
-      referente = ys.concat([x]).map(Number);
+      referenciados = ys.concat([x]).map(Number);
     }
     const memos = textContent(linha.cells[5]);
     const aps =
@@ -395,7 +404,7 @@ function parseEventos(eventos: HTMLTableRowElement[]): Evento[] {
         l => l.getAttribute('onmouseover'),
         a => RE.match(a, 'AG. PREV. SOCIAL')
       ) != null;
-    return { ordinal, descricao, referente, memos, aps };
+    return { ordinal, descricao, referenciados, memos, aps, despSent };
   });
 }
 
@@ -456,4 +465,84 @@ function houveAtosIntimacaoPagamento(eventos: Evento[], ordinalPagamento: number
         'concede o prazo de 05 (cinco) dias para que a parte autora/advogado(a)/perito(a) efetue o saque do valor depositado em conta aberta em seu nome'
       )
     );
+}
+
+type Arvore = DadosEvento[];
+interface DadosEvento {
+  ordinal: number;
+  descricao: string;
+  referentes: DadosEvento[];
+}
+
+function construirArvore(eventos: Evento[]): Arvore {
+  const eventosOrdenados = Object.freeze(eventos.slice().sort(compareBy(x => x.ordinal)));
+  const dados: { [key: number]: DadosEvento } = {};
+  const arvore: Arvore = [];
+  let situacao: 'MOVIMENTO' | 'DESPACHO' | 'SENTENÇA' = 'MOVIMENTO';
+  let ordinalMudancaSituacao = 0;
+  for (const { ordinal, descricao, referenciados: orig, despSent } of eventosOrdenados) {
+    let referenciados = orig;
+    const dadosEvento = { descricao, ordinal, referentes: [] };
+    dados[ordinal] = dadosEvento;
+    if (despSent) {
+      if (ehConclusaoParaDespacho(descricao)) {
+        switch (situacao) {
+          case 'MOVIMENTO':
+            situacao = 'DESPACHO';
+            ordinalMudancaSituacao = ordinal;
+            break;
+
+          default:
+            throw new Error(`Evento de conclusão na situação errada (evento ${ordinal}).`);
+        }
+      } else if (ehConclusaoParaSentenca(descricao)) {
+        switch (situacao) {
+          case 'MOVIMENTO':
+            situacao = 'SENTENÇA';
+            ordinalMudancaSituacao = ordinal;
+            break;
+
+          default:
+            throw new Error(`Evento de conclusão na situação errada (evento ${ordinal}).`);
+        }
+      } else {
+        situacao = 'MOVIMENTO';
+        if (referenciados.length === 0) {
+          referenciados = [ordinalMudancaSituacao];
+        }
+        ordinalMudancaSituacao = ordinal;
+      }
+    }
+    let vezesAdicionado = 0;
+    if (referenciados.length > 0) {
+      for (const referenciado of referenciados) {
+        if (dados[referenciado]) {
+          dados[referenciado].referentes.push(dadosEvento);
+          vezesAdicionado++;
+        }
+      }
+    }
+    if (vezesAdicionado === 0) {
+      arvore.push(dados[ordinal]);
+    }
+  }
+  return arvore;
+}
+
+function ehConclusaoParaDespacho(descricao: string) {
+  return RE.test(
+    descricao,
+    RE.concat(
+      /^/,
+      RE.oneOf('Autos com Juiz para Despacho/Decisão', 'Conclusos para decisão/despacho'),
+      /$/
+    )
+  );
+}
+
+function ehConclusaoParaSentenca(descricao: string) {
+  return RE.test(
+    descricao,
+    RE.concat(/^/, RE.oneOf('Autos com Juiz para Sentença', 'Conclusos para julgamento'), /$/)
+  );
 }
