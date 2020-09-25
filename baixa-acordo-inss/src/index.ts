@@ -183,7 +183,7 @@ function comEventos(eventos: Evento[]) {
   }
 
   function verificarPagamentoAutor(autor: string) {
-    const pagamento = houveRPV(eventos, autor);
+    const pagamento = houvePagamentoLiberado(eventos, autor);
     if (!pagamento) return Invalido([`Não houve pagamento do autor ${autor}.`]);
     const certidaoProcuracao = eventos
       .filter(({ ordinal: o }) => o > pagamento.ordinal)
@@ -272,23 +272,7 @@ function comEventos(eventos: Evento[]) {
   }
 
   function verificarPagamentoPerito(perito: string): Resultado<string> {
-    const pagamento = eventos.find(({ descricao }) =>
-      RE.test(
-        descricao,
-        RE.withFlags(
-          RE.concat(
-            'Requisição de Pagamento ',
-            RE.oneOf('-', 'de'),
-            ' Pequeno Valor',
-            RE.oneOf(' - ', ' '),
-            'Paga - Liberada ',
-            /.*/,
-            `(${perito})`
-          ),
-          'i'
-        )
-      )
-    );
+    const pagamento = houvePagamentoLiberado(eventos, perito);
     if (!pagamento) {
       const pagamentoAJG = eventos.find(
         ({ descricao, memos }) =>
@@ -460,7 +444,7 @@ function any(...bools: boolean[]) {
   return false;
 }
 
-function houveRPV(eventos: Evento[], nome: string) {
+function houvePagamentoLiberado(eventos: Evento[], nome: string) {
   return eventos.find(({ descricao }) =>
     RE.test(
       descricao,
@@ -468,7 +452,7 @@ function houveRPV(eventos: Evento[], nome: string) {
         RE.concat(
           'Requisição de Pagamento ',
           RE.oneOf('-', 'de'),
-          ' Pequeno Valor',
+          RE.oneOf(' Pequeno Valor', ' Precatório'),
           RE.oneOf(' - ', ' '),
           'Paga - Liberada ',
           /.*/,
