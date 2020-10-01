@@ -98,7 +98,13 @@ function verificarSentenca(eventos: Evento[]): Resultado<Evento> {
     ) ||
     eventos.find(({ descricao, memos }) =>
       all(
-        RE.test(descricao, 'Sentença com Resolução de Mérito - Pedido Procedente'),
+        RE.test(
+          descricao,
+          RE.oneOf(
+            'Sentença com Resolução de Mérito - Pedido Procedente',
+            'Julgado procedente em parte o pedido'
+          )
+        ),
         RE.test(
           memos,
           /ACOLHO(,?\s+em\s+parte,?)?\s+os?\s+(demais\s+)?pedidos?.*condenar\s+o\s+INSS/i
