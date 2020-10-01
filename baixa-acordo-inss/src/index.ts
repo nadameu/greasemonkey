@@ -297,7 +297,13 @@ function comEventos(eventos: Evento[]) {
           RE.test(
             memos,
             RE.withFlags(
-              RE.concat(/^/, 'PGTOPERITO1Perito: ', perito, '. Documento gerado pelo sistema AJG'),
+              RE.concat(
+                /^/,
+                'PGTOPERITO1Perito: ',
+                perito,
+                /\s*/,
+                '. Documento gerado pelo sistema AJG'
+              ),
               'i'
             )
           )
