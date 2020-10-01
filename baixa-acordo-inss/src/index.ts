@@ -99,7 +99,10 @@ function verificarSentenca(eventos: Evento[]): Resultado<Evento> {
     eventos.find(({ descricao, memos }) =>
       all(
         RE.test(descricao, 'Sentença com Resolução de Mérito - Pedido Procedente'),
-        RE.test(memos, /ACOLHO(,?\s+em\s+parte,?)?\s+os?\s+pedidos?.*condenar\s+o\s+INSS/i)
+        RE.test(
+          memos,
+          /ACOLHO(,?\s+em\s+parte,?)?\s+os?\s+(demais\s+)?pedidos?.*condenar\s+o\s+INSS/i
+        )
       )
     );
   if (!sentenca) return Invalido(['Não há sentença de acordo ou procedência.']);
