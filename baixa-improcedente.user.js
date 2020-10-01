@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-improcedente
-// @version 0.2.0
+// @version 0.2.1
 // @description 3DIR Baixa - sentença de improcedência
 // @namespace http://nadameu.com.br/baixa-improcedente
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -8,10 +8,10 @@
 // ==/UserScript==
 
 const localizadores = queryAll('[id="AbreLocalizadores"]').map(textContent);
-if (localizadores.length !== 1) return console.log('Mais de um localizador.');
+if (localizadores.length !== 1) return log('Mais de um localizador.');
 
 const peritos = queryAll('a[data-parte="PERITO"]').map(textContent);
-if (peritos.length < 1) return console.log('Não há peritos.');
+if (peritos.length < 1) return log('Não há peritos.');
 
 const eventos = queryAll('td.infraEventoDescricao').map(celula => celula.closest('tr'));
 
@@ -20,6 +20,7 @@ if (
     textContent(linha.cells[3]).match(/Trânsito em Julgado|Transitado em Julgado/)
   )
 )
+  return log('Não há trânsito em julgado.');
 
 if (
   !eventos.some(
@@ -32,7 +33,7 @@ if (
       )
   )
 )
-  return console.log('Não há sentença de improcedência.');
+  return log('Não há sentença de improcedência.');
 
 if (localizadores[0] === '3DIR Baixa Turma') {
   const ultimoEvento = Number(textContent(eventos[0].cells[1]));
@@ -44,9 +45,9 @@ if (localizadores[0] === '3DIR Baixa Turma') {
         ) && Number(textContent(linha.cells[1])) >= ultimoEvento - 9
     )
   )
-    return console.log('Julgamento não manteve sentença por unanimidade.');
+    return log('Julgamento não manteve sentença por unanimidade.');
 } else if (localizadores[0] !== '3DIR Baixa') {
-  return console.log('Não é 3DIR Baixa.');
+  return log('Não é 3DIR Baixa.');
 }
 
 for (const perito of peritos) {
@@ -62,7 +63,7 @@ for (const perito of peritos) {
         )
     )
   )
-    return console.log(`Não houve pagamento do perito ${perito}.`);
+    return log(`Não houve pagamento do perito ${perito}.`);
 }
 
 const capa = document.getElementById('fldCapa');
@@ -79,4 +80,8 @@ function queryAll(selector) {
 
 function textContent(node) {
   return (node.textContent || '').trim();
+}
+
+function log(...msgs) {
+  console.log('<baixa-improcedente>', ...msgs);
 }
