@@ -47,7 +47,9 @@ for (const perito of peritos) {
   if (
     !eventos.some(
       linha =>
-        textContent(linha.cells[3]).match(/Expedida Requisição Honorários Perito\/Dativo/) &&
+        textContent(linha.cells[3]).match(
+          /(?:Expedida|Expedição de) Requisição Honorários Perito\/Dativo/
+        ) &&
         textContent(linha.cells[5]).match(/PGTOPERITO\d/) &&
         textContent(linha.cells[5]).match(
           new RegExp(`Perito:\\s*${perito}\\s*. Documento gerado pelo sistema AJG`)
