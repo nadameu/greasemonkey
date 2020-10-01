@@ -232,7 +232,8 @@ function comEventos(eventos: Evento[]) {
               )
             )
         );
-      if (!despachoTED) return Invalido(['Há pedido de TED sem despacho.']);
+      if (!despachoTED)
+        return Invalido([`Há pedido de TED sem despacho (evento ${pedidoTED.ordinal}).`]);
 
       const intimacaoAgencia = eventos
         .filter(({ ordinal: o }) => o > despachoTED.ordinal)
