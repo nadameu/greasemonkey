@@ -141,7 +141,7 @@ function comEventos(eventos: Evento[]) {
         referenciados.some(ref => ref >= sentenca.ordinal) || ordinal === sentenca.ordinal + 1
       )
     );
-    if (!intimacaoAPSSentenca) return Invalido(['APSADJ não foi intimada da sentença.']);
+    if (!intimacaoAPSSentenca) return Invalido(['CEAB não foi intimada da sentença.']);
 
     const eventosAPS = eventos.filter(({ aps }) => aps);
 
@@ -151,7 +151,7 @@ function comEventos(eventos: Evento[]) {
     const ultimaResposta = respostaOriginal
       ? eventosAPS.find(({ ordinal }) => ordinal >= respostaOriginal.ordinal)
       : eventosAPS.find(({ ordinal }) => ordinal > intimacaoAPSSentenca.ordinal);
-    if (!ultimaResposta) return Invalido(['APSADJ não juntou resposta.']);
+    if (!ultimaResposta) return Invalido(['CEAB não juntou resposta.']);
 
     const intimacaoAutorResposta = houveIntimacao(
       eventos,
