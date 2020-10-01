@@ -15,13 +15,18 @@ if (peritos.length < 1) return console.log('Não há peritos.');
 
 const eventos = queryAll('td.infraEventoDescricao').map(celula => celula.closest('tr'));
 
-if (!eventos.some(linha => textContent(linha.cells[3]).match(/Trânsito em Julgado/)))
-  return console.log('Não há trânsito em julgado.');
+if (
+  !eventos.some(linha =>
+    textContent(linha.cells[3]).match(/Trânsito em Julgado|Transitado em Julgado/)
+  )
+)
 
 if (
   !eventos.some(
     linha =>
-      textContent(linha.cells[3]).match(/Sentença com Resolução de Mérito - Pedido Improcedente/) &&
+      textContent(linha.cells[3]).match(
+        /Sentença com Resolução de Mérito - Pedido Improcedente|Julgado improcedente o pedido/
+      ) &&
       textContent(linha.cells[5]).match(
         /Condeno a parte autora ao (reembolso|pagamento) dos honorários periciais/
       )
@@ -34,8 +39,9 @@ if (localizadores[0] === '3DIR Baixa Turma') {
   if (
     !eventos.some(
       linha =>
-        textContent(linha.cells[3]).match(/Julgamento - Mantida a Sentença - por unanimidade/) &&
-        Number(textContent(linha.cells[1])) >= ultimoEvento - 9
+        textContent(linha.cells[3]).match(
+          /Julgamento - Mantida a Sentença - por unanimidade|Sentença confirmada - por unanimidade/
+        ) && Number(textContent(linha.cells[1])) >= ultimoEvento - 9
     )
   )
     return console.log('Julgamento não manteve sentença por unanimidade.');
