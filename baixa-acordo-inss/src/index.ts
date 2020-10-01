@@ -257,10 +257,21 @@ function comEventos(eventos: Evento[]) {
         .find(({ referenciados }) => referenciados.some(ref => ref === intimacaoAgencia.ordinal));
       if (respostaAgencia) {
         if (houveDecursoOuCiencia(eventos, respostaAgencia.ordinal)) return Ok(autor);
-        else
+        const ultimaResposta = eventos.find(({ ordinal: o, descricao, sigla }) =>
+          all(
+            o > respostaAgencia.ordinal,
+            RE.test(descricao, /^RESPOSTA(?: - Refer\.)?/),
+            RE.test(sigla, /^UEX\d{11}$/)
+          )
+        );
+        if (!ultimaResposta)
           return Invalido([
             `Não houve decurso ou ciência sobre a resposta da agência (evento ${respostaAgencia.ordinal}).`,
           ]);
+        if (houveDecursoOuCiencia(eventos, ultimaResposta.ordinal)) return Ok(autor);
+        return Invalido([
+          `Não houve decurso ou ciência sobre a resposta da agência (evento ${ultimaResposta.ordinal}).`,
+        ]);
       }
     }
     const atosIntimacao = houveAtosIntimacaoPagamento(eventos, pagamento.ordinal);
@@ -387,6 +398,7 @@ interface Evento {
   memos: string;
   aps: boolean;
   despSent: boolean;
+  sigla: string;
 }
 
 function parseEventos(eventos: HTMLTableRowElement[]): Evento[] {
@@ -406,6 +418,7 @@ function parseEventos(eventos: HTMLTableRowElement[]): Evento[] {
       const ys = xs.split(', ');
       referenciados = ys.concat([x]).map(Number);
     }
+    const sigla = textContent(linha.cells[4]);
     const memos = textContent(linha.cells[5]);
     const aps =
       safePipe(
@@ -414,7 +427,7 @@ function parseEventos(eventos: HTMLTableRowElement[]): Evento[] {
         l => l.getAttribute('onmouseover'),
         a => RE.match(a, 'AG. PREV. SOCIAL')
       ) != null;
-    return { ordinal, descricao, referenciados, memos, aps, despSent };
+    return { ordinal, descricao, referenciados, sigla, memos, aps, despSent };
   });
 }
 
