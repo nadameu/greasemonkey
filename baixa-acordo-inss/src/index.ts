@@ -107,7 +107,7 @@ function verificarSentenca(eventos: Evento[]): Resultado<Evento> {
         ),
         RE.test(
           memos,
-          /ACOLHO(,?\s+em\s+parte,?)?\s+os?\s+(demais\s+)?pedidos?.*condenar\s+o\s+INSS/i
+          /ACOLHO(,?\s+em\s+parte,?)?\s+os?\s+(demais\s+)?pedidos?.*condena(r|ndo)\s+o\s+INSS/i
         )
       )
     );
