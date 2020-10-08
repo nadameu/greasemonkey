@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
 // @grant       GM_addStyle
-// @version     1.1.0
+// @version     1.2.0
 // @author      nadameu
 // ==/UserScript==
 
@@ -26,10 +26,6 @@ function debounce(fn) {
 }
 
 const div = $("<div id=\"divAcoesFlutuantes\"></div>")
-  .css({
-    backgroundColor: "white",
-    zIndex: "1",
-  })
   .insertBefore("#divMovPref");
 $("#divMovPref").appendTo(div);
 const placeholder = $("<div></div>").insertBefore(div);
@@ -68,10 +64,13 @@ GM_addStyle(/*css*/`
   position: fixed;
   top: ${navbarHeight}px;
   width: ${areaDadosWidth}px;
+  z-index: 1;
 }
 #divAcoesFlutuantes.flutuante fieldset {
+  background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25),
-              0 4px 8px rgba(0, 0, 0, 0.125);
+              0 4px 8px rgba(0, 0, 0, 0.125),
+              0 0 1.2em 0.6em white;
   border-color: #ccc;
 }
 `);
