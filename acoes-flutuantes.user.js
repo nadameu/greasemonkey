@@ -6,28 +6,38 @@
 // @match       https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
-// @grant       none
-// @version     1.0
+// @grant       GM_addStyle
+// @version     1.1.0
 // @author      nadameu
 // ==/UserScript==
 
 let debounceTimer;
 let debounceFn;
 function debounce(fn) {
-  return function() {
+  return function () {
     if (debounceTimer) debounceFn = fn;
-    else debounceTimer = window.setTimeout(() => {
-      window.clearTimeout(debounceTimer);
-      debounceTimer = undefined;
-      debounceFn();
-    }, 100);
-  }
+    else
+      debounceTimer = window.setTimeout(() => {
+        window.clearTimeout(debounceTimer);
+        debounceTimer = undefined;
+        debounceFn();
+      }, 100);
+  };
 }
 
-const div = $('<div></div>').css({'background-color': 'white', 'z-index': '1'}).insertBefore('#divMovPref');
-$('#divMovPref').appendTo(div);
-const placeholder = $('<div></div>').insertBefore(div);
-placeholder.css({ height: div.height() + 'px' }).hide();
+const div = $("<div id=\"divAcoesFlutuantes\"></div>")
+  .css({
+    backgroundColor: "white",
+    zIndex: "1",
+  })
+  .insertBefore("#divMovPref");
+$("#divMovPref").appendTo(div);
+const placeholder = $("<div></div>").insertBefore(div);
+placeholder
+  .css({
+    height: div.height() + "px",
+  })
+  .hide();
 
 let yPosition = 0;
 let current = div.get(0);
@@ -35,20 +45,33 @@ do {
   yPosition += current.offsetTop + current.clientTop;
   current = current.offsetParent;
 } while (current);
-let navbarHeight = $('#navbar').height();
-yPosition -= navbarHeight;  
-let areaDadosWidth = $('#divInfraAreaDados').width();
+let navbarHeight = $("#navbar").height();
+yPosition -= navbarHeight;
+let areaDadosWidth = $("#divInfraAreaDados").width();
 
 function onscroll() {
   if (window.scrollY > yPosition) {
     placeholder.show();
-    div.css({position: 'fixed', top: navbarHeight + 'px', width: areaDadosWidth + 'px' });
+    div.toggleClass('flutuante', true);
   } else {
     placeholder.hide();
-    div.css({position: 'relative', top: '', width: '' });
+    div.toggleClass('flutuante', false);
   }
 }
 
-window.addEventListener('scroll', debounce(onscroll));
+window.addEventListener("scroll", debounce(onscroll));
 
 onscroll();
+
+GM_addStyle(/*css*/`
+#divAcoesFlutuantes.flutuante {
+  position: fixed;
+  top: ${navbarHeight}px;
+  width: ${areaDadosWidth}px;
+}
+#divAcoesFlutuantes.flutuante fieldset {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25),
+              0 4px 8px rgba(0, 0, 0, 0.125);
+  border-color: #ccc;
+}
+`);
