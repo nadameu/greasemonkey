@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
 // @grant       GM_addStyle
-// @version     1.2.0
+// @version     1.3.0
 // @author      nadameu
 // ==/UserScript==
 
@@ -67,6 +67,7 @@ GM_addStyle(/*css*/`
   z-index: 1;
 }
 #divAcoesFlutuantes.flutuante fieldset {
+  margin-top: -1em;
   background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25),
               0 4px 8px rgba(0, 0, 0, 0.125),
