@@ -5,7 +5,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=acessar_documento&*
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=acessar_documento_implementacao&*
 // @grant       none
-// @version     1.1.0
+// @version     1.2.0
 // @author      nadameu
 // @description Facilita o uso do teclado, focando o documento ao abri-lo em uma janela.
 // ==/UserScript==
@@ -17,24 +17,29 @@ if (window.frames.length) {
     switch (evt.key) {
       case 'j':
       case 'J':
-        window.scrollByPages(1);
+        smoothScroll(window.innerHeight, true);
         break;
 
       case 'k':
       case 'K':
-        window.scrollByPages(-1);
+        smoothScroll(-window.innerHeight, true);
         break;
 
       case 'g':
-        window.scrollTo(undefined, 0);
+        smoothScroll(0);
         break;
 
       case 'G':
-        window.scrollTo(undefined, window.scrollMaxY);
+        smoothScroll(window.scrollMaxY);
         break;
 
       default:
         break;
     }
   }, false);
+}
+
+function smoothScroll(top, relative = false) {
+  const fn = relative ? 'scrollBy' : 'scrollTo';
+  window[fn]({ top, behavior: 'smooth' });
 }
