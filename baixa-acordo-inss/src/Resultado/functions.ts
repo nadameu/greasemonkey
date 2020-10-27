@@ -16,7 +16,7 @@ export function chain<a, b>(fx: Resultado<a>, f: (_: a) => Resultado<b>): Result
 }
 
 export function map<a, b>(fx: Resultado<a>, f: (_: a) => b): Resultado<b> {
-  return chain(fx, x => Ok(f(x)));
+  return fx.isValido ? Ok(f(fx.valor)) : fx;
 }
 
 export function lift2<a, b, c>(
@@ -24,36 +24,36 @@ export function lift2<a, b, c>(
   fb: Resultado<b>,
   f: (a: a, b: b) => c
 ): Resultado<c> {
-  if (fa.isValido)
-    if (fb.isValido) return Ok(f(fa.valor, fb.valor));
-    else return fb;
-  if (fb.isValido) return fa;
-  return Invalido(fa.razoes.concat(fb.razoes));
+  return map(sequence([fa, fb]), ([a, b]) => f(a, b));
 }
 
 export function traverse<a, b>(xs: a[], f: (_: a) => Resultado<b>): Resultado<b[]> {
-  return xs.reduce(
-    (fys: Resultado<b[]>, x) =>
-      lift2(fys, f(x), (ys, y) => {
-        ys.push(y);
-        return ys;
-      }),
-    Ok([])
-  );
+  return _traverseEntries<Record<number, a>, b>(xs.entries(), f, []) as Resultado<b[]>;
 }
 
-export function traverseObj<a extends object, b>(
+export function traverseObj<a, b>(
   obj: a,
   f: (_: a[keyof a]) => Resultado<b>
-): Resultado<{ [key in keyof a]: b }> {
-  return (Object.entries(obj) as [keyof a, a[keyof a]][]).reduce(
-    (resultado, [key, x]) =>
-      lift2(resultado, f(x), (target, y) => {
-        target[key] = y;
-        return target;
-      }),
-    Ok({}) as Resultado<{ [key in keyof a]: b }>
-  );
+): Resultado<Record<keyof a, b>> {
+  return _traverseEntries(Object.entries(obj) as [keyof a, a[keyof a]][], f);
+}
+
+function _traverseEntries<a, b>(
+  entries: Iterable<[keyof a, a[keyof a]]>,
+  f: (_: a[keyof a]) => Resultado<b>,
+  resultado: Partial<Record<keyof a, b>> = {}
+): Resultado<Record<keyof a, b>> {
+  const razoess: string[][] = [];
+  let valido = true;
+  for (const [k, v] of entries) {
+    const y = f(v);
+    if (!y.isValido) {
+      if (valido) valido = false;
+      razoess.push(y.razoes);
+    } else if (valido) resultado[k] = y.valor;
+  }
+  if (razoess.length > 0) return Invalido(razoess.flat());
+  return Ok(resultado as Record<keyof a, b>);
 }
 
 export function sequence<a>(xs: [Resultado<a>]): Resultado<[a]>;
@@ -69,8 +69,8 @@ export function sequence<a>(xs: Resultado<a>[]): Resultado<a[]> {
   return traverse(xs, x => x);
 }
 
-export function sequenceObj<a extends { [key in keyof a]: Resultado<unknown> }>(
+export function sequenceObj<a extends Record<keyof a, Resultado<unknown>>>(
   obj: a
 ): Resultado<{ [key in keyof a]: a[key] extends Resultado<infer b> ? b : never }> {
-  return traverseObj(obj, x => x as Resultado<any>);
+  return traverseObj(obj as Record<keyof a, Resultado<any>>, x => x);
 }
