@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.7.0
+// @version 0.7.1
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -358,11 +358,15 @@ function comEventos(eventos) {
       return Invalido([`Não houve ato de intimação do autor ${autor} acerca do pagamento.`]);
     }
     const matcher = withFlags(concat(oneOf('AUTOR', 'REQUERENTE'), ' -  ', autor), 'i');
-    const intimacao = atosIntimacao.find(({ ordinal }) =>
-      houveIntimacao(eventos, ordinal, matcher)
+    const intimacoes = atosIntimacao.flatMap(({ ordinal }) =>
+      intimacoesParte(eventos, ordinal, matcher)
     );
-    if (!intimacao) return Invalido([`Não houve intimação do autor ${autor} acerca do pagamento.`]);
-    if (!houveDecursoOuCiencia(eventos, intimacao.ordinal))
+    if (!intimacoes.length)
+      return Invalido([`Não houve intimação do autor ${autor} acerca do pagamento.`]);
+    const decursoOuCiencia = intimacoes.find(({ ordinal }) =>
+      houveDecursoOuCiencia(eventos, ordinal)
+    );
+    if (!decursoOuCiencia)
       return Invalido([`Não houve decurso ou ciência do autor ${autor} acerca do pagamento.`]);
     return Ok(autor);
   }
@@ -393,12 +397,15 @@ function comEventos(eventos) {
     if (atosIntimacao.length === 0)
       return Invalido([`Não houve ato de intimação do perito ${perito} acerca do pagamento.`]);
     const matcher = withFlags(concat('PERITO -  ', perito), 'i');
-    const intimacao = atosIntimacao.find(({ ordinal }) =>
-      houveIntimacao(eventos, ordinal, matcher)
+    const intimacoes = atosIntimacao.flatMap(({ ordinal }) =>
+      intimacoesParte(eventos, ordinal, matcher)
     );
-    if (!intimacao)
+    if (!intimacoes.length)
       return Invalido([`Não houve intimação do perito ${perito} acerca do pagamento.`]);
-    if (!houveDecursoOuCiencia(eventos, intimacao.ordinal))
+    const decursoOuCiencia = intimacoes.find(({ ordinal }) =>
+      houveDecursoOuCiencia(eventos, ordinal)
+    );
+    if (!decursoOuCiencia)
       return Invalido([`Não houve decurso ou ciência do perito ${perito} acerca do pagamento.`]);
     return Ok(perito);
   }
@@ -452,6 +459,22 @@ function houveIntimacao(eventos, ordinal, matcherParte) {
     )
   );
 }
+function intimacoesParte(eventos, ordinal, matcherParte) {
+  return eventos.filter(({ descricao, ordinal: o, referenciados }) =>
+    all(
+      o > ordinal,
+      referenciados.some(ref => ref === ordinal),
+      test(
+        descricao,
+        oneOf(
+          'Intimação Eletrônica - Expedida/Certificada',
+          'Expedida/certificada a intimação eletrônica'
+        )
+      ),
+      test(descricao, matcherParte)
+    )
+  );
+}
 function houveDecursoOuCiencia(eventos, ordinal) {
   return eventos
     .filter(({ ordinal: o }) => o > ordinal)
@@ -463,15 +486,8 @@ function houveDecursoOuCiencia(eventos, ordinal) {
 }
 function parseEventos(eventos) {
   return eventos.map(linha => {
-    var _a, _b;
     const ordinal = Number(textContent(linha.cells[1]));
-    const lupa =
-      (_b =
-        (_a = linha.cells[1].querySelector('a[onmouseover]')) === null || _a === void 0
-          ? void 0
-          : _a.getAttribute('onmouseover')) !== null && _b !== void 0
-        ? _b
-        : '';
+    const lupa = linha.cells[1].querySelector('a[onmouseover]')?.getAttribute('onmouseover') ?? '';
     const despSent = test(lupa, 'Magistrado(s):');
     const descricao = textContent(linha.cells[3]);
     let referenciados = [];
