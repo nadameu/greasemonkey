@@ -279,11 +279,15 @@ function comEventos(eventos: Evento[]) {
       return Invalido([`Não houve ato de intimação do autor ${autor} acerca do pagamento.`]);
     }
     const matcher = RE.withFlags(RE.concat(RE.oneOf('AUTOR', 'REQUERENTE'), ' -  ', autor), 'i');
-    const intimacao = atosIntimacao.find(({ ordinal }) =>
-      houveIntimacao(eventos, ordinal, matcher)
+    const intimacoes = atosIntimacao.flatMap(({ ordinal }) =>
+      intimacoesParte(eventos, ordinal, matcher)
     );
-    if (!intimacao) return Invalido([`Não houve intimação do autor ${autor} acerca do pagamento.`]);
-    if (!houveDecursoOuCiencia(eventos, intimacao.ordinal))
+    if (!intimacoes.length)
+      return Invalido([`Não houve intimação do autor ${autor} acerca do pagamento.`]);
+    const decursoOuCiencia = intimacoes.find(({ ordinal }) =>
+      houveDecursoOuCiencia(eventos, ordinal)
+    );
+    if (!decursoOuCiencia)
       return Invalido([`Não houve decurso ou ciência do autor ${autor} acerca do pagamento.`]);
     return Ok(autor);
   }
@@ -315,12 +319,15 @@ function comEventos(eventos: Evento[]) {
     if (atosIntimacao.length === 0)
       return Invalido([`Não houve ato de intimação do perito ${perito} acerca do pagamento.`]);
     const matcher = RE.withFlags(RE.concat('PERITO -  ', perito), 'i');
-    const intimacao = atosIntimacao.find(({ ordinal }) =>
-      houveIntimacao(eventos, ordinal, matcher)
+    const intimacoes = atosIntimacao.flatMap(({ ordinal }) =>
+      intimacoesParte(eventos, ordinal, matcher)
     );
-    if (!intimacao)
+    if (!intimacoes.length)
       return Invalido([`Não houve intimação do perito ${perito} acerca do pagamento.`]);
-    if (!houveDecursoOuCiencia(eventos, intimacao.ordinal))
+    const decursoOuCiencia = intimacoes.find(({ ordinal }) =>
+      houveDecursoOuCiencia(eventos, ordinal)
+    );
+    if (!decursoOuCiencia)
       return Invalido([`Não houve decurso ou ciência do perito ${perito} acerca do pagamento.`]);
     return Ok(perito);
   }
@@ -372,6 +379,27 @@ function houveIntimacao(
   matcherParte: string | RegExp
 ): Evento | undefined {
   return eventos.find(({ descricao, ordinal: o, referenciados }) =>
+    all(
+      o > ordinal,
+      referenciados.some(ref => ref === ordinal),
+      RE.test(
+        descricao,
+        RE.oneOf(
+          'Intimação Eletrônica - Expedida/Certificada',
+          'Expedida/certificada a intimação eletrônica'
+        )
+      ),
+      RE.test(descricao, matcherParte)
+    )
+  );
+}
+
+function intimacoesParte(
+  eventos: Evento[],
+  ordinal: number,
+  matcherParte: string | RegExp
+): Evento[] {
+  return eventos.filter(({ descricao, ordinal: o, referenciados }) =>
     all(
       o > ordinal,
       referenciados.some(ref => ref === ordinal),
