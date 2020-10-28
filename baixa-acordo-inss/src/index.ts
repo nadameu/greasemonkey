@@ -56,7 +56,9 @@ function main() {
 }
 
 function obterEventos() {
-  return parseEventos(queryAll('td.infraEventoDescricao').map(celula => celula.closest('tr')!));
+  return queryAll('td.infraEventoDescricao')
+    .map(celula => celula.closest('tr')!)
+    .map(parseEvento);
 }
 
 function verificarLocalizadores(): Resultado<string[]> {
@@ -435,34 +437,32 @@ interface Evento {
   sigla: string;
 }
 
-function parseEventos(eventos: HTMLTableRowElement[]): Evento[] {
-  return eventos.map(linha => {
-    const ordinal = Number(textContent(linha.cells[1]));
-    const lupa = linha.cells[1].querySelector('a[onmouseover]')?.getAttribute('onmouseover') ?? '';
-    const despSent = RE.test(lupa, 'Magistrado(s):');
-    const descricao = textContent(linha.cells[3]);
-    let referenciados: number[] = [];
-    const ref1 = RE.match(descricao, RE.concat('Refer. ao Evento: ', RE.capture(/\d+/)));
-    if (ref1) {
-      referenciados = [Number(ref1[1])];
-    }
-    const refN = RE.match(descricao, RE.concat('Refer. aos Eventos: ', RE.capture(/\d[\d, e]+\d/)));
-    if (refN) {
-      const [xs, x] = refN[1].split(' e ');
-      const ys = xs.split(', ');
-      referenciados = ys.concat([x]).map(Number);
-    }
-    const sigla = textContent(linha.cells[4]);
-    const memos = textContent(linha.cells[5]);
-    const aps =
-      safePipe(
-        linha.cells[4],
-        c => c.querySelector('label'),
-        l => l.getAttribute('onmouseover'),
-        a => RE.match(a, 'AG. PREV. SOCIAL')
-      ) != null;
-    return { ordinal, descricao, referenciados, sigla, memos, aps, despSent };
-  });
+function parseEvento(linha: HTMLTableRowElement): Evento {
+  const ordinal = Number(textContent(linha.cells[1]));
+  const lupa = linha.cells[1].querySelector('a[onmouseover]')?.getAttribute('onmouseover') ?? '';
+  const despSent = RE.test(lupa, 'Magistrado(s):');
+  const descricao = textContent(linha.cells[3]);
+  let referenciados: number[] = [];
+  const ref1 = RE.match(descricao, RE.concat('Refer. ao Evento: ', RE.capture(/\d+/)));
+  if (ref1) {
+    referenciados = [Number(ref1[1])];
+  }
+  const refN = RE.match(descricao, RE.concat('Refer. aos Eventos: ', RE.capture(/\d[\d, e]+\d/)));
+  if (refN) {
+    const [xs, x] = refN[1].split(' e ');
+    const ys = xs.split(', ');
+    referenciados = ys.concat([x]).map(Number);
+  }
+  const sigla = textContent(linha.cells[4]);
+  const memos = textContent(linha.cells[5]);
+  const aps =
+    safePipe(
+      linha.cells[4],
+      c => c.querySelector('label'),
+      l => l.getAttribute('onmouseover'),
+      a => RE.match(a, 'AG. PREV. SOCIAL')
+    ) != null;
+  return { ordinal, descricao, referenciados, sigla, memos, aps, despSent };
 }
 
 function queryAll(selector: string) {
