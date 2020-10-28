@@ -78,26 +78,24 @@ function verificarAutores(): Resultado<string[]> {
 function verificarSentenca(eventos: Evento[]): Resultado<Evento> {
   const sentenca =
     eventos.find(({ descricao, memos }) =>
-      any(
-        all(
-          RE.test(
-            descricao,
-            RE.oneOf(
-              'Sentença com Resolução de Mérito - Conciliação/Transação Homologada ',
-              'Homologada a Transação'
-            )
-          ),
-          RE.test(
-            memos,
-            RE.oneOf(
-              'HOMOLOGO, por sentença, a transação realizada entre as partes',
-              'Homologo o acordo, resolvendo o mérito'
-            )
-          ),
-          RE.test(memos, 'Caberá ao INSS o pagamento dos honorários periciais')
-        )
+      all(
+        RE.test(
+          descricao,
+          RE.oneOf(
+            'Sentença com Resolução de Mérito - Conciliação/Transação Homologada ',
+            'Homologada a Transação'
+          )
+        ),
+        RE.test(
+          memos,
+          RE.oneOf(
+            'HOMOLOGO, por sentença, a transação realizada entre as partes',
+            'Homologo o acordo, resolvendo o mérito'
+          )
+        ),
+        RE.test(memos, 'Caberá ao INSS o pagamento dos honorários periciais')
       )
-    ) ||
+    ) ??
     eventos.find(({ descricao, memos }) =>
       all(
         RE.test(
