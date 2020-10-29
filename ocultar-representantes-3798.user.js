@@ -1,10 +1,14 @@
 // ==UserScript==
 // @name        ocultar-representantes-3798
+// @name:pt-BR  Ocultar representantes 3798
 // @namespace   http://nadameu.com.br
+// @match       https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
+// @match       https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
+// @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
 // @grant       none
-// @version     1.0.0
-// @author      Nadameu
+// @version     1.1.0
+// @author      Paulo R. Maurici Jr.
 // @description Ocultar representantes da Agência 3798 do Banco do Brasil
 // ==/UserScript==
 
