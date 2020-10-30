@@ -1,4 +1,2 @@
 export * from './Resultado/defs';
-
-import * as resultado from './Resultado/functions';
-export { resultado };
+export * as resultado from './Resultado/functions';
