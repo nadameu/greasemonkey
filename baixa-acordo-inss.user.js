@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.7.1
+// @version 0.8.0
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -64,38 +64,27 @@ function matchWith(resultado, matchers) {
   if (resultado.isValido) return matchers.Ok(resultado.valor);
   return matchers.Invalido(resultado.razoes);
 }
-function chain(fx, f) {
-  return fx.isValido ? f(fx.valor) : fx;
-}
 function map(fx, f) {
-  return chain(fx, x => Ok(f(x)));
-}
-function lift2(fa, fb, f) {
-  if (fa.isValido)
-    if (fb.isValido) return Ok(f(fa.valor, fb.valor));
-    else return fb;
-  if (fb.isValido) return fa;
-  return Invalido(fa.razoes.concat(fb.razoes));
+  return fx.isValido ? Ok(f(fx.valor)) : fx;
 }
 function traverse(xs, f) {
-  return xs.reduce(
-    (fys, x) =>
-      lift2(fys, f(x), (ys, y) => {
-        ys.push(y);
-        return ys;
-      }),
-    Ok([])
-  );
+  return _traverseEntries(xs.entries(), f, []);
 }
 function traverseObj(obj, f) {
-  return Object.entries(obj).reduce(
-    (resultado, [key, x]) =>
-      lift2(resultado, f(x), (target, y) => {
-        target[key] = y;
-        return target;
-      }),
-    Ok({})
-  );
+  return _traverseEntries(Object.entries(obj), f);
+}
+function _traverseEntries(entries, f, resultado = {}) {
+  const razoess = [];
+  let valido = true;
+  for (const [k, v] of entries) {
+    const y = f(v);
+    if (!y.isValido) {
+      if (valido) valido = false;
+      razoess.push(y.razoes);
+    } else if (valido) resultado[k] = y.valor;
+  }
+  if (razoess.length > 0) return Invalido(razoess.flat());
+  return Ok(resultado);
 }
 function sequenceObj(obj) {
   return traverseObj(obj, x => x);
@@ -151,7 +140,9 @@ function main() {
   });
 }
 function obterEventos() {
-  return parseEventos(queryAll('td.infraEventoDescricao').map(celula => celula.closest('tr')));
+  return queryAll('td.infraEventoDescricao')
+    .map(celula => celula.closest('tr'))
+    .map(parseEvento);
 }
 function verificarLocalizadores() {
   const localizadores = queryAll('[id="AbreLocalizadores"]').map(textContent);
@@ -168,26 +159,24 @@ function verificarAutores() {
 function verificarSentenca(eventos) {
   const sentenca =
     eventos.find(({ descricao, memos }) =>
-      any(
-        all(
-          test(
-            descricao,
-            oneOf(
-              'Sentença com Resolução de Mérito - Conciliação/Transação Homologada ',
-              'Homologada a Transação'
-            )
-          ),
-          test(
-            memos,
-            oneOf(
-              'HOMOLOGO, por sentença, a transação realizada entre as partes',
-              'Homologo o acordo, resolvendo o mérito'
-            )
-          ),
-          test(memos, 'Caberá ao INSS o pagamento dos honorários periciais')
-        )
+      all(
+        test(
+          descricao,
+          oneOf(
+            'Sentença com Resolução de Mérito - Conciliação/Transação Homologada ',
+            'Homologada a Transação'
+          )
+        ),
+        test(
+          memos,
+          oneOf(
+            'HOMOLOGO, por sentença, a transação realizada entre as partes',
+            'Homologo o acordo, resolvendo o mérito'
+          )
+        ),
+        test(memos, 'Caberá ao INSS o pagamento dos honorários periciais')
       )
-    ) ||
+    ) ??
     eventos.find(({ descricao, memos }) =>
       all(
         test(
@@ -214,11 +203,9 @@ function comEventos(eventos) {
     verificarPagamentoPerito,
   };
   function verificarTransito(sentenca) {
-    const transito = eventos
-      .filter(({ ordinal }) => ordinal > sentenca.ordinal)
-      .find(({ descricao }) =>
-        test(descricao, oneOf('Trânsito em Julgado', 'Transitado em Julgado'))
-      );
+    const transito = encontrarEventoPosterior(sentenca, ({ descricao }) =>
+      test(descricao, oneOf('Trânsito em Julgado', 'Transitado em Julgado'))
+    );
     if (!transito) return Invalido(['Não há trânsito em julgado.']);
     return Ok(transito);
   }
@@ -246,7 +233,6 @@ function comEventos(eventos) {
       : eventosAPS.find(({ ordinal }) => ordinal > intimacaoAPSSentenca.ordinal);
     if (!ultimaResposta) return Invalido(['CEAB não juntou resposta.']);
     const intimacaoAutorResposta = houveIntimacao(
-      eventos,
       ultimaResposta.ordinal,
       oneOf('AUTOR', 'REQUERENTE')
     );
@@ -254,7 +240,7 @@ function comEventos(eventos) {
       return Invalido([
         `Autor não foi intimado da última resposta (evento ${ultimaResposta.ordinal}).`,
       ]);
-    if (!houveDecursoOuCiencia(eventos, intimacaoAutorResposta.ordinal)) {
+    if (!houveDecursoOuCiencia(intimacaoAutorResposta.ordinal)) {
       const peticaoAposResposta = eventos.find(
         ({ descricao, referenciados }) =>
           test(descricao, 'PETIÇÃO') &&
@@ -279,75 +265,67 @@ function comEventos(eventos) {
   function verificarPagamentoAutor(autor) {
     const pagamento = houvePagamentoLiberado(eventos, autor);
     if (!pagamento) return Invalido([`Não houve pagamento do autor ${autor}.`]);
-    const certidaoProcuracao = eventos
-      .filter(({ ordinal: o }) => o > pagamento.ordinal)
-      .find(({ memos }) =>
-        test(
-          memos,
-          concat(
-            ...intercalate(/.*/, [
-              'Certifico que ',
-              ' atua',
-              ' como advogad',
-              ' da parte autora, constando na procuração poderes expressos para ',
-              ' receber',
-              ' e dar',
-              ' quitação.',
-            ])
-          )
+    const certidaoProcuracao = encontrarEventoPosterior(pagamento, ({ memos }) =>
+      test(
+        memos,
+        concat(
+          ...intercalate(/.*/, [
+            'Certifico que ',
+            ' atua',
+            ' como advogad',
+            ' da parte autora, constando na procuração poderes expressos para ',
+            ' receber',
+            ' e dar',
+            ' quitação.',
+          ])
         )
-      );
+      )
+    );
     if (certidaoProcuracao) return Ok(autor);
-    const pedidoTED = eventos
-      .filter(({ ordinal: o }) => o > pagamento.ordinal)
-      .find(({ descricao }) => test(descricao, 'PETIÇÃO - PEDIDO DE TED'));
+    const pedidoTED = encontrarEventoPosterior(pagamento, ({ descricao }) =>
+      test(descricao, 'PETIÇÃO - PEDIDO DE TED')
+    );
     if (pedidoTED) {
-      const despachoTED = eventos
-        .filter(({ ordinal: o }) => o > pedidoTED.ordinal)
-        .find(
-          ({ descricao, memos }) =>
-            test(descricao, /Despacho/i) &&
-            test(
-              memos,
-              concat(
-                'oficie-se à Agência ',
-                /.*/,
-                ' para que proceda à transferência dos valores depositados'
-              )
+      const despachoTED = encontrarEventoPosterior(
+        pedidoTED,
+        ({ descricao, memos }) =>
+          test(descricao, /Despacho/i) &&
+          test(
+            memos,
+            concat(
+              'oficie-se à Agência ',
+              /.*/,
+              ' para que proceda à transferência dos valores depositados'
             )
-        );
-      if (!despachoTED)
-        return Invalido([`Há pedido de TED sem despacho (evento ${pedidoTED.ordinal}).`]);
-      const intimacaoAgencia = eventos
-        .filter(({ ordinal: o }) => o > despachoTED.ordinal)
-        .find(({ descricao, referenciados }) =>
-          all(
+          )
+      );
+      const intimacaoAgencia = [pedidoTED, despachoTED]
+        .filter(x => x !== undefined)
+        .map(ref =>
+          encontrarEventoReferente(ref, ({ descricao }) =>
             test(
               descricao,
               withFlags(concat('Intimação Eletrônica', /.*/, '(UNIDADE EXTERNA - Agência'), 'i')
-            ),
-            referenciados.some(ref => ref === despachoTED.ordinal)
+            )
           )
-        );
+        )
+        .find(x => x !== undefined);
+      console.log({ intimacaoAgencia, pedidoTED, despachoTED });
       if (!intimacaoAgencia)
-        return Invalido([`Não houve intimação da agência (evento ${despachoTED.ordinal}).`]);
-      const respostaAgencia = eventos
-        .filter(({ ordinal: o }) => o > intimacaoAgencia.ordinal)
-        .find(({ referenciados }) => referenciados.some(ref => ref === intimacaoAgencia.ordinal));
+        if (!despachoTED)
+          return Invalido([`Há pedido de TED sem despacho (evento ${pedidoTED.ordinal}).`]);
+        else return Invalido([`Não houve intimação da agência (evento ${despachoTED.ordinal}).`]);
+      const respostaAgencia = encontrarEventoReferente(intimacaoAgencia);
       if (respostaAgencia) {
-        if (houveDecursoOuCiencia(eventos, respostaAgencia.ordinal)) return Ok(autor);
-        const ultimaResposta = eventos.find(({ ordinal: o, descricao, sigla }) =>
-          all(
-            o > respostaAgencia.ordinal,
-            test(descricao, /^RESPOSTA(?: - Refer\.)?/),
-            test(sigla, /^UEX\d{11}$/)
-          )
+        if (houveDecursoOuCiencia(respostaAgencia.ordinal)) return Ok(autor);
+        const ultimaResposta = encontrarEventoPosterior(respostaAgencia, ({ descricao, sigla }) =>
+          all(test(descricao, /^RESPOSTA(?: - Refer\.)?/), test(sigla, /^UEX\d{11}$/))
         );
         if (!ultimaResposta)
           return Invalido([
             `Não houve decurso ou ciência sobre a resposta da agência (evento ${respostaAgencia.ordinal}).`,
           ]);
-        if (houveDecursoOuCiencia(eventos, ultimaResposta.ordinal)) return Ok(autor);
+        if (houveDecursoOuCiencia(ultimaResposta.ordinal)) return Ok(autor);
         return Invalido([
           `Não houve decurso ou ciência sobre a resposta da agência (evento ${ultimaResposta.ordinal}).`,
         ]);
@@ -358,14 +336,10 @@ function comEventos(eventos) {
       return Invalido([`Não houve ato de intimação do autor ${autor} acerca do pagamento.`]);
     }
     const matcher = withFlags(concat(oneOf('AUTOR', 'REQUERENTE'), ' -  ', autor), 'i');
-    const intimacoes = atosIntimacao.flatMap(({ ordinal }) =>
-      intimacoesParte(eventos, ordinal, matcher)
-    );
+    const intimacoes = atosIntimacao.flatMap(intimacoesParte(matcher));
     if (!intimacoes.length)
       return Invalido([`Não houve intimação do autor ${autor} acerca do pagamento.`]);
-    const decursoOuCiencia = intimacoes.find(({ ordinal }) =>
-      houveDecursoOuCiencia(eventos, ordinal)
-    );
+    const decursoOuCiencia = intimacoes.find(({ ordinal }) => houveDecursoOuCiencia(ordinal));
     if (!decursoOuCiencia)
       return Invalido([`Não houve decurso ou ciência do autor ${autor} acerca do pagamento.`]);
     return Ok(autor);
@@ -397,17 +371,47 @@ function comEventos(eventos) {
     if (atosIntimacao.length === 0)
       return Invalido([`Não houve ato de intimação do perito ${perito} acerca do pagamento.`]);
     const matcher = withFlags(concat('PERITO -  ', perito), 'i');
-    const intimacoes = atosIntimacao.flatMap(({ ordinal }) =>
-      intimacoesParte(eventos, ordinal, matcher)
-    );
+    const intimacoes = atosIntimacao.flatMap(intimacoesParte(matcher));
     if (!intimacoes.length)
       return Invalido([`Não houve intimação do perito ${perito} acerca do pagamento.`]);
-    const decursoOuCiencia = intimacoes.find(({ ordinal }) =>
-      houveDecursoOuCiencia(eventos, ordinal)
-    );
+    const decursoOuCiencia = intimacoes.find(({ ordinal }) => houveDecursoOuCiencia(ordinal));
     if (!decursoOuCiencia)
       return Invalido([`Não houve decurso ou ciência do perito ${perito} acerca do pagamento.`]);
     return Ok(perito);
+  }
+  function filtrarEventosPosteriores(referencia, predicado) {
+    const eventosPosteriores = eventos.filter(({ ordinal: o }) => o > referencia.ordinal);
+    if (predicado) return eventosPosteriores.filter(predicado);
+    return eventosPosteriores;
+  }
+  function encontrarEventoPosterior(referencia, predicado = () => true) {
+    return filtrarEventosPosteriores(referencia).find(predicado);
+  }
+  function filtrarEventosReferentes(referencia, predicado) {
+    const eventosReferentes = filtrarEventosPosteriores(referencia, ({ referenciados }) =>
+      referenciados.some(ref => ref === referencia.ordinal)
+    );
+    if (predicado) return eventosReferentes.filter(predicado);
+    return eventosReferentes;
+  }
+  function encontrarEventoReferente(referencia, predicado = () => true) {
+    return filtrarEventosReferentes(referencia).find(predicado);
+  }
+  function houveIntimacao(ordinal, matcherParte) {
+    return encontrarEventoReferente({ ordinal }, ({ descricao }) =>
+      all(ehIntimacao(descricao), test(descricao, matcherParte))
+    );
+  }
+  function intimacoesParte(matcherParte) {
+    return evento =>
+      filtrarEventosReferentes(evento, ({ descricao }) =>
+        all(ehIntimacao(descricao), test(descricao, matcherParte))
+      );
+  }
+  function houveDecursoOuCiencia(ordinal) {
+    return encontrarEventoReferente({ ordinal }, ({ descricao }) =>
+      test(descricao, oneOf('Decurso de Prazo', 'Decorrido prazo', 'RENÚNCIA AO PRAZO'))
+    );
   }
 }
 function adicionarEstilos() {
@@ -443,75 +447,32 @@ function inserirAntesDaCapa(html) {
   if (!capa) return;
   capa.insertAdjacentHTML('beforebegin', html);
 }
-function houveIntimacao(eventos, ordinal, matcherParte) {
-  return eventos.find(({ descricao, ordinal: o, referenciados }) =>
-    all(
-      o > ordinal,
-      referenciados.some(ref => ref === ordinal),
-      test(
-        descricao,
-        oneOf(
-          'Intimação Eletrônica - Expedida/Certificada',
-          'Expedida/certificada a intimação eletrônica'
-        )
-      ),
-      test(descricao, matcherParte)
-    )
-  );
-}
-function intimacoesParte(eventos, ordinal, matcherParte) {
-  return eventos.filter(({ descricao, ordinal: o, referenciados }) =>
-    all(
-      o > ordinal,
-      referenciados.some(ref => ref === ordinal),
-      test(
-        descricao,
-        oneOf(
-          'Intimação Eletrônica - Expedida/Certificada',
-          'Expedida/certificada a intimação eletrônica'
-        )
-      ),
-      test(descricao, matcherParte)
-    )
-  );
-}
-function houveDecursoOuCiencia(eventos, ordinal) {
-  return eventos
-    .filter(({ ordinal: o }) => o > ordinal)
-    .find(
-      ({ descricao, referenciados }) =>
-        test(descricao, oneOf('Decurso de Prazo', 'Decorrido prazo', 'RENÚNCIA AO PRAZO')) &&
-        referenciados.some(ref => ref === ordinal)
-    );
-}
-function parseEventos(eventos) {
-  return eventos.map(linha => {
-    const ordinal = Number(textContent(linha.cells[1]));
-    const lupa = linha.cells[1].querySelector('a[onmouseover]')?.getAttribute('onmouseover') ?? '';
-    const despSent = test(lupa, 'Magistrado(s):');
-    const descricao = textContent(linha.cells[3]);
-    let referenciados = [];
-    const ref1 = match(descricao, concat('Refer. ao Evento: ', capture(/\d+/)));
-    if (ref1) {
-      referenciados = [Number(ref1[1])];
-    }
-    const refN = match(descricao, concat('Refer. aos Eventos: ', capture(/\d[\d, e]+\d/)));
-    if (refN) {
-      const [xs, x] = refN[1].split(' e ');
-      const ys = xs.split(', ');
-      referenciados = ys.concat([x]).map(Number);
-    }
-    const sigla = textContent(linha.cells[4]);
-    const memos = textContent(linha.cells[5]);
-    const aps =
-      safePipe(
-        linha.cells[4],
-        c => c.querySelector('label'),
-        l => l.getAttribute('onmouseover'),
-        a => match(a, 'AG. PREV. SOCIAL')
-      ) != null;
-    return { ordinal, descricao, referenciados, sigla, memos, aps, despSent };
-  });
+function parseEvento(linha) {
+  const ordinal = Number(textContent(linha.cells[1]));
+  const lupa = linha.cells[1].querySelector('a[onmouseover]')?.getAttribute('onmouseover') ?? '';
+  const despSent = test(lupa, 'Magistrado(s):');
+  const descricao = textContent(linha.cells[3]);
+  let referenciados = [];
+  const ref1 = match(descricao, concat('Refer. ao Evento: ', capture(/\d+/)));
+  if (ref1) {
+    referenciados = [Number(ref1[1])];
+  }
+  const refN = match(descricao, concat('Refer. aos Eventos: ', capture(/\d[\d, e]+\d/)));
+  if (refN) {
+    const [xs, x] = refN[1].split(' e ');
+    const ys = xs.split(', ');
+    referenciados = ys.concat([x]).map(Number);
+  }
+  const sigla = textContent(linha.cells[4]);
+  const memos = textContent(linha.cells[5]);
+  const aps =
+    safePipe(
+      linha.cells[4],
+      c => c.querySelector('label'),
+      l => l.getAttribute('onmouseover'),
+      a => match(a, 'AG. PREV. SOCIAL')
+    ) != null;
+  return { ordinal, descricao, referenciados, sigla, memos, aps, despSent };
 }
 function queryAll(selector) {
   return Array.from(document.querySelectorAll(selector));
@@ -531,10 +492,6 @@ function intercalate(separator, elements) {
 function all(...bools) {
   for (const x of bools) if (!x) return false;
   return true;
-}
-function any(...bools) {
-  for (const x of bools) if (x) return true;
-  return false;
 }
 function houvePagamentoLiberado(eventos, nome) {
   return eventos.find(({ descricao }) =>
@@ -564,4 +521,13 @@ function houveAtosIntimacaoPagamento(eventos, ordinalPagamento) {
         'concede o prazo de 05 (cinco) dias para que a parte autora/advogado(a)/perito(a) efetue o saque do valor depositado em conta aberta em seu nome'
       )
     );
+}
+function ehIntimacao(descricao) {
+  return test(
+    descricao,
+    oneOf(
+      'Intimação Eletrônica - Expedida/Certificada',
+      'Expedida/certificada a intimação eletrônica'
+    )
+  );
 }
