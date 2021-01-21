@@ -282,7 +282,13 @@ function comEventos(eventos: Evento[]) {
     if (!pagamento) {
       const pagamentoAJG = eventos.find(
         ({ descricao, memos }) =>
-          RE.test(descricao, 'Expedida Requisição Honorários Perito/Dativo') &&
+          RE.test(
+            descricao,
+            RE.concat(
+              RE.oneOf('Expedida Requisição', 'Expedição de Requisição'),
+              ' Honorários Perito/Dativo'
+            )
+          ) &&
           RE.test(
             memos,
             RE.withFlags(

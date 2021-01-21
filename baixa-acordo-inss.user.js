@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.8.0
+// @version 0.8.1
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -349,7 +349,13 @@ function comEventos(eventos) {
     if (!pagamento) {
       const pagamentoAJG = eventos.find(
         ({ descricao, memos }) =>
-          test(descricao, 'Expedida Requisição Honorários Perito/Dativo') &&
+          test(
+            descricao,
+            concat(
+              oneOf('Expedida Requisição', 'Expedição de Requisição'),
+              ' Honorários Perito/Dativo'
+            )
+          ) &&
           test(
             memos,
             withFlags(
