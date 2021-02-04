@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.0.1
+// @version 27.0.2
 // @grant none
 // ==/UserScript==
 
@@ -1511,9 +1511,10 @@ var ProcessoFactory = (function() {
 				var tabela = div.childNodes[0];
 				var linhas = Array.from(tabela.rows).reverse();
 				processo.lembretes = linhas.map(linha => {
-					let celula = linha.cells[2];
-					celula.innerHTML = celula.innerHTML.replace(/<br.*?>/g, '\0\n');
-					return celula.textContent;
+					let usuario = linha.cells[2].textContent;
+					let celulaTexto = linha.cells[3];
+					celulaTexto.innerHTML = celulaTexto.innerHTML.replace(/<br.*?>/g, '\0\n');
+					return `${celulaTexto.textContent} (${usuario})`;
 				});
 			}
 			var textoSigilo = linha.cells[1].getElementsByTagName('br')[0].nextSibling
