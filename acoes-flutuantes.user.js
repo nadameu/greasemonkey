@@ -25,13 +25,13 @@ function debounce(fn) {
   };
 }
 
-const div = $("<div id=\"divAcoesFlutuantes\"></div>")
-  .insertBefore("#divMovPref");
-$("#divMovPref").appendTo(div);
-const placeholder = $("<div></div>").insertBefore(div);
+const div = $('<div id="divAcoesFlutuantes"></div>').insertBefore('#fldAcoes');
+$('#fldAcoes').appendTo(div);
+$('#divMovPref').appendTo(div);
+const placeholder = $('<div></div>').insertBefore(div);
 placeholder
   .css({
-    height: div.height() + "px",
+    height: `${div.height()}px`,
   })
   .hide();
 
@@ -41,9 +41,9 @@ do {
   yPosition += current.offsetTop + current.clientTop;
   current = current.offsetParent;
 } while (current);
-let navbarHeight = $("#navbar").height();
+let navbarHeight = $('#navbar').height();
 yPosition -= navbarHeight;
-let areaDadosWidth = $("#divInfraAreaDados").width();
+let areaDadosWidth = $('#divInfraAreaDados').width();
 
 function onscroll() {
   if (window.scrollY > yPosition) {
@@ -55,23 +55,50 @@ function onscroll() {
   }
 }
 
-window.addEventListener("scroll", debounce(onscroll));
+window.addEventListener('scroll', debounce(onscroll));
 
 onscroll();
 
-GM_addStyle(/*css*/`
+$('#lblDemaisAcoes, #lblDemaisAcoesPref').css({ display: 'block' });
+
+GM_addStyle(/*css*/ `
+.infra-styles #fldAcoes a.infraButton {
+  line-height: 18px;
+  height: 18px;
+}
+
+.infra-styles #divMovPref a.infraButton {
+  line-height: 16px;
+  height: 16px;
+}
+
 #divAcoesFlutuantes.flutuante {
   position: fixed;
   top: ${navbarHeight}px;
   width: ${areaDadosWidth}px;
   z-index: 1;
-}
-#divAcoesFlutuantes.flutuante fieldset {
-  margin-top: -1em;
   background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25),
               0 4px 8px rgba(0, 0, 0, 0.125),
               0 0 1.2em 0.6em white;
   border-color: #ccc;
+}
+
+#divAcoesFlutuantes.flutuante fieldset {
+  border-width: 1px 0 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+#divAcoesFlutuantes.flutuante > #divMovPref > br:first-child {
+  display: none;
+}
+
+#lblDemaisAcoes, #lblDemaisAcoesPref {
+  margin-bottom: -0.5em;
+}
+
+#lblOcultarAcoes, #lblOcultarAcoesPref {
+  display: block;
 }
 `);
