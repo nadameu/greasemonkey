@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
 // @grant       GM_addStyle
-// @version     1.3.1
+// @version     2.0.0
 // @author      nadameu
 // ==/UserScript==
 
