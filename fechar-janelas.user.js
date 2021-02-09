@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
 // @grant       none
-// @version     1.0.0
+// @version     2.0.0
 // @author      nadameu
 // @description Fecha as janelas de documentos que tenham sido abertas no processo
 // ==/UserScript==
@@ -18,8 +18,17 @@ if (! referencia) {
   return;
 }
 
+const tabela = document.querySelector('#tblEventos');
+if (! tabela) {
+  console.error('<fechar-janelas>', 'Não foi possível encontrar a tabela de eventos.');
+  return;
+}
+
+tabela.addEventListener('click', onTabelaClick);
+
 const div = document.createElement('div');
 div.className = 'p-2';
+div.style.display = 'none';
 div.style.cursor = 'pointer';
 
 // © 2014 Andreas Kainz & Uri Herrera & Andrew Lake & Marco Martin & Harald Sitter & Jonathan Riddell & Ken Vermette & Aleix Pol & David Faure & Albert Vaca & Luca Beltrame & Gleb Popov & Nuno Pinheiro & Alex Richardson &  Jan Grulich & Bernhard Landauer & Heiko Becker & Volker Krause & David Rosca & Phil Schaf / KDE
@@ -29,6 +38,11 @@ div.addEventListener('click', onClick);
 
 referencia.insertAdjacentElement('afterend', div);
 
+function onTabelaClick(evt) {
+  if (! evt.target?.matches?.('a.infraLinkDocumento')) return;
+  show();
+}
+
 function onClick(evt) {
   evt.preventDefault();
   const documentosAbertos = window.documentosAbertos || {};
@@ -36,5 +50,13 @@ function onClick(evt) {
     if (!janela || janela.closed) continue;
     janela.close();
   }
-  window.documentosAbertos = {};
+  hide();
+}
+
+function show() {
+  div.style.display = null;
+}
+
+function hide() {
+  div.style.display = 'none';
 }
