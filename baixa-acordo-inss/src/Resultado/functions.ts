@@ -1,16 +1,5 @@
 import { Invalido, Ok, Resultado } from './defs';
 
-type Matchers<a, b> = {
-  Ok(valor: a): b;
-  Invalido(razoes: string[]): b;
-};
-
-export function matchWith<a, b>(resultado: Resultado<a>, matchers: Matchers<a, b>): b;
-export function matchWith<a, b>(resultado: Resultado<a>, matchers: Matchers<a, b>): b {
-  if (resultado.isValido) return matchers.Ok(resultado.valor);
-  return matchers.Invalido(resultado.razoes);
-}
-
 export function chain<a, b>(fx: Resultado<a>, f: (_: a) => Resultado<b>): Resultado<b> {
   return fx.isValido ? f(fx.valor) : fx;
 }
