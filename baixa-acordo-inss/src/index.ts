@@ -8,14 +8,20 @@ main();
 function main() {
   const eventos = obterEventos();
 
-  const resTerminativos = R.sequenceObj({
+  const resultadosTerminativos = R.sequenceObj({
     localizadores: verificarLocalizadores(),
-    eventos: Ok(eventos),
     sentenca: verificarSentenca(eventos),
     autores: verificarAutores(),
   });
 
-  const resTotal = R.map(resTerminativos, ({ eventos, sentenca, autores }) => {
+  if (!resultadosTerminativos.isValido) {
+    for (const erro of resultadosTerminativos.razoes) {
+      console.log('<baixa-acordo-inss>', erro);
+    }
+    return;
+  }
+
+  const { sentenca, autores } = resultadosTerminativos.valor;
     const {
       verificarTransito,
       verificarCumprimentoObricacaoFazer,
@@ -25,34 +31,22 @@ function main() {
 
     const peritos = queryAll('a[data-parte="PERITO"]').map(textContent);
 
-    return R.sequenceObj({
+  const resultadoInterno = R.sequenceObj({
       transito: verificarTransito(sentenca),
       cumprimentoObrigacaoFazer: verificarCumprimentoObricacaoFazer(sentenca),
       autores: R.traverse(autores, verificarPagamentoAutor),
       peritos: R.traverse(peritos, verificarPagamentoPerito),
     });
-  });
 
-  R.matchWith(resTotal, {
-    Invalido(erros) {
-      for (const erro of erros) {
-        console.log('<baixa-acordo-inss>', erro);
-      }
-    },
-    Ok(resInterno) {
       adicionarEstilos();
-      R.matchWith(resInterno, {
-        Invalido(erros) {
-          for (const erro of erros) {
+
+  if (!resultadoInterno.isValido) {
+    for (const erro of resultadoInterno.razoes) {
             rejeitarMotivo(erro);
           }
-        },
-        Ok({ peritos }) {
+    return;
+  }
           baixarMotivo(peritos.length > 0 ? 4 : 1);
-        },
-      });
-    },
-  });
 }
 
 function obterEventos() {
@@ -190,7 +184,7 @@ function comEventos(eventos: Evento[]) {
   }
 
   function verificarPagamentoAutor(autor: string) {
-    const pagamento = houvePagamentoLiberado(eventos, autor);
+    const pagamento = houvePagamentoLiberado(autor);
     if (!pagamento) return Invalido([`Não houve pagamento do autor ${autor}.`]);
     const certidaoProcuracao = encontrarEventoPosterior(pagamento, ({ memos }) =>
       RE.test(
@@ -263,7 +257,7 @@ function comEventos(eventos: Evento[]) {
         ]);
       }
     }
-    const atosIntimacao = houveAtosIntimacaoPagamento(eventos, pagamento.ordinal);
+    const atosIntimacao = houveAtosIntimacaoPagamento(pagamento.ordinal);
     if (atosIntimacao.length === 0) {
       return Invalido([`Não houve ato de intimação do autor ${autor} acerca do pagamento.`]);
     }
@@ -278,7 +272,7 @@ function comEventos(eventos: Evento[]) {
   }
 
   function verificarPagamentoPerito(perito: string): Resultado<string> {
-    const pagamento = houvePagamentoLiberado(eventos, perito);
+    const pagamento = houvePagamentoLiberado(perito);
     if (!pagamento) {
       const pagamentoAJG = eventos.find(
         ({ descricao, memos }) =>
@@ -306,7 +300,7 @@ function comEventos(eventos: Evento[]) {
       if (pagamentoAJG) return Ok(perito);
       return Invalido([`Não houve pagamento do perito ${perito}.`]);
     }
-    const atosIntimacao = houveAtosIntimacaoPagamento(eventos, pagamento.ordinal);
+    const atosIntimacao = houveAtosIntimacaoPagamento(pagamento.ordinal);
     if (atosIntimacao.length === 0)
       return Invalido([`Não houve ato de intimação do perito ${perito} acerca do pagamento.`]);
     const matcher = RE.withFlags(RE.concat('PERITO -  ', perito), 'i');
@@ -371,6 +365,37 @@ function comEventos(eventos: Evento[]) {
       RE.test(descricao, RE.oneOf('Decurso de Prazo', 'Decorrido prazo', 'RENÚNCIA AO PRAZO'))
     );
   }
+
+  function houvePagamentoLiberado(nome: string) {
+    return eventos.find(({ descricao }) =>
+      RE.test(
+        descricao,
+        RE.withFlags(
+          RE.concat(
+            'Requisição de Pagamento ',
+            RE.oneOf('-', 'de'),
+            RE.oneOf(' Pequeno Valor', ' Precatório'),
+            RE.oneOf(' - ', ' '),
+            'Paga - Liberada ',
+            /.*/,
+            `(${nome})`
+          ),
+          'i'
+        )
+      )
+    );
+  }
+
+  function houveAtosIntimacaoPagamento(ordinalPagamento: number) {
+    return eventos
+      .filter(({ ordinal: o }) => o > ordinalPagamento)
+      .filter(({ memos }) =>
+        RE.test(
+          memos,
+          'concede o prazo de 05 (cinco) dias para que a parte autora/advogado(a)/perito(a) efetue o saque do valor depositado em conta aberta em seu nome'
+        )
+      );
+  }
 }
 
 function adicionarEstilos() {
@@ -433,11 +458,14 @@ function parseEvento(linha: HTMLTableRowElement): Evento {
   if (ref1) {
     referenciados = [Number(ref1[1])];
   }
-  const refN = RE.match(descricao, RE.concat('Refer. aos Eventos: ', RE.capture(/\d[\d, e]+\d/)));
+  const refN = RE.match(
+    descricao,
+    RE.concat('Refer. aos Eventos: ', RE.capture(/(\d+, )*\d+ e \d+/))
+  );
   if (refN) {
-    const [xs, x] = refN[1].split(' e ');
-    const ys = xs.split(', ');
-    referenciados = ys.concat([x]).map(Number);
+    const [xs, x] = refN[0]!.split(' e ');
+    const ys = xs!.split(', ');
+    referenciados = ys.concat([x!]).map(Number);
   }
   const sigla = textContent(linha.cells[4]);
   const memos = textContent(linha.cells[5]);
@@ -470,46 +498,14 @@ function intercalate<T>(separator: T, elements: T[]): T[] {
 }
 
 function all(...bools: boolean[]) {
-  for (const x of bools) if (!x) return false;
-  return true;
+  return bools.every(x => x);
 }
 
 function any(...bools: boolean[]) {
-  for (const x of bools) if (x) return true;
-  return false;
+  return bools.some(x => x);
 }
 
-function houvePagamentoLiberado(eventos: Evento[], nome: string) {
-  return eventos.find(({ descricao }) =>
-    RE.test(
-      descricao,
-      RE.withFlags(
-        RE.concat(
-          'Requisição de Pagamento ',
-          RE.oneOf('-', 'de'),
-          RE.oneOf(' Pequeno Valor', ' Precatório'),
-          RE.oneOf(' - ', ' '),
-          'Paga - Liberada ',
-          /.*/,
-          `(${nome})`
-        ),
-        'i'
-      )
-    )
-  );
-}
-
-function houveAtosIntimacaoPagamento(eventos: Evento[], ordinalPagamento: number) {
-  return eventos
-    .filter(({ ordinal: o }) => o > ordinalPagamento)
-    .filter(({ memos }) =>
-      RE.test(
-        memos,
-        'concede o prazo de 05 (cinco) dias para que a parte autora/advogado(a)/perito(a) efetue o saque do valor depositado em conta aberta em seu nome'
-      )
-    );
-}
-
+/*
 type Arvore = DadosEvento[];
 interface DadosEvento {
   ordinal: number;
@@ -575,21 +571,17 @@ function construirArvore(eventos: Evento[]): Arvore {
 function ehConclusaoParaDespacho(descricao: string) {
   return RE.test(
     descricao,
-    RE.concat(
-      /^/,
-      RE.oneOf('Autos com Juiz para Despacho/Decisão', 'Conclusos para decisão/despacho'),
-      /$/
-    )
+    RE.exactly(RE.oneOf('Autos com Juiz para Despacho/Decisão', 'Conclusos para decisão/despacho'))
   );
 }
 
 function ehConclusaoParaSentenca(descricao: string) {
   return RE.test(
     descricao,
-    RE.concat(/^/, RE.oneOf('Autos com Juiz para Sentença', 'Conclusos para julgamento'), /$/)
+    RE.exactly(RE.oneOf('Autos com Juiz para Sentença', 'Conclusos para julgamento'))
   );
 }
-
+*/
 function ehIntimacao(descricao: string) {
   return RE.test(
     descricao,
