@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.9.0
+// @version 0.9.1
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -280,7 +280,6 @@ function comEventos(eventos) {
           )
         )
         .find(x => x !== undefined);
-      console.log({ intimacaoAgencia, pedidoTED, despachoTED });
       if (!intimacaoAgencia)
         if (!despachoTED)
           return Invalido([`Há pedido de TED sem despacho (evento ${pedidoTED.ordinal}).`]);
@@ -464,7 +463,7 @@ function parseEvento(linha) {
   }
   const refN = match(descricao, concat('Refer. aos Eventos: ', capture(/(\d+, )*\d+ e \d+/)));
   if (refN) {
-    const [xs, x] = refN[0].split(' e ');
+    const [xs, x] = refN[1].split(' e ');
     const ys = xs.split(', ');
     referenciados = ys.concat([x]).map(Number);
   }
