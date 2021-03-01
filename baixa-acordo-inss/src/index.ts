@@ -21,31 +21,31 @@ function main() {
   }
 
   const { sentenca, autores } = resultadosTerminativos.valor;
-    const {
-      verificarTransito,
-      verificarCumprimentoObricacaoFazer,
-      verificarPagamentoAutor,
-      verificarPagamentoPerito,
-    } = comEventos(eventos);
+  const {
+    verificarTransito,
+    verificarCumprimentoObricacaoFazer,
+    verificarPagamentoAutor,
+    verificarPagamentoPerito,
+  } = comEventos(eventos);
 
-    const peritos = queryAll('a[data-parte="PERITO"]').map(textContent);
+  const peritos = queryAll('a[data-parte="PERITO"]').map(textContent);
 
   const resultadoInterno = R.sequenceObj({
-      transito: verificarTransito(sentenca),
-      cumprimentoObrigacaoFazer: verificarCumprimentoObricacaoFazer(sentenca),
-      autores: R.traverse(autores, verificarPagamentoAutor),
-      peritos: R.traverse(peritos, verificarPagamentoPerito),
-    });
+    transito: verificarTransito(sentenca),
+    cumprimentoObrigacaoFazer: verificarCumprimentoObricacaoFazer(sentenca),
+    autores: R.traverse(autores, verificarPagamentoAutor),
+    peritos: R.traverse(peritos, verificarPagamentoPerito),
+  });
 
-      adicionarEstilos();
+  adicionarEstilos();
 
   if (!resultadoInterno.isValido) {
     for (const erro of resultadoInterno.razoes) {
-            rejeitarMotivo(erro);
-          }
+      rejeitarMotivo(erro);
+    }
     return;
   }
-          baixarMotivo(peritos.length > 0 ? 4 : 1);
+  baixarMotivo(peritos.length > 0 ? 4 : 1);
 }
 
 function obterEventos() {
@@ -95,6 +95,7 @@ function verificarSentenca(eventos: Evento[]): Resultado<Evento> {
           descricao,
           RE.oneOf(
             'Sentença com Resolução de Mérito - Pedido Procedente',
+            'Julgado procedente o pedido',
             'Julgado procedente em parte o pedido'
           )
         ),
@@ -573,7 +574,7 @@ function ehConclusaoParaDespacho(descricao: string) {
     RE.exactly(RE.oneOf('Autos com Juiz para Despacho/Decisão', 'Conclusos para decisão/despacho'))
   );
 }
-
+  
 function ehConclusaoParaSentenca(descricao: string) {
   return RE.test(
     descricao,
