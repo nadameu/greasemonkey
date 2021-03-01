@@ -1,27 +1,13 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.8.1
+// @version 0.9.0
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @grant none
 // ==/UserScript==
 
-var escapeStringRegexp = string => {
-  if (typeof string !== 'string') {
-    throw new TypeError('Expected a string');
-  }
-
-  // Escape characters with special meaning either inside or outside character sets.
-  // Use a simple backslash escape when it’s always valid, and a \unnnn escape when the simpler form would be disallowed by Unicode patterns’ stricter grammar.
-  return string.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
-};
-
-function concat() {
-  for (var _len = arguments.length, exprs = new Array(_len), _key = 0; _key < _len; _key++) {
-    exprs[_key] = arguments[_key];
-  }
-
+function concat(...exprs) {
   return RegExp(exprs.map(toSource).join(''));
 }
 function fromExpr(expr) {
@@ -31,20 +17,18 @@ function toSource(expr) {
   return fromExpr(expr).source;
 }
 function literal(text) {
-  return RegExp(escapeStringRegexp(text));
+  return RegExp(text.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d'));
 }
-function oneOf() {
-  for (var _len2 = arguments.length, exprs = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-    exprs[_key2] = arguments[_key2];
-  }
-
-  return RegExp('(?:' + exprs.map(toSource).join('|') + ')');
+function oneOf(...exprs) {
+  return RegExp(`(?:${exprs.map(toSource).join('|')})`);
 }
 function withFlags(expr, flags) {
   return RegExp(toSource(expr), flags);
 }
 function capture(expr) {
-  return RegExp('(' + toSource(expr) + ')');
+  const src = toSource(expr);
+  const sanitized = src.match(/^\(\?:(.*)\)$/)?.[1] ?? src;
+  return RegExp(`(${sanitized})`);
 }
 function test(text, expr) {
   return fromExpr(expr).test(text);
@@ -60,13 +44,6 @@ function Invalido(razoes) {
   return { isValido: false, razoes };
 }
 
-function matchWith(resultado, matchers) {
-  if (resultado.isValido) return matchers.Ok(resultado.valor);
-  return matchers.Invalido(resultado.razoes);
-}
-function map(fx, f) {
-  return fx.isValido ? Ok(f(fx.valor)) : fx;
-}
 function traverse(xs, f) {
   return _traverseEntries(xs.entries(), f, []);
 }
@@ -83,7 +60,7 @@ function _traverseEntries(entries, f, resultado = {}) {
       razoess.push(y.razoes);
     } else if (valido) resultado[k] = y.valor;
   }
-  if (razoess.length > 0) return Invalido(razoess.flat());
+  if (!valido) return Invalido(razoess.flat());
   return Ok(resultado);
 }
 function sequenceObj(obj) {
@@ -97,47 +74,39 @@ function safePipe(a, ...fs) {
 main();
 function main() {
   const eventos = obterEventos();
-  const resTerminativos = sequenceObj({
+  const resultadosTerminativos = sequenceObj({
     localizadores: verificarLocalizadores(),
-    eventos: Ok(eventos),
     sentenca: verificarSentenca(eventos),
     autores: verificarAutores(),
   });
-  const resTotal = map(resTerminativos, ({ eventos, sentenca, autores }) => {
-    const {
-      verificarTransito,
-      verificarCumprimentoObricacaoFazer,
-      verificarPagamentoAutor,
-      verificarPagamentoPerito,
-    } = comEventos(eventos);
-    const peritos = queryAll('a[data-parte="PERITO"]').map(textContent);
-    return sequenceObj({
-      transito: verificarTransito(sentenca),
-      cumprimentoObrigacaoFazer: verificarCumprimentoObricacaoFazer(sentenca),
-      autores: traverse(autores, verificarPagamentoAutor),
-      peritos: traverse(peritos, verificarPagamentoPerito),
-    });
+  if (!resultadosTerminativos.isValido) {
+    for (const erro of resultadosTerminativos.razoes) {
+      console.log('<baixa-acordo-inss>', erro);
+    }
+    return;
+  }
+  const { sentenca, autores } = resultadosTerminativos.valor;
+  const {
+    verificarTransito,
+    verificarCumprimentoObricacaoFazer,
+    verificarPagamentoAutor,
+    verificarPagamentoPerito,
+  } = comEventos(eventos);
+  const peritos = queryAll('a[data-parte="PERITO"]').map(textContent);
+  const resultadoInterno = sequenceObj({
+    transito: verificarTransito(sentenca),
+    cumprimentoObrigacaoFazer: verificarCumprimentoObricacaoFazer(sentenca),
+    autores: traverse(autores, verificarPagamentoAutor),
+    peritos: traverse(peritos, verificarPagamentoPerito),
   });
-  matchWith(resTotal, {
-    Invalido(erros) {
-      for (const erro of erros) {
-        console.log('<baixa-acordo-inss>', erro);
-      }
-    },
-    Ok(resInterno) {
-      adicionarEstilos();
-      matchWith(resInterno, {
-        Invalido(erros) {
-          for (const erro of erros) {
-            rejeitarMotivo(erro);
-          }
-        },
-        Ok({ peritos }) {
-          baixarMotivo(peritos.length > 0 ? 4 : 1);
-        },
-      });
-    },
-  });
+  adicionarEstilos();
+  if (!resultadoInterno.isValido) {
+    for (const erro of resultadoInterno.razoes) {
+      rejeitarMotivo(erro);
+    }
+    return;
+  }
+  baixarMotivo(peritos.length > 0 ? 4 : 1);
 }
 function obterEventos() {
   return queryAll('td.infraEventoDescricao')
@@ -183,6 +152,7 @@ function verificarSentenca(eventos) {
           descricao,
           oneOf(
             'Sentença com Resolução de Mérito - Pedido Procedente',
+            'Julgado procedente o pedido',
             'Julgado procedente em parte o pedido'
           )
         ),
@@ -263,7 +233,7 @@ function comEventos(eventos) {
     return Ok(intimacaoAutorResposta);
   }
   function verificarPagamentoAutor(autor) {
-    const pagamento = houvePagamentoLiberado(eventos, autor);
+    const pagamento = houvePagamentoLiberado(autor);
     if (!pagamento) return Invalido([`Não houve pagamento do autor ${autor}.`]);
     const certidaoProcuracao = encontrarEventoPosterior(pagamento, ({ memos }) =>
       test(
@@ -331,7 +301,7 @@ function comEventos(eventos) {
         ]);
       }
     }
-    const atosIntimacao = houveAtosIntimacaoPagamento(eventos, pagamento.ordinal);
+    const atosIntimacao = houveAtosIntimacaoPagamento(pagamento.ordinal);
     if (atosIntimacao.length === 0) {
       return Invalido([`Não houve ato de intimação do autor ${autor} acerca do pagamento.`]);
     }
@@ -345,7 +315,7 @@ function comEventos(eventos) {
     return Ok(autor);
   }
   function verificarPagamentoPerito(perito) {
-    const pagamento = houvePagamentoLiberado(eventos, perito);
+    const pagamento = houvePagamentoLiberado(perito);
     if (!pagamento) {
       const pagamentoAJG = eventos.find(
         ({ descricao, memos }) =>
@@ -373,7 +343,7 @@ function comEventos(eventos) {
       if (pagamentoAJG) return Ok(perito);
       return Invalido([`Não houve pagamento do perito ${perito}.`]);
     }
-    const atosIntimacao = houveAtosIntimacaoPagamento(eventos, pagamento.ordinal);
+    const atosIntimacao = houveAtosIntimacaoPagamento(pagamento.ordinal);
     if (atosIntimacao.length === 0)
       return Invalido([`Não houve ato de intimação do perito ${perito} acerca do pagamento.`]);
     const matcher = withFlags(concat('PERITO -  ', perito), 'i');
@@ -419,6 +389,35 @@ function comEventos(eventos) {
       test(descricao, oneOf('Decurso de Prazo', 'Decorrido prazo', 'RENÚNCIA AO PRAZO'))
     );
   }
+  function houvePagamentoLiberado(nome) {
+    return eventos.find(({ descricao }) =>
+      test(
+        descricao,
+        withFlags(
+          concat(
+            'Requisição de Pagamento ',
+            oneOf('-', 'de'),
+            oneOf(' Pequeno Valor', ' Precatório'),
+            oneOf(' - ', ' '),
+            'Paga - Liberada ',
+            /.*/,
+            `(${nome})`
+          ),
+          'i'
+        )
+      )
+    );
+  }
+  function houveAtosIntimacaoPagamento(ordinalPagamento) {
+    return eventos
+      .filter(({ ordinal: o }) => o > ordinalPagamento)
+      .filter(({ memos }) =>
+        test(
+          memos,
+          'concede o prazo de 05 (cinco) dias para que a parte autora/advogado(a)/perito(a) efetue o saque do valor depositado em conta aberta em seu nome'
+        )
+      );
+  }
 }
 function adicionarEstilos() {
   const style = document.createElement('style');
@@ -455,7 +454,7 @@ function inserirAntesDaCapa(html) {
 }
 function parseEvento(linha) {
   const ordinal = Number(textContent(linha.cells[1]));
-  const lupa = linha.cells[1].querySelector('a[onmouseover]')?.getAttribute('onmouseover') ?? '';
+  const lupa = linha.cells[1]?.querySelector('a[onmouseover]')?.getAttribute('onmouseover') ?? '';
   const despSent = test(lupa, 'Magistrado(s):');
   const descricao = textContent(linha.cells[3]);
   let referenciados = [];
@@ -463,9 +462,9 @@ function parseEvento(linha) {
   if (ref1) {
     referenciados = [Number(ref1[1])];
   }
-  const refN = match(descricao, concat('Refer. aos Eventos: ', capture(/\d[\d, e]+\d/)));
+  const refN = match(descricao, concat('Refer. aos Eventos: ', capture(/(\d+, )*\d+ e \d+/)));
   if (refN) {
-    const [xs, x] = refN[1].split(' e ');
+    const [xs, x] = refN[0].split(' e ');
     const ys = xs.split(', ');
     referenciados = ys.concat([x]).map(Number);
   }
@@ -484,7 +483,7 @@ function queryAll(selector) {
   return Array.from(document.querySelectorAll(selector));
 }
 function textContent(node) {
-  return (node.textContent || '').trim();
+  return (node?.textContent ?? '').trim();
 }
 function intercalate(separator, elements) {
   const result = [];
@@ -496,38 +495,85 @@ function intercalate(separator, elements) {
   return result;
 }
 function all(...bools) {
-  for (const x of bools) if (!x) return false;
-  return true;
+  return bools.every(x => x);
 }
-function houvePagamentoLiberado(eventos, nome) {
-  return eventos.find(({ descricao }) =>
-    test(
-      descricao,
-      withFlags(
-        concat(
-          'Requisição de Pagamento ',
-          oneOf('-', 'de'),
-          oneOf(' Pequeno Valor', ' Precatório'),
-          oneOf(' - ', ' '),
-          'Paga - Liberada ',
-          /.*/,
-          `(${nome})`
-        ),
-        'i'
-      )
-    )
+/*
+type Arvore = DadosEvento[];
+interface DadosEvento {
+  ordinal: number;
+  descricao: string;
+  referentes: DadosEvento[];
+}
+
+function construirArvore(eventos: Evento[]): Arvore {
+  const eventosOrdenados = Object.freeze(eventos.slice().sort(compareBy(x => x.ordinal)));
+  const dados: { [key: number]: DadosEvento } = {};
+  const arvore: Arvore = [];
+  let situacao: 'MOVIMENTO' | 'DESPACHO' | 'SENTENÇA' = 'MOVIMENTO';
+  let ordinalMudancaSituacao = 0;
+  for (const { ordinal, descricao, referenciados: orig, despSent } of eventosOrdenados) {
+    let referenciados = orig;
+    const dadosEvento = { descricao, ordinal, referentes: [] };
+    dados[ordinal] = dadosEvento;
+    if (despSent) {
+      if (ehConclusaoParaDespacho(descricao)) {
+        switch (situacao) {
+          case 'MOVIMENTO':
+            situacao = 'DESPACHO';
+            ordinalMudancaSituacao = ordinal;
+            break;
+
+          default:
+            throw new Error(`Evento de conclusão na situação errada (evento ${ordinal}).`);
+        }
+      } else if (ehConclusaoParaSentenca(descricao)) {
+        switch (situacao) {
+          case 'MOVIMENTO':
+            situacao = 'SENTENÇA';
+            ordinalMudancaSituacao = ordinal;
+            break;
+
+          default:
+            throw new Error(`Evento de conclusão na situação errada (evento ${ordinal}).`);
+        }
+      } else {
+        situacao = 'MOVIMENTO';
+        if (referenciados.length === 0) {
+          referenciados = [ordinalMudancaSituacao];
+        }
+        ordinalMudancaSituacao = ordinal;
+      }
+    }
+    let vezesAdicionado = 0;
+    if (referenciados.length > 0) {
+      for (const referenciado of referenciados) {
+        if (dados[referenciado]) {
+          dados[referenciado].referentes.push(dadosEvento);
+          vezesAdicionado++;
+        }
+      }
+    }
+    if (vezesAdicionado === 0) {
+      arvore.push(dados[ordinal]);
+    }
+  }
+  return arvore;
+}
+
+function ehConclusaoParaDespacho(descricao: string) {
+  return RE.test(
+    descricao,
+    RE.exactly(RE.oneOf('Autos com Juiz para Despacho/Decisão', 'Conclusos para decisão/despacho'))
   );
 }
-function houveAtosIntimacaoPagamento(eventos, ordinalPagamento) {
-  return eventos
-    .filter(({ ordinal: o }) => o > ordinalPagamento)
-    .filter(({ memos }) =>
-      test(
-        memos,
-        'concede o prazo de 05 (cinco) dias para que a parte autora/advogado(a)/perito(a) efetue o saque do valor depositado em conta aberta em seu nome'
-      )
-    );
+  
+function ehConclusaoParaSentenca(descricao: string) {
+  return RE.test(
+    descricao,
+    RE.exactly(RE.oneOf('Autos com Juiz para Sentença', 'Conclusos para julgamento'))
+  );
 }
+*/
 function ehIntimacao(descricao) {
   return test(
     descricao,
