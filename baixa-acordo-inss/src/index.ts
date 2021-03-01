@@ -1,5 +1,4 @@
-import * as RE from 'descriptive-regexp';
-import { compareBy } from './Ordering';
+import * as RE from './descriptive-regexp';
 import { Invalido, Ok, resultado as R, Resultado } from './Resultado';
 import { safePipe } from './safePipe';
 
