@@ -425,7 +425,7 @@ interface Evento {
 
 function parseEvento(linha: HTMLTableRowElement): Evento {
   const ordinal = Number(textContent(linha.cells[1]));
-  const lupa = linha.cells[1].querySelector('a[onmouseover]')?.getAttribute('onmouseover') ?? '';
+  const lupa = linha.cells[1]?.querySelector('a[onmouseover]')?.getAttribute('onmouseover') ?? '';
   const despSent = RE.test(lupa, 'Magistrado(s):');
   const descricao = textContent(linha.cells[3]);
   let referenciados: number[] = [];
@@ -455,8 +455,8 @@ function queryAll(selector: string) {
   return Array.from(document.querySelectorAll(selector));
 }
 
-function textContent(node: Node) {
-  return (node.textContent || '').trim();
+function textContent(node?: Node | null) {
+  return (node?.textContent ?? '').trim();
 }
 
 function intercalate<T>(separator: T, elements: T[]): T[] {
