@@ -41,7 +41,7 @@ function _traverseEntries<a, b>(
       razoess.push(y.razoes);
     } else if (valido) resultado[k] = y.valor;
   }
-  if (razoess.length > 0) return Invalido(razoess.flat());
+  if (!valido) return Invalido(razoess.flat());
   return Ok(resultado as Record<keyof a, b>);
 }
 
