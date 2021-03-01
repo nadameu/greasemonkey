@@ -235,7 +235,6 @@ function comEventos(eventos: Evento[]) {
           )
         )
         .find((x): x is Evento => x !== undefined);
-      console.log({ intimacaoAgencia, pedidoTED, despachoTED });
       if (!intimacaoAgencia)
         if (!despachoTED)
           return Invalido([`Há pedido de TED sem despacho (evento ${pedidoTED.ordinal}).`]);
