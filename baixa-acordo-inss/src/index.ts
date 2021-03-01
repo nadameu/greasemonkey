@@ -462,7 +462,7 @@ function parseEvento(linha: HTMLTableRowElement): Evento {
     RE.concat('Refer. aos Eventos: ', RE.capture(/(\d+, )*\d+ e \d+/))
   );
   if (refN) {
-    const [xs, x] = refN[0]!.split(' e ');
+    const [xs, x] = refN[1]!.split(' e ');
     const ys = xs!.split(', ');
     referenciados = ys.concat([x!]).map(Number);
   }
