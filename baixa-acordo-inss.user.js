@@ -7,6 +7,16 @@
 // @grant none
 // ==/UserScript==
 
+var escapeStringRegexp = string => {
+  if (typeof string !== 'string') {
+    throw new TypeError('Expected a string');
+  }
+
+  // Escape characters with special meaning either inside or outside character sets.
+  // Use a simple backslash escape when it’s always valid, and a \unnnn escape when the simpler form would be disallowed by Unicode patterns’ stricter grammar.
+  return string.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
+};
+
 function concat(...exprs) {
   return RegExp(exprs.map(toSource).join(''));
 }
@@ -17,7 +27,7 @@ function toSource(expr) {
   return fromExpr(expr).source;
 }
 function literal(text) {
-  return RegExp(text.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d'));
+  return RegExp(escapeStringRegexp(text));
 }
 function oneOf(...exprs) {
   return RegExp(`(?:${exprs.map(toSource).join('|')})`);
