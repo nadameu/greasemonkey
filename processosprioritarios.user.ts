@@ -927,7 +927,7 @@ const obterFormularioRelatorioGeral = memoize(async () => {
 	});
 	console.log('Página relatório geral obtida', doc);
 	const consultar = doc.getElementById('btnConsultar');
-	if (!(consultar instanceof HTMLInputElement))
+	if (!(consultar instanceof HTMLButtonElement))
 		throw new Error('Elemento não encontrado: "#btnConsultar".');
 	const form = consultar.form;
 	if (!form) throw new Error('Formulário do relatório geral não encontrado.');
