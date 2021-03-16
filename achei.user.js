@@ -1,3 +1,4 @@
+"use strict";
 // ==UserScript==
 // @name        Achei
 // @namespace   http://nadameu.com.br/achei
@@ -57,6 +58,7 @@ const reduzirTabelas = (node) => {
     }
     return [node];
 };
+// @ts-ignore
 const main = () => Promise.all([getDominio(), getFormulario()]).then(([dominio, formulario]) => {
     const insertSnippet = makeInsertSnippet(dominio);
     const qtd = Array.from(nextSiblings(formulario))

@@ -46,14 +46,14 @@ const makeInsertSnippet = (dominio: string) => {
 	return (node: Node): boolean => {
 		const txt = (node.textContent || '').trim();
 		if (txt === '') return false;
-		const [sigla] = reSigla.exec(txt) || [null];
+		const [sigla] = (reSigla.exec(txt) as [string, ...string[]] | null) || [null];
 		if (sigla === null) return false;
 		node.parentNode!.insertBefore(createSnippet(sigla.toLowerCase()), node.nextSibling);
 		return true;
 	};
 };
 
-const nextSiblings = function*(node: Node) {
+const nextSiblings = function* (node: Node) {
 	let current = node.nextSibling;
 	while (current !== null) {
 		yield current;
@@ -71,6 +71,7 @@ const reduzirTabelas = (node: Node) => {
 	return [node];
 };
 
+// @ts-ignore
 const main = () =>
 	Promise.all([getDominio(), getFormulario()]).then(([dominio, formulario]) => {
 		const insertSnippet = makeInsertSnippet(dominio);
@@ -82,4 +83,7 @@ const main = () =>
 	});
 
 // eslint-disable-next-line no-console
-main().then(x => console.log('Resultado:', x), e => console.error('Erro:', e));
+main().then(
+	x => console.log('Resultado:', x),
+	e => console.error('Erro:', e),
+);
