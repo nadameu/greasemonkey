@@ -1394,44 +1394,42 @@ function calcularAtraso(a: Date, b: Date) {
 
 interface InfoProcesso {
 	classe: string;
-	dadosComplementares: Set<unknown>;
+	dadosComplementares: Set<string>;
 	dataAutuacao: Date;
 	dataInclusaoLocalizador: Date;
 	dataSituacao: Date;
 	dataUltimoEvento: Date;
-	juizo: unknown;
+	juizo: string;
 	lembretes: string[];
-	linha: unknown;
-	link: unknown;
+	linha: HTMLTableRowElement;
+	link: HTMLAnchorElement;
 	localizadores: LocalizadoresProcesso;
-	numClasse: number;
+	numClasse: string;
 	numCompetencia: number;
 	numproc: string;
-	numprocFormatado: unknown;
-	sigilo: unknown;
+	numprocFormatado: string;
+	sigilo: number;
 	situacao: string;
-	ultimoEvento: unknown;
 }
 
 class Processo implements InfoProcesso {
 	classe: string;
-	dadosComplementares: Set<unknown>;
+	dadosComplementares: Set<string>;
 	dataAutuacao: Date;
 	dataInclusaoLocalizador: Date;
 	dataSituacao: Date;
 	dataUltimoEvento: Date;
-	juizo: unknown;
+	juizo: string;
 	lembretes: string[];
-	linha: unknown;
-	link: unknown;
+	linha: HTMLTableRowElement;
+	link: HTMLAnchorElement;
 	localizadores: LocalizadoresProcesso;
-	numClasse: number;
+	numClasse: string;
 	numCompetencia: number;
 	numproc: string;
-	numprocFormatado: unknown;
-	sigilo: unknown;
+	numprocFormatado: string;
+	sigilo: number;
 	situacao: string;
-	ultimoEvento: unknown;
 	constructor({
 		classe,
 		dadosComplementares,
@@ -1450,7 +1448,6 @@ class Processo implements InfoProcesso {
 		numprocFormatado,
 		sigilo,
 		situacao,
-		ultimoEvento,
 	}: InfoProcesso) {
 		this.classe = classe;
 		this.dadosComplementares = dadosComplementares;
@@ -1469,7 +1466,6 @@ class Processo implements InfoProcesso {
 		this.numprocFormatado = numprocFormatado;
 		this.sigilo = sigilo;
 		this.situacao = situacao;
-		this.ultimoEvento = ultimoEvento;
 	}
 	get atraso() {
 		const hoje = new Date();
@@ -1491,7 +1487,7 @@ class Processo implements InfoProcesso {
 			return CompetenciasCorregedoria.CRIMINAL;
 		} else if (
 			(this.numCompetencia >= COMPETENCIA_EF_MIN || this.numCompetencia <= COMPETENCIA_EF_MAX) &&
-			(this.numClasse === CLASSE_EF || this.numClasse === CLASSE_CARTA_PRECATORIA)
+			(Number(this.numClasse) === CLASSE_EF || Number(this.numClasse) === CLASSE_CARTA_PRECATORIA)
 		) {
 			return CompetenciasCorregedoria.EXECUCAO_FISCAL;
 		}
@@ -1553,7 +1549,7 @@ class Processo implements InfoProcesso {
 class ProcessoFactory {
 	static fromLinha(linha: HTMLTableRowElement): Processo {
 		if (linha.cells.length < 11) throw new Error('Não foi possível obter os dados do processo.');
-		const numClasse = Number(linha.dataset.classe);
+		const numClasse = linha.dataset.classe!;
 		const numCompetencia = Number(linha.dataset.competencia);
 		const link = linha.cells[1]!.querySelector('a');
 		if (!link) throw new Error('Link para o processo não encontrado.');
@@ -1624,7 +1620,6 @@ class ProcessoFactory {
 			numprocFormatado,
 			sigilo,
 			situacao,
-			ultimoEvento,
 		});
 	}
 }
