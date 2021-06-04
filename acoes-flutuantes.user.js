@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
 // @grant       GM_addStyle
-// @version     2.0.0
+// @version     3.0.0
 // @author      nadameu
 // ==/UserScript==
 
@@ -45,13 +45,20 @@ let navbarHeight = $('#navbar').height();
 yPosition -= navbarHeight;
 let areaDadosWidth = $('#divInfraAreaDados').width();
 
+let flutuante = false;
 function onscroll() {
   if (window.scrollY > yPosition) {
-    placeholder.show();
-    div.toggleClass('flutuante', true);
+    if (!flutuante) {
+      flutuante = true;
+      placeholder.show();
+      div.toggleClass('flutuante', true);
+    }
   } else {
-    placeholder.hide();
-    div.toggleClass('flutuante', false);
+    if (flutuante) {
+      flutuante = false;
+      placeholder.hide();
+      div.toggleClass('flutuante', false);
+    }
   }
 }
 
