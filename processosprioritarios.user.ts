@@ -25,11 +25,11 @@ const CompetenciasCorregedoria = {
 	EXECUCAO_FISCAL: 4,
 } as const;
 const Situacoes = {
-	MOVIMENTO: 3,
+	'MOVIMENTO': 3,
 	'MOVIMENTO-AGUARDA DESPACHO': 2,
 	'MOVIMENTO-AGUARDA SENTENÇA': 4,
-	INICIAL: 1,
-	INDEFINIDA: 5,
+	'INICIAL': 1,
+	'INDEFINIDA': 5,
 } as const;
 const RegrasCorregedoria = {
 	[CompetenciasCorregedoria.JUIZADO]: {
@@ -123,7 +123,7 @@ class GUI {
 		head.appendChild(estilos);
 	}
 	atualizarVisualizacao(localizador: Localizador, filtrado = false) {
-		if (!localizador.infoLink) throw new Error('Localizador não possui identificador.');
+		if (!localizador.infoLink) return;
 		const linha = localizador.linha;
 		const DIAS_A_FRENTE = 3;
 		const avisos = [
@@ -305,11 +305,12 @@ class GUI {
 			balao.classList.add('gmDetalhesAberto');
 			$('html').animate({ scrollTop: $(balao).offset().top - $(window).innerHeight() / 2 }, 'fast');
 			const MENOR = -1,
+				IGUAL = 0,
 				MAIOR = +1;
 			processos.sort((a, b) => {
 				if (a.termoPrazoCorregedoria < b.termoPrazoCorregedoria) return MENOR;
 				if (a.termoPrazoCorregedoria > b.termoPrazoCorregedoria) return MAIOR;
-				return 0;
+				return IGUAL;
 			});
 			processos.forEach((processo, indiceProcesso) => {
 				const linhaNova = (linha.parentElement as HTMLTableSectionElement).insertRow(
@@ -568,18 +569,79 @@ class GUI {
 			button.textContent = 'Atualizar';
 		}
 	}
-	criarGrafico(localizadores: Localizadores) {
+	atualizarTabelaExtra(localizadores: Localizadores) {
+		let tabela = document.querySelector<HTMLTableElement>('table.gmTabelaExtra');
+		if (!tabela) {
+			tabela = document.createElement('table');
+			tabela.className = 'gmTabelaExtra';
+			localizadores[0]?.linha.closest('table')?.parentNode?.appendChild(tabela);
+			tabela.createTBody();
+		}
+		const tBody = tabela.tBodies[0]!;
+		while (tBody.firstChild) tBody.removeChild(tBody.firstChild);
+
 		const qtd = localizadores.map(loc => loc.processos.length).reduce((acc, x) => acc + x, 0);
+		console.log({ qtd });
 		const info = localizadores
-			.map(({ linha, processos }) => ({
+			.map(info => ({
+				info,
+				linha: info.linha,
+				processos: info.processos
+					.map(info => ({ info, valor: info.atrasoPorcentagem + 1 }))
+					.map(({ info, valor }) => ({ info, valor: valor < 1 ? valor / qtd : valor }))
+					.sort((a, b) => b.valor - a.valor),
+			}))
+			.map(({ info, linha, processos }) => ({
+				info,
 				linha,
-				valor: processos
-					.map(p => p.atrasoPorcentagem + 1)
-					.map(x => (x < 1 ? x / qtd : x))
-					.reduce((acc, x) => acc + x, 0),
+				processos,
+				valor: processos.reduce((acc, { valor }) => acc + valor, 0),
 			}))
 			.sort((a, b) => b.valor - a.valor);
-		info[0]?.linha.parentNode!.append(...info.map(({ linha }) => linha));
+		localizadores[0]?.linha.parentNode?.querySelectorAll('.gmDetalhes').forEach(x => x.remove());
+		localizadores[0]?.linha.parentNode?.append(...info.map(loc => loc.linha));
+
+		const temp = localizadores.map(localizador =>
+			localizador.processos.map(processo => ({ processo, localizador })),
+		);
+		const sep = ([] as { processo: Processo; localizador: Localizador }[])
+			.concat(...temp)
+			.filter(x => x.processo.atrasoPorcentagem >= 0)
+			.sort((a, b) => b.processo.atrasoPorcentagem - a.processo.atrasoPorcentagem);
+
+		let css = 'Escura';
+		for (const { processo: proc, localizador } of sep) {
+			const row = document.createElement('tr');
+			css = css === 'Clara' ? 'Escura' : 'Clara';
+			row.className = `infraTr${css}`;
+			let html = '<td class="infraTd">';
+			html += `<a href="${proc.link.href}" target="_blank">`;
+			html += proc.numprocFormatado;
+			html += '</a>';
+			html += '</td>';
+			html += '<td class="infraTd" style="text-align: right;">';
+			html += `${proc.localizadores
+				.filter(l => l.id !== localizador.infoLink!.id)
+				.map(l => l.sigla)
+				.join('<br>')}`;
+			html += '</td>';
+			html += '<td class="infraTd">';
+			html += `${localizador.nomeExibicao}`;
+			html += '</td>';
+			html += '<td class="infraTd">';
+			html += `<progress value="${proc.atrasoPorcentagem + 1}"></progress>`;
+			html += '</td>';
+			html += '<td class="infraTd">';
+			html += new Intl.NumberFormat('pt-BR', { style: 'percent' }).format(
+				proc.atrasoPorcentagem + 1,
+			);
+			html += '</td>';
+			row.innerHTML = html;
+			tBody.appendChild(row);
+		}
+	}
+	criarGrafico(localizadores: Localizadores) {
+		this.atualizarTabelaExtra(localizadores);
 		function excluirCanvasAntigo() {
 			const canvases = document.getElementsByTagName('canvas');
 			if (canvases.length > 0) {
@@ -859,8 +921,8 @@ class GUI {
 				const agora = new Date(),
 					hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
 				const minimo = hoje.getTime();
-				const maximo = Math.max.apply(null, dias);
 				const UM_DIA = 864e5;
+				const maximo = Math.min(Math.max.apply(null, dias), minimo + 30 * UM_DIA);
 				this.categorias.quantidade = (maximo - minimo) / UM_DIA + 1;
 			}
 			calcularDadosEscala(maximo: number) {
@@ -1339,57 +1401,113 @@ const COMPETENCIA_JUIZADO_MIN = 9,
 	CLASSE_EF = 99,
 	CLASSE_CARTA_PRECATORIA = 60;
 
-const DOMINGO = 0;
-const SEGUNDA = 1;
-const SABADO = 6;
+const DOMINGO = 0,
+	SEGUNDA = 1,
+	TERCA = 2,
+	QUARTA = 3,
+	QUINTA = 4,
+	SEXTA = 5,
+	SABADO = 6;
 
 function adiantarParaSabado(data: Date) {
-	const diaDaSemana = data.getDay();
-	if (diaDaSemana === DOMINGO) {
-		return new Date(data.getFullYear(), data.getMonth(), data.getDate() - 1);
+	let ajuste = 0;
+	switch (data.getDay()) {
+		case DOMINGO:
+			ajuste = -1;
+			break;
+
+		case SEGUNDA:
+			ajuste = -2;
+			break;
 	}
-	if (diaDaSemana === SEGUNDA) {
-		return new Date(data.getFullYear(), data.getMonth(), data.getDate() - 2);
-	}
-	return new Date(data.getTime());
+	return new Date(data.getFullYear(), data.getMonth(), data.getDate() + ajuste);
 }
 
 function prorrogarParaSegunda(data: Date) {
-	const diaDaSemana = data.getDay();
-	if (diaDaSemana === DOMINGO) {
-		return new Date(data.getFullYear(), data.getMonth(), data.getDate() + 1);
+	let ajuste = 0;
+	switch (data.getDay()) {
+		case SABADO:
+			ajuste = 2;
+			break;
+
+		case DOMINGO:
+			ajuste = 1;
+			break;
 	}
-	if (diaDaSemana === SABADO) {
-		return new Date(data.getFullYear(), data.getMonth(), data.getDate() + 2);
-	}
-	return new Date(data.getTime());
+	return new Date(data.getFullYear(), data.getMonth(), data.getDate() + ajuste);
 }
 
-const JANEIRO = 0;
-const DEZEMBRO = 11;
+const JANEIRO = 0,
+	MAIO = 4,
+	DEZEMBRO = 11;
 const calcularRecesso = memoize((ano: number) => {
 	const inicio = adiantarParaSabado(new Date(ano, DEZEMBRO, 20));
 	const retorno = prorrogarParaSegunda(new Date(ano + 1, JANEIRO, 7));
 	return { inicio, retorno };
 });
 
-function calcularRecessoData(data: Date) {
-	let { inicio, retorno } = calcularRecesso(data.getFullYear() - 1);
-	while (data > retorno) {
-		const recesso = calcularRecesso(retorno.getFullYear());
-		inicio = recesso.inicio;
-		retorno = recesso.retorno;
-	}
-	return { inicio, retorno };
+function calcularProximo(
+	ajusteAno: number,
+	fn: (ano: number) => Record<'inicio' | 'retorno', Date>,
+) {
+	return (data: Date) => {
+		let ano = data.getFullYear() + ajusteAno;
+		let datas: Record<'inicio' | 'retorno', Date>;
+		do datas = fn(ano++);
+		while (data.getTime() > datas.retorno.getTime());
+		return datas;
+	};
 }
 
+const calcularRecessoData = calcularProximo(-1, calcularRecesso);
+
+const calcularInspecao = memoize((ano: number) => {
+	// Menor data possível para a terceira segunda-feira do mês
+	const quinzeMaio = new Date(ano, MAIO, 15);
+
+	const diasAteSegundaFeira = (SEGUNDA - quinzeMaio.getDay() + 7) % 7;
+	const inicio = new Date(ano, MAIO, 15 + diasAteSegundaFeira);
+	const retorno = new Date(ano, MAIO, inicio.getDate() + 7);
+	return { inicio, retorno };
+});
+
+const calcularInspecaoData = calcularProximo(0, calcularInspecao);
+
 function calcularAtraso(a: Date, b: Date) {
-	const { inicio, retorno } = calcularRecessoData(a);
-	return (
-		Math.max(0, inicio.getTime() - a.getTime()) -
-		Math.max(0, inicio.getTime() - b.getTime()) +
-		Math.max(0, b.getTime() - retorno.getTime())
-	);
+	let [ascendente, menor, maior] = a <= b ? [true, a, b] : [false, b, a];
+	let recesso = calcularRecessoData(menor);
+	let inspecao = calcularInspecaoData(menor);
+	let proximaSuspensao: { tipo: 'recesso' | 'inspecao'; inicio: Date; retorno: Date } =
+		recesso.inicio < inspecao.inicio
+			? { tipo: 'recesso', ...recesso }
+			: { tipo: 'inspecao', ...inspecao };
+
+	function ajustarMenorESuspensoes() {
+		menor = proximaSuspensao.retorno;
+		if (proximaSuspensao.tipo === 'inspecao') {
+			inspecao = calcularInspecao(inspecao.retorno.getFullYear() + 1);
+			proximaSuspensao = { tipo: 'recesso', ...recesso };
+		} else {
+			recesso = calcularRecesso(recesso.retorno.getFullYear());
+			proximaSuspensao = { tipo: 'inspecao', ...inspecao };
+		}
+	}
+
+	if (menor >= proximaSuspensao.inicio) ajustarMenorESuspensoes();
+
+	let absoluto = 0;
+	while (true) {
+		if (maior > proximaSuspensao.inicio) {
+			absoluto += proximaSuspensao.inicio.getTime() - menor.getTime();
+			if (maior <= proximaSuspensao.retorno) break;
+			ajustarMenorESuspensoes();
+			continue;
+		} else {
+			absoluto += maior.getTime() - menor.getTime();
+			break;
+		}
+	}
+	return ascendente ? absoluto : -absoluto;
 }
 
 interface InfoProcesso {
@@ -1411,6 +1529,258 @@ interface InfoProcesso {
 	sigilo: number;
 	situacao: string;
 }
+
+interface InfoMeta {
+	[idLocalizador: string]: {
+		[situacao: string]: {
+			campoDataConsiderada: 'dataSituacao' | 'dataUltimoEvento' | 'dataInclusaoLocalizador';
+			dias: {
+				[competencia in typeof CompetenciasCorregedoria[keyof typeof CompetenciasCorregedoria]]: number;
+			};
+		};
+	};
+}
+
+const minhasRegras = {
+	AgAssinaturaJuiz: {
+		campoDataConsiderada: 'dataInclusaoLocalizador' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 3,
+			[CompetenciasCorregedoria.CIVEL]: 3,
+			[CompetenciasCorregedoria.CRIMINAL]: 3,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 3,
+		},
+	},
+	AgPgtoPrecatorio: {
+		campoDataConsiderada: 'dataSituacao' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 730,
+			[CompetenciasCorregedoria.CIVEL]: 730,
+			[CompetenciasCorregedoria.CRIMINAL]: 730,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 730,
+		},
+	},
+	AgPgtoRPV: {
+		campoDataConsiderada: 'dataSituacao' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 30,
+			[CompetenciasCorregedoria.CIVEL]: 30,
+			[CompetenciasCorregedoria.CRIMINAL]: 30,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 30,
+		},
+	},
+	Analisar: {
+		campoDataConsiderada: 'dataUltimoEvento' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 15,
+			[CompetenciasCorregedoria.CIVEL]: 20,
+			[CompetenciasCorregedoria.CRIMINAL]: 20,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 60,
+		},
+	},
+	Cumprir: {
+		campoDataConsiderada: 'dataUltimoEvento' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 10,
+			[CompetenciasCorregedoria.CIVEL]: 15,
+			[CompetenciasCorregedoria.CRIMINAL]: 15,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 25,
+		},
+	},
+	CumprirPrioridade: {
+		campoDataConsiderada: 'dataUltimoEvento' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 5,
+			[CompetenciasCorregedoria.CIVEL]: 7,
+			[CompetenciasCorregedoria.CRIMINAL]: 7,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 12,
+		},
+	},
+	Despachar: {
+		campoDataConsiderada: 'dataSituacao' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 15,
+			[CompetenciasCorregedoria.CIVEL]: 20,
+			[CompetenciasCorregedoria.CRIMINAL]: 20,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 60,
+		},
+	},
+	DespacharPrioridade: {
+		campoDataConsiderada: 'dataSituacao' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 7,
+			[CompetenciasCorregedoria.CIVEL]: 10,
+			[CompetenciasCorregedoria.CRIMINAL]: 10,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 30,
+		},
+	},
+	Prazo05: {
+		campoDataConsiderada: 'dataUltimoEvento' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 17,
+			[CompetenciasCorregedoria.CIVEL]: 17,
+			[CompetenciasCorregedoria.CRIMINAL]: 17,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 17,
+		},
+	},
+	Prazo10: {
+		campoDataConsiderada: 'dataUltimoEvento' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 24,
+			[CompetenciasCorregedoria.CIVEL]: 24,
+			[CompetenciasCorregedoria.CRIMINAL]: 24,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 24,
+		},
+	},
+	Prazo30: {
+		campoDataConsiderada: 'dataUltimoEvento' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 52,
+			[CompetenciasCorregedoria.CIVEL]: 52,
+			[CompetenciasCorregedoria.CRIMINAL]: 52,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 52,
+		},
+	},
+	ProcessoParado: {
+		campoDataConsiderada: 'dataUltimoEvento' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 30,
+			[CompetenciasCorregedoria.CIVEL]: 60,
+			[CompetenciasCorregedoria.CRIMINAL]: 30,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 120,
+		},
+	},
+	Sentenciar: {
+		campoDataConsiderada: 'dataSituacao' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 45,
+			[CompetenciasCorregedoria.CIVEL]: 60,
+			[CompetenciasCorregedoria.CRIMINAL]: 60,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 60,
+		},
+	},
+	SentenciarPrioridade: {
+		campoDataConsiderada: 'dataSituacao' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 22,
+			[CompetenciasCorregedoria.CIVEL]: 30,
+			[CompetenciasCorregedoria.CRIMINAL]: 30,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 30,
+		},
+	},
+	Suspensao: {
+		campoDataConsiderada: 'dataUltimoEvento' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 180,
+			[CompetenciasCorregedoria.CIVEL]: 180,
+			[CompetenciasCorregedoria.CRIMINAL]: 180,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 180,
+		},
+	},
+	UmDiaNoLocalizador: {
+		campoDataConsiderada: 'dataInclusaoLocalizador' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 1,
+			[CompetenciasCorregedoria.CIVEL]: 1,
+			[CompetenciasCorregedoria.CRIMINAL]: 1,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 1,
+		},
+	},
+};
+const infoMeta: InfoMeta = {
+	'721612283838905044100680025624' /* 3DIR Ag pedido TED */: {
+		MOVIMENTO: minhasRegras.Prazo05,
+	},
+	'721308334450542230220000000003' /* 3DIR Ag pagar BB/CEF */: {
+		MOVIMENTO: minhasRegras.Prazo10,
+	},
+	'721434640434691780220000000004' /* 3DIR Ag saque +1 ano */: {
+		MOVIMENTO: minhasRegras.Prazo30,
+	},
+	'721362003373237310210000000001' /* 3DIR Ag Juiz assinar */: {
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.AgAssinaturaJuiz,
+		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.AgAssinaturaJuiz,
+	},
+	'721448979119064340240000000001' /* 3DIR Ag pagamento precatório */: {
+		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
+		'MOVIMENTO': minhasRegras.ProcessoParado,
+	},
+	'721307551490768040230000000002' /* 3DIR Ag pagamento RPV */: {
+		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoRPV,
+		'MOVIMENTO': minhasRegras.ProcessoParado,
+	},
+	'721596120821598545737898280283' /* 3DIR Agendar Zoom */: {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
+	'721307546545352560220000000002' /* 3DIR Baixa */: { MOVIMENTO: minhasRegras.Cumprir },
+	'721377617310101250210000000001' /* 3DIR Baixa Demo */: { MOVIMENTO: minhasRegras.Cumprir },
+	'721473784358242940217525843407' /* 3DIR Baixa Turma */: { MOVIMENTO: minhasRegras.Cumprir },
+	'721307546545352560220000000004' /* 3DIR Cumprimento */: {
+		BAIXADO: minhasRegras.CumprirPrioridade,
+	},
+	'721307546545352560220000000001' /* 3DIR Direção */: {
+		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
+	},
+	'721593790295233093891502637047' /* 3DIR Entrega */: { MOVIMENTO: minhasRegras.ProcessoParado },
+	'721484231615301020214955770825' /* 3DIR Extrato CEF */: { MOVIMENTO: minhasRegras.Cumprir },
+	'721394121597912040240000000001' /* 3DIR RPV Prontas */: {
+		MOVIMENTO: {
+			campoDataConsiderada: 'dataUltimoEvento' as const,
+			dias: {
+				[CompetenciasCorregedoria.JUIZADO]: 30,
+				[CompetenciasCorregedoria.CIVEL]: 30,
+				[CompetenciasCorregedoria.CRIMINAL]: 30,
+				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 30,
+			},
+		},
+	},
+	'721562943669373244747535696808' /* 9EXE Ag decisão supe */: {
+		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
+	},
+	'721527261655975790236901397942' /* C/ Paulo */: {
+		'MOVIMENTO': minhasRegras.Cumprir,
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
+		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
+	},
+	'721548256047652070237271128328' /* META 2 */: {
+		'MOVIMENTO': minhasRegras.CumprirPrioridade,
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.DespacharPrioridade,
+		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.SentenciarPrioridade,
+		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
+	},
+	'771387208544881780110000003529' /* PEDIDO DE TED AUTOMÁTICO */: {
+		MOVIMENTO: minhasRegras.CumprirPrioridade,
+	},
+	'721335971440797820230000000084' /* REQ INTIMADA */: { MOVIMENTO: minhasRegras.Cumprir },
+	'721426007793151980220000000102' /* REQ PAGA LIBERADA */: {
+		MOVIMENTO: {
+			campoDataConsiderada: 'dataUltimoEvento' as const,
+			dias: {
+				[CompetenciasCorregedoria.JUIZADO]: 7,
+				[CompetenciasCorregedoria.CIVEL]: 7,
+				[CompetenciasCorregedoria.CRIMINAL]: 7,
+				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 7,
+			},
+		},
+	},
+	'721335971440797820230000000033' /* REQ PREPARADA INTIMAÇÃO */: {
+		MOVIMENTO: minhasRegras.ProcessoParado,
+	},
+	'721335971440797820230000000135' /* REQ PROCESSADA */: { MOVIMENTO: minhasRegras.ProcessoParado },
+	'721495116809325210234371229829' /* Conta Req +1Ano com Saldo - BAIXADO */: {
+		BAIXADO: {
+			...minhasRegras.Analisar,
+			campoDataConsiderada: 'dataInclusaoLocalizador' as const,
+		},
+	},
+	'721273070396362990240000000266' /* TRF/TR BAIXADOS */: { '*': minhasRegras.Analisar },
+	'721273070396362990240000000076' /* TRF/TR DECISÃO */: {
+		'*': minhasRegras.Analisar,
+	},
+	'721273070396362990240000000171' /* TRF/TR JULGADOS */: {
+		'*': minhasRegras.Analisar,
+	},
+};
 
 class Processo implements InfoProcesso {
 	classe: string;
@@ -1467,9 +1837,13 @@ class Processo implements InfoProcesso {
 		this.sigilo = sigilo;
 		this.situacao = situacao;
 	}
+	private _atraso?: number;
 	get atraso() {
-		const hoje = new Date();
-		return calcularAtraso(this.termoPrazoCorregedoria, hoje) / MILISSEGUNDOS_EM_UM_DIA;
+		if (this._atraso === undefined) {
+			const hoje = new Date();
+			this._atraso = calcularAtraso(this.termoPrazoCorregedoria, hoje) / MILISSEGUNDOS_EM_UM_DIA;
+		}
+		return this._atraso;
 	}
 	get atrasoPorcentagem() {
 		return this.atraso / this.prazoCorregedoria;
@@ -1493,35 +1867,61 @@ class Processo implements InfoProcesso {
 		}
 		return CompetenciasCorregedoria.CIVEL;
 	}
+	private _campoDataConsiderada:
+		| 'dataSituacao'
+		| 'dataUltimoEvento'
+		| 'dataInclusaoLocalizador'
+		| undefined;
 	get campoDataConsiderada(): 'dataSituacao' | 'dataUltimoEvento' | 'dataInclusaoLocalizador' {
-		let ret: 'dataSituacao' | 'dataUltimoEvento' | 'dataInclusaoLocalizador' = 'dataSituacao';
-		switch (this.situacao) {
-			case 'MOVIMENTO-AGUARDA DESPACHO':
-			case 'MOVIMENTO-AGUARDA SENTENÇA':
-				ret = 'dataSituacao';
-				break;
-			case 'MOVIMENTO':
-				ret = 'dataUltimoEvento';
-				if (this.dataInclusaoLocalizador < this.dataUltimoEvento) {
-					if (document.body.matches('.gmConsiderarDataInclusaoLocalizador')) {
-						ret = 'dataInclusaoLocalizador';
-					}
-				}
-				break;
-			default:
-				ret = 'dataSituacao';
-				break;
+		if (this._campoDataConsiderada === undefined) {
+			const infos =
+				this.localizadores
+					.map(loc => {
+						return (
+							infoMeta[loc.id]?.[this.situacao]?.campoDataConsiderada ??
+							infoMeta[loc.id]?.['*']?.campoDataConsiderada ??
+							null
+						);
+					})
+					.reduce((prev, curr) =>
+						prev === null
+							? curr === null
+								? null
+								: curr
+							: curr === null
+							? prev
+							: this[curr] < this[prev]
+							? curr
+							: prev,
+					) ?? 'dataSituacao';
+			this._campoDataConsiderada = infos;
 		}
-		return ret;
+		return this._campoDataConsiderada;
 	}
+	private _prazoCorregedoria: number | undefined;
 	get prazoCorregedoria() {
-		const situacao =
-			this.situacao in Situacoes
-				? Situacoes[this.situacao as keyof typeof Situacoes]
-				: Situacoes['INDEFINIDA'];
-		let dias = RegrasCorregedoria[this.competenciaCorregedoria][situacao];
-		if (this.prioridade && document.body.matches('.gmPrazoMetade')) dias /= 2;
-		return dias;
+		if (this._prazoCorregedoria === undefined) {
+			const infos =
+				this.localizadores
+					.map(loc => {
+						return (
+							infoMeta[loc.id]?.[this.situacao]?.dias?.[this.competenciaCorregedoria] ??
+							infoMeta[loc.id]?.['*']?.dias?.[this.competenciaCorregedoria] ??
+							null
+						);
+					})
+					.reduce((prev, curr) =>
+						prev === null
+							? curr === null
+								? null
+								: curr
+							: curr === null
+							? prev
+							: Math.min(prev, curr),
+					) ?? 1;
+			this._prazoCorregedoria = infos;
+		}
+		return this._prazoCorregedoria!;
 	}
 	get prioridade() {
 		return (
@@ -1529,21 +1929,46 @@ class Processo implements InfoProcesso {
 			this.dadosComplementares.has('Réu Preso')
 		);
 	}
+	private _termoPrazoCorregedoria: Date | null = null;
 	get termoPrazoCorregedoria() {
-		const dataConsiderada = new Date(this[this.campoDataConsiderada].getTime());
-		let recesso = calcularRecessoData(dataConsiderada);
-		if (dataConsiderada >= recesso.inicio) {
-			dataConsiderada.setTime(recesso.retorno.getTime());
+		if (this._termoPrazoCorregedoria === null) {
+			let data = new Date(this[this.campoDataConsiderada].getTime());
+
+			let recesso = calcularRecessoData(data);
+			let inspecao = calcularInspecaoData(data);
+			let proximaSuspensao: { tipo: 'recesso' | 'inspecao'; inicio: Date; retorno: Date } =
+				recesso.inicio < inspecao.inicio
+					? { tipo: 'recesso', ...recesso }
+					: { tipo: 'inspecao', ...inspecao };
+
+			function ajustarSuspensoes() {
+				const temp = proximaSuspensao.retorno.getTime();
+				if (proximaSuspensao.tipo === 'inspecao') {
+					inspecao = calcularInspecao(inspecao.retorno.getFullYear() + 1);
+					proximaSuspensao = { tipo: 'recesso', ...recesso };
+				} else {
+					recesso = calcularRecesso(recesso.retorno.getFullYear());
+					proximaSuspensao = { tipo: 'inspecao', ...inspecao };
+				}
+				return new Date(temp);
+			}
+
+			if (data >= proximaSuspensao.inicio) data = ajustarSuspensoes();
+
+			let prazo = this.prazoCorregedoria * MILISSEGUNDOS_EM_UM_DIA;
+			while (true) {
+				const tempoAteProximaSuspensao = proximaSuspensao.inicio.getTime() - data.getTime();
+				if (tempoAteProximaSuspensao < prazo) {
+					prazo -= tempoAteProximaSuspensao;
+					data = ajustarSuspensoes();
+				} else {
+					data.setTime(data.getTime() + prazo);
+					break;
+				}
+			}
+			this._termoPrazoCorregedoria = data;
 		}
-		const dataTermo = new Date(dataConsiderada.getTime());
-		dataTermo.setDate(dataTermo.getDate() + this.prazoCorregedoria);
-		while (dataTermo >= recesso.inicio) {
-			dataTermo.setTime(
-				dataTermo.getTime() + (recesso.retorno.getTime() - recesso.inicio.getTime()),
-			);
-			recesso = calcularRecesso(recesso.retorno.getFullYear());
-		}
-		return dataTermo;
+		return this._termoPrazoCorregedoria;
 	}
 }
 class ProcessoFactory {
