@@ -161,7 +161,7 @@ const editarValores = (
     });
 
     if (salvar) {
-      window.alert = function() {
+      window.alert = function () {
         console.log.apply(console, arguments);
       };
       jQuery(botaoSalvar).click();
@@ -175,9 +175,7 @@ const Acoes = {
 
     const $area = jQuery('#divInfraAreaDados');
 
-    const $botaoPoupanca = jQuery('<button>Poupança</button>')
-      .css('visibility', 'hidden')
-      .hide();
+    const $botaoPoupanca = jQuery('<button>Poupança</button>').css('visibility', 'hidden').hide();
     $botaoPoupanca.on('click', evt => {
       evt.preventDefault();
       definirFlag('poupanca');

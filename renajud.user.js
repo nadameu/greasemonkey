@@ -26,10 +26,10 @@ function inserir() {
       yielded = it.next(value);
       if (!yielded.done) {
         yielded.value.then(
-          function(result) {
+          function (result) {
             getNext(result);
           },
-          function(err) {
+          function (err) {
             it.throw(err);
           }
         );
@@ -40,8 +40,8 @@ function inserir() {
     getNext();
   }
 
-  GUI.addOnNumprocChangeListener(function(numproc) {
-    async(function*() {
+  GUI.addOnNumprocChangeListener(function (numproc) {
+    async(function* () {
       try {
         GUI.Logger.clear();
         GUI.areaImpressao.limpar();
@@ -195,22 +195,22 @@ function inserir() {
   var form = document.getElementById('form-incluir-restricao');
   var firstDiv = form.getElementsByTagName('div')[0],
     id = firstDiv.id;
-  AjaxListener.listen(id, function(ext) {
+  AjaxListener.listen(id, function (ext) {
     if (ext.currentStep === 'inclui-restricao') {
       GUI.hide();
       GUI.areaImpressao.limpar();
       document.getElementById('form-incluir-restricao:campo-magistrado_input').childNodes[0].value =
         '';
       GUI.criarOpcaoPreencherMagistrado();
-      AjaxListener.listen('form-incluir-restricao:campo-municipio', function() {
+      AjaxListener.listen('form-incluir-restricao:campo-municipio', function () {
         PreferenciasUsuario.municipio = Pagina.obterMunicipio();
         preencherTudo();
       });
-      AjaxListener.listen('form-incluir-restricao:campo-orgao', function() {
+      AjaxListener.listen('form-incluir-restricao:campo-orgao', function () {
         PreferenciasUsuario.orgao = Pagina.obterOrgao();
         preencherTudo();
       });
-      Pagina.addOnMagistradoChangeListener(function(valor) {
+      Pagina.addOnMagistradoChangeListener(function (valor) {
         PreferenciasUsuario.magistrado = valor;
         preencherTudo();
       });
@@ -225,7 +225,7 @@ function inserir() {
 
 function retirar() {}
 
-var PreferenciasUsuario = (function() {
+var PreferenciasUsuario = (function () {
   'use strict';
 
   function padrao(nome, valor) {
@@ -281,7 +281,7 @@ var PreferenciasUsuario = (function() {
   return PreferenciasUsuario;
 })();
 
-var AjaxListener = (function() {
+var AjaxListener = (function () {
   'use strict';
 
   var callbacks = new Map();
@@ -317,7 +317,7 @@ var AjaxListener = (function() {
       window.postMessage(JSON.stringify(obj), origin);
     }
 
-    $(window.document).ajaxComplete(function(evt, xhr, options) {
+    $(window.document).ajaxComplete(function (evt, xhr, options) {
       var extension = $('extension', xhr.responseXML).text();
       if (extension === '') {
         extension = null;
@@ -340,7 +340,7 @@ var AjaxListener = (function() {
   const origin = [location.protocol, document.domain].join('//');
   window.addEventListener(
     'message',
-    function(evt) {
+    function (evt) {
       if (evt.origin !== origin) {
         return;
       }
@@ -368,7 +368,7 @@ var AjaxListener = (function() {
     listenOnce(source) {
       console.debug('AjaxListener.listenOnce(source)', source);
       var hijackedResolve;
-      var promise = new Promise(function(resolve) {
+      var promise = new Promise(function (resolve) {
         hijackedResolve = resolve;
       });
       addResolve(source, hijackedResolve);
@@ -377,7 +377,7 @@ var AjaxListener = (function() {
   };
 })();
 
-var GUI = (function() {
+var GUI = (function () {
   'use strict';
 
   var style = document.createElement('style');
@@ -412,7 +412,7 @@ var GUI = (function() {
   );
   estadoElement.addEventListener(
     'change',
-    function(e) {
+    function (e) {
       estadoSalvo = e.target.value;
       PreferenciasUsuario.estado = estadoSalvo;
     },
@@ -423,7 +423,7 @@ var GUI = (function() {
   var numprocElement = alteracoesGreasemonkey.querySelector('input');
   numprocElement.addEventListener(
     'change',
-    function() {
+    function () {
       var numproc = GUI.numproc.replace(/\D+/g, '');
       GUI.numproc = numproc;
       listeners.forEach(fn => fn(numproc));
@@ -462,7 +462,7 @@ var GUI = (function() {
       checkbox.checked = PreferenciasUsuario.preencherMagistrado;
       checkbox.addEventListener(
         'change',
-        function(evt) {
+        function (evt) {
           PreferenciasUsuario.preencherMagistrado = evt.target.checked;
         },
         false
@@ -521,7 +521,7 @@ var GUI = (function() {
   return GUI;
 })();
 
-var Pagina = (function() {
+var Pagina = (function () {
   'use strict';
 
   function addSelectOneMenuListner(prefixo, fn) {
@@ -529,7 +529,7 @@ var Pagina = (function() {
     var select = document.getElementById(prefixo + '_input');
     painelOpcoes.addEventListener(
       'click',
-      function(evt) {
+      function (evt) {
         var elementoClicado = evt.target;
         if (
           elementoClicado.tagName.toUpperCase() === 'LI' &&
@@ -550,7 +550,7 @@ var Pagina = (function() {
         divDetalhes = document.getElementById(idDivDetalhes);
       var abrirDetalhes = divDetalhes.previousElementSibling,
         idAbrirDetalhes = abrirDetalhes.id;
-      var promise = AjaxListener.listenOnce(idAbrirDetalhes).then(function() {
+      var promise = AjaxListener.listenOnce(idAbrirDetalhes).then(function () {
         return document.getElementById(prefixo + ':panel-group-dados-veiculo');
       });
       abrirDetalhes.click();
@@ -561,7 +561,7 @@ var Pagina = (function() {
       var prefixo = Pagina.obterPrefixoVeiculo(ord);
       var idAbrirRestricoes = prefixo + ':link-detalhes-veiculo-restricoes',
         abrirRestricoes = document.getElementById(idAbrirRestricoes);
-      var promise = AjaxListener.listenOnce(idAbrirRestricoes).then(function() {
+      var promise = AjaxListener.listenOnce(idAbrirRestricoes).then(function () {
         var idDialogo = prefixo + ':dlg-detalhes-veiculo-restricoes',
           dialogo = document.getElementById(idDialogo);
         var fieldsets = dialogo.getElementsByTagName('fieldset');
@@ -593,8 +593,8 @@ var Pagina = (function() {
     },
     aguardarProximaPaginaListagem(pagina) {
       console.debug('Pagina.aguardarProximaPaginaListagem(pagina)', pagina);
-      var promise = new Promise(function(resolve, reject) {
-        var onPaginaCarregada = function() {
+      var promise = new Promise(function (resolve, reject) {
+        var onPaginaCarregada = function () {
           console.info('pagina carregada');
           var botoesPagina = [
             ...document.getElementsByClassName('ui-paginator-page'),
@@ -698,7 +698,7 @@ var Pagina = (function() {
       var idBotaoPesquisar = 'form-incluir-restricao:botao-pesquisar';
       var botaoPesquisar = document.getElementById(idBotaoPesquisar);
       var campoDocumento = document.getElementById('form-incluir-restricao:campo-cpf-cnpj');
-      var promise = AjaxListener.listenOnce(idBotaoPesquisar).then(function(ext) {
+      var promise = AjaxListener.listenOnce(idBotaoPesquisar).then(function (ext) {
         if (ext === null) {
           return 0;
         } else {
@@ -718,13 +718,13 @@ var Pagina = (function() {
   return Pagina;
 })();
 
-var ServicoWSDL = (function() {
+var ServicoWSDL = (function () {
   'use strict';
 
   var dadosSalvos = new Map();
 
   function analisarRespostaNumeroProcesso(xhr) {
-    var promise = new Promise(function(resolve, reject) {
+    var promise = new Promise(function (resolve, reject) {
       var parser = new DOMParser();
       var xml = parser.parseFromString(xhr.responseText, 'application/xml');
       if (xml.lastChild.nodeName === 'parsererror') {
@@ -757,7 +757,7 @@ var ServicoWSDL = (function() {
       if (dadosSalvos.has(id)) {
         return Promise.resolve(dadosSalvos.get(id));
       }
-      var promise = new Promise(function(resolve, reject) {
+      var promise = new Promise(function (resolve, reject) {
         var options = {
           method: 'POST',
           url: 'https://www2.trf4.jus.br/trf4/processos/acompanhamento/consultaws.php',
@@ -777,14 +777,14 @@ var ServicoWSDL = (function() {
           headers: {
             SOAPAction: 'consulta_processual_ws_wsdl#ws_consulta_processo',
           },
-          onload: function(xhr) {
+          onload: function (xhr) {
             if (xhr.status >= 200 && xhr.status < 300) {
               resolve(xhr);
             } else {
               reject(new Error('Erro ao tentar obter os dados do processo.'));
             }
           },
-          onerror: function() {
+          onerror: function () {
             reject(new Error('Erro ao tentar obter os dados do processo.'));
           },
         };

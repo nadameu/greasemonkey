@@ -9,7 +9,7 @@
 // @description Destaca o último link clicado
 // ==/UserScript==
 
-$('a[href]').click(function(){
+$('a[href]').click(function () {
   $('.extraUltimoLinkClicado').removeClass('extraUltimoLinkClicado');
   $(this).addClass('extraUltimoLinkClicado');
 });

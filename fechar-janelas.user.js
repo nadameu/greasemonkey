@@ -13,13 +13,13 @@
 // ==/UserScript==
 
 const referencia = document.querySelector('[name="selInfraUnidades"]')?.parentNode?.parentNode;
-if (! referencia) {
+if (!referencia) {
   console.error('<fechar-janelas>', 'Não foi possível encontrar um local para inserir o botão.');
   return;
 }
 
 const tabela = document.querySelector('#tblEventos');
-if (! tabela) {
+if (!tabela) {
   console.error('<fechar-janelas>', 'Não foi possível encontrar a tabela de eventos.');
   return;
 }
@@ -39,7 +39,7 @@ div.addEventListener('click', onClick);
 referencia.insertAdjacentElement('afterend', div);
 
 function onTabelaClick(evt) {
-  if (! evt.target?.matches?.('a.infraLinkDocumento')) return;
+  if (!evt.target?.matches?.('a.infraLinkDocumento')) return;
   show();
 }
 

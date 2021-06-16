@@ -31,7 +31,7 @@ var tps = 0;
 function iniciarRolagem() {
   posicaoMaxima = posicaoAtual = window.scrollY;
   direcaoAtual = -1;
-  intervalo = window.setInterval(function() {
+  intervalo = window.setInterval(function () {
     posicaoAtual = posicaoAtual + (direcaoAtual * velocidadeAtual) / fps;
     if (posicaoAtual >= posicaoMaxima) {
       posicaoAtual = posicaoMaxima;
@@ -99,7 +99,7 @@ var pausa = document.getElementById('gmPausa');
 
 fechar.addEventListener(
   'click',
-  function(evt) {
+  function (evt) {
     evt.preventDefault();
     botoes.style.display = 'none';
   },
@@ -108,7 +108,7 @@ fechar.addEventListener(
 
 playPause.addEventListener(
   'click',
-  function(evt) {
+  function (evt) {
     if (direcaoAtual !== 0) {
       pararRolagem();
     } else {
@@ -121,7 +121,7 @@ playPause.addEventListener(
 velocidade.value = velocidadeAtual;
 velocidade.addEventListener(
   'change',
-  function(evt) {
+  function (evt) {
     velocidadeAtual = Number(velocidade.value);
     Preferencias.velocidade = velocidadeAtual;
   },

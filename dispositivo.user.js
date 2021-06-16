@@ -38,15 +38,16 @@ const animateScroll = (target, duration) =>
 
 const getOffsetTop = el => (el === null ? 0 : el.offsetTop + getOffsetTop(el.offsetParent));
 
-const waitForElement = (selector, { ms = 100, attempts = 15} = {}) => new Promise((res, rej) => {
-  const go = attempt => {
-    if (attempt > attempts) return void rej();
-    const el = document.querySelector(selector);
-    if (el) return void res(el);
-    setTimeout(go, ms, attempt + 1);
-  }
-  go(1);
-});
+const waitForElement = (selector, { ms = 100, attempts = 15 } = {}) =>
+  new Promise((res, rej) => {
+    const go = attempt => {
+      if (attempt > attempts) return void rej();
+      const el = document.querySelector(selector);
+      if (el) return void res(el);
+      setTimeout(go, ms, attempt + 1);
+    };
+    go(1);
+  });
 
 waitForElement('.titulo')
   .catch(() => Promise.reject('Título não encontrado!'))

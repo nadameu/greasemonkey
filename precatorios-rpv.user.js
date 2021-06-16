@@ -15,7 +15,7 @@
 // @grant GM_xmlhttpRequest
 // ==/UserScript==
 
-!(function(t) {
+!(function (t) {
   var e = {};
   function n(r) {
     if (e[r]) return e[r].exports;
@@ -24,16 +24,16 @@
   }
   (n.m = t),
     (n.c = e),
-    (n.d = function(t, e, r) {
+    (n.d = function (t, e, r) {
       n.o(t, e) || Object.defineProperty(t, e, { enumerable: !0, get: r });
     }),
-    (n.r = function(t) {
+    (n.r = function (t) {
       'undefined' != typeof Symbol &&
         Symbol.toStringTag &&
         Object.defineProperty(t, Symbol.toStringTag, { value: 'Module' }),
         Object.defineProperty(t, '__esModule', { value: !0 });
     }),
-    (n.t = function(t, e) {
+    (n.t = function (t, e) {
       if ((1 & e && (t = n(t)), 8 & e)) return t;
       if (4 & e && 'object' == typeof t && t && t.__esModule) return t;
       var r = Object.create(null);
@@ -46,37 +46,37 @@
           n.d(
             r,
             o,
-            function(e) {
+            function (e) {
               return t[e];
             }.bind(null, o)
           );
       return r;
     }),
-    (n.n = function(t) {
+    (n.n = function (t) {
       var e =
         t && t.__esModule
-          ? function() {
+          ? function () {
               return t.default;
             }
-          : function() {
+          : function () {
               return t;
             };
       return n.d(e, 'a', e), e;
     }),
-    (n.o = function(t, e) {
+    (n.o = function (t, e) {
       return Object.prototype.hasOwnProperty.call(t, e);
     }),
     (n.p = ''),
     n((n.s = 0));
 })([
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     n.r(e);
     var r = n(1),
       o = n(2);
     const a = n(49);
-    (function() {
-      return r.a(this, void 0, void 0, function*() {
+    (function () {
+      return r.a(this, void 0, void 0, function* () {
         return GM_addStyle(a), (yield Object(o.a)(document)).adicionarAlteracoes();
       });
     })().then(
@@ -84,13 +84,13 @@
       t => console.error(t)
     );
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r;
     });
     function r(t, e, n, r) {
-      return new (n || (n = Promise))(function(o, a) {
+      return new (n || (n = Promise))(function (o, a) {
         function i(t) {
           try {
             c(r.next(t));
@@ -108,7 +108,7 @@
         function c(t) {
           t.done
             ? o(t.value)
-            : new n(function(e) {
+            : new n(function (e) {
                 e(t.value);
               }).then(i, s);
         }
@@ -116,9 +116,9 @@
       });
     }
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return l;
     });
     var r = n(3),
@@ -153,9 +153,9 @@
       return Promise.reject(new Error(`Página desconhecida: ${n.href}`));
     }
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return h;
     });
     var r = n(1),
@@ -210,13 +210,13 @@
       };
     class h extends i.a {
       adicionarAlteracoes() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const t = this.getWindow().opener;
           yield this.testarJanelaProcessoAberta();
           const e = yield this.obterRequisicoes();
           return Promise.all(
             e.map(e =>
-              r.a(this, void 0, void 0, function*() {
+              r.a(this, void 0, void 0, function* () {
                 const n = yield p(e.linha, 2),
                   r = a.a.criar('Verificar dados', n => {
                     n.preventDefault(), n.stopPropagation(), this.solicitarAberturaRequisicao(t, e);
@@ -230,7 +230,7 @@
         });
       }
       obterRequisicao(t) {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const { obterNumero: e, obterTexto: n, obterElems: r } = f(t),
             o = yield e(0),
             a = yield n(1),
@@ -246,7 +246,7 @@
         });
       }
       obterRequisicoes() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const t = this.queryAll('#divInfraAreaTabela > table tr[class^="infraTr"]').map(
             this.obterRequisicao
           );
@@ -267,7 +267,7 @@
         t.postMessage(JSON.stringify(n), this.getLocation().origin);
       }
       testarJanelaProcessoAberta() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const t = this.getWindow(),
             e = t.opener;
           if (!e || e === t) throw new Error('Janela do processo não está aberta.');
@@ -290,10 +290,10 @@
       }
     }
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r;
-    !(function(t) {
+    !(function (t) {
       (t.ABRIR_DOCUMENTO = 'abrirDocumento'),
         (t.ABRIR_REQUISICAO = 'abrirRequisicao'),
         (t.BUSCAR_DADOS = 'buscarDados'),
@@ -308,7 +308,7 @@
     })(r || (r = {})),
       (e.a = r);
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     e.a = {
       criar(t, e) {
@@ -319,9 +319,9 @@
       },
     };
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return o;
     });
     var r = n(7);
@@ -375,14 +375,14 @@
       }
     }
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r =
       (this && this.__assign) ||
-      function() {
+      function () {
         return (r =
           Object.assign ||
-          function(t) {
+          function (t) {
             for (var e, n = 1, r = arguments.length; n < r; n++)
               for (var o in (e = arguments[n]))
                 Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
@@ -393,76 +393,76 @@
     var o = n(8),
       a = n(9);
     e.URI = 'Option';
-    var i = (function() {
+    var i = (function () {
       function t() {
         this._tag = 'None';
       }
       return (
-        (t.prototype.map = function(t) {
+        (t.prototype.map = function (t) {
           return e.none;
         }),
-        (t.prototype.mapNullable = function(t) {
+        (t.prototype.mapNullable = function (t) {
           return e.none;
         }),
-        (t.prototype.ap = function(t) {
+        (t.prototype.ap = function (t) {
           return e.none;
         }),
-        (t.prototype.ap_ = function(t) {
+        (t.prototype.ap_ = function (t) {
           return t.ap(this);
         }),
-        (t.prototype.chain = function(t) {
+        (t.prototype.chain = function (t) {
           return e.none;
         }),
-        (t.prototype.reduce = function(t, e) {
+        (t.prototype.reduce = function (t, e) {
           return t;
         }),
-        (t.prototype.alt = function(t) {
+        (t.prototype.alt = function (t) {
           return t;
         }),
-        (t.prototype.orElse = function(t) {
+        (t.prototype.orElse = function (t) {
           return t();
         }),
-        (t.prototype.extend = function(t) {
+        (t.prototype.extend = function (t) {
           return e.none;
         }),
-        (t.prototype.fold = function(t, e) {
+        (t.prototype.fold = function (t, e) {
           return t;
         }),
-        (t.prototype.foldL = function(t, e) {
+        (t.prototype.foldL = function (t, e) {
           return t();
         }),
-        (t.prototype.getOrElse = function(t) {
+        (t.prototype.getOrElse = function (t) {
           return t;
         }),
-        (t.prototype.getOrElseL = function(t) {
+        (t.prototype.getOrElseL = function (t) {
           return t();
         }),
-        (t.prototype.toNullable = function() {
+        (t.prototype.toNullable = function () {
           return null;
         }),
-        (t.prototype.toUndefined = function() {}),
-        (t.prototype.inspect = function() {
+        (t.prototype.toUndefined = function () {}),
+        (t.prototype.inspect = function () {
           return this.toString();
         }),
-        (t.prototype.toString = function() {
+        (t.prototype.toString = function () {
           return 'none';
         }),
-        (t.prototype.contains = function(t, e) {
+        (t.prototype.contains = function (t, e) {
           return !1;
         }),
-        (t.prototype.isNone = function() {
+        (t.prototype.isNone = function () {
           return !0;
         }),
-        (t.prototype.isSome = function() {
+        (t.prototype.isSome = function () {
           return !1;
         }),
-        (t.prototype.exists = function(t) {
+        (t.prototype.exists = function (t) {
           return !1;
         }),
-        (t.prototype.filter = function(t) {
+        (t.prototype.filter = function (t) {
           return e.none;
         }),
-        (t.prototype.refine = function(t) {
+        (t.prototype.refine = function (t) {
           return e.none;
         }),
         (t.value = new t()),
@@ -470,94 +470,94 @@
       );
     })();
     (e.None = i), (e.none = i.value);
-    var s = (function() {
+    var s = (function () {
       function t(t) {
         (this.value = t), (this._tag = 'Some');
       }
       return (
-        (t.prototype.map = function(e) {
+        (t.prototype.map = function (e) {
           return new t(e(this.value));
         }),
-        (t.prototype.mapNullable = function(t) {
+        (t.prototype.mapNullable = function (t) {
           return e.fromNullable(t(this.value));
         }),
-        (t.prototype.ap = function(n) {
+        (t.prototype.ap = function (n) {
           return n.isNone() ? e.none : new t(n.value(this.value));
         }),
-        (t.prototype.ap_ = function(t) {
+        (t.prototype.ap_ = function (t) {
           return t.ap(this);
         }),
-        (t.prototype.chain = function(t) {
+        (t.prototype.chain = function (t) {
           return t(this.value);
         }),
-        (t.prototype.reduce = function(t, e) {
+        (t.prototype.reduce = function (t, e) {
           return e(t, this.value);
         }),
-        (t.prototype.alt = function(t) {
+        (t.prototype.alt = function (t) {
           return this;
         }),
-        (t.prototype.orElse = function(t) {
+        (t.prototype.orElse = function (t) {
           return this;
         }),
-        (t.prototype.extend = function(e) {
+        (t.prototype.extend = function (e) {
           return new t(e(this));
         }),
-        (t.prototype.fold = function(t, e) {
+        (t.prototype.fold = function (t, e) {
           return e(this.value);
         }),
-        (t.prototype.foldL = function(t, e) {
+        (t.prototype.foldL = function (t, e) {
           return e(this.value);
         }),
-        (t.prototype.getOrElse = function(t) {
+        (t.prototype.getOrElse = function (t) {
           return this.value;
         }),
-        (t.prototype.getOrElseL = function(t) {
+        (t.prototype.getOrElseL = function (t) {
           return this.value;
         }),
-        (t.prototype.toNullable = function() {
+        (t.prototype.toNullable = function () {
           return this.value;
         }),
-        (t.prototype.toUndefined = function() {
+        (t.prototype.toUndefined = function () {
           return this.value;
         }),
-        (t.prototype.inspect = function() {
+        (t.prototype.inspect = function () {
           return this.toString();
         }),
-        (t.prototype.toString = function() {
+        (t.prototype.toString = function () {
           return 'some(' + o.toString(this.value) + ')';
         }),
-        (t.prototype.contains = function(t, e) {
+        (t.prototype.contains = function (t, e) {
           return t.equals(this.value, e);
         }),
-        (t.prototype.isNone = function() {
+        (t.prototype.isNone = function () {
           return !1;
         }),
-        (t.prototype.isSome = function() {
+        (t.prototype.isSome = function () {
           return !0;
         }),
-        (t.prototype.exists = function(t) {
+        (t.prototype.exists = function (t) {
           return t(this.value);
         }),
-        (t.prototype.filter = function(t) {
+        (t.prototype.filter = function (t) {
           return this.exists(t) ? this : e.none;
         }),
-        (t.prototype.refine = function(t) {
+        (t.prototype.refine = function (t) {
           return this.filter(t);
         }),
         t
       );
     })();
     (e.Some = s),
-      (e.getSetoid = function(t) {
+      (e.getSetoid = function (t) {
         return {
-          equals: function(e, n) {
+          equals: function (e, n) {
             return e.isNone() ? n.isNone() : !n.isNone() && t.equals(e.value, n.value);
           },
         };
       }),
-      (e.getOrd = function(t) {
+      (e.getOrd = function (t) {
         return r({}, e.getSetoid(t), {
-          compare: function(e, n) {
+          compare: function (e, n) {
             return e.isSome()
               ? n.isSome()
                 ? t.compare(e.value, n.value)
@@ -568,75 +568,75 @@
           },
         });
       });
-    var c = function(t) {
+    var c = function (t) {
         return new s(t);
       },
-      u = function(t, e) {
+      u = function (t, e) {
         return t.chain(e);
       },
-      l = function(t, e) {
+      l = function (t, e) {
         return t.alt(e);
       };
-    (e.getApplySemigroup = function(t) {
+    (e.getApplySemigroup = function (t) {
       return {
-        concat: function(n, r) {
+        concat: function (n, r) {
           return n.isSome() && r.isSome() ? e.some(t.concat(n.value, r.value)) : e.none;
         },
       };
     }),
-      (e.getApplyMonoid = function(t) {
+      (e.getApplyMonoid = function (t) {
         return r({}, e.getApplySemigroup(t), { empty: e.some(t.empty) });
       }),
-      (e.getFirstMonoid = function() {
+      (e.getFirstMonoid = function () {
         return { concat: l, empty: e.none };
       }),
-      (e.getLastMonoid = function() {
+      (e.getLastMonoid = function () {
         return a.getDualMonoid(e.getFirstMonoid());
       }),
-      (e.getMonoid = function(t) {
+      (e.getMonoid = function (t) {
         return {
-          concat: function(n, r) {
+          concat: function (n, r) {
             return n.isNone() ? r : r.isNone() ? n : e.some(t.concat(n.value, r.value));
           },
           empty: e.none,
         };
       }),
-      (e.fromNullable = function(t) {
+      (e.fromNullable = function (t) {
         return null == t ? e.none : new s(t);
       }),
       (e.some = c),
-      (e.fromPredicate = function(t) {
-        return function(n) {
+      (e.fromPredicate = function (t) {
+        return function (n) {
           return t(n) ? e.some(n) : e.none;
         };
       }),
-      (e.tryCatch = function(t) {
+      (e.tryCatch = function (t) {
         try {
           return e.some(t());
         } catch (t) {
           return e.none;
         }
       }),
-      (e.fromEither = function(t) {
+      (e.fromEither = function (t) {
         return t.isLeft() ? e.none : e.some(t.value);
       }),
-      (e.isSome = function(t) {
+      (e.isSome = function (t) {
         return t.isSome();
       }),
-      (e.isNone = function(t) {
+      (e.isNone = function (t) {
         return t.isNone();
       }),
-      (e.fromRefinement = function(t) {
-        return function(n) {
+      (e.fromRefinement = function (t) {
+        return function (n) {
           return t(n) ? e.some(n) : e.none;
         };
       }),
-      (e.getRefinement = function(t) {
-        return function(e) {
+      (e.getRefinement = function (t) {
+        return function (e) {
           return t(e).isSome();
         };
       });
-    var d = function(t) {
+    var d = function (t) {
         if (t.isNone()) return { left: e.none, right: e.none };
         var n = t.value;
         return n.isLeft()
@@ -646,66 +646,66 @@
       p = u;
     e.option = {
       URI: e.URI,
-      map: function(t, e) {
+      map: function (t, e) {
         return t.map(e);
       },
       of: c,
-      ap: function(t, e) {
+      ap: function (t, e) {
         return e.ap(t);
       },
       chain: u,
-      reduce: function(t, e, n) {
+      reduce: function (t, e, n) {
         return t.reduce(e, n);
       },
-      foldMap: function(t) {
-        return function(e, n) {
+      foldMap: function (t) {
+        return function (e, n) {
           return e.isNone() ? t.empty : n(e.value);
         };
       },
-      foldr: function(t, e, n) {
+      foldr: function (t, e, n) {
         return t.isNone() ? e : n(t.value, e);
       },
-      traverse: function(t) {
-        return function(n, r) {
+      traverse: function (t) {
+        return function (n, r) {
           return n.isNone() ? t.of(e.none) : t.map(r(n.value), e.some);
         };
       },
-      sequence: function(t) {
-        return function(n) {
+      sequence: function (t) {
+        return function (n) {
           return n.isNone() ? t.of(e.none) : t.map(n.value, e.some);
         };
       },
-      zero: function() {
+      zero: function () {
         return e.none;
       },
       alt: l,
-      extend: function(t, e) {
+      extend: function (t, e) {
         return t.extend(e);
       },
-      compact: function(t) {
+      compact: function (t) {
         return t.chain(o.identity);
       },
       separate: d,
-      filter: function(t, e) {
+      filter: function (t, e) {
         return t.filter(e);
       },
       filterMap: p,
-      partition: function(t, e) {
+      partition: function (t, e) {
         return { left: t.filter(o.not(e)), right: t.filter(e) };
       },
-      partitionMap: function(t, e) {
+      partitionMap: function (t, e) {
         return d(t.map(e));
       },
-      wither: function(t) {
-        return function(e, n) {
+      wither: function (t) {
+        return function (e, n) {
           return e.isNone() ? t.of(e) : n(e.value);
         };
       },
-      wilt: function(t) {
-        return function(n, r) {
+      wilt: function (t) {
+        return function (n, r) {
           return n.isNone()
             ? t.of({ left: e.none, right: e.none })
-            : t.map(r(n.value), function(t) {
+            : t.map(r(n.value), function (t) {
                 return t.isLeft()
                   ? { left: e.some(t.value), right: e.none }
                   : { left: e.none, right: e.some(t.value) };
@@ -714,89 +714,89 @@
       },
     };
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     function r(t, n, o) {
-      return function(a) {
+      return function (a) {
         var i = e.concat(o, [a]);
         return 0 === n ? t.apply(this, i) : r(t, n - 1, i);
       };
     }
     Object.defineProperty(e, '__esModule', { value: !0 }),
-      (e.identity = function(t) {
+      (e.identity = function (t) {
         return t;
       }),
       (e.unsafeCoerce = e.identity),
-      (e.not = function(t) {
-        return function(e) {
+      (e.not = function (t) {
+        return function (e) {
           return !t(e);
         };
       }),
-      (e.or = function(t, e) {
-        return function(n) {
+      (e.or = function (t, e) {
+        return function (n) {
           return t(n) || e(n);
         };
       }),
-      (e.and = function(t, e) {
-        return function(n) {
+      (e.and = function (t, e) {
+        return function (n) {
           return t(n) && e(n);
         };
       }),
-      (e.constant = function(t) {
-        return function() {
+      (e.constant = function (t) {
+        return function () {
           return t;
         };
       }),
-      (e.constTrue = function() {
+      (e.constTrue = function () {
         return !0;
       }),
-      (e.constFalse = function() {
+      (e.constFalse = function () {
         return !1;
       }),
-      (e.constNull = function() {
+      (e.constNull = function () {
         return null;
       }),
-      (e.constUndefined = function() {}),
-      (e.flip = function(t) {
-        return function(e) {
-          return function(n) {
+      (e.constUndefined = function () {}),
+      (e.flip = function (t) {
+        return function (e) {
+          return function (n) {
             return t(n)(e);
           };
         };
       }),
-      (e.on = function(t) {
-        return function(e) {
-          return function(n, r) {
+      (e.on = function (t) {
+        return function (e) {
+          return function (n, r) {
             return t(e(n), e(r));
           };
         };
       }),
-      (e.compose = function() {
+      (e.compose = function () {
         for (var t = [], e = 0; e < arguments.length; e++) t[e] = arguments[e];
         var n = t.length - 1;
-        return function(e) {
+        return function (e) {
           for (var r = e, o = n; o > -1; o--) r = t[o].call(this, r);
           return r;
         };
       }),
-      (e.pipe = function() {
+      (e.pipe = function () {
         for (var t = [], e = 0; e < arguments.length; e++) t[e] = arguments[e];
         var n = t.length - 1;
-        return function(e) {
+        return function (e) {
           for (var r = e, o = 0; o <= n; o++) r = t[o].call(this, r);
           return r;
         };
       }),
-      (e.concat = function(t, e) {
+      (e.concat = function (t, e) {
         for (var n = t.length, r = e.length, o = Array(n + r), a = 0; a < n; a++) o[a] = t[a];
         for (a = 0; a < r; a++) o[a + n] = e[a];
         return o;
       }),
       (e.curried = r),
-      (e.curry = function(t) {
+      (e.curry = function (t) {
         return r(t, t.length - 1, []);
       });
-    (e.toString = function(t) {
+    (e.toString = function (t) {
       if ('string' == typeof t) return JSON.stringify(t);
       if (t instanceof Date) return "new Date('" + t.toISOString() + "')";
       if (Array.isArray(t)) return '[' + t.map(e.toString).join(', ') + ']';
@@ -812,43 +812,43 @@
         return String(t);
       }
     }),
-      (e.tuple = function(t, e) {
+      (e.tuple = function (t, e) {
         return [t, e];
       }),
-      (e.tupleCurried = function(t) {
-        return function(e) {
+      (e.tupleCurried = function (t) {
+        return function (e) {
           return [t, e];
         };
       }),
-      (e.apply = function(t) {
-        return function(e) {
+      (e.apply = function (t) {
+        return function (e) {
           return t(e);
         };
       }),
-      (e.applyFlipped = function(t) {
-        return function(e) {
+      (e.applyFlipped = function (t) {
+        return function (e) {
           return e(t);
         };
       }),
       (e.phantom = void 0),
-      (e.constIdentity = function() {
+      (e.constIdentity = function () {
         return e.identity;
       }),
-      (e.increment = function(t) {
+      (e.increment = function (t) {
         return t + 1;
       }),
-      (e.decrement = function(t) {
+      (e.decrement = function (t) {
         return t - 1;
       });
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r =
       (this && this.__assign) ||
-      function() {
+      function () {
         return (r =
           Object.assign ||
-          function(t) {
+          function (t) {
             for (var e, n = 1, r = arguments.length; n < r; n++)
               for (var o in (e = arguments[n]))
                 Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
@@ -858,63 +858,63 @@
     Object.defineProperty(e, '__esModule', { value: !0 });
     var o = n(8),
       a = n(10);
-    (e.fold = function(t) {
+    (e.fold = function (t) {
       return a.fold(t)(t.empty);
     }),
-      (e.getProductMonoid = function(t, e) {
+      (e.getProductMonoid = function (t, e) {
         return r({}, a.getProductSemigroup(t, e), { empty: [t.empty, e.empty] });
       }),
-      (e.getDualMonoid = function(t) {
+      (e.getDualMonoid = function (t) {
         return r({}, a.getDualSemigroup(t), { empty: t.empty });
       }),
       (e.monoidAll = r({}, a.semigroupAll, { empty: !0 })),
       (e.monoidAny = r({}, a.semigroupAny, { empty: !1 }));
     (e.unsafeMonoidArray = r({}, a.getArraySemigroup(), { empty: [] })),
-      (e.getArrayMonoid = function() {
+      (e.getArrayMonoid = function () {
         return e.unsafeMonoidArray;
       });
     var i = {};
-    (e.getDictionaryMonoid = function(t) {
+    (e.getDictionaryMonoid = function (t) {
       return r({}, a.getDictionarySemigroup(t), { empty: i });
     }),
       (e.monoidSum = r({}, a.semigroupSum, { empty: 0 })),
       (e.monoidProduct = r({}, a.semigroupProduct, { empty: 1 })),
       (e.monoidString = r({}, a.semigroupString, { empty: '' })),
       (e.monoidVoid = r({}, a.semigroupVoid, { empty: void 0 })),
-      (e.getFunctionMonoid = function(t) {
-        return function() {
+      (e.getFunctionMonoid = function (t) {
+        return function () {
           return r({}, a.getFunctionSemigroup(t)(), {
-            empty: function() {
+            empty: function () {
               return t.empty;
             },
           });
         };
       }),
-      (e.getEndomorphismMonoid = function() {
+      (e.getEndomorphismMonoid = function () {
         return { concat: o.compose, empty: o.identity };
       }),
-      (e.getRecordMonoid = function(t) {
+      (e.getRecordMonoid = function (t) {
         for (var e = {}, n = 0, o = Object.keys(t); n < o.length; n++) {
           var i = o[n];
           e[i] = t[i].empty;
         }
         return r({}, a.getRecordSemigroup(t), { empty: e });
       }),
-      (e.getMeetMonoid = function(t) {
+      (e.getMeetMonoid = function (t) {
         return r({}, a.getMeetSemigroup(t), { empty: t.top });
       }),
-      (e.getJoinMonoid = function(t) {
+      (e.getJoinMonoid = function (t) {
         return r({}, a.getJoinSemigroup(t), { empty: t.bottom });
       });
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r =
       (this && this.__assign) ||
-      function() {
+      function () {
         return (r =
           Object.assign ||
-          function(t) {
+          function (t) {
             for (var e, n = 1, r = arguments.length; n < r; n++)
               for (var o in (e = arguments[n]))
                 Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
@@ -924,26 +924,26 @@
     Object.defineProperty(e, '__esModule', { value: !0 });
     var o = n(11),
       a = n(8);
-    (e.fold = function(t) {
-      return function(e) {
-        return function(n) {
+    (e.fold = function (t) {
+      return function (e) {
+        return function (n) {
           return n.reduce(t.concat, e);
         };
       };
     }),
-      (e.getFirstSemigroup = function() {
+      (e.getFirstSemigroup = function () {
         return { concat: a.identity };
       }),
-      (e.getLastSemigroup = function() {
+      (e.getLastSemigroup = function () {
         return {
-          concat: function(t, e) {
+          concat: function (t, e) {
             return e;
           },
         };
       }),
-      (e.getProductSemigroup = function(t, e) {
+      (e.getProductSemigroup = function (t, e) {
         return {
-          concat: function(n, r) {
+          concat: function (n, r) {
             var o = n[0],
               a = n[1],
               i = r[0],
@@ -952,27 +952,27 @@
           },
         };
       }),
-      (e.getDualSemigroup = function(t) {
+      (e.getDualSemigroup = function (t) {
         return {
-          concat: function(e, n) {
+          concat: function (e, n) {
             return t.concat(n, e);
           },
         };
       }),
-      (e.getFunctionSemigroup = function(t) {
-        return function() {
+      (e.getFunctionSemigroup = function (t) {
+        return function () {
           return {
-            concat: function(e, n) {
-              return function(r) {
+            concat: function (e, n) {
+              return function (r) {
                 return t.concat(e(r), n(r));
               };
             },
           };
         };
       }),
-      (e.getRecordSemigroup = function(t) {
+      (e.getRecordSemigroup = function (t) {
         return {
-          concat: function(e, n) {
+          concat: function (e, n) {
             for (var r = {}, o = 0, a = Object.keys(t); o < a.length; o++) {
               var i = a[o];
               r[i] = t[i].concat(e[i], n[i]);
@@ -981,32 +981,32 @@
           },
         };
       }),
-      (e.getMeetSemigroup = function(t) {
+      (e.getMeetSemigroup = function (t) {
         return { concat: o.min(t) };
       }),
-      (e.getJoinSemigroup = function(t) {
+      (e.getJoinSemigroup = function (t) {
         return { concat: o.max(t) };
       }),
       (e.semigroupAll = {
-        concat: function(t, e) {
+        concat: function (t, e) {
           return t && e;
         },
       }),
       (e.semigroupAny = {
-        concat: function(t, e) {
+        concat: function (t, e) {
           return t || e;
         },
       }),
-      (e.getArraySemigroup = function() {
+      (e.getArraySemigroup = function () {
         return {
-          concat: function(t, e) {
+          concat: function (t, e) {
             return a.concat(t, e);
           },
         };
       }),
-      (e.getDictionarySemigroup = function(t) {
+      (e.getDictionarySemigroup = function (t) {
         return {
-          concat: function(e, n) {
+          concat: function (e, n) {
             for (var o = r({}, e), a = Object.keys(n), i = a.length, s = 0; s < i; s++) {
               var c = a[s];
               o[c] = e.hasOwnProperty(c) ? t.concat(e[c], n[c]) : n[c];
@@ -1016,34 +1016,34 @@
         };
       });
     var i = e.getDictionarySemigroup(e.getLastSemigroup());
-    (e.getObjectSemigroup = function() {
+    (e.getObjectSemigroup = function () {
       return i;
     }),
       (e.semigroupSum = {
-        concat: function(t, e) {
+        concat: function (t, e) {
           return t + e;
         },
       }),
       (e.semigroupProduct = {
-        concat: function(t, e) {
+        concat: function (t, e) {
           return t * e;
         },
       }),
       (e.semigroupString = {
-        concat: function(t, e) {
+        concat: function (t, e) {
           return t + e;
         },
       }),
-      (e.semigroupVoid = { concat: function() {} });
+      (e.semigroupVoid = { concat: function () {} });
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r =
       (this && this.__assign) ||
-      function() {
+      function () {
         return (r =
           Object.assign ||
-          function(t) {
+          function (t) {
             for (var e, n = 1, r = arguments.length; n < r; n++)
               for (var o in (e = arguments[n]))
                 Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
@@ -1054,84 +1054,84 @@
     var o = n(12),
       a = n(13),
       i = n(8);
-    (e.unsafeCompare = function(t, e) {
+    (e.unsafeCompare = function (t, e) {
       return t < e ? -1 : t > e ? 1 : 0;
     }),
       (e.ordString = r({}, a.setoidString, { compare: e.unsafeCompare })),
       (e.ordNumber = r({}, a.setoidNumber, { compare: e.unsafeCompare })),
       (e.ordBoolean = r({}, a.setoidBoolean, { compare: e.unsafeCompare })),
-      (e.lessThan = function(t) {
-        return function(e, n) {
+      (e.lessThan = function (t) {
+        return function (e, n) {
           return -1 === t.compare(e, n);
         };
       }),
-      (e.greaterThan = function(t) {
-        return function(e, n) {
+      (e.greaterThan = function (t) {
+        return function (e, n) {
           return 1 === t.compare(e, n);
         };
       }),
-      (e.lessThanOrEq = function(t) {
-        return function(e, n) {
+      (e.lessThanOrEq = function (t) {
+        return function (e, n) {
           return 1 !== t.compare(e, n);
         };
       }),
-      (e.greaterThanOrEq = function(t) {
-        return function(e, n) {
+      (e.greaterThanOrEq = function (t) {
+        return function (e, n) {
           return -1 !== t.compare(e, n);
         };
       }),
-      (e.min = function(t) {
-        return function(e, n) {
+      (e.min = function (t) {
+        return function (e, n) {
           return 1 === t.compare(e, n) ? n : e;
         };
       }),
-      (e.max = function(t) {
-        return function(e, n) {
+      (e.max = function (t) {
+        return function (e, n) {
           return -1 === t.compare(e, n) ? n : e;
         };
       }),
-      (e.clamp = function(t) {
+      (e.clamp = function (t) {
         var n = e.min(t),
           r = e.max(t);
-        return function(t, e) {
-          return function(o) {
+        return function (t, e) {
+          return function (o) {
             return r(n(o, e), t);
           };
         };
       }),
-      (e.between = function(t) {
+      (e.between = function (t) {
         var n = e.lessThan(t),
           r = e.greaterThan(t);
-        return function(t, e) {
-          return function(o) {
+        return function (t, e) {
+          return function (o) {
             return !n(o, t) && !r(o, e);
           };
         };
       }),
-      (e.fromCompare = function(t) {
+      (e.fromCompare = function (t) {
         return {
-          equals: function(e, n) {
+          equals: function (e, n) {
             return 0 === t(e, n);
           },
           compare: t,
         };
       }),
-      (e.contramap = function(t, n) {
+      (e.contramap = function (t, n) {
         return e.fromCompare(i.on(n.compare)(t));
       }),
-      (e.getSemigroup = function() {
+      (e.getSemigroup = function () {
         return {
-          concat: function(t, n) {
-            return e.fromCompare(function(e, r) {
+          concat: function (t, n) {
+            return e.fromCompare(function (e, r) {
               return o.semigroupOrdering.concat(t.compare(e, r), n.compare(e, r));
             });
           },
         };
       }),
-      (e.getProductOrd = function(t, e) {
+      (e.getProductOrd = function (t, e) {
         var n = a.getProductSetoid(t, e);
         return r({}, n, {
-          compare: function(n, r) {
+          compare: function (n, r) {
             var o = n[0],
               a = n[1],
               i = r[0],
@@ -1141,32 +1141,32 @@
           },
         });
       }),
-      (e.getDualOrd = function(t) {
-        return e.fromCompare(function(e, n) {
+      (e.getDualOrd = function (t) {
+        return e.fromCompare(function (e, n) {
           return t.compare(n, e);
         });
       }),
-      (e.ordDate = e.contramap(function(t) {
+      (e.ordDate = e.contramap(function (t) {
         return t.valueOf();
       }, e.ordNumber));
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     Object.defineProperty(e, '__esModule', { value: !0 }),
-      (e.sign = function(t) {
+      (e.sign = function (t) {
         return t <= -1 ? -1 : t >= 1 ? 1 : 0;
       }),
       (e.setoidOrdering = {
-        equals: function(t, e) {
+        equals: function (t, e) {
           return t === e;
         },
       }),
       (e.semigroupOrdering = {
-        concat: function(t, e) {
+        concat: function (t, e) {
           return 0 !== t ? t : e;
         },
       }),
-      (e.invert = function(t) {
+      (e.invert = function (t) {
         switch (t) {
           case -1:
             return 1;
@@ -1177,40 +1177,40 @@
         }
       });
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     Object.defineProperty(e, '__esModule', { value: !0 });
     var r = n(8);
-    e.strictEqual = function(t, e) {
+    e.strictEqual = function (t, e) {
       return t === e;
     };
     var o = { equals: e.strictEqual };
     (e.setoidString = o),
       (e.setoidNumber = o),
       (e.setoidBoolean = o),
-      (e.getArraySetoid = function(t) {
+      (e.getArraySetoid = function (t) {
         return {
-          equals: function(e, n) {
+          equals: function (e, n) {
             return (
               e.length === n.length &&
-              e.every(function(e, r) {
+              e.every(function (e, r) {
                 return t.equals(e, n[r]);
               })
             );
           },
         };
       }),
-      (e.getRecordSetoid = function(t) {
+      (e.getRecordSetoid = function (t) {
         return {
-          equals: function(e, n) {
+          equals: function (e, n) {
             for (var r in t) if (!t[r].equals(e[r], n[r])) return !1;
             return !0;
           },
         };
       }),
-      (e.getProductSetoid = function(t, e) {
+      (e.getProductSetoid = function (t, e) {
         return {
-          equals: function(n, r) {
+          equals: function (n, r) {
             var o = n[0],
               a = n[1],
               i = r[0],
@@ -1219,23 +1219,23 @@
           },
         };
       }),
-      (e.contramap = function(t, e) {
+      (e.contramap = function (t, e) {
         return { equals: r.on(e.equals)(t) };
       }),
-      (e.setoidDate = e.contramap(function(t) {
+      (e.setoidDate = e.contramap(function (t) {
         return t.valueOf();
       }, e.setoidNumber));
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     function r(t) {
       return parseInt(t, 10);
     }
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r;
     });
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     function r(t) {
       return Promise.all(
@@ -1257,16 +1257,16 @@
         )
       ).then(t => t.reduce((t, e) => t.concat(e), []));
     }
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r;
     }),
-      n.d(e, 'b', function() {
+      n.d(e, 'b', function () {
         return o;
       });
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return h;
     });
     var r = n(1),
@@ -1318,7 +1318,7 @@
         return a.catOptions(t);
       }
       obterAutuacao() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           return u.d.analisar(yield this.queryTexto('#txtAutuacao'));
         });
       }
@@ -1326,7 +1326,7 @@
         return this.destacarDocumentosPorTipo('CALC');
       }
       obterContratos() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const t = yield this.destacarDocumentosPorTipo('CONHON');
           if (t.length > 0) return t;
           const e = yield this.destacarDocumentosPorMemo(/contrato|honor/i),
@@ -1338,7 +1338,7 @@
         return this.destacarDocumentosPorEvento(/Despacho\/Decisão - Determina Citação/);
       }
       obterHonorarios() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           return [].concat(
             yield this.destacarDocumentosPorTipo('SOLPGTOHON'),
             yield this.destacarDocumentosPorTipo('PGTOPERITO')
@@ -1354,7 +1354,7 @@
           .getOrElse('???');
       }
       obterLinkListar() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           return this.query(
             'a[href^="controlador.php?acao=processo_precatorio_rpv&"]',
             yield this.obterInformacoesAdicionais()
@@ -1365,7 +1365,7 @@
         return this.queryTexto('#txtMagistrado');
       }
       obterNumproc() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           return (yield this.obterNumprocf()).replace(/\D/g, '');
         });
       }
@@ -1385,7 +1385,7 @@
         return this.query('#tblEventos');
       }
       obterTransito() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const t = /(^(Julgamento|Sentença))|Voto|Recurso Extraordinário Inadmitido|Pedido de Uniformização para a Turma Nacional - Inadmitido/,
             e = /CIÊNCIA, COM RENÚNCIA AO PRAZO|Decurso de Prazo/,
             n = /Trânsito em Julgado/,
@@ -1486,7 +1486,7 @@
         });
       }
       abrirDocumento(t, e) {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const n = yield this.query(`#tdEvento${t}Doc${e}`);
           (yield this.query('.infraLinkDocumento', n)).click();
         });
@@ -1501,7 +1501,7 @@
         this.abrirJanela(t, `editar-requisicao${e}`, n);
       }
       abrirJanelaListar(t = !1) {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           this.abrirJanela(
             (yield this.obterLinkListar()).href,
             `listarRequisicoes${yield this.obterNumproc()}`,
@@ -1513,7 +1513,7 @@
         this.abrirJanela(t, `requisicao${e}`, n);
       }
       adicionarAlteracoes() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           GM_addStyle(m);
           const t = this.getWindow();
           t.addEventListener('pagehide', () => {
@@ -1528,7 +1528,7 @@
         });
       }
       consultarRequisicoesFinalizadas() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const t = yield this.obterLinkListar(),
             e = yield f.a(t.href),
             n = new d.a(e),
@@ -1557,7 +1557,7 @@
                 t.preventDefault(),
                   t.stopPropagation(),
                   (() =>
-                    r.a(this, void 0, void 0, function*() {
+                    r.a(this, void 0, void 0, function* () {
                       (e.textContent = 'Aguarde, carregando...'),
                         yield this.consultarRequisicoesFinalizadas(),
                         (e.textContent = 'Conferir ofício requisitório');
@@ -1594,7 +1594,7 @@
           });
       }
       destacarDocumentos(t) {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           return a.catOptions(
             Array.from((yield this.obterTabelaEventos()).tBodies)
               .map(t => Array.from(t.rows))
@@ -1670,7 +1670,7 @@
         );
       }
       enviarDadosProcesso(t, e) {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const n = {
             acao: s.a.RESPOSTA_DADOS,
             dados: {
@@ -1755,7 +1755,7 @@
     }
     function g(t, e) {
       if (void 0 === e)
-        return function(e) {
+        return function (e) {
           return g(t, e);
         };
       let n = e.parentElement;
@@ -1769,29 +1769,29 @@
       return e => i.fromNullable(e.cells[t]).mapNullable(t => t.textContent);
     }
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     Object.defineProperty(e, '__esModule', { value: !0 });
     var r = n(8);
     function o(t) {
-      return function(e) {
-        return function(n) {
-          return function(r) {
+      return function (e) {
+        return function (n) {
+          return function (r) {
             return t.ap(t.map(n, e), r);
           };
         };
       };
     }
-    (e.applyFirst = function(t) {
-      return function(e, n) {
+    (e.applyFirst = function (t) {
+      return function (e, n) {
         return t.ap(t.map(e, r.constant), n);
       };
     }),
-      (e.applySecond = function(t) {
-        return function(e, n) {
+      (e.applySecond = function (t) {
+        return function (e, n) {
           return t.ap(
-            t.map(e, function() {
-              return function(t) {
+            t.map(e, function () {
+              return function (t) {
                 return t;
               };
             }),
@@ -1800,23 +1800,23 @@
         };
       }),
       (e.liftA2 = o),
-      (e.liftA3 = function(t) {
-        return function(e) {
-          return function(n) {
-            return function(r) {
-              return function(o) {
+      (e.liftA3 = function (t) {
+        return function (e) {
+          return function (n) {
+            return function (r) {
+              return function (o) {
                 return t.ap(t.ap(t.map(n, e), r), o);
               };
             };
           };
         };
       }),
-      (e.liftA4 = function(t) {
-        return function(e) {
-          return function(n) {
-            return function(r) {
-              return function(o) {
-                return function(a) {
+      (e.liftA4 = function (t) {
+        return function (e) {
+          return function (n) {
+            return function (r) {
+              return function (o) {
+                return function (a) {
                   return t.ap(t.ap(t.ap(t.map(n, e), r), o), a);
                 };
               };
@@ -1824,29 +1824,29 @@
           };
         };
       }),
-      (e.getSemigroup = function(t, e) {
-        var n = o(t)(function(t) {
-          return function(n) {
+      (e.getSemigroup = function (t, e) {
+        var n = o(t)(function (t) {
+          return function (n) {
             return e.concat(t, n);
           };
         });
-        return function() {
+        return function () {
           return {
-            concat: function(t, e) {
+            concat: function (t, e) {
               return n(t)(e);
             },
           };
         };
       });
     var a = {};
-    e.sequenceT = function(t) {
-      return function() {
+    e.sequenceT = function (t) {
+      return function () {
         for (var e = [], n = 0; n < arguments.length; n++) e[n] = arguments[n];
         var o = e.length,
           i = a[o];
         Boolean(i) ||
           (i = a[o] = r.curried(
-            function() {
+            function () {
               for (var t = [], e = 0; e < arguments.length; e++) t[e] = arguments[e];
               return t;
             },
@@ -1858,14 +1858,14 @@
       };
     };
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r =
       (this && this.__assign) ||
-      function() {
+      function () {
         return (r =
           Object.assign ||
-          function(t) {
+          function (t) {
             for (var e, n = 1, r = arguments.length; n < r; n++)
               for (var o in (e = arguments[n]))
                 Object.prototype.hasOwnProperty.call(e, o) && (t[o] = e[o]);
@@ -1878,13 +1878,13 @@
       i = n(11),
       s = n(13);
     (e.URI = 'Array'),
-      (e.getMonoid = function() {
+      (e.getMonoid = function () {
         return { concat: o.concat, empty: e.empty };
       }),
       (e.getSetoid = s.getArraySetoid),
-      (e.getOrd = function(t) {
+      (e.getOrd = function (t) {
         return r({}, e.getSetoid(t), {
-          compare: function(e, n) {
+          compare: function (e, n) {
             for (var r = e.length, o = n.length, a = Math.min(r, o), s = 0; s < a; s++) {
               var c = t.compare(e[s], n[s]);
               if (0 !== c) return c;
@@ -1893,11 +1893,11 @@
           },
         });
       });
-    var c = function(t, e) {
+    var c = function (t, e) {
         for (var n = t.length, r = new Array(n), o = 0; o < n; o++) r[o] = e(t[o]);
         return r;
       },
-      u = function(t, e) {
+      u = function (t, e) {
         for (var n = 0, r = t.length, o = new Array(r), a = 0; a < r; a++) {
           (n += (c = e(t[a])).length), (o[a] = c);
         }
@@ -1909,16 +1909,16 @@
         }
         return i;
       },
-      l = function(t, e, n) {
+      l = function (t, e, n) {
         for (var r = t.length, o = e, a = 0; a < r; a++) o = n(o, t[a]);
         return o;
       };
     function d(t) {
-      return function(n, r) {
-        return l(n, t.of(p()), function(n, o) {
+      return function (n, r) {
+        return l(n, t.of(p()), function (n, o) {
           return t.ap(
-            t.map(n, function(t) {
-              return function(n) {
+            t.map(n, function (t) {
+              return function (n) {
                 return e.snoc(t, n);
               };
             }),
@@ -1929,25 +1929,25 @@
     }
     e.traverse = d;
     e.empty = [];
-    var p = function() {
+    var p = function () {
         return e.empty;
       },
       f = o.concat;
-    (e.makeBy = function(t, e) {
+    (e.makeBy = function (t, e) {
       for (var n = [], r = 0; r < t; r++) n.push(e(r));
       return n;
     }),
-      (e.range = function(t, n) {
-        return e.makeBy(n - t + 1, function(e) {
+      (e.range = function (t, n) {
+        return e.makeBy(n - t + 1, function (e) {
           return t + e;
         });
       }),
-      (e.replicate = function(t, n) {
-        return e.makeBy(t, function() {
+      (e.replicate = function (t, n) {
+        return e.makeBy(t, function () {
           return n;
         });
       });
-    (e.flatten = function(t) {
+    (e.flatten = function (t) {
       for (var e = 0, n = t.length, r = 0; r < n; r++) e += t[r].length;
       var o = Array(e),
         a = 0;
@@ -1957,170 +1957,170 @@
       }
       return o;
     }),
-      (e.fold = function(t, n, r) {
+      (e.fold = function (t, n, r) {
         return e.isEmpty(t) ? n : r(t[0], t.slice(1));
       }),
-      (e.foldL = function(t, n, r) {
+      (e.foldL = function (t, n, r) {
         return e.isEmpty(t) ? n() : r(t[0], t.slice(1));
       }),
-      (e.foldr = function(t, n, r) {
+      (e.foldr = function (t, n, r) {
         return e.isEmpty(t) ? n : r(t.slice(0, t.length - 1), t[t.length - 1]);
       }),
-      (e.foldrL = function(t, n, r) {
+      (e.foldrL = function (t, n, r) {
         return e.isEmpty(t) ? n() : r(t.slice(0, t.length - 1), t[t.length - 1]);
       }),
-      (e.scanLeft = function(t, e, n) {
+      (e.scanLeft = function (t, e, n) {
         var r = t.length,
           o = new Array(r + 1);
         o[0] = e;
         for (var a = 0; a < r; a++) o[a + 1] = n(o[a], t[a]);
         return o;
       }),
-      (e.scanRight = function(t, e, n) {
+      (e.scanRight = function (t, e, n) {
         var r = t.length,
           o = new Array(r + 1);
         o[r] = e;
         for (var a = r - 1; a >= 0; a--) o[a] = n(t[a], o[a + 1]);
         return o;
       }),
-      (e.isEmpty = function(t) {
+      (e.isEmpty = function (t) {
         return 0 === t.length;
       }),
-      (e.isOutOfBound = function(t, e) {
+      (e.isOutOfBound = function (t, e) {
         return t < 0 || t >= e.length;
       }),
-      (e.index = function(t, n) {
+      (e.index = function (t, n) {
         return e.isOutOfBound(t, n) ? a.none : a.some(n[t]);
       }),
-      (e.cons = function(t, e) {
+      (e.cons = function (t, e) {
         for (var n = e.length, r = Array(n + 1), o = 0; o < n; o++) r[o + 1] = e[o];
         return (r[0] = t), r;
       }),
-      (e.snoc = function(t, e) {
+      (e.snoc = function (t, e) {
         for (var n = t.length, r = Array(n + 1), o = 0; o < n; o++) r[o] = t[o];
         return (r[n] = e), r;
       }),
-      (e.head = function(t) {
+      (e.head = function (t) {
         return e.isEmpty(t) ? a.none : a.some(t[0]);
       }),
-      (e.last = function(t) {
+      (e.last = function (t) {
         return e.index(t.length - 1, t);
       }),
-      (e.tail = function(t) {
+      (e.tail = function (t) {
         return e.isEmpty(t) ? a.none : a.some(t.slice(1));
       }),
-      (e.init = function(t) {
+      (e.init = function (t) {
         var e = t.length;
         return 0 === e ? a.none : a.some(t.slice(0, e - 1));
       }),
-      (e.take = function(t, e) {
+      (e.take = function (t, e) {
         return e.slice(0, t);
       }),
-      (e.takeEnd = function(t, n) {
+      (e.takeEnd = function (t, n) {
         return 0 === t ? e.empty : n.slice(-t);
       }),
-      (e.takeWhile = function(t, e) {
+      (e.takeWhile = function (t, e) {
         for (var n = m(t, e), r = Array(n), o = 0; o < n; o++) r[o] = t[o];
         return r;
       });
-    var m = function(t, e) {
+    var m = function (t, e) {
       for (var n = t.length, r = 0; r < n && e(t[r]); r++);
       return r;
     };
-    (e.span = function(t, e) {
+    (e.span = function (t, e) {
       for (var n = m(t, e), r = Array(n), o = 0; o < n; o++) r[o] = t[o];
       var a = t.length,
         i = Array(a - n);
       for (o = n; o < a; o++) i[o - n] = t[o];
       return { init: r, rest: i };
     }),
-      (e.drop = function(t, e) {
+      (e.drop = function (t, e) {
         return e.slice(t, e.length);
       }),
-      (e.dropEnd = function(t, e) {
+      (e.dropEnd = function (t, e) {
         return e.slice(0, e.length - t);
       }),
-      (e.dropWhile = function(t, e) {
+      (e.dropWhile = function (t, e) {
         for (var n = m(t, e), r = t.length, o = Array(r - n), a = n; a < r; a++) o[a - n] = t[a];
         return o;
       }),
-      (e.findIndex = function(t, e) {
+      (e.findIndex = function (t, e) {
         for (var n = t.length, r = 0; r < n; r++) if (e(t[r])) return a.some(r);
         return a.none;
       }),
-      (e.findFirst = function(t, e) {
+      (e.findFirst = function (t, e) {
         for (var n = t.length, r = 0; r < n; r++) if (e(t[r])) return a.some(t[r]);
         return a.none;
       }),
-      (e.findLast = function(t, e) {
+      (e.findLast = function (t, e) {
         for (var n = t.length - 1; n >= 0; n--) if (e(t[n])) return a.some(t[n]);
         return a.none;
       }),
-      (e.findLastIndex = function(t, e) {
+      (e.findLastIndex = function (t, e) {
         for (var n = t.length - 1; n >= 0; n--) if (e(t[n])) return a.some(n);
         return a.none;
       }),
-      (e.refine = function(t, n) {
+      (e.refine = function (t, n) {
         return e.filter(t, n);
       }),
-      (e.copy = function(t) {
+      (e.copy = function (t) {
         for (var e = t.length, n = Array(e), r = 0; r < e; r++) n[r] = t[r];
         return n;
       }),
-      (e.unsafeInsertAt = function(t, n, r) {
+      (e.unsafeInsertAt = function (t, n, r) {
         var o = e.copy(r);
         return o.splice(t, 0, n), o;
       }),
-      (e.insertAt = function(t, n, r) {
+      (e.insertAt = function (t, n, r) {
         return t < 0 || t > r.length ? a.none : a.some(e.unsafeInsertAt(t, n, r));
       }),
-      (e.unsafeUpdateAt = function(t, n, r) {
+      (e.unsafeUpdateAt = function (t, n, r) {
         var o = e.copy(r);
         return (o[t] = n), o;
       }),
-      (e.updateAt = function(t, n, r) {
+      (e.updateAt = function (t, n, r) {
         return e.isOutOfBound(t, r) ? a.none : a.some(e.unsafeUpdateAt(t, n, r));
       }),
-      (e.unsafeDeleteAt = function(t, n) {
+      (e.unsafeDeleteAt = function (t, n) {
         var r = e.copy(n);
         return r.splice(t, 1), r;
       }),
-      (e.deleteAt = function(t, n) {
+      (e.deleteAt = function (t, n) {
         return e.isOutOfBound(t, n) ? a.none : a.some(e.unsafeDeleteAt(t, n));
       }),
-      (e.modifyAt = function(t, n, r) {
+      (e.modifyAt = function (t, n, r) {
         return e.isOutOfBound(n, t) ? a.none : e.updateAt(n, r(t[n]), t);
       }),
-      (e.reverse = function(t) {
+      (e.reverse = function (t) {
         return e.copy(t).reverse();
       }),
-      (e.rights = function(t) {
+      (e.rights = function (t) {
         for (var e = [], n = t.length, r = 0; r < n; r++) {
           var o = t[r];
           o.isRight() && e.push(o.value);
         }
         return e;
       }),
-      (e.lefts = function(t) {
+      (e.lefts = function (t) {
         for (var e = [], n = t.length, r = 0; r < n; r++) {
           var o = t[r];
           o.isLeft() && e.push(o.value);
         }
         return e;
       }),
-      (e.sort = function(t) {
-        return function(n) {
+      (e.sort = function (t) {
+        return function (n) {
           return e.copy(n).sort(t.compare);
         };
       }),
-      (e.zipWith = function(t, e, n) {
+      (e.zipWith = function (t, e, n) {
         for (var r = [], o = Math.min(t.length, e.length), a = 0; a < o; a++) r[a] = n(t[a], e[a]);
         return r;
       }),
-      (e.zip = function(t, n) {
+      (e.zip = function (t, n) {
         return e.zipWith(t, n, o.tuple);
       }),
-      (e.rotate = function(t, n) {
+      (e.rotate = function (t, n) {
         var r = n.length;
         return 0 === t || r <= 1 || r === Math.abs(t)
           ? n
@@ -2128,15 +2128,15 @@
           ? e.rotate(r + t, n)
           : n.slice(-t).concat(n.slice(0, r - t));
       }),
-      (e.member = function(t) {
-        return function(e, n) {
+      (e.member = function (t) {
+        return function (e, n) {
           for (var r, o = 0, a = e.length; o < a; o++) if (((r = e[o]), t.equals(r, n))) return !0;
           return !1;
         };
       }),
-      (e.uniq = function(t) {
+      (e.uniq = function (t) {
         var n = e.member(t);
-        return function(t) {
+        return function (t) {
           for (var e = [], r = t.length, o = 0; o < r; o++) {
             var a = t[o];
             n(e, a) || e.push(a);
@@ -2144,36 +2144,36 @@
           return r === e.length ? t : e;
         };
       }),
-      (e.sortBy = function(t) {
-        return e.fold(t, a.none, function(t, n) {
+      (e.sortBy = function (t) {
+        return e.fold(t, a.none, function (t, n) {
           return a.some(e.sortBy1(t, n));
         });
       }),
-      (e.sortBy1 = function(t, n) {
+      (e.sortBy1 = function (t, n) {
         return e.sort(n.reduce(i.getSemigroup().concat, t));
       }),
-      (e.mapOption = function(t, e) {
+      (e.mapOption = function (t, e) {
         for (var n = [], r = 0, o = t; r < o.length; r++) {
           var a = e(o[r]);
           a.isSome() && n.push(a.value);
         }
         return n;
       }),
-      (e.catOptions = function(t) {
+      (e.catOptions = function (t) {
         return e.mapOption(t, o.identity);
       }),
-      (e.partitionMap = function(t, e) {
+      (e.partitionMap = function (t, e) {
         for (var n = [], r = [], o = 0, a = t; o < a.length; o++) {
           var i = e(a[o]);
           i.isLeft() ? n.push(i.value) : r.push(i.value);
         }
         return { left: n, right: r };
       }),
-      (e.filter = function(t, e) {
+      (e.filter = function (t, e) {
         return t.filter(e);
       });
     var h = e.catOptions,
-      g = function(t) {
+      g = function (t) {
         for (var e = [], n = [], r = 0, o = t; r < o.length; r++) {
           var a = o[r];
           a.isLeft() ? e.push(a.value) : n.push(a.value);
@@ -2181,7 +2181,7 @@
         return { left: e, right: n };
       },
       v = e.mapOption;
-    (e.chop = function(t, e) {
+    (e.chop = function (t, e) {
       for (var n = [], r = t; r.length > 0; ) {
         var o = e(r),
           a = o[0],
@@ -2190,23 +2190,23 @@
       }
       return n;
     }),
-      (e.split = function(t, e) {
+      (e.split = function (t, e) {
         return [e.slice(0, t), e.slice(t)];
       }),
-      (e.chunksOf = function(t, n) {
+      (e.chunksOf = function (t, n) {
         return e.isOutOfBound(n - 1, t)
           ? [t]
-          : e.chop(t, function(t) {
+          : e.chop(t, function (t) {
               return e.split(n, t);
             });
       }),
-      (e.comprehension = function(t, n, r) {
-        var o = function(t, a) {
+      (e.comprehension = function (t, n, r) {
+        var o = function (t, a) {
           return 0 === a.length
             ? n.apply(void 0, t)
               ? [r.apply(void 0, t)]
               : e.empty
-            : u(a[0], function(n) {
+            : u(a[0], function (n) {
                 return o(e.snoc(t, n), a.slice(1));
               });
         };
@@ -2219,7 +2219,7 @@
         separate: g,
         filter: e.filter,
         filterMap: v,
-        partition: function(t, e) {
+        partition: function (t, e) {
           for (var n = [], r = [], o = 0, a = t; o < a.length; o++) {
             var i = a[o];
             e(i) ? r.push(i) : n.push(i);
@@ -2227,31 +2227,31 @@
           return { left: n, right: r };
         },
         partitionMap: e.partitionMap,
-        of: function(t) {
+        of: function (t) {
           return [t];
         },
-        ap: function(t, n) {
+        ap: function (t, n) {
           return e.flatten(
-            c(t, function(t) {
+            c(t, function (t) {
               return c(n, t);
             })
           );
         },
         chain: u,
         reduce: l,
-        foldMap: function(t) {
-          return function(e, n) {
-            return e.reduce(function(e, r) {
+        foldMap: function (t) {
+          return function (e, n) {
+            return e.reduce(function (e, r) {
               return t.concat(e, n(r));
             }, t.empty);
           };
         },
-        foldr: function(t, e, n) {
-          return t.reduceRight(function(t, e) {
+        foldr: function (t, e, n) {
+          return t.reduceRight(function (t, e) {
             return n(e, t);
           }, e);
         },
-        unfoldr: function(t, e) {
+        unfoldr: function (t, e) {
           for (var n = [], r = t; ; ) {
             var o = e(r);
             if (!o.isSome()) break;
@@ -2263,12 +2263,12 @@
           return n;
         },
         traverse: d,
-        sequence: function(t) {
-          return function(n) {
-            return l(n, t.of(p()), function(n, r) {
+        sequence: function (t) {
+          return function (n) {
+            return l(n, t.of(p()), function (n, r) {
               return t.ap(
-                t.map(n, function(t) {
-                  return function(n) {
+                t.map(n, function (t) {
+                  return function (n) {
                     return e.snoc(t, n);
                   };
                 }),
@@ -2279,65 +2279,65 @@
         },
         zero: p,
         alt: f,
-        extend: function(t, e) {
-          return t.map(function(t, n, r) {
+        extend: function (t, e) {
+          return t.map(function (t, n, r) {
             return e(r.slice(n));
           });
         },
-        wither: function(t) {
+        wither: function (t) {
           var e = d(t);
-          return function(n, r) {
+          return function (n, r) {
             return t.map(e(n, r), h);
           };
         },
-        wilt: function(t) {
+        wilt: function (t) {
           var e = d(t);
-          return function(n, r) {
+          return function (n, r) {
             return t.map(e(n, r), g);
           };
         },
       });
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r = n(20);
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r.a;
     });
     var o = n(21);
-    n.d(e, 'b', function() {
+    n.d(e, 'b', function () {
       return o.a;
     });
     var a = n(22);
-    n.d(e, 'c', function() {
+    n.d(e, 'c', function () {
       return a.a;
     });
     var i = n(24);
-    n.d(e, 'd', function() {
+    n.d(e, 'd', function () {
       return i.a;
     });
     var s = n(25);
-    n.d(e, 'e', function() {
+    n.d(e, 'e', function () {
       return s.a;
     });
     var c = n(26);
-    n.d(e, 'f', function() {
+    n.d(e, 'f', function () {
       return c.a;
     });
     var u = n(27);
-    n.d(e, 'g', function() {
+    n.d(e, 'g', function () {
       return u.a;
     });
     var l = n(28);
-    n.d(e, 'h', function() {
+    n.d(e, 'h', function () {
       return l.a;
     });
     var d = n(29);
-    n.d(e, 'i', function() {
+    n.d(e, 'i', function () {
       return d.a;
     });
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r = n(14);
     const o = {
@@ -2350,7 +2350,7 @@
     };
     e.a = o;
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     const r = {
       analisar: t => ('' === t ? void 0 : 'Sim' === t),
@@ -2358,7 +2358,7 @@
     };
     e.a = r;
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r = n(14),
       o = n(23);
@@ -2378,18 +2378,18 @@
     };
     e.a = a;
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     function r(t, e, n) {
       let r = t;
       for (; r.length < e; ) r = n + r;
       return r;
     }
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r;
     });
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r = n(14),
       o = n(23);
@@ -2424,13 +2424,13 @@
     };
     e.a = a;
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r = n(14);
     const o = { analisar: t => Object(r.a)('0' + t), converter: t => t.toString() };
     e.a = o;
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r = n(14),
       o = n(23);
@@ -2451,7 +2451,7 @@
     };
     e.a = a;
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     const r = {
       analisar: t => parseFloat(t.replace(/\./g, '').replace(/,/, '.')),
@@ -2466,7 +2466,7 @@
     };
     e.a = r;
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     const r = {
       analisar(t) {
@@ -2488,7 +2488,7 @@
     };
     e.a = r;
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r = n(27);
     const o = {
@@ -2503,63 +2503,63 @@
     };
     e.a = o;
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     n(2);
     var r = n(3);
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r.a;
     });
     n(31);
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     n(1), n(6), n(32);
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     function r(t, ...e) {
       return e.reduce((t, e) => (null == t ? null : e(t)), t);
     }
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r;
     });
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r = n(14);
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r.a;
     });
     n(34), n(23);
     var o = n(35);
-    n.d(e, 'b', function() {
+    n.d(e, 'b', function () {
       return o.a;
     });
     n(32);
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     function r(t, e = 0) {
       const n = Math.pow(10, e);
       return Math.round(t * n) / n;
     }
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r;
     });
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r = n(37);
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r.a;
     });
     n(38);
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     function r(t) {
       return new Promise((e, n) => {
@@ -2573,20 +2573,20 @@
           r.send(null);
       });
     }
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r;
     });
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
   },
-  function(t, e) {
+  function (t, e) {
     t.exports =
       '.gmEventoDestacado > td {\r\n\tbackground: #f8eddb;\r\n\tborder: 0px solid #c0c0c0;\r\n\tborder-width: 1px 0;\r\n}\r\n.gmTextoDestacado {\r\n\tcolor: red;\r\n\tfont-size: 1.2em;\r\n}\r\n';
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return m;
     });
     var r = n(1),
@@ -2602,7 +2602,7 @@
     const f = n(46);
     class m extends u.a {
       obterRequisicao() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           return (
             this._requisicao || (this._requisicao = yield this.analisarDadosRequisicao()),
             this._requisicao
@@ -2610,7 +2610,7 @@
         });
       }
       adicionarAlteracoes() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           GM_addStyle(f);
           const t = this.getWindow();
           t.addEventListener('message', this.onMensagemRecebida.bind(this)),
@@ -2618,7 +2618,7 @@
         });
       }
       adicionarAreaDocumentosProcesso() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           (yield this.query('#divInfraAreaTabela')).insertAdjacentHTML(
             'beforeend',
             '<div class="gm-documentos"></div>'
@@ -2626,7 +2626,7 @@
         });
       }
       adicionarBotaoTelaIntimacao() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const t = i.a.criar(
             'Ir para tela de intimação',
             this.onBotaoTelaIntimacaoClicado.bind(this)
@@ -2644,7 +2644,7 @@
           this.exibirDocumentosProcesso(t);
       }
       analisarDadosRequisicao() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const t = new a.a(
             new l.a(/^<span class="titBold">Status:<\/span> (.*?)$/, 'status'),
             new l.a(/^<span class="titBold">Originário Jef:<\/span> (.*?)$/, 'originarioJEF'),
@@ -2717,8 +2717,9 @@
                 e.beneficiarios.push(this.analisarTabelaBeneficiarios(t, u++));
               else if ('Honorários' === s) e.honorarios.push(this.analisarTabelaHonorarios(t, u++));
               else if ('Multa' !== s)
-                throw (console.error('Tabela não analisada!', t),
-                new Error('Tabela não analisada!'));
+                throw (
+                  (console.error('Tabela não analisada!', t), new Error('Tabela não analisada!'))
+                );
             }
             i = i.nextElementSibling;
           }
@@ -2847,7 +2848,7 @@
         return this.enviarSolicitacao(t, n);
       }
       exibirDocumentosProcesso(t) {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const e = yield this.query('.gm-documentos');
           this.exibirTitulo('Documentos do processo', e);
           let n = [
@@ -2898,7 +2899,7 @@
               Array.from(a.values()).map(t => {
                 Promise.all(
                   Array.from(t.documentos.values()).map(e =>
-                    r.a(this, void 0, void 0, function*() {
+                    r.a(this, void 0, void 0, function* () {
                       (yield this.query(
                         `#gm-documento-ev${t.evento}-doc${e.ordem}`
                       )).addEventListener('click', this.onLinkDocumentoClicado.bind(this));
@@ -2918,7 +2919,7 @@
         );
       }
       exibirValoresCalculados() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const t = yield this.obterRequisicao(),
             e = yield this.query('#divInfraAreaTabela');
           this.exibirTitulo('Conferência dos cálculos', e),
@@ -3058,7 +3059,7 @@
           const e = JSON.parse(t.data);
           e.acao === o.a.RESPOSTA_DADOS &&
             (() =>
-              r.a(this, void 0, void 0, function*() {
+              r.a(this, void 0, void 0, function* () {
                 console.log('Dados da requisicação:', yield this.obterRequisicao()),
                   yield this.validarDadosRequisicao(),
                   yield this.exibirValoresCalculados(),
@@ -3069,7 +3070,7 @@
         }
       }
       validarDadosProcesso(t) {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const e = yield this.obterRequisicao();
           this.validarElemento(
             '.gm-requisicao__dados__codigoAssunto',
@@ -3123,7 +3124,7 @@
         });
       }
       validarDadosRequisicao() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const t = yield this.obterRequisicao();
           this.validarElemento('.gm-requisicao__dados__status', 'Finalizada' === t.status),
             this.validarElemento('.gm-requisicao__dados__originarioJEF', !0),
@@ -3339,9 +3340,9 @@
       }
     }
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r;
     });
     class r {
@@ -3379,16 +3380,16 @@
       }
     }
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r;
     });
     const r = 954;
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r;
     });
     class r {
@@ -3417,16 +3418,16 @@
       }
     }
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
     var r = n(45);
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r.a;
     });
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return r;
     });
     class r {
@@ -3439,13 +3440,13 @@
       }
     }
   },
-  function(t, e) {
+  function (t, e) {
     t.exports =
       "table a {\r\n\tfont-size: 1em;\r\n}\r\n.gm-requisicao__tabela tr::before {\r\n\tcontent: '';\r\n\tfont-size: 1.2em;\r\n\tfont-weight: bold;\r\n}\r\n.gm-requisicao__tabela .gm-resposta--correta td,\r\n.gm-requisicao__tabela .gm-resposta--correta span {\r\n\tcolor: hsl(240, 10%, 65%);\r\n}\r\n.gm-requisicao__tabela .gm-resposta--correta::before {\r\n\tcontent: '✓';\r\n\tcolor: hsl(120, 25%, 65%);\r\n}\r\n\r\n.gm-requisicao__tabela .gm-resposta--incorreta td,\r\n.gm-requisicao__tabela .gm-resposta--incorreta span {\r\n\tcolor: hsl(0, 100%, 40%);\r\n}\r\n.gm-requisicao__tabela .gm-resposta--incorreta::before {\r\n\tcontent: '✗';\r\n\tcolor: hsl(0, 100%, 40%);\r\n\ttext-shadow: none;\r\n}\r\n\r\n.gm-requisicao__tabela .gm-resposta--indefinida td,\r\n.gm-requisicao__tabela .gm-resposta--indefinida span {\r\n\tcolor: hsl(30, 100%, 40%);\r\n}\r\n.gm-requisicao__tabela .gm-resposta--indefinida::before {\r\n\tcontent: '?';\r\n\tcolor: hsl(30, 100%, 40%);\r\n\ttext-shadow: none;\r\n}\r\n\r\np.gm-resposta {\r\n\tfont-size: 1.2em;\r\n\tmargin: 1em 0 0;\r\n}\r\n.gm-resposta--correta {\r\n\tcolor: hsl(120, 25%, 75%);\r\n}\r\n.gm-resposta--incorreta {\r\n\tcolor: hsl(0, 100%, 40%);\r\n\ttext-shadow: 0 2px 2px hsl(0, 75%, 60%);\r\n}\r\n.gm-resposta--indefinida {\r\n\tcolor: hsl(30, 100%, 40%);\r\n\ttext-shadow: 0 2px 3px hsl(30, 75%, 60%);\r\n}\r\n\r\np.gm-dados-adicionais {\r\n\tmargin-top: 0;\r\n\tmargin-left: 2ex;\r\n}\r\n.gm-botoes {\r\n\tmargin: 4em 0;\r\n\tdisplay: flex;\r\n\tjustify-content: space-around;\r\n}\r\ntable.gm-tabela-eventos td {\r\n\tpadding: 0 0.5ex;\r\n}\r\n";
   },
-  function(t, e, n) {
+  function (t, e, n) {
     'use strict';
-    n.d(e, 'a', function() {
+    n.d(e, 'a', function () {
       return u;
     });
     var r = n(1),
@@ -3459,7 +3460,7 @@
         super(...arguments), (this._isLoadingPages = !1), (this._isLoadingDates = !1);
       }
       adicionarAlteracoes() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           GM_addStyle(c);
           const t = yield this.query('#divInfraBarraComandosSuperior'),
             e = this.doc.createDocumentFragment();
@@ -3481,7 +3482,7 @@
         });
       }
       adicionarBotaoCarregarPaginas() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const t = yield this.obterDadosPaginacao();
           return o.a.criar(
             'Carregar todas as páginas',
@@ -3500,7 +3501,7 @@
         return o.a.criar('Ordenar por data de trânsito', this.onBotaoOrdenarClicked.bind(this));
       }
       obterDadosPaginacao() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const t = yield this.query('#hdnInfraPaginaAtual');
           if (0 !== Number(t.value)) throw new d();
           yield this.query('#lnkInfraProximaPaginaSuperior').catch(() => Promise.reject(new d()));
@@ -3523,7 +3524,7 @@
         });
       }
       obterDadosOficios() {
-        return r.a(this, void 0, void 0, function*() {
+        return r.a(this, void 0, void 0, function* () {
           const t = yield Promise.all(
             this.queryAll('img[src$="infra_css/imagens/lupa.gif"]').map(t => p(t, 'a[href]'))
           );
@@ -3628,7 +3629,7 @@
         const e = t.target,
           n = e.textContent;
         this.obterDadosOficios().then(t => {
-          !(function() {
+          !(function () {
             const t = JSON.parse(localStorage.getItem('datas-transito') || '[]');
             m = new Map(
               t.reduce(
@@ -3649,7 +3650,7 @@
               const n = a.h.converter(Math.round(100 * c) / 100);
               return (
                 (e.textContent = `Carregando dados... ${n}`),
-                (function(t) {
+                (function (t) {
                   const e = new URL(t).searchParams,
                     n = Number(e.get('txtNumRequisicao'));
                   if (!isNaN(n) && m.has(n)) return Promise.resolve(m.get(n));
@@ -3773,11 +3774,11 @@
     }
     let m = new Map();
   },
-  function(t, e) {
+  function (t, e) {
     t.exports =
       '.extraLinkOficioRequisitorio:active,\r\n.extraLinkOficioRequisitorio:focus {\r\n\tborder: 1px dotted;\r\n\tbackground: yellow;\r\n}\r\n';
   },
-  function(t, e) {
+  function (t, e) {
     t.exports = '.gm-conferir-rpv__tbody > tr:hover {\r\n\tbackground-color: #ccc;\r\n}\r\n';
   },
 ]);

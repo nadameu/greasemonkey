@@ -367,10 +367,7 @@ function main() {
 }
 
 function extrairParametrosUrl(url) {
-  const str = url
-    .split('?')
-    .slice(1)
-    .join('?');
+  const str = url.split('?').slice(1).join('?');
   return new Map(
     str.split('&').map(pair => pair.split('=').map(texto => decodeURIComponent(texto)))
   );

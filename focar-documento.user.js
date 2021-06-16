@@ -10,5 +10,4 @@
 // @description Facilita o uso do teclado, focando o documento ao abri-lo em uma janela.
 // ==/UserScript==
 
-if (window.frames.length)
-  window.frames[0].focus();
+if (window.frames.length) window.frames[0].focus();

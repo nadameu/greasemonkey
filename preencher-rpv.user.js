@@ -13,7 +13,7 @@
 
 const STEPS_HONORARIOS = 5;
 
-const Moeda = (function() {
+const Moeda = (function () {
   const formatador = new Intl.NumberFormat('pt-BR', {
     style: 'decimal',
     minimumFractionDigits: 2,
@@ -32,7 +32,7 @@ const Moeda = (function() {
   };
 })();
 
-const Propriedades = (function() {
+const Propriedades = (function () {
   const camposBoolean = ['haCorrente', 'haAnterior'];
   const camposInteiro = ['honorarios'];
   const camposMoeda = ['principal', 'total', 'corrente', 'anterior', 'sucumbencia', 'outros'];
@@ -190,9 +190,7 @@ function adicionarAlteracoesHonorario() {
     botao.style.display = 'none';
   }
   function atualizarResultado() {
-    return atualizarResultadoHonorario()
-      .then(onValoresAtualizados)
-      .catch(onValoresZerados);
+    return atualizarResultadoHonorario().then(onValoresAtualizados).catch(onValoresZerados);
   }
 
   atualizarResultado();

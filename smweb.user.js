@@ -26,11 +26,11 @@ $(
   '#ctl00_ContentPlaceHolder1_btnVoltar, #ctl00_ctl00_ContentPlaceHolder1_Titulo_btnVoltar, #ctl00_footer_btnFechar'
 )
   .parent()
-  .each(function() {
+  .each(function () {
     $(this).append(
       '<button id="btnCarta" class="smbotao" style="background-color: firebrick;">Carta</button>'
     );
-    $('#btnCarta').on('click', function(e) {
+    $('#btnCarta').on('click', function (e) {
       e.preventDefault();
       var ed =
         FCKeditorAPI.Instances.ctl00_ContentPlaceHolder1_FCKeditor1 ||
@@ -95,7 +95,7 @@ $(
     $(this).append(
       '<button id="btnConfirmar" class="smbotao" style="background-color: firebrick;">Confirmar</button>'
     );
-    $('#btnConfirmar').on('click', function(e) {
+    $('#btnConfirmar').on('click', function (e) {
       e.preventDefault();
       var ed =
         FCKeditorAPI.Instances.ctl00_ContentPlaceHolder1_FCKeditor1 ||
@@ -105,13 +105,13 @@ $(
       var editando = false,
         apagar = false,
         texto = '';
-      $(doc.body.childNodes).each(function() {
+      $(doc.body.childNodes).each(function () {
         if (this.id === 'textofim') {
           editando = false;
           texto = texto.replace(/&nbsp;/g, ' ');
           console.log(texto);
           texto = texto.replace(/<br ?\/?><\/div>/g, '\n');
-          texto = texto.replace(/<\/?([a-z]+)[^>]*>/g, function(match, tag) {
+          texto = texto.replace(/<\/?([a-z]+)[^>]*>/g, function (match, tag) {
             switch (tag.toLowerCase()) {
               case 'div':
                 if (match === '</div>') return '\n';
@@ -137,7 +137,7 @@ $(
           console.log('joined', partes);
           partes = partes.split(/\n\n+/g);
           console.log(partes);
-          texto = partes.map(function(parte) {
+          texto = partes.map(function (parte) {
             return Paragrafo('texto', parte);
           });
           console.log(texto);
@@ -167,7 +167,7 @@ $(
     });
   });
 
-var Paragrafo = (function() {
+var Paragrafo = (function () {
   var fontePadrao = 'Bookman Old Style';
   var alinhamentoPadrao = 'justify';
   var tamanhoPadrao = 12;
@@ -185,10 +185,10 @@ var Paragrafo = (function() {
     partes = partes.concat(['</span>', '</span>', '</div>']);
     return partes.join('');
   }
-  Paragrafo.setFonte = function(fonte) {
+  Paragrafo.setFonte = function (fonte) {
     fontePadrao = fonte;
   };
-  Paragrafo.addEstilo = function(
+  Paragrafo.addEstilo = function (
     estilo,
     alinhamento = alinhamentoPadrao,
     tamanho = tamanhoPadrao,
@@ -199,12 +199,12 @@ var Paragrafo = (function() {
   return Paragrafo;
 })();
 
-var Linha = (function() {
+var Linha = (function () {
   var estiloPadrao = null;
   function Linha() {
     return Paragrafo(estiloPadrao, '<br />');
   }
-  Linha.setEstilo = function(estilo) {
+  Linha.setEstilo = function (estilo) {
     estiloPadrao = estilo;
   };
   return Linha;
