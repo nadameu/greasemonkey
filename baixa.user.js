@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name Preenchimento dados baixa
-// @version 5.1.1
+// @version 5.2.0
 // @author nadameu
 // @namespace http://nadameu.com.br/baixa
 // @include /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=baixa_arquivamento_processo_etapa_(1|3)&/
@@ -92,7 +92,7 @@ function query(selector, parentNode = document) {
   if ('1' === etapa)
     (({ baixar, pendencias, wrapper, sidebar }) => {
       adicionarEstilos(
-        '.gmLabel {\n\tborder-color: #faa;\n}\n.gmLabel.gmChecked {\n\tbackground: #fdc;\n}\n#gmFechar {\n\tcursor: pointer;\n}\n.gmLabel label {\n\tcursor: pointer;\n}\n.gmValor {\n\tdisplay: inline-block;\n\twidth: 18px;\n\theight: 18px;\n\tline-height: 18px;\n\tcolor: #333;\n\tbackground: #cea;\n\tborder-radius: 100%;\n}\n'
+        '.gmLabel {\n\tborder-color: #faa;\n}\n.gmLabel.gmChecked {\n\tbackground: #fdc;\n}\n#gmFechar {\n\tcursor: pointer;\n}\n.gmLabel label {\n\tcursor: pointer;\n}\n.gmValor {\n\tdisplay: inline-block;\n\twidth: 18px;\n\theight: 18px;\n\tline-height: 18px;\n\tcolor: #333;\n\tbackground: #cea;\n\tborder-radius: 100%;\n\ttext-align: center;\n}\n'
       );
       ((wrapper, sidebar) => {
         wrapper.style.transition = 'none';
