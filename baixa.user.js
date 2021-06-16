@@ -162,8 +162,10 @@ function query(selector, parentNode = document) {
           function alteraTextoAguardaEFade(texto) {
             div.textContent = texto;
             div.getBoundingClientRect();
-            div.style.transition = `opacity 500ms linear ${((mensagem = texto),
-            Math.max(ESPERA_MINIMA, mensagem.length * MILISSEGUNDOS_POR_CARACTERE))}ms`;
+            div.style.transition = `opacity 500ms linear ${
+              ((mensagem = texto),
+              Math.max(ESPERA_MINIMA, mensagem.length * MILISSEGUNDOS_POR_CARACTERE))
+            }ms`;
             var mensagem;
             div.style.opacity = '0';
           }
@@ -267,14 +269,17 @@ function query(selector, parentNode = document) {
       document.addEventListener('click', osd.ocultar);
       document.addEventListener(
         'keypress',
-        (({ pushDígito: pushDígito, mostrarTexto, setValor, baixar }) => evt => {
-          const digito = (string => (/^\d$/.test(string) ? Number(string) : null))(evt.key);
-          if (null !== digito) {
-            const valor = pushDígito(digito);
-            mostrarTexto(valor.toString());
-            setValor(valor);
-          } else 13 === evt.keyCode && baixar.click();
-        })({
+        (
+          ({ pushDígito: pushDígito, mostrarTexto, setValor, baixar }) =>
+          evt => {
+            const digito = (string => (/^\d$/.test(string) ? Number(string) : null))(evt.key);
+            if (null !== digito) {
+              const valor = pushDígito(digito);
+              mostrarTexto(valor.toString());
+              setValor(valor);
+            } else 13 === evt.keyCode && baixar.click();
+          }
+        )({
           baixar,
           mostrarTexto: osd.mostrarTexto,
           pushDígito: controladorDigitos.pushDígito,
