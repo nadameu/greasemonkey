@@ -1563,10 +1563,10 @@ const minhasRegras = {
 	AgPgtoRPV: {
 		campoDataConsiderada: 'dataSituacao' as const,
 		dias: {
-			[CompetenciasCorregedoria.JUIZADO]: 30,
-			[CompetenciasCorregedoria.CIVEL]: 30,
-			[CompetenciasCorregedoria.CRIMINAL]: 30,
-			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 30,
+			[CompetenciasCorregedoria.JUIZADO]: 60,
+			[CompetenciasCorregedoria.CIVEL]: 60,
+			[CompetenciasCorregedoria.CRIMINAL]: 60,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 60,
 		},
 	},
 	Analisar: {
@@ -1576,6 +1576,15 @@ const minhasRegras = {
 			[CompetenciasCorregedoria.CIVEL]: 20,
 			[CompetenciasCorregedoria.CRIMINAL]: 20,
 			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 60,
+		},
+	},
+	AnalisarPrioridade: {
+		campoDataConsiderada: 'dataUltimoEvento' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 7,
+			[CompetenciasCorregedoria.CIVEL]: 10,
+			[CompetenciasCorregedoria.CRIMINAL]: 10,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 30,
 		},
 	},
 	Cumprir: {
@@ -1668,6 +1677,15 @@ const minhasRegras = {
 			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 30,
 		},
 	},
+	SituacaoErrada: {
+		campoDataConsiderada: 'dataSituacao' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 1,
+			[CompetenciasCorregedoria.CIVEL]: 1,
+			[CompetenciasCorregedoria.CRIMINAL]: 1,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 1,
+		},
+	},
 	Suspensao: {
 		campoDataConsiderada: 'dataUltimoEvento' as const,
 		dias: {
@@ -1688,6 +1706,9 @@ const minhasRegras = {
 	},
 };
 const infoMeta: InfoMeta = {
+	'721307546622562490210000000013' /* Devolução Turma */: {
+		MOVIMENTO: minhasRegras.Analisar,
+	},
 	'721612283838905044100680025624' /* 3DIR Ag pedido TED */: {
 		MOVIMENTO: minhasRegras.Prazo05,
 	},
@@ -1734,8 +1755,73 @@ const infoMeta: InfoMeta = {
 			},
 		},
 	},
+	'721307551490768040230000000001' /* 9EXE Ag contrarrazões */: {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
 	'721562943669373244747535696808' /* 9EXE Ag decisão supe */: {
 		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
+	},
+	'721583337216547742495762572419' /* 9EXE Ag Fazer INSS 1 */: {
+		MOVIMENTO: minhasRegras.Prazo30,
+	},
+	'721607866102094019347001221238' /* 9EXE Ag prov. partes baixa */: {
+		MOVIMENTO: minhasRegras.Analisar,
+	},
+	'721307552681884870230000000002' /* 9EXE Ag providência partes */: {
+		MOVIMENTO: minhasRegras.Analisar,
+	},
+	'721308062479869640210000000001' /* 9EXE Ag recurso */: {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
+	'721552920360416260216979817401' /* 9EXE Analisar recurso */: {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
+	'721307635473840010210000000001' /* 9EXE Cálculo devolvido */: {
+		MOVIMENTO: minhasRegras.Analisar,
+	},
+	'721507130986103060244491911387' /* 9EXE Descumprimento INSS */: {
+		MOVIMENTO: minhasRegras.AnalisarPrioridade,
+	},
+	'721307554204880400230000000001' /* 9EXE Digitar RPV */: {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
+	'721307558985430470230000000001' /* 9EXE Exp RPV */: {
+		MOVIMENTO: minhasRegras.Prazo05,
+	},
+	'721507130986103060244448466387' /* 9EXE Habilitação sucessores */: {
+		MOVIMENTO: minhasRegras.Analisar,
+	},
+	'721507130986103060244459513559' /* 9EXE Honorários de sucumbência */: {
+		MOVIMENTO: minhasRegras.Analisar,
+	},
+	'721547820988212490231284718313' /* 9EXE Ord impugnação */: {
+		MOVIMENTO: minhasRegras.Analisar,
+	},
+	'721544193174836710212300925863' /* 9EXE P. física */: {
+		MOVIMENTO: minhasRegras.Analisar,
+	},
+	'721400171914790310250000000002' /* 9EXE Rec Assessoria */: {
+		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
+	},
+	'721544107305944230242168515535' /* 9EXE Suspensos */: {
+		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
+		'SUSP/SOBR-Aguarda Julg.Embg.': minhasRegras.Suspensao,
+		'SUSP/SOBR-P.Decisão Judicial': minhasRegras.Suspensao,
+		'SUSP/SOBR-Parcel.Débito.': minhasRegras.Suspensao,
+	},
+	'721535037528900780222902466001' /* 9EXE Triagem */: {
+		MOVIMENTO: minhasRegras.AnalisarPrioridade,
+	},
+	'721583337216547742495846775052' /* 9EXE Verif obrigação fazer 1 */: {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
+	'721583337216547742495856888118' /* 9EXE Verif obrigação fazer M */: {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
+	'721483972730880570255881334762' /* C/ Luciana */: {
+		'MOVIMENTO': minhasRegras.Cumprir,
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
+		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
 	},
 	'721527261655975790236901397942' /* C/ Paulo */: {
 		'MOVIMENTO': minhasRegras.Cumprir,
@@ -1772,6 +1858,9 @@ const infoMeta: InfoMeta = {
 			...minhasRegras.Analisar,
 			campoDataConsiderada: 'dataInclusaoLocalizador' as const,
 		},
+	},
+	'721274465163072970240000000027' /* TRF RECEBIDOS */: {
+		MOVIMENTO: minhasRegras.Analisar,
 	},
 	'721273070396362990240000000266' /* TRF/TR BAIXADOS */: { '*': minhasRegras.Analisar },
 	'721273070396362990240000000076' /* TRF/TR DECISÃO */: {
