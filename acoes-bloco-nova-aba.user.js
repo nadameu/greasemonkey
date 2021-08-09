@@ -6,10 +6,14 @@
 // @match       https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=localizador_processos_lista&*
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=localizador_processos_lista&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=localizador_processos_lista&*
+// @match       https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=relatorio_geral_consultar&*
+// @match       https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=relatorio_geral_consultar&*
+// @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=relatorio_geral_consultar&*
+// @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=relatorio_geral_consultar&*
 // @grant       none
-// @version     1.0.0
+// @version     2.0.0
 // @author      Paulo R. Maurici Jr.
-// @description Permite que ações em bloco sejam abertas em nova aba, na tela de processos por localizador.
+// @description Permite que ações em bloco sejam abertas em nova aba, na tela de processos por localizador e no resultado do relatório geral.
 // ==/UserScript==
 
 const frmAcao = document.querySelector('#frmAcao');
