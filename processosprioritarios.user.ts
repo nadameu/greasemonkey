@@ -16,7 +16,6 @@ interface Window {
 	infraExibirAviso(permiteCancelar: boolean, texto: string): void;
 	infraOcultarAviso(): void;
 }
-declare function $(...args: any[]): any;
 
 const CompetenciasCorregedoria = {
 	JUIZADO: 1,
@@ -303,7 +302,10 @@ class GUI {
 				balaoAberto.classList.remove('gmDetalhesAberto');
 			});
 			balao.classList.add('gmDetalhesAberto');
-			$('html').animate({ scrollTop: $(balao).offset().top - $(window).innerHeight() / 2 }, 'fast');
+			$('html').animate(
+				{ scrollTop: $(balao).offset()!.top - $(window).innerHeight()! / 2 },
+				'fast',
+			);
 			const MENOR = -1,
 				IGUAL = 0,
 				MAIOR = +1;
