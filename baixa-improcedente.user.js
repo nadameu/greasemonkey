@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-improcedente
-// @version 0.2.1
+// @version 0.3.0
 // @description 3DIR Baixa - sentença de improcedência
 // @namespace http://nadameu.com.br/baixa-improcedente
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -22,18 +22,21 @@ if (
 )
   return log('Não há trânsito em julgado.');
 
-if (
-  !eventos.some(
-    linha =>
-      textContent(linha.cells[3]).match(
-        /Sentença com Resolução de Mérito - Pedido Improcedente|Julgado improcedente o pedido/
-      ) &&
-      textContent(linha.cells[5]).match(
-        /Condeno a parte autora ao (reembolso|pagamento) dos honorários periciais/
-      )
-  )
-)
+const sentencaImprocedencia = eventos.filter(
+  linha =>
+    textContent(linha.cells[3]).match(
+      /Sentença com Resolução de Mérito - Pedido Improcedente|Julgado improcedente o pedido/
+    )
+);
+if (sentencaImprocedencia.length !== 1)
   return log('Não há sentença de improcedência.');
+
+let condenacaoAutora = sentencaImprocedencia.some(
+  linha =>
+    textContent(linha.cells[5]).match(
+      /Condeno a parte autora ao (reembolso|pagamento) dos honorários periciais/
+    )
+);
 
 if (localizadores[0] === '3DIR Baixa Turma') {
   const ultimoEvento = Number(textContent(eventos[0].cells[1]));
@@ -46,6 +49,8 @@ if (localizadores[0] === '3DIR Baixa Turma') {
     )
   )
     return log('Julgamento não manteve sentença por unanimidade.');
+  else
+    condenacaoAutora = true;
 } else if (localizadores[0] !== '3DIR Baixa') {
   return log('Não é 3DIR Baixa.');
 }
@@ -69,9 +74,11 @@ for (const perito of peritos) {
 const capa = document.getElementById('fldCapa');
 if (!capa) return;
 
+const motivo = condenacaoAutora ? '6' : '0';
+
 capa.insertAdjacentHTML(
   'beforebegin',
-  `<div style="display: inline-block; padding: 4px; border-radius: 4px; font-size: 1.25em; font-weight: bold; background: #848; color: #fff;">Baixar motivo 6</div>`
+  `<div style="display: inline-block; padding: 4px; border-radius: 4px; font-size: 1.25em; font-weight: bold; background: #848; color: #fff;">Baixar motivo ${motivo}</div>`
 );
 
 function queryAll(selector) {
