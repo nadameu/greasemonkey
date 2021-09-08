@@ -1475,7 +1475,9 @@ const infoMeta = {
         BAIXADO: minhasRegras.CumprirPrioridade,
     },
     '721307546545352560220000000001' /* 3DIR Direção */: {
-        MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
+        'MOVIMENTO': minhasRegras.UmDiaNoLocalizador,
+        'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
+        'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
     },
     '721593790295233093891502637047' /* 3DIR Entrega */: { MOVIMENTO: minhasRegras.ProcessoParado },
     '721484231615301020214955770825' /* 3DIR Extrato CEF */: { MOVIMENTO: minhasRegras.Cumprir },
