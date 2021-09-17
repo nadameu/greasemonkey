@@ -1,6 +1,6 @@
 import * as path from 'path';
 import serve from 'rollup-plugin-serve';
-import typescript from 'rollup-plugin-typescript';
+import typescript from '@rollup/plugin-typescript';
 import { generateBanner } from './generateBanner';
 import metadata from './metadata';
 import pkg from './package.json';
