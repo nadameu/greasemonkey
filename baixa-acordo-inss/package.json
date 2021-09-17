@@ -8,16 +8,15 @@
     "start": "rollup -c -w --environment BUILD:development"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^19.0.0",
-    "@rollup/plugin-node-resolve": "^13.0.0",
-    "@rollup/plugin-typescript": "^8.2.1",
-    "prettier": "^2.3.2",
-    "rollup": "^2.52.4",
+    "@rollup/plugin-commonjs": "^20.0.0",
+    "@rollup/plugin-node-resolve": "^13.0.4",
+    "@rollup/plugin-typescript": "^8.2.5",
+    "prettier": "^2.4.1",
+    "rollup": "^2.56.3",
     "rollup-plugin-serve": "^1.1.0",
-    "typescript": "^4.3.4"
+    "typescript": "^4.4.3"
   },
   "dependencies": {
-    "descriptive-regexp": "^0.2.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.1"
   }
 }
