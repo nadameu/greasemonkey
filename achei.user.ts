@@ -10,6 +10,7 @@
 // @include     http://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar&*
 // @include     https://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar
 // @include     https://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar&*
+// @require     https://raw.githubusercontent.com/nadameu/greasemonkey/Maybe-v1.0.0/lib/Maybe.js
 // @version     15.0.0
 // @grant       none
 // ==/UserScript==
@@ -24,82 +25,72 @@ interface NodeSigla {
   sigla: string;
 }
 
-const reSigla = /^\s*Sigla:\s*(\S+)\s*(\(antiga:\s*\S+\s*\))?\s*$/;
+type Maybe<a> = import('./lib/Maybe').Maybe<a>;
 
-main(document).catch(e => {
-  console.error(e);
-});
-
-async function main(doc: HTMLDocument) {
-  const dominio = await getDominio(doc);
-  const formulario = await getFormulario(doc);
-  const nodeInfo = await getNodeInfo(formulario);
+async function main(doc: Document) {
+  const [dominio, nodeInfo] = await maybe.all(getDominio(doc), getFormulario(doc).map(getNodeInfo));
   criarLinks(doc, dominio, nodeInfo);
   const qtd = nodeInfo.length;
   const s = qtd > 1 ? 's' : '';
   console.log(`${qtd} link${s} criado${s}`);
 }
 
-async function getFormulario(doc: HTMLDocument): Promise<HTMLFormElement> {
-  const formulario = doc.querySelector<HTMLFormElement>('form[name="formulario"]');
-  if (formulario == null) throw new Error('Formulário não encontrado.');
-  return formulario;
-}
+const getDominio = (doc: Document): Maybe<string> =>
+  maybe
+    .Just(doc)
+    .safeMap(x => x.querySelector('[name="local"]:checked'))
+    .safeMap(x => x.nextSibling)
+    .safeMap(x => x.textContent)
+    .map(x => x.trim());
 
-async function getDominio(doc: HTMLDocument): Promise<string> {
-  const dominio = doc
-    .querySelector('[name="local"]:checked')
-    ?.nextSibling?.textContent?.trim()
-    .toLowerCase();
-  if (dominio == null) throw new Error('Domínio não encontrado.');
-  return dominio;
-}
+const getFormulario = (doc: Document): Maybe<HTMLFormElement> =>
+  maybe.Just(doc).safeMap(x => x.querySelector<HTMLFormElement>('form[name="formulario"]'));
 
-async function getNodeInfo(formulario: HTMLFormElement): Promise<NodeSigla[]> {
-  const info = Array.from(
-    (function* () {
-      for (const sibling of siblings(formulario))
-        for (const node of flattenTabela(sibling)) yield* getNodeSigla(node);
-    })()
-  );
-  if (info.length === 0) throw new Error('Nenhuma sigla encontrada.');
-  return info;
+const getNodeInfo = (formulario: HTMLFormElement): NodeSigla[] =>
+  Array.from(parseFormulario(formulario));
+
+function* parseFormulario(formulario: HTMLFormElement) {
+  for (const sibling of siblings(formulario))
+    for (const node of flattenTabela(sibling)) yield* getNodeSigla(node);
 }
 
 function* siblings(node: Node) {
-  for (let current = node.nextSibling; current !== null; current = current.nextSibling)
-    yield current;
+  for (let s = node.nextSibling; s !== null; s = s.nextSibling) yield s;
 }
 
-function flattenTabela(node: Node): Iterable<Node> {
+function* flattenTabela(node: Node) {
   if (node instanceof HTMLTableElement) {
     const celula = node.querySelector('td:nth-child(2)');
     if (!celula) throw new Error('Célula não encontrada.');
-    return celula.childNodes;
+    yield* celula.childNodes;
   }
-  return [node];
+  yield node;
 }
 
-function getNodeSigla(node: Node): [NodeSigla] | [] {
-  const text = node.textContent;
-  if (!text) return [];
-  const match = text.match(reSigla);
-  if (!match) return [];
-  const sigla = siglaFromMatch(match);
-  return sigla == null ? [] : [{ node, sigla }];
-}
+const getNodeSigla = (node: Node): Maybe<NodeSigla> =>
+  maybe
+    .Just(node)
+    .safeMap(x => x.textContent)
+    .chain(siglaFromText)
+    .map(sigla => ({ node, sigla }));
 
-function siglaFromMatch(match: RegExpMatchArray): string {
-  if (!match[2]) {
-    // Possui somente sigla antiga
-    return match[1].toLowerCase();
-  } else {
-    // Possui sigla antiga e nova
-    return match[1];
-  }
-}
+const reSigla = /^\s*Sigla:\s*(\S+)\s*(\(antiga:\s*\S+\s*\))?\s*$/;
 
-function criarLinks(doc: HTMLDocument, dominio: string, nodeInfo: NodeSigla[]) {
+const siglaFromText = (text: string): Maybe<string> =>
+  maybe
+    .Just(text)
+    .safeMap(x => x.match(reSigla))
+    .map(match => {
+      if (match[2]) {
+        // Possui sigla antiga e nova
+        return match[1];
+      } else {
+        // Possui somente sigla nova
+        return match[1].toLowerCase();
+      }
+    });
+
+function criarLinks(doc: Document, dominio: string, nodeInfo: NodeSigla[]) {
   const template = doc.createElement('template');
   template.innerHTML = ' [ <a href="" target="_blank">Abrir na Intra</a> ]';
   const content = template.content;
@@ -110,3 +101,7 @@ function criarLinks(doc: HTMLDocument, dominio: string, nodeInfo: NodeSigla[]) {
     node.parentNode!.insertBefore(fragment, node.nextSibling);
   }
 }
+
+main(document).catch(e => {
+  console.error(e);
+});
