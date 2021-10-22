@@ -182,10 +182,12 @@
       },
       p = (t, e) =>
         Promise.resolve(t.cells).then(
-          (t => e =>
-            e.length > t && void 0 !== e[t]
-              ? Promise.resolve(e[t])
-              : Promise.reject(new Error(`Índice inexistente: ${t}.`)))(e)
+          (
+            t => e =>
+              e.length > t && void 0 !== e[t]
+                ? Promise.resolve(e[t])
+                : Promise.reject(new Error(`Índice inexistente: ${t}.`))
+          )(e)
         ),
       f = t => {
         const e = e => p(t, e),
@@ -1386,7 +1388,8 @@
       }
       obterTransito() {
         return r.a(this, void 0, void 0, function* () {
-          const t = /(^(Julgamento|Sentença))|Voto|Recurso Extraordinário Inadmitido|Pedido de Uniformização para a Turma Nacional - Inadmitido/,
+          const t =
+              /(^(Julgamento|Sentença))|Voto|Recurso Extraordinário Inadmitido|Pedido de Uniformização para a Turma Nacional - Inadmitido/,
             e = /CIÊNCIA, COM RENÚNCIA AO PRAZO|Decurso de Prazo/,
             n = /Trânsito em Julgado/,
             r = /Data: (\d\d\/\d\d\/\d\d\d\d)/,
@@ -1421,21 +1424,22 @@
                     `^Intimação Eletrônica - Expedida/Certificada - Julgamento|Refer\\. ao Evento: ${t}(\\D|$)`
                   )
               ),
-              c = Object(o.liftA2)(i.option)(t => e =>
-                s
-                  .filter(e =>
-                    b(1)(e)
-                      .map(t => p.a(t))
-                      .exists(e => e <= t)
-                  )
-                  .filter(t => b(3)(t).exists(t => !e.test(t)))
-                  .filter(t =>
-                    i
-                      .fromNullable(t.cells[3])
-                      .mapNullable(t => t.querySelector('.infraEventoPrazoParte'))
-                      .mapNullable(t => t.dataset.parte)
-                      .exists(t => /^(AUTOR|REU|MPF)$/.test(t))
-                  )
+              c = Object(o.liftA2)(i.option)(
+                t => e =>
+                  s
+                    .filter(e =>
+                      b(1)(e)
+                        .map(t => p.a(t))
+                        .exists(e => e <= t)
+                    )
+                    .filter(t => b(3)(t).exists(t => !e.test(t)))
+                    .filter(t =>
+                      i
+                        .fromNullable(t.cells[3])
+                        .mapNullable(t => t.querySelector('.infraEventoPrazoParte'))
+                        .mapNullable(t => t.dataset.parte)
+                        .exists(t => /^(AUTOR|REU|MPF)$/.test(t))
+                    )
               )(n)(r).getOrElse([]);
             if (c.length > 0) {
               const t = /^return infraTooltipMostrar\('([^']+)','Informações do Evento',1000\);$/,
@@ -1845,14 +1849,15 @@
         var o = e.length,
           i = a[o];
         Boolean(i) ||
-          (i = a[o] = r.curried(
-            function () {
-              for (var t = [], e = 0; e < arguments.length; e++) t[e] = arguments[e];
-              return t;
-            },
-            o - 1,
-            []
-          ));
+          (i = a[o] =
+            r.curried(
+              function () {
+                for (var t = [], e = 0; e < arguments.length; e++) t[e] = arguments[e];
+                return t;
+              },
+              o - 1,
+              []
+            ));
         for (var s = t.map(e[0], i), c = 1; c < o; c++) s = t.ap(s, e[c]);
         return s;
       };

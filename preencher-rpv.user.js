@@ -544,13 +544,8 @@ window.formatarCampoMoeda = function formatarCampoMoeda(input) {
 
 function gerarHTMLBeneficiario(valoresCalculados, ocultarVazios = false) {
   const { haCorrente, haAnterior } = Propriedades;
-  const {
-    principalAutor,
-    jurosAutor,
-    totalAutor,
-    correnteAutor,
-    anteriorAutor,
-  } = valoresCalculados;
+  const { principalAutor, jurosAutor, totalAutor, correnteAutor, anteriorAutor } =
+    valoresCalculados;
   if (ocultarVazios && totalAutor === 0) return '';
   let resultado = `Beneficiário: ${Moeda.formatar(totalAutor)} (${Moeda.formatar(
     principalAutor

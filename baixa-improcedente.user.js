@@ -22,20 +22,17 @@ if (
 )
   return log('Não há trânsito em julgado.');
 
-const sentencaImprocedencia = eventos.filter(
-  linha =>
-    textContent(linha.cells[3]).match(
-      /Sentença com Resolução de Mérito - Pedido Improcedente|Julgado improcedente o pedido/
-    )
+const sentencaImprocedencia = eventos.filter(linha =>
+  textContent(linha.cells[3]).match(
+    /Sentença com Resolução de Mérito - Pedido Improcedente|Julgado improcedente o pedido/
+  )
 );
-if (sentencaImprocedencia.length !== 1)
-  return log('Não há sentença de improcedência.');
+if (sentencaImprocedencia.length !== 1) return log('Não há sentença de improcedência.');
 
-let condenacaoAutora = sentencaImprocedencia.some(
-  linha =>
-    textContent(linha.cells[5]).match(
-      /Condeno a parte autora ao (reembolso|pagamento) dos honorários periciais/
-    )
+let condenacaoAutora = sentencaImprocedencia.some(linha =>
+  textContent(linha.cells[5]).match(
+    /Condeno a parte autora ao (reembolso|pagamento) dos honorários periciais/
+  )
 );
 
 if (localizadores[0] === '3DIR Baixa Turma') {
@@ -49,8 +46,7 @@ if (localizadores[0] === '3DIR Baixa Turma') {
     )
   )
     return log('Julgamento não manteve sentença por unanimidade.');
-  else
-    condenacaoAutora = true;
+  else condenacaoAutora = true;
 } else if (localizadores[0] !== '3DIR Baixa') {
   return log('Não é 3DIR Baixa.');
 }

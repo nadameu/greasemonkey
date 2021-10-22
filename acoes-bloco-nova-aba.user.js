@@ -17,21 +17,22 @@
 // ==/UserScript==
 
 const frmAcao = document.querySelector('#frmAcao');
-if (! frmAcao) return;
+if (!frmAcao) return;
 
 const oldTarget = frmAcao.target;
 
 const fieldsets = document.querySelectorAll('[id="fldAcoes"]');
 
 fieldsets.forEach(fieldset => {
-  fieldset.addEventListener('click', (evt) => {
+  fieldset.addEventListener('click', evt => {
     const { target } = evt;
     if (typeof target.matches !== 'function') return;
-    if (! target.matches('a.infraButton')) return;
+    if (!target.matches('a.infraButton')) return;
 
-    const [, tipoAcao] = target.href.match(/^javascript:validarAcao\('([^']+)'\);void\(0\);$/) || [];
-    if (! tipoAcao) return;
-    
+    const [, tipoAcao] =
+      target.href.match(/^javascript:validarAcao\('([^']+)'\);void\(0\);$/) || [];
+    if (!tipoAcao) return;
+
     evt.preventDefault();
 
     frmAcao.target = '_blank';

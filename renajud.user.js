@@ -596,9 +596,9 @@ var Pagina = (function () {
       var promise = new Promise(function (resolve, reject) {
         var onPaginaCarregada = function () {
           console.info('pagina carregada');
-          var botoesPagina = [
-            ...document.getElementsByClassName('ui-paginator-page'),
-          ].filter(botao => botao.classList.contains('ui-state-active'));
+          var botoesPagina = [...document.getElementsByClassName('ui-paginator-page')].filter(
+            botao => botao.classList.contains('ui-state-active')
+          );
           if (botoesPagina.length === 2 && Number(botoesPagina[0].textContent) === pagina) {
             resolve();
           } else if (botoesPagina.length === 2) {

@@ -20,7 +20,7 @@ function main() {
   window.addEventListener('load', () => {
     removerPreOcultacao();
     const infos = buscarElementos();
-    if (! infos) return;
+    if (!infos) return;
     for (const info of infos) {
       criarIcone(info);
     }
@@ -39,8 +39,12 @@ function buscarElementos() {
   if (ocultarPartes.length === 0) return;
   const celulas = Array.prototype.map.call(ocultarPartes, x => x.closest('td'));
   if (celulas.some(x => x === null)) return;
-  const icones = celulas.map(x => x.querySelector('img[src$="infra_css/imagens/ver_tudo.gif"], img[src$="infra_css/imagens/ver_resumo.gif"]'))
-  if (! icones.every(x => x === null)) return;
+  const icones = celulas.map(x =>
+    x.querySelector(
+      'img[src$="infra_css/imagens/ver_tudo.gif"], img[src$="infra_css/imagens/ver_resumo.gif"]'
+    )
+  );
+  if (!icones.every(x => x === null)) return;
   return celulas.map((celula, indice) => ({ celula, span: ocultarPartes[indice] }));
 }
 
@@ -48,7 +52,7 @@ function criarIcone({ celula, span }) {
   let mostrar = false;
   const icone = document.createElement('img');
   icone.addEventListener('click', () => {
-    mostrar = ! mostrar;
+    mostrar = !mostrar;
     atualizar();
   });
   atualizar();
