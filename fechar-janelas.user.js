@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
 // @grant       none
-// @version     3.0.0
+// @version     3.1.0
 // @author      nadameu
 // @description Fecha as janelas de documentos que tenham sido abertas no processo
 // ==/UserScript==
@@ -30,12 +30,9 @@ const style = document.head.appendChild(document.createElement('style'));
 style.textContent = /* css */ `
 
 #gm-fechar-janelas {
-  --accent: #41285e;
-  --bg: #494251;
-  --disabled: #5d5863;
-  --disabled-text: #ccc;
-  --shadow: #262c31;
-  --muted-accent: #453557;
+  --accent: #6f5b9b;
+  --shadow: #555;
+  --muted-accent: #675a84;
   --text: #fff;
 }
 #gm-fechar-janelas {
