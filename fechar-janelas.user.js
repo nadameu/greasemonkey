@@ -7,39 +7,78 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
 // @grant       none
-// @version     2.0.0
+// @version     3.0.0
 // @author      nadameu
 // @description Fecha as janelas de documentos que tenham sido abertas no processo
 // ==/UserScript==
 
 const referencia = document.querySelector('[name="selInfraUnidades"]')?.parentNode?.parentNode;
-if (!referencia) {
+if (! referencia) {
   console.error('<fechar-janelas>', 'Não foi possível encontrar um local para inserir o botão.');
   return;
 }
 
 const tabela = document.querySelector('#tblEventos');
-if (!tabela) {
+if (! tabela) {
   console.error('<fechar-janelas>', 'Não foi possível encontrar a tabela de eventos.');
   return;
 }
 
 tabela.addEventListener('click', onTabelaClick);
 
-const div = document.createElement('div');
-div.className = 'p-2';
-div.style.display = 'none';
-div.style.cursor = 'pointer';
+const style = document.head.appendChild(document.createElement('style'));
+style.textContent = /* css */ `
+
+#gm-fechar-janelas {
+  --accent: #41285e;
+  --bg: #494251;
+  --disabled: #5d5863;
+  --disabled-text: #ccc;
+  --shadow: #262c31;
+  --muted-accent: #453557;
+  --text: #fff;
+}
+#gm-fechar-janelas {
+  display: flex;
+  align-items: center;
+  margin: 0 1rem;
+  padding: 2px 20px;
+  font-size: 18px;
+  border: none;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px var(--shadow);
+  background: var(--muted-accent);
+  color: var(--text);
+  cursor: pointer;
+}
+#gm-fechar-janelas:hover {
+  transition: background-color 0.1s ease-in;
+  background: var(--accent);
+}
+#gm-fechar-janelas:disabled {
+  display: none;
+}
+#gm-fechar-janelas svg {
+  height: 18px;
+  margin-right: 10px;
+}
+#gm-fechar-janelas svg .outer {
+  fill: var(--text);
+}
+`;
+
+const button = referencia.insertAdjacentElement('afterend', document.createElement('button'));
+button.id = 'gm-fechar-janelas';
+button.disabled = true;
 
 // © 2014 Andreas Kainz & Uri Herrera & Andrew Lake & Marco Martin & Harald Sitter & Jonathan Riddell & Ken Vermette & Aleix Pol & David Faure & Albert Vaca & Luca Beltrame & Gleb Popov & Nuno Pinheiro & Alex Richardson &  Jan Grulich & Bernhard Landauer & Heiko Becker & Volker Krause & David Rosca & Phil Schaf / KDE
-div.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" height="22"><circle cx="8" cy="8" r="6" fill="#fff"/><path d="M8 0a8 8 0 00-8 8 8 8 0 008 8 8 8 0 008-8 8 8 0 00-8-8M5 4l3 3 3-3 1 1-3 3 3 3-1 1-3-3-3 3-1-1 3-3-3-3 1-1" fill="#da4453"/></svg> Fechar janelas`;
+button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0a8 8 0 00-8 8 8 8 0 008 8 8 8 0 008-8 8 8 0 00-8-8M5 4l3 3 3-3 1 1-3 3 3 3-1 1-3-3-3 3-1-1 3-3-3-3 1-1" class="outer"/></svg> Fechar janelas`;
 
-div.addEventListener('click', onClick);
+button.addEventListener('click', onClick);
 
-referencia.insertAdjacentElement('afterend', div);
 
 function onTabelaClick(evt) {
-  if (!evt.target?.matches?.('a.infraLinkDocumento')) return;
+  if (! evt.target?.matches?.('a.infraLinkDocumento')) return;
   show();
 }
 
@@ -54,9 +93,9 @@ function onClick(evt) {
 }
 
 function show() {
-  div.style.display = null;
+  button.disabled = false;
 }
 
 function hide() {
-  div.style.display = 'none';
+  button.disabled = true;
 }
