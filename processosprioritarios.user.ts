@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.0.2
+// @version 27.1.0
 // @grant none
 // ==/UserScript==
 
@@ -1758,6 +1758,11 @@ const infoMeta: InfoMeta = {
 				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 30,
 			},
 		},
+	},
+	'721523553899874850256893780310' /* 3DIR Temporário */: {
+		'MOVIMENTO': minhasRegras.UmDiaNoLocalizador,
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
+		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
 	},
 	'721307551490768040230000000001' /* 9EXE Ag contrarrazões */: {
 		MOVIMENTO: minhasRegras.Cumprir,
