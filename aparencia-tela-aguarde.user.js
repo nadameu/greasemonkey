@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php
 // @grant       none
-// @version     1.0.0
+// @version     1.1.0
 // @author      nadameu
 // @description Muda a aparência da tela "Aguarde..."
 // ==/UserScript==
@@ -57,9 +57,11 @@ body > div.infraFundoTransparente {
   display: flex;
   justify-content: center;
   align-items: center;
+  font-size: 10px;
 }
 #divInfraAviso {
   inset: auto !important;
+  background: var(--aviso);
   padding: 1em;
   border: 1px outset var(--aviso);
   border-radius: 2px;
@@ -73,9 +75,15 @@ body > div.infraFundoTransparente {
   grid-area: text;
   padding: 1em 0;
   text-align: center;
+  font-weight: bold;
+  font-size: 1.2em;
 }
 #btnInfraAvisoCancelar {
   grid-area: button;
+  border: .1em solid;
+  border-color: #ccc #666 #666 #ccc;
+  background-color: #ededed;
+  background-image: linear-gradient(to bottom, #fafafa, #ebebeb);
 }
 svg.spinner {
   grid-area: spinner;
