@@ -4,7 +4,7 @@
 // @namespace   http://nadameu.com.br
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=relatorio_geral_listar&*
 // @grant       none
-// @version     1.0.0
+// @version     1.1.0
 // @author      nadameu
 // @description Aguardar o carregamento completo do formulário do relatório geral antes de poder clicar em "Consultar"
 // @run-at      document-start
@@ -57,7 +57,7 @@ function adicionarEstilos() {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #080210aa;
+  background: hsla(266, 25%, 5%, 0.75);
   font-size: 2.2rem;
   color: white;
   text-shadow: 0px 0px 3px black;
