@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
 // @grant       GM_addStyle
-// @version     3.0.0
+// @version     4.0.0
 // @author      nadameu
 // ==/UserScript==
 
@@ -27,12 +27,10 @@ function debounce(fn) {
 
 const div = $('<div id="divAcoesFlutuantes"></div>').insertBefore('#fldAcoes');
 $('#fldAcoes').appendTo(div);
-$('#divMovPref').appendTo(div);
+$('#nav-acoes-processo').parent().appendTo(div);
 const placeholder = $('<div></div>').insertBefore(div);
 placeholder
-  .css({
-    height: `${div.height()}px`,
-  })
+  .css({ height: `${div.height()}px` })
   .hide();
 
 let yPosition = 0;
