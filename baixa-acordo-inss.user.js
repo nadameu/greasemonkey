@@ -1,21 +1,11 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.9.1
+// @version 0.10.0
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @grant none
 // ==/UserScript==
-
-var escapeStringRegexp = string => {
-  if (typeof string !== 'string') {
-    throw new TypeError('Expected a string');
-  }
-
-  // Escape characters with special meaning either inside or outside character sets.
-  // Use a simple backslash escape when it’s always valid, and a \unnnn escape when the simpler form would be disallowed by Unicode patterns’ stricter grammar.
-  return string.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
-};
 
 function concat(...exprs) {
   return RegExp(exprs.map(toSource).join(''));
@@ -27,7 +17,7 @@ function toSource(expr) {
   return fromExpr(expr).source;
 }
 function literal(text) {
-  return RegExp(escapeStringRegexp(text));
+  return RegExp(text.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d'));
 }
 function oneOf(...exprs) {
   return RegExp(`(?:${exprs.map(toSource).join('|')})`);
@@ -153,7 +143,14 @@ function verificarSentenca(eventos) {
             'Homologo o acordo, resolvendo o mérito'
           )
         ),
-        test(memos, 'Caberá ao INSS o pagamento dos honorários periciais')
+        test(
+          memos,
+          concat(
+            'Caberá ao INSS o ',
+            oneOf('pagamento', 'ressarcimento'),
+            ' dos honorários periciais'
+          )
+        )
       )
     ) ??
     eventos.find(({ descricao, memos }) =>
@@ -214,7 +211,7 @@ function comEventos(eventos) {
     if (!ultimaResposta) return Invalido(['CEAB não juntou resposta.']);
     const intimacaoAutorResposta = houveIntimacao(
       ultimaResposta.ordinal,
-      oneOf('AUTOR', 'REQUERENTE')
+      oneOf('AUTOR', 'REQUERENTE', 'EXEQUENTE')
     );
     if (!intimacaoAutorResposta)
       return Invalido([
@@ -273,7 +270,8 @@ function comEventos(eventos) {
           test(
             memos,
             concat(
-              'oficie-se à Agência ',
+              /[Oo]/,
+              'ficie-se à Agência ',
               /.*/,
               ' para que proceda à transferência dos valores depositados'
             )
@@ -314,7 +312,10 @@ function comEventos(eventos) {
     if (atosIntimacao.length === 0) {
       return Invalido([`Não houve ato de intimação do autor ${autor} acerca do pagamento.`]);
     }
-    const matcher = withFlags(concat(oneOf('AUTOR', 'REQUERENTE'), ' -  ', autor), 'i');
+    const matcher = withFlags(
+      concat(oneOf('AUTOR', 'REQUERENTE', 'EXEQUENTE'), ' -  ', autor),
+      'i'
+    );
     const intimacoes = atosIntimacao.flatMap(intimacoesParte(matcher));
     if (!intimacoes.length)
       return Invalido([`Não houve intimação do autor ${autor} acerca do pagamento.`]);
@@ -338,13 +339,7 @@ function comEventos(eventos) {
           test(
             memos,
             withFlags(
-              concat(
-                /^/,
-                'PGTOPERITO1Perito: ',
-                perito,
-                /\s*/,
-                '. Documento gerado pelo sistema AJG'
-              ),
+              concat('PGTOPERITO1Perito: ', perito, /\s*/, '. Documento gerado pelo sistema AJG'),
               'i'
             )
           )

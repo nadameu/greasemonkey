@@ -86,7 +86,14 @@ function verificarSentenca(eventos: Evento[]): Resultado<Evento> {
             'Homologo o acordo, resolvendo o mérito'
           )
         ),
-        RE.test(memos, 'Caberá ao INSS o pagamento dos honorários periciais')
+        RE.test(
+          memos,
+          RE.concat(
+            'Caberá ao INSS o ',
+            RE.oneOf('pagamento', 'ressarcimento'),
+            ' dos honorários periciais'
+          )
+        )
       )
     ) ??
     eventos.find(({ descricao, memos }) =>
@@ -153,7 +160,7 @@ function comEventos(eventos: Evento[]) {
 
     const intimacaoAutorResposta = houveIntimacao(
       ultimaResposta.ordinal,
-      RE.oneOf('AUTOR', 'REQUERENTE')
+      RE.oneOf('AUTOR', 'REQUERENTE', 'EXEQUENTE')
     );
     if (!intimacaoAutorResposta)
       return Invalido([
@@ -215,7 +222,8 @@ function comEventos(eventos: Evento[]) {
           RE.test(
             memos,
             RE.concat(
-              'oficie-se à Agência ',
+              /[Oo]/,
+              'ficie-se à Agência ',
               /.*/,
               ' para que proceda à transferência dos valores depositados'
             )
@@ -260,7 +268,10 @@ function comEventos(eventos: Evento[]) {
     if (atosIntimacao.length === 0) {
       return Invalido([`Não houve ato de intimação do autor ${autor} acerca do pagamento.`]);
     }
-    const matcher = RE.withFlags(RE.concat(RE.oneOf('AUTOR', 'REQUERENTE'), ' -  ', autor), 'i');
+    const matcher = RE.withFlags(
+      RE.concat(RE.oneOf('AUTOR', 'REQUERENTE', 'EXEQUENTE'), ' -  ', autor),
+      'i'
+    );
     const intimacoes = atosIntimacao.flatMap(intimacoesParte(matcher));
     if (!intimacoes.length)
       return Invalido([`Não houve intimação do autor ${autor} acerca do pagamento.`]);
@@ -286,7 +297,6 @@ function comEventos(eventos: Evento[]) {
             memos,
             RE.withFlags(
               RE.concat(
-                /^/,
                 'PGTOPERITO1Perito: ',
                 perito,
                 /\s*/,
