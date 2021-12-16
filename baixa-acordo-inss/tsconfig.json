@@ -5,5 +5,7 @@
     "target": "es2020",
     "moduleResolution": "node",
     "noUncheckedIndexedAccess": true
-  }
+  },
+  "include": ["./src/"],
+  "exclude": []
 }
