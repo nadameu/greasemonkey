@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.10.0
+// @version 0.11.0
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -21,6 +21,11 @@ function literal(text) {
 }
 function oneOf(...exprs) {
   return RegExp(`(?:${exprs.map(toSource).join('|')})`);
+}
+function optional(expr) {
+  const source = toSource(expr);
+  if (source.length === 1) return RegExp(`${source}?`);
+  else return RegExp(`(?:${toSource(expr)})?`);
 }
 function withFlags(expr, flags) {
   return RegExp(toSource(expr), flags);
@@ -462,11 +467,17 @@ function parseEvento(linha) {
   const despSent = test(lupa, 'Magistrado(s):');
   const descricao = textContent(linha.cells[3]);
   let referenciados = [];
-  const ref1 = match(descricao, concat('Refer. ao Evento: ', capture(/\d+/)));
+  const ref1 = match(
+    descricao,
+    concat('Refer.', / +/, 'ao Evento', optional(':'), ' ', capture(/\d+/))
+  );
   if (ref1) {
     referenciados = [Number(ref1[1])];
   }
-  const refN = match(descricao, concat('Refer. aos Eventos: ', capture(/(\d+, )*\d+ e \d+/)));
+  const refN = match(
+    descricao,
+    concat('Refer. aos Eventos', optional(':'), ' ', capture(/(\d+, )*\d+ e \d+/))
+  );
   if (refN) {
     const [xs, x] = refN[1].split(' e ');
     const ys = xs.split(', ');
