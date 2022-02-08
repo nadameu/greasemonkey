@@ -463,13 +463,16 @@ function parseEvento(linha: HTMLTableRowElement): Evento {
   const despSent = RE.test(lupa, 'Magistrado(s):');
   const descricao = textContent(linha.cells[3]);
   let referenciados: number[] = [];
-  const ref1 = RE.match(descricao, RE.concat('Refer. ao Evento: ', RE.capture(/\d+/)));
+  const ref1 = RE.match(
+    descricao,
+    RE.concat('Refer.', / +/, 'ao Evento', RE.optional(':'), ' ', RE.capture(/\d+/))
+  );
   if (ref1) {
     referenciados = [Number(ref1[1])];
   }
   const refN = RE.match(
     descricao,
-    RE.concat('Refer. aos Eventos: ', RE.capture(/(\d+, )*\d+ e \d+/))
+    RE.concat('Refer. aos Eventos', RE.optional(':'), ' ', RE.capture(/(\d+, )*\d+ e \d+/))
   );
   if (refN) {
     const [xs, x] = refN[1]!.split(' e ');
