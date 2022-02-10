@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
 // @grant       GM_addStyle
-// @version     5.0.0
+// @version     5.1.0
 // @author      nadameu
 // ==/UserScript==
 
@@ -37,14 +37,15 @@ function adicionarEstilos() {
   GM_addStyle(/* css */ `
 #gm-scroll-acoes {
   position: fixed;
-  bottom: 1rem;
-  right: 9rem;
+  bottom: 75px;
+  right: 5rem;
   width: 50px;
   height: 50px;
   padding: 0;
-  border: 1px solid #6c757d57;
+  background: #eae8ee;
+  border: 1px solid #bdafcf;
   border-radius: 50px;
-  color: #6c757d;
+  color: #3c2060;
 }
   `);
 }
