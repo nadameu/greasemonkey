@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.11.0
+// @version 0.12.0
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -22,24 +22,21 @@ function literal(text) {
 function oneOf(...exprs) {
   return RegExp(`(?:${exprs.map(toSource).join('|')})`);
 }
-function optional(expr) {
-  const source = toSource(expr);
-  if (source.length === 1) return RegExp(`${source}?`);
-  else return RegExp(`(?:${toSource(expr)})?`);
-}
 function withFlags(expr, flags) {
   return RegExp(toSource(expr), flags);
-}
-function capture(expr) {
-  const src = toSource(expr);
-  const sanitized = src.match(/^\(\?:(.*)\)$/)?.[1] ?? src;
-  return RegExp(`(${sanitized})`);
 }
 function test(text, expr) {
   return fromExpr(expr).test(text);
 }
 function match(text, expr) {
   return text.match(fromExpr(expr));
+}
+
+function obterReferencias(descricao) {
+  const match = descricao.match(/Refer\. +aos? Eventos?\:? +((?:(?:\d+, *)*\d+ *e *)?\d+)/);
+  if (!match) return [];
+  const textoEventos = match[1].split(/, *| *e */g);
+  return textoEventos.map(Number).sort((a, b) => a - b);
 }
 
 function Ok(valor) {
@@ -466,23 +463,7 @@ function parseEvento(linha) {
   const lupa = linha.cells[1]?.querySelector('a[onmouseover]')?.getAttribute('onmouseover') ?? '';
   const despSent = test(lupa, 'Magistrado(s):');
   const descricao = textContent(linha.cells[3]);
-  let referenciados = [];
-  const ref1 = match(
-    descricao,
-    concat('Refer.', / +/, 'ao Evento', optional(':'), ' ', capture(/\d+/))
-  );
-  if (ref1) {
-    referenciados = [Number(ref1[1])];
-  }
-  const refN = match(
-    descricao,
-    concat('Refer. aos Eventos', optional(':'), ' ', capture(/(\d+, )*\d+ e \d+/))
-  );
-  if (refN) {
-    const [xs, x] = refN[1].split(' e ');
-    const ys = xs.split(', ');
-    referenciados = ys.concat([x]).map(Number);
-  }
+  const referenciados = obterReferencias(descricao);
   const sigla = textContent(linha.cells[4]);
   const memos = textContent(linha.cells[5]);
   const aps =

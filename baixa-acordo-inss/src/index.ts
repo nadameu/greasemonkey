@@ -1,4 +1,5 @@
 import * as RE from './descriptive-regexp';
+import { obterReferencias } from './referentes';
 import { Invalido, Ok, resultado as R, Resultado } from './Resultado';
 import { safePipe } from './safePipe';
 
@@ -462,23 +463,7 @@ function parseEvento(linha: HTMLTableRowElement): Evento {
   const lupa = linha.cells[1]?.querySelector('a[onmouseover]')?.getAttribute('onmouseover') ?? '';
   const despSent = RE.test(lupa, 'Magistrado(s):');
   const descricao = textContent(linha.cells[3]);
-  let referenciados: number[] = [];
-  const ref1 = RE.match(
-    descricao,
-    RE.concat('Refer.', / +/, 'ao Evento', RE.optional(':'), ' ', RE.capture(/\d+/))
-  );
-  if (ref1) {
-    referenciados = [Number(ref1[1])];
-  }
-  const refN = RE.match(
-    descricao,
-    RE.concat('Refer. aos Eventos', RE.optional(':'), ' ', RE.capture(/(\d+, )*\d+ e \d+/))
-  );
-  if (refN) {
-    const [xs, x] = refN[1]!.split(' e ');
-    const ys = xs!.split(', ');
-    referenciados = ys.concat([x!]).map(Number);
-  }
+  const referenciados = obterReferencias(descricao);
   const sigla = textContent(linha.cells[4]);
   const memos = textContent(linha.cells[5]);
   const aps =
