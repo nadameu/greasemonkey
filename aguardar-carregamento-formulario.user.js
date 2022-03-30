@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=relatorio_geral_listar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=relatorio_geral_listar&*
 // @grant       none
-// @version     2.0.1
+// @version     3.0.1
 // @author      nadameu
 // @description Aguardar o carregamento completo do formulário do relatório geral antes de poder clicar em "Consultar"
 // ==/UserScript==
