@@ -1,34 +1,45 @@
 // ==UserScript==
 // @name         Fotos Intra
 // @namespace    http://nadameu.com.br/fotos-intra
-// @version      3.0.0
+// @version      4.0.0
 // @author       nadameu
 // @description  Corrige a distorção nas fotos da Intra
 // @website      http://www.nadameu.com.br/
-// @include      /^https?:\/\/intra(pr|rs|sc|)2?\.trf4\.jus\.br\/membros\/.*-jus-br\/$/
-// @include      /^https?:\/\/intra(pr|rs|sc|)2?\.trf4\.jus\.br\/$/
+// @include      /^https?:\/\/intra(pr|rs|sc|)2?\.trf4\.jus\.br\/membros\/.*-jus-br\//
+// @include      /^https?:\/\/intra(pr|rs|sc|)2?\.trf4\.jus\.br\//
 // @run-at       document-end
 // @grant        none
 // ==/UserScript==
 
-if (document.location.pathname === '/') {
-  const coluna = document.querySelector('.coluna-direita');
-  if (!coluna) return;
-  const titulo = coluna.querySelector(':scope > .widgettitle:first-child');
-  if (!titulo) return;
-  if (!/^Aniversariantes/.test(titulo.textContent)) return;
-  const div = titulo.insertAdjacentElement('afterend', document.createElement('div'));
-  div.className = 'gm-aniversariantes'
-  const aniversariantes = coluna.querySelectorAll('a[href^="/membros/"]');
-  aniversariantes.forEach(aniv => {
-    div.appendChild(aniv);
-  });
-  document.querySelectorAll('.avatar').forEach(foto => {
-    foto.removeAttribute('width');
-    foto.removeAttribute('height');
-  });
-  const style = document.head.appendChild(document.createElement('style'));
-  style.textContent = `
+let style;
+
+main().catch(err => {
+  console.error(err);
+});
+
+async function main() {
+  adicionarEstilosGeral();
+  if (document.location.pathname === '/') {
+    const coluna = await queryOne('.coluna-direita');
+    const titulo = await queryOne(':scope > .widgettitle:first-child', coluna);
+    if (!/^Aniversariantes/.test(titulo.textContent)) throw new Error('Não foi possível localizar aniversariantes.');
+
+    adicionarEstilosHome();
+    const div = titulo.insertAdjacentElement('afterend', document.createElement('div'));
+    div.className = 'gm-aniversariantes'
+    for (const aniversariante of coluna.querySelectorAll('a[href^="/membros/"]')) {
+      div.appendChild(aniversariante);
+    }
+    for (const foto of document.querySelectorAll('.avatar')) {
+      foto.removeAttribute('width');
+      foto.removeAttribute('height');
+    }
+  }
+}
+
+function adicionarEstilosHome() {
+  style = style || document.head.appendChild(document.createElement('style'));
+  style.textContent += `
 .gm-aniversariantes {
   display: flex;
   flex-direction: row;
@@ -44,10 +55,25 @@ if (document.location.pathname === '/') {
   aspect-ratio: 2/3;
   object-fit: cover;
 }
-  `;
-} else {
-  document.querySelectorAll('.photo').forEach(foto => {
-    foto.removeAttribute('width');
-    foto.removeAttribute('height');
-  });
+`;
+}
+
+function adicionarEstilosGeral() {
+  style = style || document.head.appendChild(document.createElement('style'));
+  style.textContent += `
+.avatar,
+#wp-admin-bar-user-info .avatar {
+  width: auto !important;
+}
+`;
+}
+
+async function queryOne(selector, context = document) {
+  const elements = context.querySelectorAll(selector);
+  if (elements.length !== 1) throw new Error(`Não foi possível obter um elemento único para o seletor \`${selector}\`.`);
+  return elements[0];
+}
+
+function queryAll(selector, context = document) {
+  return Array.from(context.querySelectorAll(selector));
 }
