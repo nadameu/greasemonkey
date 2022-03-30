@@ -11,7 +11,7 @@
 // @include     https://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar
 // @include     https://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar&*
 // @require     https://raw.githubusercontent.com/nadameu/greasemonkey/Maybe-v1.0.0/lib/Maybe.js
-// @version     15.0.0
+// @version     15.1.0
 // @grant       none
 // ==/UserScript==
 
@@ -35,13 +35,19 @@ async function main(doc: Document) {
   console.log(`${qtd} link${s} criado${s}`);
 }
 
+const dominios = {
+  1: 'trf4',
+  2: 'jfrs',
+  3: 'jfsc',
+  4: 'jfpr',
+} as const;
+
 const getDominio = (doc: Document): Maybe<string> =>
   maybe
     .Just(doc)
-    .safeMap(x => x.querySelector('[name="local"]:checked'))
-    .safeMap(x => x.nextSibling)
-    .safeMap(x => x.textContent)
-    .map(x => x.trim());
+    .safeMap(x => x.querySelector<HTMLInputElement>('input[name="local"]:checked'))
+    .map(x => x.value)
+    .safeMap(x => (x in dominios ? dominios[x as unknown as keyof typeof dominios] : null));
 
 const getFormulario = (doc: Document): Maybe<HTMLFormElement> =>
   maybe.Just(doc).safeMap(x => x.querySelector<HTMLFormElement>('form[name="formulario"]'));

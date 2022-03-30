@@ -12,7 +12,7 @@
 // @include     https://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar
 // @include     https://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar&*
 // @require     https://raw.githubusercontent.com/nadameu/greasemonkey/Maybe-v1.0.0/lib/Maybe.js
-// @version     15.0.0
+// @version     15.1.0
 // @grant       none
 // ==/UserScript==
 async function main(doc) {
@@ -22,13 +22,18 @@ async function main(doc) {
   const s = qtd > 1 ? 's' : '';
   console.log(`${qtd} link${s} criado${s}`);
 }
+const dominios = {
+  1: 'trf4',
+  2: 'jfrs',
+  3: 'jfsc',
+  4: 'jfpr',
+};
 const getDominio = doc =>
   maybe
     .Just(doc)
-    .safeMap(x => x.querySelector('[name="local"]:checked'))
-    .safeMap(x => x.nextSibling)
-    .safeMap(x => x.textContent)
-    .map(x => x.trim());
+    .safeMap(x => x.querySelector('input[name="local"]:checked'))
+    .map(x => x.value)
+    .safeMap(x => (x in dominios ? dominios[x] : null));
 const getFormulario = doc =>
   maybe.Just(doc).safeMap(x => x.querySelector('form[name="formulario"]'));
 const getNodeInfo = formulario => Array.from(parseFormulario(formulario));
