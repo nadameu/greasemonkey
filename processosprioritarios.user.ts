@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.1.0
+// @version 27.2.0
 // @grant none
 // ==/UserScript==
 
@@ -732,6 +732,13 @@ class GUI {
 				};
 				return { ...area, margens, dimensoes };
 			}
+			get dadosTrintaDias() {
+				const UM_DIA = 864e5;
+				const agora = new Date(),
+					hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime(),
+					maximo = hoje + 30 * UM_DIA;
+				return new Map(Array.from(this.dados.entries()).filter(([dia]) => dia <= maximo));
+			}
 			constructor() {
 				this.dimensoes = {
 					get largura() {
@@ -897,7 +904,7 @@ class GUI {
 				}
 			}
 			calcularEscala() {
-				const quantidades = Array.from(this.dados.values());
+				const quantidades = Array.from(this.dadosTrintaDias.values());
 				const maximo = Math.max.apply(null, quantidades);
 				this.calcularDadosEscala(maximo);
 				const distanciaMinima = 2 * this.dimensoes.espacamento + 2 * this.texto.altura;
@@ -919,13 +926,12 @@ class GUI {
 				this.escala.largura = largura;
 			}
 			calcularCategorias() {
-				const dias = Array.from(this.dados.keys());
-				const agora = new Date(),
-					hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-				const minimo = hoje.getTime();
 				const UM_DIA = 864e5;
-				const maximo = Math.min(Math.max.apply(null, dias), minimo + 30 * UM_DIA);
-				this.categorias.quantidade = (maximo - minimo) / UM_DIA + 1;
+				const dias = Array.from(this.dadosTrintaDias.keys());
+				const agora = new Date(),
+					hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime(),
+					maximo = Math.max.apply(null, dias);
+				this.categorias.quantidade = (maximo - hoje) / UM_DIA + 1;
 			}
 			calcularDadosEscala(maximo: number) {
 				if (maximo <= 10) {
