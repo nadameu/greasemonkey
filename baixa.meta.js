@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name Preenchimento dados baixa
-// @version 5.2.0
+// @version 5.2.1
 // @author nadameu
 // @namespace http://nadameu.com.br/baixa
 // @include /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=baixa_arquivamento_processo_etapa_(1|3)&/
