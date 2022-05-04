@@ -6,7 +6,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.2.0
+// @version 27.3.0
 // @grant none
 // ==/UserScript==
 
@@ -1737,6 +1737,10 @@ const infoMeta: InfoMeta = {
 	'721307551490768040230000000002' /* 3DIR Ag pagamento RPV */: {
 		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoRPV,
 		'MOVIMENTO': minhasRegras.ProcessoParado,
+	},
+	'721423260735024680230000000001' /* 3DIR Ag prazo */: {
+		'MOVIMENTO': minhasRegras.CumprirPrioridade,
+		'SUSP/SOBR-P.Decisão Judicial': minhasRegras.Suspensao,
 	},
 	'721596120821598545737898280283' /* 3DIR Agendar Zoom */: {
 		MOVIMENTO: minhasRegras.Cumprir,
