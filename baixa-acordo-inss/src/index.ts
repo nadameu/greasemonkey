@@ -311,6 +311,20 @@ function comEventos(eventos: Evento[]) {
           )
       );
       if (pagamentoAJG) return Ok(perito);
+      const pagamentoNaoIdentificado = eventos.find(
+        ({ descricao, memos }) =>
+          RE.test(
+            descricao,
+            RE.concat(
+              RE.oneOf('Expedida Requisição', 'Expedição de Requisição'),
+              ' Honorários Perito/Dativo'
+            )
+          ) && RE.test(memos, /SOL_PGTO_HON1$/)
+      );
+      if (pagamentoNaoIdentificado)
+        return Invalido([
+          `Não houve pagamento do perito ${perito}. Há pagamento sem identificação no evento ${pagamentoNaoIdentificado.ordinal}.`,
+        ]);
       return Invalido([`Não houve pagamento do perito ${perito}.`]);
     }
     const atosIntimacao = houveAtosIntimacaoPagamento(pagamento.ordinal);
