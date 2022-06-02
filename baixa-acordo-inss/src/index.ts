@@ -140,7 +140,7 @@ function comEventos(eventos: Evento[]) {
           descricao,
           RE.oneOf(
             'Intimação Eletrônica - Expedida/Certificada - Requisição',
-            'Expedida/certificada a intimação eletrônica'
+            'Expedida/certificada a intimação eletrônica - Requisição'
           )
         ),
         RE.test(descricao, 'AGÊNCIA DA PREVIDÊNCIA SOCIAL'),
@@ -474,7 +474,7 @@ function parseEvento(linha: HTMLTableRowElement): Evento {
       linha.cells[4],
       c => c.querySelector('label'),
       l => l.getAttribute('onmouseover'),
-      a => RE.match(a, 'AG. PREV. SOCIAL')
+      a => RE.match(a, RE.oneOf('AG. PREV. SOCIAL', 'CEAB-DJ-INSS-SR3'))
     ) != null;
   return { ordinal, descricao, referenciados, sigla, memos, aps, despSent };
 }
