@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.13.0
+// @version 0.14.0
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -347,6 +347,20 @@ function comEventos(eventos) {
           )
       );
       if (pagamentoAJG) return Ok(perito);
+      const pagamentoNaoIdentificado = eventos.find(
+        ({ descricao, memos }) =>
+          test(
+            descricao,
+            concat(
+              oneOf('Expedida Requisição', 'Expedição de Requisição'),
+              ' Honorários Perito/Dativo'
+            )
+          ) && test(memos, /SOL_PGTO_HON1$/)
+      );
+      if (pagamentoNaoIdentificado)
+        return Invalido([
+          `Não houve pagamento do perito ${perito}. Há pagamento sem identificação no evento ${pagamentoNaoIdentificado.ordinal}.`,
+        ]);
       return Invalido([`Não houve pagamento do perito ${perito}.`]);
     }
     const atosIntimacao = houveAtosIntimacaoPagamento(pagamento.ordinal);
@@ -471,7 +485,7 @@ function parseEvento(linha) {
       linha.cells[4],
       c => c.querySelector('label'),
       l => l.getAttribute('onmouseover'),
-      a => match(a, 'AG. PREV. SOCIAL')
+      a => match(a, oneOf('AG. PREV. SOCIAL', 'CEAB-DJ-INSS-SR3'))
     ) != null;
   return { ordinal, descricao, referenciados, sigla, memos, aps, despSent };
 }
