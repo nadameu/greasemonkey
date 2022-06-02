@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name baixa-acordo-inss
-// @version 0.12.0
+// @version 0.13.0
 // @description 3DIR Baixa - acordo INSS
 // @namespace http://nadameu.com.br/baixa-acordo-inss
 // @match https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -195,7 +195,7 @@ function comEventos(eventos) {
           descricao,
           oneOf(
             'Intimação Eletrônica - Expedida/Certificada - Requisição',
-            'Expedida/certificada a intimação eletrônica'
+            'Expedida/certificada a intimação eletrônica - Requisição'
           )
         ),
         test(descricao, 'AGÊNCIA DA PREVIDÊNCIA SOCIAL'),
@@ -298,15 +298,15 @@ function comEventos(eventos) {
       if (respostaAgencia) {
         if (houveDecursoOuCiencia(respostaAgencia.ordinal)) return Ok(autor);
         const ultimaResposta = encontrarEventoPosterior(respostaAgencia, ({ descricao, sigla }) =>
-          all(test(descricao, /^RESPOSTA(?: - Refer\.)?/), test(sigla, /^UEX\d{11}$/))
+          all(test(descricao, /^(?:RESPOSTA|OFÍCIO)(?: - Refer\.)?/), test(sigla, /^UEX\d{11}$/))
         );
         if (!ultimaResposta)
           return Invalido([
-            `Não houve decurso ou ciência sobre a resposta da agência (evento ${respostaAgencia.ordinal}).`,
+            `Não houve decurso ou ciência sobre a resposta da agência bancária (evento ${respostaAgencia.ordinal}).`,
           ]);
         if (houveDecursoOuCiencia(ultimaResposta.ordinal)) return Ok(autor);
         return Invalido([
-          `Não houve decurso ou ciência sobre a resposta da agência (evento ${ultimaResposta.ordinal}).`,
+          `Não houve decurso ou ciência sobre a resposta da agência bancária (evento ${ultimaResposta.ordinal}).`,
         ]);
       }
     }
