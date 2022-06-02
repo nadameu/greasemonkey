@@ -253,15 +253,18 @@ function comEventos(eventos: Evento[]) {
       if (respostaAgencia) {
         if (houveDecursoOuCiencia(respostaAgencia.ordinal)) return Ok(autor);
         const ultimaResposta = encontrarEventoPosterior(respostaAgencia, ({ descricao, sigla }) =>
-          all(RE.test(descricao, /^RESPOSTA(?: - Refer\.)?/), RE.test(sigla, /^UEX\d{11}$/))
+          all(
+            RE.test(descricao, /^(?:RESPOSTA|OFÍCIO)(?: - Refer\.)?/),
+            RE.test(sigla, /^UEX\d{11}$/)
+          )
         );
         if (!ultimaResposta)
           return Invalido([
-            `Não houve decurso ou ciência sobre a resposta da agência (evento ${respostaAgencia.ordinal}).`,
+            `Não houve decurso ou ciência sobre a resposta da agência bancária (evento ${respostaAgencia.ordinal}).`,
           ]);
         if (houveDecursoOuCiencia(ultimaResposta.ordinal)) return Ok(autor);
         return Invalido([
-          `Não houve decurso ou ciência sobre a resposta da agência (evento ${ultimaResposta.ordinal}).`,
+          `Não houve decurso ou ciência sobre a resposta da agência bancária (evento ${ultimaResposta.ordinal}).`,
         ]);
       }
     }
