@@ -13,13 +13,16 @@ main();
 
 function main() {
   const barras = document.getElementsByClassName('infraBarraComandos');
-  
+
   if (barras.length === 0) return;
-  
+
   inserirEstilos();
-  
+
   barras.forEach(barra => {
-    barra.insertAdjacentHTML('afterbegin', '<button class="infraButton gm-atualizar-relatorio-geral">Atualizar</button>');
+    barra.insertAdjacentHTML(
+      'afterbegin',
+      '<button class="infraButton gm-atualizar-relatorio-geral">Atualizar</button>'
+    );
   });
 }
 

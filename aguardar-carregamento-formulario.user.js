@@ -24,27 +24,27 @@ async function main() {
   tela.textContent = 'Carregando formulário...';
 
   let timeout, observer;
-  
+
   try {
     const localizador = document.getElementById('selLocalizadorPrincipal');
-    if (! localizador) return;
-    
+    if (!localizador) return;
+
     await Promise.race([
-      new Promise((_,rej) => {
+      new Promise((_, rej) => {
         timeout = window.setTimeout(rej, 3000);
       }),
-      new Promise((res) => {
+      new Promise(res => {
         observer = new MutationObserver(() => {
           if (localizador.style.display !== 'none') return;
           else res();
         });
         observer.observe(localizador, { attributes: true });
       }),
-    ])
+    ]);
   } catch (error) {
     throw error;
   } finally {
-    if (observer) observer.disconnect(); 
+    if (observer) observer.disconnect();
     if (timeout) window.clearTimeout(timeout);
     document.body.removeChild(tela);
   }
@@ -52,7 +52,7 @@ async function main() {
 
 function adicionarEstilos() {
   const style = document.head.appendChild(document.createElement('style'));
-    
+
   style.textContent = /* css */ `
 #gm-tela-ocultar-formulario {
   position: fixed;
@@ -67,5 +67,4 @@ function adicionarEstilos() {
   color: white;
   text-shadow: 0px 0px 3px black;
 }`;
-  
 }

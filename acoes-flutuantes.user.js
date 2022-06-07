@@ -15,12 +15,12 @@ main();
 
 function main() {
   const backTop = document.getElementById('backTop');
-  if (! backTop) return;
+  if (!backTop) return;
   const fldAcoes = document.getElementById('fldAcoes');
-  if (! fldAcoes) return;
+  if (!fldAcoes) return;
   adicionarEstilos();
   const button = document.createElement('button');
-  button.id = 'gm-scroll-acoes'
+  button.id = 'gm-scroll-acoes';
   button.className = 'btn btn-light shadow-sm';
   button.textContent = 'Ações';
   button.addEventListener('click', evt => {

@@ -16,17 +16,17 @@ let button;
 
 try {
   main();
-} catch(error) {
+} catch (error) {
   console.error('<fechar-janelas>', error);
 }
 
 function main() {
   const referencia = document.querySelector('[name="selInfraUnidades"]')?.parentNode?.parentNode;
-  if (! referencia) throw new Error('Não foi possível encontrar um local para inserir o botão.');
+  if (!referencia) throw new Error('Não foi possível encontrar um local para inserir o botão.');
 
   const tabela = document.querySelector('#tblEventos');
-  if (! tabela) throw new Error('Não foi possível encontrar a tabela de eventos.');
-  
+  if (!tabela) throw new Error('Não foi possível encontrar a tabela de eventos.');
+
   adicionarEstilos();
 
   tabela.addEventListener('click', onTabelaClick);
@@ -43,7 +43,7 @@ function main() {
 }
 
 function onTabelaClick(evt) {
-  if (! evt.target?.matches?.('a.infraLinkDocumento')) return;
+  if (!evt.target?.matches?.('a.infraLinkDocumento')) return;
   show();
 }
 
@@ -64,7 +64,6 @@ function show() {
 function hide() {
   button.hidden = true;
 }
-
 
 function adicionarEstilos() {
   const style = document.head.appendChild(document.createElement('style'));

@@ -23,15 +23,18 @@ function main() {
   if (document.location.pathname === '/') {
     const coluna = queryOne('.coluna-direita');
     const titulo = queryOne(':scope > .widgettitle:first-child', coluna);
-    assert(/^Aniversariantes/.test(titulo.textContent), 'Não foi possível localizar aniversariantes.');
+    assert(
+      /^Aniversariantes/.test(titulo.textContent),
+      'Não foi possível localizar aniversariantes.'
+    );
     const aniversariantes = coluna.querySelectorAll('a[href^="/membros/"]');
     const fotos = document.querySelectorAll('.avatar');
 
     adicionarEstilosGeral();
     adicionarEstilosHome();
     const div = titulo.insertAdjacentElement(
-      'afterend', 
-      h('div', { 'class': 'gm-aniversariantes' }, ...aniversariantes)
+      'afterend',
+      h('div', { class: 'gm-aniversariantes' }, ...aniversariantes)
     );
     fotos.forEach(foto => {
       foto.removeAttribute('width');
@@ -87,10 +90,13 @@ function adicionarEstilosGeral() {
 
 function queryOne(selector, context = document) {
   const elements = context.querySelectorAll(selector);
-  assert(elements.length === 1, `Não foi possível obter um elemento único para o seletor \`${selector}\`.`);
+  assert(
+    elements.length === 1,
+    `Não foi possível obter um elemento único para o seletor \`${selector}\`.`
+  );
   return elements[0];
 }
 
 function assert(condition, message) {
-  if (! condition) throw new Error(message);
+  if (!condition) throw new Error(message);
 }

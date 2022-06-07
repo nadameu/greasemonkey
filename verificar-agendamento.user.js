@@ -26,7 +26,10 @@ class Query {
       if (query instanceof QueryOne) results[key] = query.value;
       else results[key] = query.values;
     }
-    return new QueryOne(results, ['Query', `sequenceObj({ ${Object.keys(results).sort().join(', ')} })`]);
+    return new QueryOne(results, [
+      'Query',
+      `sequenceObj({ ${Object.keys(results).sort().join(', ')} })`,
+    ]);
   }
 }
 
@@ -35,20 +38,40 @@ class QueryNone extends Query {
     super();
     this.errors = errors;
   }
-  
+
   catch(handler) {
     handler(this.errors);
   }
-  filter(p) { return this; }
-  flatMap(f) { return this; }
-  isEmpty() { return true; }
-  isNotEmpty() { return false; }
-  map(f) { return this; }
-  notEmpty() { return this; }
-  one() { return this; }
-  query(selector) { return this; }
-  safeMap(f) { return this; }
-  toArray() { return []; }
+  filter(p) {
+    return this;
+  }
+  flatMap(f) {
+    return this;
+  }
+  isEmpty() {
+    return true;
+  }
+  isNotEmpty() {
+    return false;
+  }
+  map(f) {
+    return this;
+  }
+  notEmpty() {
+    return this;
+  }
+  one() {
+    return this;
+  }
+  query(selector) {
+    return this;
+  }
+  safeMap(f) {
+    return this;
+  }
+  toArray() {
+    return [];
+  }
 }
 
 class QueryOne extends Query {
@@ -57,7 +80,7 @@ class QueryOne extends Query {
     this.value = value;
     this.messages = messages;
   }
-  
+
   catch(handler) {}
   filter(p) {
     const messages = [...this.messages, 'filter(p)'];
@@ -67,12 +90,20 @@ class QueryOne extends Query {
   flatMap(f) {
     const result = f(this.value);
     const messages = [...this.messages, 'flatMap(f)'];
-    if (result instanceof QueryNone) return new QueryNone([new Error(`${messages.join('\n\t.')}\nreturned a QueryNone.`), ...result.errors]);
+    if (result instanceof QueryNone)
+      return new QueryNone([
+        new Error(`${messages.join('\n\t.')}\nreturned a QueryNone.`),
+        ...result.errors,
+      ]);
     if (result instanceof QueryOne) return new QueryOne(result.value, messages);
     return new QuerySome(result.values, messages);
   }
-  isEmpty() { return false; }
-  isNotEmpty() { return true; }
+  isEmpty() {
+    return false;
+  }
+  isNotEmpty() {
+    return true;
+  }
   map(f) {
     return new QueryOne(f(this.value), [...this.messages, 'map(f)']);
   }
@@ -83,15 +114,21 @@ class QueryOne extends Query {
     return new QueryOne(this.value, [...this.messages, 'one()']);
   }
   query(selector) {
-    return new QuerySome(Array.from(this.value.querySelectorAll(selector)), [...this.messages, `query(\`${selector}\`)`]);
+    return new QuerySome(Array.from(this.value.querySelectorAll(selector)), [
+      ...this.messages,
+      `query(\`${selector}\`)`,
+    ]);
   }
   safeMap(f) {
     const result = f(this.value);
     const messages = [...this.messages, 'safeMap(f)'];
-    if (result == null) return new QueryNone([new Error(`${messages.join('\n\t.')}\nreturned null or undefined.`)]);
+    if (result == null)
+      return new QueryNone([new Error(`${messages.join('\n\t.')}\nreturned null or undefined.`)]);
     return new QueryOne(result, messages);
   }
-  toArray() { return [this.value]; }
+  toArray() {
+    return [this.value];
+  }
 }
 
 class QuerySome extends Query {
@@ -104,51 +141,78 @@ class QuerySome extends Query {
   catch(handler) {}
   filter(p) {
     if (this.values.length === 0) return this;
-    return new QuerySome(this.values.filter(x => p(x)), [...this.messages, 'filter(p)']);
+    return new QuerySome(
+      this.values.filter(x => p(x)),
+      [...this.messages, 'filter(p)']
+    );
   }
   flatMap(f) {
     if (this.values.length === 0) return this;
-    return new QuerySome(this.values.flatMap(x => f(x).toArray()), [...this.messages, 'flatMap(f)']);
+    return new QuerySome(
+      this.values.flatMap(x => f(x).toArray()),
+      [...this.messages, 'flatMap(f)']
+    );
   }
-  isEmpty() { return this.values.length === 0; }
-  isNotEmpty() { return this.values.length !== 0; }
+  isEmpty() {
+    return this.values.length === 0;
+  }
+  isNotEmpty() {
+    return this.values.length !== 0;
+  }
   map(f) {
     if (this.values.length === 0) return this;
-    return new QuerySome(this.values.map(x => f(x)), [...this.messages, 'map(f)']);
+    return new QuerySome(
+      this.values.map(x => f(x)),
+      [...this.messages, 'map(f)']
+    );
   }
   notEmpty() {
-    if (this.values.length === 0) return new QueryNone([new Error(`${this.messages.join('\n\t.')}\nreturned an empty set.`)]);
+    if (this.values.length === 0)
+      return new QueryNone([new Error(`${this.messages.join('\n\t.')}\nreturned an empty set.`)]);
     return new QuerySome(this.values, [...this.messages, 'notEmpty()']);
   }
   one() {
-    if (this.values.length === 0) return new QueryNone([new Error(`${this.messages.join('\n\t.')}\nreturned an empty set.`)]);
+    if (this.values.length === 0)
+      return new QueryNone([new Error(`${this.messages.join('\n\t.')}\nreturned an empty set.`)]);
     if (this.values.length === 1) return new QueryOne(this.values[0], [...this.messages, 'one()']);
-    return new QueryNone([new Error(`${this.messages.join('\n\t.')}\nreturned a set with ${this.values.length} elements.`)])
+    return new QueryNone([
+      new Error(
+        `${this.messages.join('\n\t.')}\nreturned a set with ${this.values.length} elements.`
+      ),
+    ]);
   }
   query(selector) {
     if (this.values.length === 0) return this;
-    return new QuerySome(this.values.flatMap(context => Array.from(context.querySelectorAll(selector))), [...this.messages, `query(\`${selector}\`)`]);
+    return new QuerySome(
+      this.values.flatMap(context => Array.from(context.querySelectorAll(selector))),
+      [...this.messages, `query(\`${selector}\`)`]
+    );
   }
   safeMap(f) {
     if (this.values.length === 0) return this;
-    return new QuerySome(this.values.map(x => f(x)).filter(x => x != null), [...this.messages, 'safeMap(f)']);
+    return new QuerySome(
+      this.values.map(x => f(x)).filter(x => x != null),
+      [...this.messages, 'safeMap(f)']
+    );
   }
-  toArray() { return this.values; }
+  toArray() {
+    return this.values;
+  }
 }
 
 const main = () =>
-  Query.query("#divInfraBarraLocalizacao h4")
-    .safeMap((h4) => h4.textContent?.match(/^Agendamento da Minuta .*(\d+)$/)?.[1])
+  Query.query('#divInfraBarraLocalizacao h4')
+    .safeMap(h4 => h4.textContent?.match(/^Agendamento da Minuta .*(\d+)$/)?.[1])
     .one()
-    .flatMap((minuta) =>
+    .flatMap(minuta =>
       Query.sequenceObj({
-        botao: Query.query("#btnManterAgendamento").one(),
+        botao: Query.query('#btnManterAgendamento').one(),
         ehLote: Query.of(window.top.document.body)
-          .query("#fldMinutas tr")
-          .filter((row) => row.cells.length >= 2)
-          .filter((row) => RegExp(minuta).test(row.cells[1].textContent))
+          .query('#fldMinutas tr')
+          .filter(row => row.cells.length >= 2)
+          .filter(row => RegExp(minuta).test(row.cells[1].textContent))
           .one()
-          .map((row) =>
+          .map(row =>
             Query.of(row.cells[row.cells.length - 1])
               .query('#divListaRecursosMinuta > a img[src$="imagens/minuta_editar_lote.gif"]')
               .isNotEmpty()
@@ -160,7 +224,7 @@ const main = () =>
         botao.click();
       }
     })
-    .catch((errors) => {
+    .catch(errors => {
       console.log(errors);
     });
 

@@ -205,7 +205,7 @@ module.exports = {
     // "computed-property-spacing": "off",
     'eol-last': 'warn',
     'func-call-spacing': 'warn',
-    indent: [
+    'indent': [
       'warn',
       'tab',
       {
@@ -235,8 +235,8 @@ module.exports = {
     // "operator-linebreak": "off",
     // "padded-blocks": "off",
     // "quote-props": "off",
-    quotes: ['warn', 'single'],
-    semi: 'warn',
+    'quotes': ['warn', 'single'],
+    'semi': 'warn',
     'semi-spacing': 'warn',
     'space-before-blocks': 'warn',
     'space-before-function-paren': ['warn', 'never'],

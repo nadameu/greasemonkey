@@ -40,7 +40,7 @@ function main() {
     const botao = document.getElementById('btnInfraAvisoCancelar');
     botao.style.display = botaoCancelar ? '' : 'none';
     return fundo;
-  }
+  };
 }
 
 function adicionarEstilos() {
