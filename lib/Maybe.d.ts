@@ -1,5 +1,3 @@
-export as namespace maybe;
-
 type AllMaybes<T, Acc extends any[] = []> = T extends [Maybe<infer U>, ...infer Rest]
   ? AllMaybes<Rest, [...Acc, U]>
   : T extends []

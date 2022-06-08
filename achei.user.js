@@ -1,4 +1,3 @@
-'use strict';
 // ==UserScript==
 // @name        Achei
 // @namespace   http://nadameu.com.br/achei
@@ -11,12 +10,74 @@
 // @include     http://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar&*
 // @include     https://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar
 // @include     https://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar&*
-// @require     https://raw.githubusercontent.com/nadameu/greasemonkey/Maybe-v1.0.0/lib/Maybe.js
 // @version     15.1.0
 // @grant       none
 // ==/UserScript==
+
+class Maybe {}
+
+class Just extends Maybe {
+  constructor(value) {
+    super();
+    this.value = value;
+  }
+
+  *[Symbol.iterator]() {
+    yield this.value;
+  }
+
+  chain(f) {
+    return f(this.value);
+  }
+
+  safeMap(f) {
+    return this.map(f).chain(fromNullish);
+  }
+
+  map(f) {
+    return new Just(f(this.value));
+  }
+
+  then(Just, _) {
+    return Just(this.value);
+  }
+}
+
+const Jp = Just.prototype;
+Jp.isJust = true;
+Jp.isNothing = false;
+
+const createJust = value => new Just(value);
+
+class Nothing extends Maybe {
+  *[Symbol.iterator]() {}
+
+  then(_, Nothing) {
+    return Nothing();
+  }
+}
+
+const Np = Nothing.prototype;
+Np.isJust = false;
+Np.isNothing = true;
+
+Np.chain = Np.safeMap = Np.map = () => nothing;
+
+const nothing = new Nothing();
+const all = (...maybes) => {
+  const results = [];
+
+  for (const maybe of maybes) {
+    if (maybe.isNothing) return nothing;
+    results.push(maybe.value);
+  }
+
+  return new Just(results);
+};
+const fromNullish = value => (value == null ? nothing : new Just(value));
+
 async function main(doc) {
-  const [dominio, nodeInfo] = await maybe.all(getDominio(doc), getFormulario(doc).map(getNodeInfo));
+  const [dominio, nodeInfo] = await all(getDominio(doc), getFormulario(doc).map(getNodeInfo));
   criarLinks(doc, dominio, nodeInfo);
   const qtd = nodeInfo.length;
   const s = qtd > 1 ? 's' : '';
@@ -29,13 +90,12 @@ const dominios = {
   4: 'jfpr',
 };
 const getDominio = doc =>
-  maybe
-    .Just(doc)
+  createJust(doc)
     .safeMap(x => x.querySelector('input[name="local"]:checked'))
     .map(x => x.value)
     .safeMap(x => (x in dominios ? dominios[x] : null));
 const getFormulario = doc =>
-  maybe.Just(doc).safeMap(x => x.querySelector('form[name="formulario"]'));
+  createJust(doc).safeMap(x => x.querySelector('form[name="formulario"]'));
 const getNodeInfo = formulario => Array.from(parseFormulario(formulario));
 function* parseFormulario(formulario) {
   for (const sibling of siblings(formulario))
@@ -53,15 +113,13 @@ function* flattenTabela(node) {
   yield node;
 }
 const getNodeSigla = node =>
-  maybe
-    .Just(node)
+  createJust(node)
     .safeMap(x => x.textContent)
     .chain(siglaFromText)
     .map(sigla => ({ node, sigla }));
 const reSigla = /^\s*Sigla:\s*(\S+)\s*(\(antiga:\s*\S+\s*\))?\s*$/;
 const siglaFromText = text =>
-  maybe
-    .Just(text)
+  createJust(text)
     .safeMap(x => x.match(reSigla))
     .map(match => {
       if (match[2]) {

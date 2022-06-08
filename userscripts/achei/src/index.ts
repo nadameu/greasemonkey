@@ -1,19 +1,5 @@
-// ==UserScript==
-// @name        Achei
-// @namespace   http://nadameu.com.br/achei
-// @description Link para informações da Intra na página do Achei!
-// @include     http://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar
-// @include     http://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar&*
-// @include     https://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar
-// @include     https://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar&*
-// @include     http://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar
-// @include     http://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar&*
-// @include     https://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar
-// @include     https://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar&*
-// @require     https://raw.githubusercontent.com/nadameu/greasemonkey/Maybe-v1.0.0/lib/Maybe.js
-// @version     15.1.0
-// @grant       none
-// ==/UserScript==
+import * as maybe from '../../../lib/Maybe';
+import { type Maybe } from '../../../lib/Maybe';
 
 interface State {
   dominio: string;
@@ -24,8 +10,6 @@ interface NodeSigla {
   node: Node;
   sigla: string;
 }
-
-type Maybe<a> = import('./lib/Maybe').Maybe<a>;
 
 async function main(doc: Document) {
   const [dominio, nodeInfo] = await maybe.all(getDominio(doc), getFormulario(doc).map(getNodeInfo));
@@ -89,10 +73,10 @@ const siglaFromText = (text: string): Maybe<string> =>
     .map(match => {
       if (match[2]) {
         // Possui sigla antiga e nova
-        return match[1];
+        return match[1]!;
       } else {
         // Possui somente sigla nova
-        return match[1].toLowerCase();
+        return match[1]!.toLowerCase();
       }
     });
 

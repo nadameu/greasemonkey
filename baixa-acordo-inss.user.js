@@ -7,6 +7,14 @@
 // @grant none
 // ==/UserScript==
 
+var escapeStringRegexp = string => {
+  if (typeof string !== 'string') {
+    throw new TypeError('Expected a string');
+  }
+
+  return string.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
+};
+
 function concat(...exprs) {
   return RegExp(exprs.map(toSource).join(''));
 }
@@ -17,7 +25,7 @@ function toSource(expr) {
   return fromExpr(expr).source;
 }
 function literal(text) {
-  return RegExp(text.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d'));
+  return RegExp(escapeStringRegexp(text));
 }
 function oneOf(...exprs) {
   return RegExp(`(?:${exprs.map(toSource).join('|')})`);

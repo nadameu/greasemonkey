@@ -1,4 +1,4 @@
-import * as RE from './descriptive-regexp';
+import * as RE from 'descriptive-regexp';
 import { obterReferencias } from './referentes';
 import { Invalido, Ok, resultado as R, Resultado } from './Resultado';
 import { safePipe } from './safePipe';

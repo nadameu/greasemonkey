@@ -1,5 +1,6 @@
-import { obterReferencias } from '../src/referentes';
 import { expect } from 'chai';
+import { it } from 'mocha';
+import { obterReferencias } from '../src/referentes';
 
 it('Um evento', () => {
   testarExpressoes([42]);
@@ -41,7 +42,7 @@ function testarExpressoes(numeroEventos: number[], numerosEmOrdem: number[] = nu
 function gerarExpressoes(numeroEventos: number[]) {
   if (numeroEventos.length < 1) throw new Error('Ao menos um número deve ser fornecido.');
   const numeros = numeroEventos.slice();
-  const ultimo = numeros.pop().toString();
+  const ultimo = numeros.pop()!.toString();
   const partes = numeros.length === 0 ? [] : [numeros.join(', ')];
   partes.push(ultimo);
   const textoEventos = partes.join(' e ');
