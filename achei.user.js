@@ -14,67 +14,46 @@
 // @grant       none
 // ==/UserScript==
 
-class Maybe {}
-
-class Just extends Maybe {
-  constructor(value) {
-    super();
-    this.value = value;
-  }
-
-  *[Symbol.iterator]() {
-    yield this.value;
-  }
-
-  chain(f) {
-    return f(this.value);
-  }
-
-  safeMap(f) {
-    return this.map(f).chain(fromNullish);
-  }
-
-  map(f) {
-    return new Just(f(this.value));
-  }
-
-  then(Just, _) {
-    return Just(this.value);
-  }
+function Just(value) {
+  return {
+    isJust: true,
+    isNothing: false,
+    value,
+    *[Symbol.iterator]() {
+      yield value;
+    },
+    chain: f => f(value),
+    map: f => Just(f(value)),
+    safeMap: f => fromNullish(f(value)),
+    then(f, _) {
+      return f(value);
+    },
+  };
 }
-
-const Jp = Just.prototype;
-Jp.isJust = true;
-Jp.isNothing = false;
-
-const createJust = value => new Just(value);
-
-class Nothing extends Maybe {
-  *[Symbol.iterator]() {}
-
-  then(_, Nothing) {
-    return Nothing();
-  }
-}
-
-const Np = Nothing.prototype;
-Np.isJust = false;
-Np.isNothing = true;
-
-Np.chain = Np.safeMap = Np.map = () => nothing;
-
-const nothing = new Nothing();
-const all = (...maybes) => {
+const returnNothing = () => Nothing;
+const Nothing = {
+  isJust: false,
+  isNothing: true,
+  *[Symbol.iterator]() {},
+  chain: returnNothing,
+  map: returnNothing,
+  safeMap: returnNothing,
+  then(_, f) {
+    return f();
+  },
+};
+function all(...maybes) {
   const results = [];
-
   for (const maybe of maybes) {
-    if (maybe.isNothing) return nothing;
+    if (maybe.isNothing) return Nothing;
     results.push(maybe.value);
   }
-
-  return new Just(results);
-};
-const fromNullish = value => (value == null ? nothing : new Just(value));
+  return Just(results);
+}
+function fromNullish(value) {
+  if (value == null) return Nothing;
+  return Just(value);
+}
 
 async function main(doc) {
   const [dominio, nodeInfo] = await all(getDominio(doc), getFormulario(doc).map(getNodeInfo));
@@ -90,12 +69,11 @@ const dominios = {
   4: 'jfpr',
 };
 const getDominio = doc =>
-  createJust(doc)
+  Just(doc)
     .safeMap(x => x.querySelector('input[name="local"]:checked'))
     .map(x => x.value)
     .safeMap(x => (x in dominios ? dominios[x] : null));
-const getFormulario = doc =>
-  createJust(doc).safeMap(x => x.querySelector('form[name="formulario"]'));
+const getFormulario = doc => Just(doc).safeMap(x => x.querySelector('form[name="formulario"]'));
 const getNodeInfo = formulario => Array.from(parseFormulario(formulario));
 function* parseFormulario(formulario) {
   for (const sibling of siblings(formulario))
@@ -113,13 +91,13 @@ function* flattenTabela(node) {
   yield node;
 }
 const getNodeSigla = node =>
-  createJust(node)
+  Just(node)
     .safeMap(x => x.textContent)
     .chain(siglaFromText)
     .map(sigla => ({ node, sigla }));
 const reSigla = /^\s*Sigla:\s*(\S+)\s*(\(antiga:\s*\S+\s*\))?\s*$/;
 const siglaFromText = text =>
-  createJust(text)
+  Just(text)
     .safeMap(x => x.match(reSigla))
     .map(match => {
       if (match[2]) {
