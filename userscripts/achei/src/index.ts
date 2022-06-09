@@ -1,74 +1,81 @@
-import * as maybe from '../../../lib/Maybe';
-import { type Maybe } from '../../../lib/Maybe';
-
-interface State {
-  dominio: string;
-  nodeInfo: NodeSigla[];
-}
+import * as Q from '@nadameu/query';
 
 interface NodeSigla {
   node: Node;
   sigla: string;
 }
 
-async function main(doc: Document) {
-  const [dominio, nodeInfo] = await maybe.all(getDominio(doc), getFormulario(doc).map(getNodeInfo));
-  criarLinks(doc, dominio, nodeInfo);
-  const qtd = nodeInfo.length;
-  const s = qtd > 1 ? 's' : '';
-  console.log(`${qtd} link${s} criado${s}`);
+interface Types<a> {
+  Array: Array<a>;
+}
+
+function main(doc: Document) {
+  const result = Q.lift2(
+    getDominio(doc),
+    getFormulario(doc).map(getNodeInfo),
+    (dominio, nodeInfo) => {
+      criarLinks(doc, dominio, nodeInfo);
+      const qtd = nodeInfo.length;
+      const s = qtd > 1 ? 's' : '';
+      console.log(`${qtd} link${s} criado${s}`);
+    }
+  );
+  if (result.tag === 'Fail') {
+    console.error(result.history.join('.'));
+  }
 }
 
 const dominios = {
-  1: 'trf4',
-  2: 'jfrs',
-  3: 'jfsc',
-  4: 'jfpr',
+  '1': 'trf4',
+  '2': 'jfrs',
+  '3': 'jfsc',
+  '4': 'jfpr',
 } as const;
 
-const getDominio = (doc: Document): Maybe<string> =>
-  maybe
-    .Just(doc)
-    .safeMap(x => x.querySelector<HTMLInputElement>('input[name="local"]:checked'))
+const getDominio = (doc: Document) =>
+  Q.of(doc)
+    .query<HTMLInputElement>('input[name="local"]:checked')
+    .one()
     .map(x => x.value)
-    .safeMap(x => (x in dominios ? dominios[x as unknown as keyof typeof dominios] : null));
+    .safeMap(x => (((k): k is keyof typeof dominios => k in dominios)(x) ? dominios[x] : null));
 
-const getFormulario = (doc: Document): Maybe<HTMLFormElement> =>
-  maybe.Just(doc).safeMap(x => x.querySelector<HTMLFormElement>('form[name="formulario"]'));
+const getFormulario = (doc: Document) =>
+  Q.of(doc).query<HTMLFormElement>('form[name="formulario"]').one();
 
 const getNodeInfo = (formulario: HTMLFormElement): NodeSigla[] =>
   Array.from(parseFormulario(formulario));
 
-function* parseFormulario(formulario: HTMLFormElement) {
-  for (const sibling of siblings(formulario))
-    for (const node of flattenTabela(sibling)) yield* getNodeSigla(node);
+function parseFormulario(formulario: HTMLFormElement) {
+  return siblings(formulario).chain(flattenTabela).chain(getNodeSigla);
 }
 
-function* siblings(node: Node) {
-  for (let s = node.nextSibling; s !== null; s = s.nextSibling) yield s;
+function siblings(node: Node) {
+  return Q.unfold(node.nextSibling, s => (s === null ? null : [s, s.nextSibling]));
 }
 
-function* flattenTabela(node: Node) {
-  if (node instanceof HTMLTableElement) {
-    const celula = node.querySelector('td:nth-child(2)');
-    if (!celula) throw new Error('Célula não encontrada.');
-    yield* celula.childNodes;
-  }
-  yield node;
+function flattenTabela(node: Node): Q.Query<Node> {
+  const qn = Q.of(node);
+  if (node instanceof HTMLTableElement)
+    return Q.concat(
+      Q.of(node)
+        .query('td:nth-child(2)')
+        .one()
+        .mapIterable(celula => celula.childNodes),
+      qn
+    );
+  return qn;
 }
 
-const getNodeSigla = (node: Node): Maybe<NodeSigla> =>
-  maybe
-    .Just(node)
+const getNodeSigla = (node: Node) =>
+  Q.of(node)
     .safeMap(x => x.textContent)
     .chain(siglaFromText)
     .map(sigla => ({ node, sigla }));
 
 const reSigla = /^\s*Sigla:\s*(\S+)\s*(\(antiga:\s*\S+\s*\))?\s*$/;
 
-const siglaFromText = (text: string): Maybe<string> =>
-  maybe
-    .Just(text)
+const siglaFromText = (text: string) =>
+  Q.of(text)
     .safeMap(x => x.match(reSigla))
     .map(match => {
       if (match[2]) {
@@ -92,6 +99,4 @@ function criarLinks(doc: Document, dominio: string, nodeInfo: NodeSigla[]) {
   }
 }
 
-main(document).catch(e => {
-  console.error(e);
-});
+main(document);
