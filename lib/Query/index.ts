@@ -3,10 +3,12 @@ interface QueryBase<T> {
   history: string[];
   [Symbol.iterator](): Generator<T>;
   chain<U>(f: (_: T) => Query<U>): Query<U>;
+  concatMap<U>(f: (_: T) => Query<U>): Query<U>;
   map<U>(f: (_: T) => U): Query<U>;
   mapIterable<U>(f: (_: T) => Iterable<U>): Query<U>;
   one(): QueryMaybe<T>;
   safeMap<U>(f: (_: T) => U | null | undefined): Query<U>;
+  tap(f: (_: T) => void): Query<T>;
 }
 type QueryMaybe<T> = Fail<T> | One<T>;
 interface QueryMaybeBase<T> extends QueryBase<T> {
@@ -15,6 +17,7 @@ interface QueryMaybeBase<T> extends QueryBase<T> {
   map<U>(f: (_: T) => U): QueryMaybe<U>;
   query<T extends Element>(this: QueryMaybe<ParentNode>, selector: string): Query<T>;
   safeMap<U>(f: (_: T) => U | null | undefined): QueryMaybe<U>;
+  tap(f: (_: T) => void): QueryMaybe<T>;
 }
 
 export interface Fail<T = never> extends QueryMaybeBase<T> {
@@ -27,11 +30,13 @@ export function Fail<T = never>(history: string[]): Fail<T> {
     history,
     *[Symbol.iterator]() {},
     chain: returnThis,
+    concatMap: returnThis,
     map: returnThis,
     mapIterable: returnThis,
     one: returnThis,
     query: returnThis,
     safeMap: returnThis,
+    tap: returnThis,
   };
   return _this;
 }
@@ -53,6 +58,7 @@ export function One<T>(value: T, history: string[]): One<T> {
       yield value;
     },
     chain,
+    concatMap: chain,
     map: f => One(f(value), [...history, 'map(f)']),
     mapIterable: f =>
       _mapHistory(
@@ -72,6 +78,10 @@ export function One<T>(value: T, history: string[]): One<T> {
       const result = f(value);
       if (result == null) return Fail(newHistory);
       return One(result, newHistory);
+    },
+    tap: f => {
+      f(value);
+      return One(value, history);
     },
   };
 
@@ -109,6 +119,13 @@ export function Many<T>(values: T[], history: string[]): Many<T> {
       yield* values;
     },
     chain,
+    concatMap: f => {
+      const newHistory = [...history, 'concatMap(f)'];
+      const results = values.flatMap(x => Array.from(f(x)));
+      if (results.length === 0) return Fail(newHistory);
+      if (results.length === 1) return One(results[0]!, newHistory);
+      return Many(results, newHistory);
+    },
     map: f =>
       Many(
         values.map(x => f(x)),
@@ -129,6 +146,10 @@ export function Many<T>(values: T[], history: string[]): Many<T> {
         results.push(result);
       }
       return Many(results, newHistory);
+    },
+    tap: f => {
+      values.forEach(x => f(x));
+      return Many(values, history);
     },
   };
 
@@ -166,27 +187,28 @@ export function lift2<T, U, V>(fx: Query<T>, fy: Query<U>, f: (x: T, y: U) => V)
 }
 
 export function unfold<T, U>(seed: U, f: (seed: U) => [value: T, nextSeed: U] | null): Query<T> {
-  let results: T[] = [];
-  let result: ReturnType<typeof f>;
-  let currentSeed = seed;
-  let value: T;
-  while ((result = f(currentSeed))) {
-    [value, currentSeed] = result;
-    results.push(value);
-  }
-  const newHistory = ['unfold(seed, f)'];
-  if (results.length === 0) return Fail(newHistory);
-  if (results.length === 1) return One(results[0]!, newHistory);
-  return Many(results, newHistory);
+  return _mapHistory(
+    fromIterable(
+      (function* () {
+        let s = seed,
+          current: [T, U] | null;
+        while ((current = f(s))) {
+          yield current[0];
+          s = current[1];
+        }
+      })()
+    ),
+    () => ['unfold(seed, f)']
+  );
 }
 
-export const fromIterable = <T>(iterable: Iterable<T>): Query<T> =>
-  _mapHistory(
-    unfold(iterable[Symbol.iterator](), (iter, result = iter.next()) =>
-      result.done ? null : [result.value, iter]
-    ),
-    () => ['fromIterable(iterable)']
-  );
+export const fromIterable = <T>(iterable: Iterable<T>): Query<T> => {
+  const results = Array.from(iterable);
+  const h = ['fromIterable(iterable)'];
+  if (results.length === 0) return Fail(h);
+  if (results.length === 1) return One(results[0]!, h);
+  return Many(results, h);
+};
 
 export const concat = <T>(fx: Query<T>, fy: Query<T>): Query<T> => {
   const newHistory = [`concat(${fx.history.join('.')}, ${fy.history.join('.')})`];

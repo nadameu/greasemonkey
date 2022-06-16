@@ -10,7 +10,7 @@
 // @include     http://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar&*
 // @include     https://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar
 // @include     https://serh.trf4.jus.br/achei/pesquisar.php?acao=pesquisar&*
-// @version     15.2.0
+// @version     15.3.0
 // @grant       none
 // ==/UserScript==
 
@@ -21,11 +21,13 @@ function Fail(history) {
     history,
     *[Symbol.iterator]() {},
     chain: returnThis,
+    concatMap: returnThis,
     map: returnThis,
     mapIterable: returnThis,
     one: returnThis,
     query: returnThis,
     safeMap: returnThis,
+    tap: returnThis,
   };
   return _this;
 }
@@ -41,6 +43,7 @@ function One(value, history) {
       yield value;
     },
     chain,
+    concatMap: chain,
     map: f => One(f(value), [...history, 'map(f)']),
     mapIterable: f =>
       _mapHistory(
@@ -60,6 +63,10 @@ function One(value, history) {
       const result = f(value);
       if (result == null) return Fail(newHistory);
       return One(result, newHistory);
+    },
+    tap: f => {
+      f(value);
+      return One(value, history);
     },
   };
   function chain(f) {
@@ -86,6 +93,13 @@ function Many(values, history) {
       yield* values;
     },
     chain,
+    concatMap: f => {
+      const newHistory = [...history, 'concatMap(f)'];
+      const results = values.flatMap(x => Array.from(f(x)));
+      if (results.length === 0) return Fail(newHistory);
+      if (results.length === 1) return One(results[0], newHistory);
+      return Many(results, newHistory);
+    },
     map: f =>
       Many(
         values.map(x => f(x)),
@@ -106,6 +120,10 @@ function Many(values, history) {
         results.push(result);
       }
       return Many(results, newHistory);
+    },
+    tap: f => {
+      values.forEach(x => f(x));
+      return Many(values, history);
     },
   };
   function chain(f) {
@@ -134,26 +152,27 @@ function lift2(fx, fy, f) {
   );
 }
 function unfold(seed, f) {
-  let results = [];
-  let result;
-  let currentSeed = seed;
-  let value;
-  while ((result = f(currentSeed))) {
-    [value, currentSeed] = result;
-    results.push(value);
-  }
-  const newHistory = ['unfold(seed, f)'];
-  if (results.length === 0) return Fail(newHistory);
-  if (results.length === 1) return One(results[0], newHistory);
-  return Many(results, newHistory);
-}
-const fromIterable = iterable =>
-  _mapHistory(
-    unfold(iterable[Symbol.iterator](), (iter, result = iter.next()) =>
-      result.done ? null : [result.value, iter]
+  return _mapHistory(
+    fromIterable(
+      (function* () {
+        let s = seed,
+          current;
+        while ((current = f(s))) {
+          yield current[0];
+          s = current[1];
+        }
+      })()
     ),
-    () => ['fromIterable(iterable)']
+    () => ['unfold(seed, f)']
   );
+}
+const fromIterable = iterable => {
+  const results = Array.from(iterable);
+  const h = ['fromIterable(iterable)'];
+  if (results.length === 0) return Fail(h);
+  if (results.length === 1) return One(results[0], h);
+  return Many(results, h);
+};
 const concat = (fx, fy) => {
   const newHistory = [`concat(${fx.history.join('.')}, ${fy.history.join('.')})`];
   const k = () => newHistory;
@@ -198,7 +217,7 @@ const getDominio = doc =>
 const getFormulario = doc => of(doc).query('form[name="formulario"]').one();
 const getNodeInfo = formulario => Array.from(parseFormulario(formulario));
 function parseFormulario(formulario) {
-  return siblings(formulario).chain(flattenTabela).chain(getNodeSigla);
+  return siblings(formulario).chain(flattenTabela).concatMap(getNodeSigla);
 }
 function siblings(node) {
   return unfold(node.nextSibling, s => (s === null ? null : [s, s.nextSibling]));

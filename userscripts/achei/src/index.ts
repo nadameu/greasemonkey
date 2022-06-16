@@ -46,7 +46,7 @@ const getNodeInfo = (formulario: HTMLFormElement): NodeSigla[] =>
   Array.from(parseFormulario(formulario));
 
 function parseFormulario(formulario: HTMLFormElement) {
-  return siblings(formulario).chain(flattenTabela).chain(getNodeSigla);
+  return siblings(formulario).chain(flattenTabela).concatMap(getNodeSigla);
 }
 
 function siblings(node: Node) {
