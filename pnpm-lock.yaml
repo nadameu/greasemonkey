@@ -50,6 +50,9 @@ importers:
   lib/opaque:
     specifiers: {}
 
+  lib/pipe:
+    specifiers: {}
+
   lib/predicates:
     specifiers:
       '@nadameu/opaque': ^1.0.0
@@ -58,12 +61,6 @@ importers:
 
   lib/resolvable:
     specifiers: {}
-
-  userscripts/achei:
-    specifiers:
-      '@nadameu/query': workspace:^1.0.0
-    dependencies:
-      '@nadameu/query': link:../../lib/Query
 
   userscripts/baixa-acordo-inss:
     specifiers:

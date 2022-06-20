@@ -1,28 +1,21 @@
-import * as Q from '@nadameu/query';
-
 interface NodeSigla {
   node: Node;
   sigla: string;
 }
 
-interface Types<a> {
-  Array: Array<a>;
-}
-
 function main(doc: Document) {
-  const result = Q.lift2(
-    getDominio(doc),
-    getFormulario(doc).map(getNodeInfo),
-    (dominio, nodeInfo) => {
-      criarLinks(doc, dominio, nodeInfo);
-      const qtd = nodeInfo.length;
-      const s = qtd > 1 ? 's' : '';
-      console.log(`${qtd} link${s} criado${s}`);
-    }
-  );
-  if (result.tag === 'Fail') {
-    console.error(result.history.join('.'));
+  const dominio = getDominio(doc);
+  if (!dominio) throw new Error('Não foi possível verificar o domínio.');
+  const formulario = getFormulario(doc);
+  if (!formulario) throw new Error('Não foi possível obter o formulário.');
+  const criarLinks = makeCriarLinks(doc, dominio);
+  const nodeInfo = getNodeInfo(formulario);
+  for (const nodeSigla of nodeInfo) {
+    criarLinks(nodeSigla);
   }
+  const qtd = nodeInfo.length;
+  const s = qtd > 1 ? 's' : '';
+  console.log(`${qtd} link${s} criado${s}`);
 }
 
 const dominios = {
@@ -32,71 +25,68 @@ const dominios = {
   '4': 'jfpr',
 } as const;
 
-const getDominio = (doc: Document) =>
-  Q.of(doc)
-    .query<HTMLInputElement>('input[name="local"]:checked')
-    .one()
-    .map(x => x.value)
-    .safeMap(x => (((k): k is keyof typeof dominios => k in dominios)(x) ? dominios[x] : null));
+const getDominio = (doc: Document) => {
+  const value = doc.querySelector<HTMLInputElement>('input[name="local"]:checked')?.value;
+  if (!value) return null;
+  if (!(value in dominios)) return null;
+  return dominios[value as keyof typeof dominios];
+};
 
 const getFormulario = (doc: Document) =>
-  Q.of(doc).query<HTMLFormElement>('form[name="formulario"]').one();
+  doc.querySelector<HTMLFormElement>('form[name="formulario"]');
 
-const getNodeInfo = (formulario: HTMLFormElement): NodeSigla[] =>
-  Array.from(parseFormulario(formulario));
+const getNodeInfo = (formulario: HTMLFormElement) => {
+  const nodeInfo: NodeSigla[] = [];
+  for (const sibling of siblings(formulario))
+    for (const node of flattenTabela(sibling)) {
+      const nodeSigla = getNodeSigla(node);
+      if (nodeSigla) nodeInfo.push(nodeSigla);
+    }
+  return nodeInfo;
+};
 
-function parseFormulario(formulario: HTMLFormElement) {
-  return siblings(formulario).chain(flattenTabela).concatMap(getNodeSigla);
+function* siblings(node: Node) {
+  for (let s = node.nextSibling; s; s = s.nextSibling) yield s;
 }
 
-function siblings(node: Node) {
-  return Q.unfold(node.nextSibling, s => (s === null ? null : [s, s.nextSibling]));
-}
-
-function flattenTabela(node: Node): Q.Query<Node> {
-  const qn = Q.of(node);
+function* flattenTabela(node: Node) {
   if (node instanceof HTMLTableElement)
-    return Q.concat(
-      Q.of(node)
-        .query('td:nth-child(2)')
-        .one()
-        .mapIterable(celula => celula.childNodes),
-      qn
-    );
-  return qn;
+    yield* node.querySelector('td:nth-child(2)')?.childNodes ?? [];
+  yield node;
 }
 
-const getNodeSigla = (node: Node) =>
-  Q.of(node)
-    .safeMap(x => x.textContent)
-    .chain(siglaFromText)
-    .map(sigla => ({ node, sigla }));
+const getNodeSigla = (node: Node): NodeSigla | null => {
+  const text = node.textContent;
+  if (!text) return null;
+  const sigla = siglaFromText(text);
+  if (!sigla) return null;
+  return { node, sigla };
+};
 
 const reSigla = /^\s*Sigla:\s*(\S+)\s*(\(antiga:\s*\S+\s*\))?\s*$/;
 
-const siglaFromText = (text: string) =>
-  Q.of(text)
-    .safeMap(x => x.match(reSigla))
-    .map(match => {
-      if (match[2]) {
-        // Possui sigla antiga e nova
-        return match[1]!;
-      } else {
-        // Possui somente sigla nova
-        return match[1]!.toLowerCase();
-      }
-    });
+const siglaFromText = (text: string) => {
+  const match = text.match(reSigla);
+  if (!match) return null;
+  if (match[2]) {
+    // Possui sigla antiga e nova
+    return match[1]!;
+  } else {
+    // Possui somente sigla nova
+    return match[1]!.toLowerCase();
+  }
+};
 
-function criarLinks(doc: Document, dominio: string, nodeInfo: NodeSigla[]) {
+function makeCriarLinks(doc: Document, dominio: string) {
   const template = doc.createElement('template');
   template.innerHTML = ' [ <a href="" target="_blank">Abrir na Intra</a> ]';
   const content = template.content;
   const link = content.querySelector('a')!;
-  for (const { node, sigla } of nodeInfo) {
+  return ({ node, sigla }: NodeSigla) => {
     link.href = `https://intra.trf4.jus.br/membros/${sigla}${dominio}-jus-br`;
     const fragment = doc.importNode(content, true);
     node.parentNode!.insertBefore(fragment, node.nextSibling);
-  }
+  };
 }
 
 main(document);
