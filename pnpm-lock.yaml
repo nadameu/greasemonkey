@@ -41,6 +41,21 @@ importers:
   lib/Query:
     specifiers: {}
 
+  lib/handler:
+    specifiers: {}
+
+  lib/mutable:
+    specifiers: {}
+
+  lib/opaque:
+    specifiers: {}
+
+  lib/predicates:
+    specifiers:
+      '@nadameu/opaque': ^1.0.0
+    dependencies:
+      '@nadameu/opaque': link:../opaque
+
   userscripts/achei:
     specifiers:
       '@nadameu/query': workspace:^1.0.0
