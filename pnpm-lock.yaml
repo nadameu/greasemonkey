@@ -56,6 +56,9 @@ importers:
     dependencies:
       '@nadameu/opaque': link:../opaque
 
+  lib/resolvable:
+    specifiers: {}
+
   userscripts/achei:
     specifiers:
       '@nadameu/query': workspace:^1.0.0
@@ -82,6 +85,16 @@ importers:
       esbuild-runner: 2.2.1_esbuild@0.14.43
       mocha: 9.2.2
       npm-run-all: 4.1.5
+
+  userscripts/renajud:
+    specifiers:
+      '@nadameu/predicates': workspace:^1.0.0
+      '@nadameu/resolvable': workspace:^1.0.0
+      descriptive-regexp: ^0.3.0
+    dependencies:
+      '@nadameu/predicates': link:../../lib/predicates
+      '@nadameu/resolvable': link:../../lib/resolvable
+      descriptive-regexp: 0.3.0
 
 packages:
 
