@@ -1,12 +1,63 @@
-import * as Pagina from '../Pagina';
-import { GUI } from '../GUI';
-import * as AjaxListener from '../AjaxListener';
-import { PreferenciasUsuario } from '../PreferenciasUsuario';
-import { obterPorId, obterPorSeletor } from '../obter';
 import { assert, hasShape, isNotNullish, isString } from '@nadameu/predicates';
+import * as AjaxListener from '../AjaxListener';
+import { GUI } from '../GUI';
+import { obterPorId, obterPorSeletor } from '../obter';
+import * as Pagina from '../Pagina';
+import { PreferenciasUsuario } from '../PreferenciasUsuario';
 
 export function inserir() {
-  GUI.addOnNumprocChangeListener(numproc => {
+  GUI.addOnDadosInputListener(texto => {
+    GUI.Logger.clear();
+    GUI.Logger.write('Analisando dados...');
+    const linhas = texto
+      .split(/\n/g)
+      .slice(8)
+      .map(linha => linha.split(/\t/g));
+    assert(
+      linhas.every((x): x is [string, string, string, string, string, string] => x.length === 6),
+      'Formato dos dados copiados não reconhecido.'
+    );
+    type DadosPessoa = {
+      nome: string;
+      doc: string | null;
+    };
+
+    const filtered = linhas.reduce(
+      (
+        { autores, reus }: Record<'autores' | 'reus', DadosPessoa[]>,
+        [nomeAutor, docAutor, , nomeReu, docReu]
+      ) => {
+        const matchAutor = docAutor.match(/^="(\d+)"$/);
+        if (matchAutor) {
+          autores.push({ nome: nomeAutor, doc: matchAutor[1]! });
+        } else if (docAutor === '') {
+          if (nomeAutor) autores.push({ nome: nomeAutor, doc: null });
+        } else {
+          throw new Error('Formato dos dados copiados não reconhecido (CPF/CNPJ).');
+        }
+
+        const matchReu = docReu.match(/^="(\d+)"$/);
+        if (matchReu) {
+          reus.push({ nome: nomeReu, doc: matchReu[1]! });
+        } else if (docReu === '') {
+          if (nomeReu) reus.push({ nome: nomeReu, doc: null });
+        } else {
+          throw new Error('Formato dos dados copiados não reconhecido (CPF/CNPJ).');
+        }
+
+        return { autores, reus };
+      },
+      { autores: [], reus: [] }
+    );
+    GUI.Logger.write('OK.\n');
+    GUI.hideEntrada();
+    filtered.autores.forEach(f => {
+      GUI.Logger.write(`${f.nome} (${f.doc})\n`);
+    });
+    filtered.reus.forEach(f => {
+      GUI.Logger.write(`${f.nome} (${f.doc})\n`);
+    });
+    /*
     (async function () {
       try {
         GUI.Logger.clear();
@@ -104,6 +155,7 @@ export function inserir() {
         Pagina.limpar();
       }
     })();
+*/
   });
 
   function preencherSelectOneMenu(idCampo: string, valor: string) {

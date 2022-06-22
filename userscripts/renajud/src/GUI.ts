@@ -5,69 +5,67 @@ import { assert, isNotNull } from '@nadameu/predicates';
 
 const style = document.createElement('style');
 style.innerHTML = /* css */ `
-  @media print { div#alteracoesGreasemonkey, .noprint { display: none; } }
-  @media screen { div#impressaoGreasemonkey, .noscreen { display: none; } }
-  div#alteracoesGreasemonkey div { font-family: monospace; }
-  div#impressaoGreasemonkey table { page-break-inside: avoid; }
+  @media print { #gm-formulario, .noprint { display: none; } }
+  @media screen { #gm-impressao, .noscreen { display: none; } }
+  #gm-formulario { background: hsl(266, 50%, 95.1%); box-sizing: border-box; margin-top: 2%; margin-left: 2%; padding: 10px 3%; width: 90%; font-size: 14px; color: #333; }
+  #gm-entrada p { margin: 0 0 1em; color: inherit; font-size: 1em; }
+  #gm-explicacao { font-size: 0.94em; color: #444; }
+  #gm-explicacao h4 { font-size: 1.05em; font-weight: 600; }
+  #gm-explicacao ul { list-style: square inside; }
+  #gm-explicacao ul ul { list-style: disc inside; margin-left: 2ex; margin-top: 0.5em; }
+  #gm-explicacao li { margin: 0 0 0.5em; color: inherit; font-size: 1em; }
+  #gm-entrada textarea { font-family: monospace; }
+  #gm-saida { font-family: monospace; }
+  #gm-impressao table { page-break-inside: avoid; }
 `;
 document.getElementsByTagName('head')[0]!.appendChild(style);
 
 const painel = obterPorId('panel-inserir-restricao');
 painel.insertAdjacentHTML(
   'beforebegin',
-  /* html */ `<div id="alteracoesGreasemonkey"><select></select> <input placeholder="Número do processo" size="25" maxlength="25" autofocus/><div></div></div>`
+  /* html */ `
+<div id="gm-formulario">
+  <div id="gm-entrada">
+    <p>Cole aqui o resultado do botão &ldquo;Copiar para colar no Excel&rdquo;:</p>
+    <textarea cols="80" rows="10" autofocus></textarea>
+    <div id="gm-explicacao">
+      <h4>Onde encontro este botão?</h4>
+      <ul>
+        <li>Nas configurações do <em>eproc</em>:
+          <ul>
+            <li>Habilite &ldquo;Exibir botão &lsquo;Copiar para colar no Excel&rsquo;&rdquo;;</li>
+            <li>Desabilite &ldquo;Ocultar demais partes da capa do processo&rdquo;;</li>
+          </ul>
+        </li>
+        <li>Na tela do processo, próximo ao botão &ldquo;Download completo&rdquo;, haverá um botão &ldquo;Copiar para colar no Excel&rdquo;.</li>
+        <li>Após clicar, certifique-se de que a mensagem &ldquo;Dados copiados&rdquo; foi exibida.</li>
+      </ul>
+    </div>
+  </div>
+  <div id="gm-saida"></div>
+</div>`
 );
-const alteracoesGreasemonkey = obterPorId('#alteracoesGreasemonkey');
+const alteracoesGreasemonkey = obterPorId('gm-formulario');
 
-document.body.insertAdjacentHTML('beforeend', /* html */ `<div id="impressaoGreasemonkey"></div>`);
-const impressaoGreasemonkey =
-  painel.parentNode!.querySelector<HTMLDivElement>('#impressaoGreasemonkey')!;
-
-const estadoElement = alteracoesGreasemonkey.querySelector('select')!;
-let estadoSalvo = PreferenciasUsuario.estado;
-estadoElement.insertAdjacentHTML(
-  'afterbegin',
-  ['PR', 'RS', 'SC']
-    .map(
-      estado => '<option' + (estado === estadoSalvo ? ' selected' : '') + '>' + estado + '</option>'
-    )
-    .join('')
-);
-estadoElement.addEventListener(
-  'change',
-  e => {
-    estadoSalvo = (e.target as HTMLSelectElement).value;
-    PreferenciasUsuario.estado = estadoSalvo;
-  },
-  false
-);
+document.body.insertAdjacentHTML('beforeend', /* html */ `<div id="gm-impressao"></div>`);
+const impressaoGreasemonkey = painel.parentNode!.querySelector<HTMLDivElement>('#gm-impressao')!;
 
 const listeners: Array<(_: string) => void> = [];
-const numprocElement = alteracoesGreasemonkey.querySelector('input')!;
-numprocElement.addEventListener(
-  'change',
+const dadosProcesso = alteracoesGreasemonkey.querySelector('textarea')!;
+dadosProcesso.addEventListener(
+  'input',
   () => {
-    const numproc = GUI.numproc.replace(/\D+/g, '');
-    GUI.numproc = numproc;
-    listeners.forEach(fn => fn(numproc));
+    listeners.forEach(fn => fn(dadosProcesso.value));
   },
   false
 );
 
-const logElement = alteracoesGreasemonkey.querySelector('div')!;
+const logElement = alteracoesGreasemonkey.querySelector<HTMLDivElement>('#gm-saida')!;
+const divEntrada = alteracoesGreasemonkey.querySelector<HTMLDivElement>('#gm-entrada')!;
 
 export const GUI = {
-  get estado() {
-    return estadoElement.value;
-  },
-  get numproc() {
-    return numprocElement.value;
-  },
-  set numproc(val) {
-    numprocElement.value = val;
-  },
-  addOnNumprocChangeListener(fn: (numproc: string) => void) {
-    console.debug('GUI.addOnNumprocChangeListener(fn)', fn);
+  addOnDadosInputListener(fn: (numproc: string) => void) {
+    console.debug('GUI.addOnDadosInputListener(fn)', fn);
     listeners.push(fn);
   },
   criarOpcaoPreencherMagistrado() {
@@ -114,6 +112,10 @@ export const GUI = {
     console.debug('GUI.hide()');
     alteracoesGreasemonkey.style.display = 'none';
   },
+  hideEntrada() {
+    console.debug('GUI.hideEntrada()');
+    divEntrada.style.display = 'none';
+  },
   restaurarTabelaVeiculos(fragmento: DocumentFragment) {
     console.debug('GUI.restaurarTabelaVeiculos(fragmento)', fragmento);
     const tBody = obterPorId('form-incluir-restricao:lista-veiculo_data');
@@ -129,6 +131,10 @@ export const GUI = {
   show() {
     console.debug('GUI.show()');
     alteracoesGreasemonkey.style.display = '';
+  },
+  showEntrada() {
+    console.debug('GUI.showEntrada()');
+    divEntrada.style.display = '';
   },
   Logger: {
     clear() {
