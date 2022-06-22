@@ -1,13 +1,17 @@
 import { assert, isNotNull } from '@nadameu/predicates';
 
 export function obterPorId(id: string) {
-  const elemento = document.getElementById(id);
-  assert(isNotNull(elemento), `Não encontrado: #${id}.`);
-  return elemento;
+  return assegurarExistente(document.getElementById(id), `#${id}`);
 }
 
 export function obterPorTipoId<K extends keyof HTMLElementTagNameMap>(tagName: K, id: string) {
-  const elemento = document.querySelector<HTMLElementTagNameMap[K]>(`${tagName}[id="${id}"]`);
-  assert(isNotNull(elemento), `Não encontrado: ${tagName}#${id}.`);
-  return elemento;
+  return assegurarExistente(
+    document.querySelector<HTMLElementTagNameMap[K]>(`${tagName}[id="${id}"]`),
+    `${tagName}#${id}.`
+  );
+}
+
+function assegurarExistente<T>(obj: T | null, seletor: string) {
+  assert(isNotNull(obj), `Não encontrado: ${seletor}.`);
+  return obj;
 }

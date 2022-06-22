@@ -1,27 +1,30 @@
 import { PreferenciasUsuario } from './PreferenciasUsuario';
 import * as Pagina from './Pagina';
+import { obterPorId } from './obter';
+import { assert, isNotNull } from '@nadameu/predicates';
 
 const style = document.createElement('style');
-style.innerHTML = [
-  '@media print { div#alteracoesGreasemonkey, .noprint { display: none; } }',
-  '@media screen { div#impressaoGreasemonkey, .noscreen { display: none; } }',
-  'div#alteracoesGreasemonkey div { font-family: monospace; }',
-  'div#impressaoGreasemonkey table { page-break-inside: avoid; }',
-].join('\n');
-document.getElementsByTagName('head')[0].appendChild(style);
+style.innerHTML = /* css */ `
+  @media print { div#alteracoesGreasemonkey, .noprint { display: none; } }
+  @media screen { div#impressaoGreasemonkey, .noscreen { display: none; } }
+  div#alteracoesGreasemonkey div { font-family: monospace; }
+  div#impressaoGreasemonkey table { page-break-inside: avoid; }
+`;
+document.getElementsByTagName('head')[0]!.appendChild(style);
 
-const painel = document.getElementById('panel-inserir-restricao');
+const painel = obterPorId('panel-inserir-restricao');
 painel.insertAdjacentHTML(
   'beforebegin',
-  '<div id="alteracoesGreasemonkey"><select></select> <input placeholder="Número do processo" size="25" maxlength="25" autofocus/><div></div></div>'
+  /* html */ `<div id="alteracoesGreasemonkey"><select></select> <input placeholder="Número do processo" size="25" maxlength="25" autofocus/><div></div></div>`
 );
-const alteracoesGreasemonkey = document.getElementById('alteracoesGreasemonkey');
+const alteracoesGreasemonkey = obterPorId('#alteracoesGreasemonkey');
 
-document.body.insertAdjacentHTML('beforeend', '<div id="impressaoGreasemonkey"></div>');
-const impressaoGreasemonkey = document.getElementById('impressaoGreasemonkey');
+document.body.insertAdjacentHTML('beforeend', /* html */ `<div id="impressaoGreasemonkey"></div>`);
+const impressaoGreasemonkey =
+  painel.parentNode!.querySelector<HTMLDivElement>('#impressaoGreasemonkey')!;
 
-const estadoElement = alteracoesGreasemonkey.querySelector('select');
-const estadoSalvo = PreferenciasUsuario.estado;
+const estadoElement = alteracoesGreasemonkey.querySelector('select')!;
+let estadoSalvo = PreferenciasUsuario.estado;
 estadoElement.insertAdjacentHTML(
   'afterbegin',
   ['PR', 'RS', 'SC']
@@ -32,18 +35,18 @@ estadoElement.insertAdjacentHTML(
 );
 estadoElement.addEventListener(
   'change',
-  function (e) {
-    estadoSalvo = e.target.value;
+  e => {
+    estadoSalvo = (e.target as HTMLSelectElement).value;
     PreferenciasUsuario.estado = estadoSalvo;
   },
   false
 );
 
-const listeners = [];
-const numprocElement = alteracoesGreasemonkey.querySelector('input');
+const listeners: Array<(_: string) => void> = [];
+const numprocElement = alteracoesGreasemonkey.querySelector('input')!;
 numprocElement.addEventListener(
   'change',
-  function () {
+  () => {
     const numproc = GUI.numproc.replace(/\D+/g, '');
     GUI.numproc = numproc;
     listeners.forEach(fn => fn(numproc));
@@ -51,7 +54,7 @@ numprocElement.addEventListener(
   false
 );
 
-const logElement = alteracoesGreasemonkey.querySelector('div');
+const logElement = alteracoesGreasemonkey.querySelector('div')!;
 
 export const GUI = {
   get estado() {
@@ -63,42 +66,42 @@ export const GUI = {
   set numproc(val) {
     numprocElement.value = val;
   },
-  addOnNumprocChangeListener(fn) {
+  addOnNumprocChangeListener(fn: (numproc: string) => void) {
     console.debug('GUI.addOnNumprocChangeListener(fn)', fn);
     listeners.push(fn);
   },
   criarOpcaoPreencherMagistrado() {
     console.debug('GUI.criarOpcaoPreencherMagistrado()');
-    const menu = document.getElementById('form-incluir-restricao:campo-magistrado');
-    const celula = menu.parentNode;
-    while (celula && celula.tagName.toUpperCase() !== 'TD') {
-      celula = celula.parentNode;
-    }
+    const menu = obterPorId('form-incluir-restricao:campo-magistrado');
+    const celula = menu.closest('td');
+    assert(isNotNull(celula), `Não encontrado: campo magistrado.`);
     celula.insertAdjacentHTML(
       'afterend',
-      '<td><label><input type="checkbox" id="preencher-magistrado-automaticamente"/> Usar este valor como padrão para todos os processos</label></td>'
+      /* html */ `<td><label><input type="checkbox" id="preencher-magistrado-automaticamente"/> Usar este valor como padrão para todos os processos</label></td>`
     );
-    const checkbox = document.getElementById('preencher-magistrado-automaticamente');
+    const checkbox = celula.parentNode!.querySelector<HTMLInputElement>(
+      '[id="preencher-magistrado-automaticamente"]'
+    )!;
     checkbox.checked = PreferenciasUsuario.preencherMagistrado;
     checkbox.addEventListener(
       'change',
-      function (evt) {
-        PreferenciasUsuario.preencherMagistrado = evt.target.checked;
+      evt => {
+        PreferenciasUsuario.preencherMagistrado = (evt.target as HTMLInputElement).checked;
       },
       false
     );
   },
-  definirRestricoesVeiculo(ord, restricoes) {
+  definirRestricoesVeiculo(ord: number, restricoes: string[]) {
     console.debug('GUI.definirRestricoeVeiculo(ord, restricoes)', ord, restricoes);
     const celulaRestricao = Pagina.obterCelulaRestricaoVeiculo(ord);
     celulaRestricao.innerHTML = '<div class="noscreen">' + celulaRestricao.innerHTML + '</div>\n';
     celulaRestricao.insertAdjacentHTML(
       'beforeend',
-      restricoes.map(texto => '<div class="noprint">' + texto + '</div>').join('\n')
+      restricoes.map(texto => `<div class="noprint">${texto}</div>`).join('\n')
     );
   },
   areaImpressao: {
-    adicionar(elemento) {
+    adicionar(elemento: HTMLElement) {
       console.debug('GUI.areaImpressao.adicionar(elemento)', elemento);
       impressaoGreasemonkey.appendChild(elemento);
     },
@@ -111,15 +114,15 @@ export const GUI = {
     console.debug('GUI.hide()');
     alteracoesGreasemonkey.style.display = 'none';
   },
-  restaurarTabelaVeiculos(fragmento) {
+  restaurarTabelaVeiculos(fragmento: DocumentFragment) {
     console.debug('GUI.restaurarTabelaVeiculos(fragmento)', fragmento);
-    const tBody = document.getElementById('form-incluir-restricao:lista-veiculo_data');
+    const tBody = obterPorId('form-incluir-restricao:lista-veiculo_data');
     tBody.insertBefore(fragmento, tBody.firstChild);
   },
   salvarTabelaVeiculos() {
     console.debug('GUI.salvarTabelaVeiculos()');
     const fragmento = document.createDocumentFragment();
-    const linhas = [...document.getElementById('form-incluir-restricao:lista-veiculo_data').rows];
+    const linhas = [...obterPorId('form-incluir-restricao:lista-veiculo_data').rows];
     linhas.forEach(linha => fragmento.appendChild(linha));
     return fragmento;
   },
@@ -132,7 +135,7 @@ export const GUI = {
       console.debug('GUI.Logger.clear()');
       logElement.innerHTML = '';
     },
-    write(text) {
+    write(text: string) {
       console.debug('GUI.Logger.write(text)', text);
       logElement.innerHTML += text.replace(/\n/g, '<br/>');
     },
