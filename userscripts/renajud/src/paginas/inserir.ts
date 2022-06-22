@@ -2,9 +2,11 @@ import * as Pagina from '../Pagina';
 import { GUI } from '../GUI';
 import * as AjaxListener from '../AjaxListener';
 import { PreferenciasUsuario } from '../PreferenciasUsuario';
+import { obterPorId, obterPorSeletor } from '../obter';
+import { assert, hasShape, isNotNullish, isString } from '@nadameu/predicates';
 
 export function inserir() {
-  GUI.addOnNumprocChangeListener(function (numproc) {
+  GUI.addOnNumprocChangeListener(numproc => {
     (async function () {
       try {
         GUI.Logger.clear();
@@ -15,7 +17,7 @@ export function inserir() {
         const documentos = await ServicoWSDL.obterDocumentosReus(numproc);
         GUI.Logger.write('..................... ok.\n');
 
-        const qtdVeiculos = 0;
+        let qtdVeiculos = 0;
         let len = documentos.length,
           ultimo = len - 1,
           documento;
@@ -45,9 +47,9 @@ export function inserir() {
         if (qtdVeiculos > 0) {
           await Pagina.limparPesquisa();
 
-          const paginaAtual = 1;
+          let paginaAtual = 1;
 
-          for (const i = 0; i < qtdVeiculos; ++i) {
+          for (let i = 0; i < qtdVeiculos; ++i) {
             if (i > 99 && i % 100 === 0) {
               GUI.Logger.write('Imprimindo detalhes dos veículos...');
               Pagina.imprimir();
@@ -96,34 +98,27 @@ export function inserir() {
         }
       } catch (err) {
         console.error(err);
-        window.alert(err.message);
+        if (err instanceof Error) window.alert(err.message);
+        else window.alert(String(err));
         GUI.Logger.clear();
         Pagina.limpar();
       }
     })();
   });
 
-  function preencherSelectOneMenu(idCampo, valor) {
+  function preencherSelectOneMenu(idCampo: string, valor: string) {
     console.debug('preencherSelectOneMenu(idCampo, valor)', idCampo, valor);
-    const idSelect = idCampo + '_input',
-      idPainel = idCampo + '_panel';
-    const select = document.getElementById(idSelect);
-    const opcao = select.querySelectorAll('option[value="' + valor + '"]');
-    if (opcao.length === 0) {
-      throw new Error('Opção não encontrada (campo "' + idCampo + '"):', valor);
-    }
-    const texto = opcao[0].innerHTML;
-    const menu = document
-      .getElementById(idCampo)
-      .getElementsByClassName('ui-selectonemenu-trigger');
-    opcao = [...document.getElementById(idPainel).getElementsByTagName('li')].filter(
-      li => li.dataset.label === texto
+    const opcao = obterPorSeletor<HTMLOptionElement>(
+      `[id="${idCampo}_input"] option[value="${valor}"]`
     );
-    if (menu.length === 0) {
-      throw new Error('Campo não encontrado: "' + idCampo + '"', select, texto, menu, opcao);
-    }
-    menu[0].click();
-    opcao[0].click();
+    const texto = opcao.innerHTML;
+    const menu = obterPorSeletor(`[id="${idCampo}"] .ui-selectonemenu-trigger`);
+    const opcaoNova = Array.from(
+      document.querySelectorAll<HTMLLIElement>(`[id="${idCampo}_panel"] li`)
+    ).filter(li => li.dataset.label === texto)[0];
+    assert(isNotNullish(opcaoNova), `Não encontrada: opção "${texto}".`);
+    menu.click();
+    opcaoNova.click();
   }
 
   function preencherTudo() {
@@ -152,31 +147,30 @@ export function inserir() {
         PreferenciasUsuario.magistrado
       );
     } else if (Pagina.obterMagistrado() !== '') {
-      document.getElementById('form-incluir-restricao:campo-numero-processo').value = GUI.numproc;
+      obterPorId('form-incluir-restricao:campo-numero-processo').value = GUI.numproc;
     } else {
       console.info('Tudo preenchido.');
     }
   }
 
-  const form = document.getElementById('form-incluir-restricao');
-  const firstDiv = form.getElementsByTagName('div')[0],
-    id = firstDiv.id;
-  AjaxListener.listen(id, function (ext) {
+  const id = document.querySelector('[id="form-incluir-restricao"] div')?.id;
+  assert(isNotNullish(id), `Não encontrado: Id.`);
+  AjaxListener.listen(id, ext => {
+    assert(hasShape({ currentStep: isString })(ext), 'Informação não encontrada: currentStep.');
     if (ext.currentStep === 'inclui-restricao') {
       GUI.hide();
       GUI.areaImpressao.limpar();
-      document.getElementById('form-incluir-restricao:campo-magistrado_input').childNodes[0].value =
-        '';
+      obterPorId('form-incluir-restricao:campo-magistrado_input').childNodes[0].value = '';
       GUI.criarOpcaoPreencherMagistrado();
-      AjaxListener.listen('form-incluir-restricao:campo-municipio', function () {
+      AjaxListener.listen('form-incluir-restricao:campo-municipio', () => {
         PreferenciasUsuario.municipio = Pagina.obterMunicipio();
         preencherTudo();
       });
-      AjaxListener.listen('form-incluir-restricao:campo-orgao', function () {
+      AjaxListener.listen('form-incluir-restricao:campo-orgao', () => {
         PreferenciasUsuario.orgao = Pagina.obterOrgao();
         preencherTudo();
       });
-      Pagina.addOnMagistradoChangeListener(function (valor) {
+      Pagina.addOnMagistradoChangeListener(valor => {
         PreferenciasUsuario.magistrado = valor;
         preencherTudo();
       });

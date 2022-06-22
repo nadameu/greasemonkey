@@ -4,6 +4,10 @@ export function obterPorId(id: string) {
   return assegurarExistente(document.getElementById(id), `#${id}`);
 }
 
+export function obterPorSeletor<T extends HTMLElement>(seletor: string) {
+  return assegurarExistente(document.querySelector<T>(seletor), seletor);
+}
+
 export function obterPorTipoId<K extends keyof HTMLElementTagNameMap>(tagName: K, id: string) {
   return assegurarExistente(
     document.querySelector<HTMLElementTagNameMap[K]>(`${tagName}[id="${id}"]`),

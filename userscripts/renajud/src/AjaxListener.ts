@@ -9,7 +9,10 @@ import {
 } from '@nadameu/predicates';
 import { createResolvable } from '@nadameu/resolvable';
 
-const isExtension = hasShape({ totalRecords: isNumber });
+const isExtension = isAnyOf(
+  hasShape({ totalRecords: isNumber }),
+  hasShape({ currentStep: isString })
+);
 type Extension = Static<typeof isExtension>;
 
 const isDetails = hasShape({

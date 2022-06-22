@@ -5,6 +5,10 @@ import {
   isNonEmptyString,
   isNotNullish,
   negate,
+  hasShape,
+  isNumber,
+  isAnyOf,
+  isNull,
 } from '@nadameu/predicates';
 import * as AjaxListener from './AjaxListener';
 import { obterPorId, obterPorTipoId } from './obter';
@@ -207,10 +211,10 @@ export function obterVeiculosDocumento(documento: string) {
   const botaoPesquisar = obterPorId(idBotaoPesquisar);
   const campoDocumento = obterPorTipoId('input', 'form-incluir-restricao:campo-cpf-cnpj');
   const promise = AjaxListener.listenOnce(idBotaoPesquisar).then(ext => {
-    if (ext === null) {
-      return 0;
-    } else {
+    if (hasShape({ totalRecords: isNumber })(ext)) {
       return ext.totalRecords;
+    } else {
+      return 0;
     }
   });
   campoDocumento.value = documento;
