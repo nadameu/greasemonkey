@@ -3,7 +3,8 @@
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_consultar\&/
-// @version     7.0.1
+// @require     https://unpkg.com/xlsx@0.15.5/dist/xlsx.full.min.js
+// @version     8.0.0
 // @grant       none
 // ==/UserScript==
 
@@ -70,7 +71,7 @@ if (acao === 'relatorio_geral_listar') {
 		const limpar = $('#btnLimparCookie');
 		limpar.click();
 	};
-  
+
 
 	if (sessionStorage.limpando) {
 		delete sessionStorage.limpando;
@@ -95,17 +96,18 @@ if (acao === 'relatorio_geral_listar') {
 	$('#gerarArquivo').on('click', evt => {
 		evt.preventDefault();
 
-		const campos = ['processo', 'competenciaCorregedoria', '', 'classe', 'localizador', 'situacao', 'autuacao', 'dataEstatistica', 'data', '', '', '', '', '', '', 'setor', '', '', 'outrosLocalizadores'];
+		const campos = ['processo', 'competenciaCorregedoria', '', 'classe', 'localizador', 'situacao', 'autuacao', 'dataEstatistica', 'data', '', '', '', '', '', '', 'setor', '', '', 'outrosLocalizadores', 'todosLocalizadores'];
 		chainProcessos(dadosProcesso => dadosProcesso.localizador.map(localizador => {
 			const processo = [];
-			campos.forEach(function(campo, indiceCampo) {
+			campos.forEach(function (campo, indiceCampo) {
 				if (campo === 'localizador') {
 					processo[indiceCampo] = localizador;
-                } else if (campo === 'outrosLocalizadores') {
+				} else if (campo === 'outrosLocalizadores') {
 					processo[indiceCampo] = dadosProcesso.localizador.filter(loc => loc !== localizador).join('; ');
+				} else if (campo === 'todosLocalizadores') {
+					processo[indiceCampo] = dadosProcesso.localizador.slice().sort().join('; ');
 				} else if (campo === 'data' || campo === 'autuacao' || campo === 'dataEstatistica') {
-					const data = dadosProcesso[campo];
-					processo[indiceCampo] = `${data.getFullYear()}-${numeroDoisDigitos(data.getMonth() + 1)}-${numeroDoisDigitos(data.getDate())} ${numeroDoisDigitos(data.getHours())}:${numeroDoisDigitos(data.getMinutes())}:${numeroDoisDigitos(data.getSeconds())}`;
+					processo[indiceCampo] = dadosProcesso[campo];
 				} else if (campo === '') {
 					// não faz nada
 				} else {
@@ -114,89 +116,68 @@ if (acao === 'relatorio_geral_listar') {
 			});
 			return processo;
 		})).then(processos => {
-			const table = document.createElement('table');
-			table.insertAdjacentHTML('afterbegin', [
-				'<col style="mso-number-format: \'@\';"/>', // Processo
-				'<col width="0" style="mso-number-format: \'@\';"/>', // Competência Corregedoria
-				'<col width="0" style="mso-number-format: \'@\';"/>', // Competência
-				'<col style="mso-number-format: \'@\';"/>', // Classe
-				'<col style="mso-number-format: \'@\';"/>', // Localizador
-				'<col style="mso-number-format: \'@\';"/>', // Situação
-				'<col width="0" style="mso-number-format: \'dd\\/mm\\/yyyy\';"/>', // Data autuação;
-				'<col width="0" style="mso-number-format: \'dd\\/mm\\/yyyy\';"/>', // Data Estat.
-				'<col width="0" style="mso-number-format: \'dd\\/mm\\/yyyy\';"/>', // Data Últ. Fase
-				'<col width="0" style="mso-number-format: \'0\';"/>', // Regra
-				'<col width="0" style="mso-number-format: \'@\';"/>', // Campo a considerar
-				'<col style="mso-number-format: \'dd\\/mm\\/yyyy\';"/>', // Data considerada
-				'<col style="mso-number-format: \'@\';"/>', // Motivo
-				'<col style="mso-number-format: \'0\';"/>', // Esperado
-				'<col style="mso-number-format: \'0\';"/>', // Dias
-				'<col style="mso-number-format: \'@\';"/>', // Setor
-				'<col style="mso-number-format: \'0.00%\';"/>', // Atraso
-				'<col style="mso-number-format: \'@\';"/>', // Incluir?
-				'<col style="mso-number-format: \'@\';"/>', // Outros localizadores
-			].join(''));
-			table.createTHead();
-			table.tHead.insertRow();
-			Array.from({length: 11}).forEach(() => {
-				table.tHead.rows[0].insertCell()
-			});
-			table.tHead.rows[0].insertCell().setAttribute('x:fmla', "=TODAY()");
-			const tRow = table.tHead.insertRow();
-			const camposExcel = ['Processo', 'Competência Corregedoria', 'Competência', 'Classe', 'Localizador', 'Situação', 'Data autuação', 'Data Estat.', 'Data Últ. Fase', 'Regra', 'Campo a considerar', 'Data considerada', 'Motivo', 'Esperado', 'Dias', 'Setor', 'Atraso', 'Incluir?', 'Outros localizadores'];
-			for (let i = 0; i < camposExcel.length; i++) tRow.insertCell();
-			camposExcel.forEach((campo, i) => tRow.cells[i].innerHTML = '<strong>' + campo + '</strong>');
-			const tBody = table.createTBody();
-			processos.forEach((processo, p) => {
-				const row = tBody.insertRow();
-				for (let i = 0; i < camposExcel.length; i++) row.insertCell();
-				processo.forEach((campo, i) => {
-					row.cells[i].textContent = campo;
-					if (i === 0) row.cells[i].setAttribute('x:str', campo);
-				});
-				row.cells[9].setAttribute('x:fmla', "=VLOOKUP(E" + (p + 3) + ", '[regras.xls]localizador_situacao_regra'!$A$2:$D$999, 1 + MATCH(F" + (p + 3) + ", '[regras.xls]localizador_situacao_regra'!$B$1:$D$1, 0), FALSE)");
-				row.cells[10].setAttribute('x:fmla', "=VLOOKUP(J" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$A$2:$D$99, 4, FALSE)");
-				row.cells[11].setAttribute('x:fmla', "=OFFSET(F" + (p + 3) + ", 0, MATCH(K" + (p + 3) + ", $G$2:$I$2, 0), 1, 1)");
-				row.cells[12].setAttribute('x:fmla', "=VLOOKUP(J" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$A$2:$C$99, 3, FALSE)");
-				row.cells[13].setAttribute('x:fmla', "=VLOOKUP(J" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$A$2:$H$99, 4 + MATCH(B" + (p + 3) + ", '[regras.xls]regras_corregedoria'!$E$1:$H$1, 0), FALSE)");
-				row.cells[14].setAttribute('x:fmla', "=$L$1 - L" + (p + 3) + "");
-				row.cells[16].setAttribute('x:fmla', "=O" + (p + 3) + " / N" + (p + 3) + " - 1");
-				row.cells[17].setAttribute('x:fmla', "=IF(Q" + (p + 3) + " > 0, \"S\", \"N\")");
-			});
-			const blob = new Blob([
-				'<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head>',
-				'<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>',
-				'<style>td { white-space: nowrap; }</style>',
-				'<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>processos</x:Name><x:WorksheetOptions><x:ProtectContents>False</x:ProtectContents></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->',
-				'</head><body>',
-				table.outerHTML,
-				'</body></html>'
-			], { type: 'application/vnd.ms-excel' });
-			const link = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = link;
-			a.textContent = 'download';
-			a.download = 'processos.xls';
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
+
+			const camposExcel = ['Processo', 'Competência Corregedoria', 'Competência', 'Classe', 'Localizador', 'Situação', 'Data autuação', 'Data Estat.', 'Data Últ. Fase', 'Regra', 'Campo a considerar', 'Data considerada', 'Motivo', 'Esperado', 'Dias', 'Setor', 'Atraso', 'Incluir?', 'Outros localizadores', 'Todos loc. A-Z'];
+
+			const workbook = XLSX.utils.book_new();
+			const sheet = XLSX.utils.aoa_to_sheet([Array.from({ length: 11 }, () => '').concat(['=HOJE()']), camposExcel].concat(processos), { cellDates: true });
+			const range = XLSX.utils.decode_range(sheet['!ref']);
+			const arquivo = 'file:///C:/Users/pmj/Desktop/regras.xls';
+			const localizador_situacao_regra = `'${arquivo}'#$localizador_situacao_regra`;
+			const regras_corregedoria = `'${arquivo}'#$regras_corregedoria`;
+			for (let R = range.s.r; R <= range.e.r; ++R) {
+				for (let C = range.s.c; C <= range.e.c; ++C) {
+					const cell_address = { c: C, r: R };
+					const cell_ref = XLSX.utils.encode_cell(cell_address);
+					const cell = sheet[cell_ref];
+					if (cell) {
+						if (cell.t === 'd') {
+							delete cell.w;
+							cell.z = 'dd/mm/yyyy';
+						}
+					}
+					if (R >= 2) {
+						if (C === 9) {
+							sheet[cell_ref] = { t: 'n', w: '?', f: `VLOOKUP(E${R + 1}, ${localizador_situacao_regra}.$A$2:$D$999, 1 + MATCH(F${R + 1}, ${localizador_situacao_regra}.$B$1:$D$1, 0), FALSE) ` };
+						} else if (C === 10) {
+							sheet[cell_ref] = { t: 'n', f: `VLOOKUP(J${R + 1}, ${regras_corregedoria}.$A$2:$D$99, 4, FALSE)` }
+						} else if (C === 11) {
+							sheet[cell_ref] = { t: 'n', f: `OFFSET(F${R + 1}, 0, MATCH(K${R + 1}, $G$2:$I$2, 0), 1, 1)` }
+						} else if (C === 12) {
+							sheet[cell_ref] = { t: 'n', f: `VLOOKUP(J${R + 1}, ${regras_corregedoria}.$A$2:$C$99, 3, FALSE)` }
+						} else if (C === 13) {
+							sheet[cell_ref] = { t: 'n', f: `VLOOKUP(J${R + 1}, ${regras_corregedoria}.$A$2:$H$99, 4 + MATCH(B${R + 1}, ${regras_corregedoria}.$E$1:$H$1, 0), FALSE)` }
+						} else if (C === 14) {
+							sheet[cell_ref] = { t: 'n', f: `$L$1 - L${R + 1}`, z: '0' }
+						} else if (C === 16) {
+							sheet[cell_ref] = { t: 'n', f: `O${R + 1} / N${R + 1} - 1`, z: '0.00%' }
+						} else if (C === 17) {
+							sheet[cell_ref] = { t: 'n', f: `IF(Q${R + 1} > 0, \"S\", \"N\")` }
+						}
+					}
+				}
+			}
+			sheet['L1'] = { t: 'n', f: 'TODAY()', z: 'dd/mm/yyyy' };
+			XLSX.utils.book_append_sheet(workbook, sheet, "SheetJS");
+			XLSX.writeFile(workbook, "SheetJS.ods");
+			return;
 		});
 	});
 	area.prepend(button);
 
 	area.prepend($('<button id="excluirDB" type="button">Excluir banco de dados</button>'));
-	$('#excluirDB').on('click', function(evt) {
+	$('#excluirDB').on('click', function (evt) {
 		evt.preventDefault();
 
 		console.info('apagando...');
-		new Promise(function(resolve, reject) {
+		new Promise(function (resolve, reject) {
 			const req = indexedDB.deleteDatabase('relatorioSemanal');
 			req.onsuccess = resolve;
 			req.onerror = reject;
 		})
 			.then(evt => console.log('ok', evt))
 			.catch(console.error)
-			.then(function() {
+			.then(function () {
 				localStorage.removeItem('relatorioSemanal');
 				location.reload();
 			});
@@ -208,10 +189,10 @@ if (acao === 'relatorio_geral_listar') {
 	const tabela = $('#tabelaLocalizadores');
 	const campos = ['', 'processo', 'autuacao', 'dias', 'situacao', 'sigilo', 'classe', 'localizador', '', 'data'];
 	const processos = [], localizadores = new Set(), situacoes = new Set();
-	tabela.each(function() {
-		$(this).find('tr.infraTrClara, tr.infraTrEscura').each(function() {
+	tabela.each(function () {
+		$(this).find('tr.infraTrClara, tr.infraTrEscura').each(function () {
 			const processo = Object.create(null);
-			campos.forEach(function(campo, i) {
+			campos.forEach(function (campo, i) {
 				let valor = this.cells[i].textContent;
 				switch (campo) {
 					case 'processo': {
@@ -224,7 +205,7 @@ if (acao === 'relatorio_geral_listar') {
 						} else if (competencia >= 21 && competencia <= 30) {
 							processo.competenciaCorregedoria = 'Criminal';
 						} else if ((competencia === 41 || competencia === 43) &&
-(classe === 99 || classe === 60)) {
+							(classe === 99 || classe === 60)) {
 							processo.competenciaCorregedoria = 'Execução Fiscal';
 						} else {
 							processo.competenciaCorregedoria = 'Cível';
@@ -290,5 +271,5 @@ if (acao === 'relatorio_geral_listar') {
 }
 
 function numeroDoisDigitos(num) {
-  return String(num).padStart(2, '0');
+	return String(num).padStart(2, '0');
 }
