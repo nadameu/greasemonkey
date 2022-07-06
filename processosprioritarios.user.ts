@@ -2179,7 +2179,7 @@ function adicionarBotaoComVinculo(localizadores: Localizadores) {
 		false,
 	);
 }
-// @ts-ignore
+
 function main() {
 	if (/\?acao=usuario_tipo_monitoramento_localizador_listar&/.test(location.search)) {
 		let tabela = document.getElementById('divInfraAreaTabela')?.querySelector('table');
@@ -2238,3 +2238,5 @@ function memoize<T, U>(fn: (_: T) => U): (_: T) => U {
 		return store.get(x)!;
 	};
 }
+
+export {};

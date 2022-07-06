@@ -71,7 +71,6 @@ const reduzirTabelas = (node: Node) => {
 	return [node];
 };
 
-// @ts-ignore
 const main = () =>
 	Promise.all([getDominio(), getFormulario()]).then(([dominio, formulario]) => {
 		const insertSnippet = makeInsertSnippet(dominio);
@@ -87,3 +86,5 @@ main().then(
 	x => console.log('Resultado:', x),
 	e => console.error('Erro:', e),
 );
+
+export {};
