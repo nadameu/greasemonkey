@@ -23,43 +23,6 @@ const CompetenciasCorregedoria = {
 	CRIMINAL: 3,
 	EXECUCAO_FISCAL: 4,
 } as const;
-const Situacoes = {
-	'MOVIMENTO': 3,
-	'MOVIMENTO-AGUARDA DESPACHO': 2,
-	'MOVIMENTO-AGUARDA SENTENÇA': 4,
-	'INICIAL': 1,
-	'INDEFINIDA': 5,
-} as const;
-const RegrasCorregedoria = {
-	[CompetenciasCorregedoria.JUIZADO]: {
-		[Situacoes['INICIAL']]: 10,
-		[Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 15,
-		[Situacoes['MOVIMENTO']]: 10,
-		[Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 45,
-		[Situacoes['INDEFINIDA']]: 30,
-	},
-	[CompetenciasCorregedoria.CIVEL]: {
-		[Situacoes['INICIAL']]: 10,
-		[Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 20,
-		[Situacoes['MOVIMENTO']]: 15,
-		[Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60,
-		[Situacoes['INDEFINIDA']]: 60,
-	},
-	[CompetenciasCorregedoria.CRIMINAL]: {
-		[Situacoes['INICIAL']]: 15,
-		[Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 20,
-		[Situacoes['MOVIMENTO']]: 15,
-		[Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60,
-		[Situacoes['INDEFINIDA']]: 30,
-	},
-	[CompetenciasCorregedoria.EXECUCAO_FISCAL]: {
-		[Situacoes['INICIAL']]: 10,
-		[Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 60,
-		[Situacoes['MOVIMENTO']]: 25,
-		[Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60,
-		[Situacoes['INDEFINIDA']]: 120,
-	},
-};
 const invalidSymbols = /[&<>"]/g;
 const replacementSymbols = { '&': 'amp', '<': 'lt', '>': 'gt', '"': 'quot' };
 function safeHTML(strings: TemplateStringsArray, ...vars: string[]) {
@@ -196,7 +159,7 @@ class GUI {
 			);
 		}
 		const processosComPeticao = localizador.processos.filter(processo => {
-			let localizadoresPeticao = processo.localizadores.filter(
+			const localizadoresPeticao = processo.localizadores.filter(
 				localizadorProcesso =>
 					localizadorProcesso.sigla === 'PETIÇÃO' ||
 					localizadorProcesso.sigla === 'SUSPENSOS-RETORNO',
@@ -320,8 +283,7 @@ class GUI {
 				);
 				const atraso = Math.round(processo.atraso);
 				linhaNova.className = 'infraTrClara gmDetalhes';
-				const DIGITOS_CLASSE = 6,
-					DIGITOS_COMPETENCIA = 2;
+				const DIGITOS_COMPETENCIA = 2;
 				linhaNova.dataset.classe = String(processo.numClasse);
 				linhaNova.dataset.competencia = (
 					'0'.repeat(DIGITOS_COMPETENCIA) + processo.numCompetencia
@@ -354,7 +316,7 @@ class GUI {
 					MAXIMO_PRIORIDADE_DOIS_OU_MAIOR = 1,
 					DIAS_BAIXO = 3,
 					IDEAL = 0.5;
-				let indicePrioridadeProcesso: number = -1;
+				let indicePrioridadeProcesso = -1;
 				if (typeof indicePrioridade === 'undefined') {
 					prioridades.forEach((processos, indice) => {
 						if (processos.includes(processo)) {
@@ -674,8 +636,8 @@ class GUI {
 		}
 		function extrairDatas(processos: Map<string, number>) {
 			const datas = new Map<number, number>();
-			for (let timestamp of processos.values()) {
-				let valorAtual = datas.get(timestamp) || 0;
+			for (const timestamp of processos.values()) {
+				const valorAtual = datas.get(timestamp) || 0;
 				datas.set(timestamp, valorAtual + 1);
 			}
 			return datas;
@@ -765,7 +727,7 @@ class GUI {
 					linhaPrimaria: { espessura: 2, cor: '#888' },
 					linhaSecundaria: { espessura: 0.5, cor: '#666' },
 				};
-				let self: Grafico = this;
+				const self: Grafico = this;
 				this.categorias = {
 					quantidade: 1,
 					get distancia() {
@@ -809,10 +771,10 @@ class GUI {
 				context.fillStyle = this.corFundo;
 				context.fillRect(0, 0, this.dimensoes.largura, this.dimensoes.altura);
 				context.beginPath();
-				let x = this.dimensoes.margem;
-				let y = x;
-				let w = this.dimensoes.largura - 2 * this.dimensoes.margem;
-				let h = this.dimensoes.altura - 2 * this.dimensoes.margem;
+				const x = this.dimensoes.margem;
+				const y = x;
+				const w = this.dimensoes.largura - 2 * this.dimensoes.margem;
+				const h = this.dimensoes.altura - 2 * this.dimensoes.margem;
 				context.rect(x, y, w, h);
 				context.lineWidth = this.linha.espessura;
 				context.strokeStyle = this.linha.cor;
@@ -852,8 +814,8 @@ class GUI {
 						context.strokeStyle = this.escala.linhaSecundaria.cor;
 						context.lineWidth = this.escala.linhaSecundaria.espessura;
 					}
-					let proporcao = i / this.escala.maximo;
-					let y =
+					const proporcao = i / this.escala.maximo;
+					const y =
 						this.dimensoes.altura - this.area.margens.b - proporcao * this.area.dimensoes.altura;
 					context.fillText(i.toString(), xTexto, y);
 					context.beginPath();
@@ -875,8 +837,8 @@ class GUI {
 					this.dimensoes.altura -
 					(this.dimensoes.margem + this.linha.espessura / 2 + this.area.margens.b) / 2;
 				for (let i = 0; i < this.categorias.quantidade; i += step) {
-					let dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
-					let x = this.area.margens.l + (i + 0.5) * this.categorias.distancia;
+					const dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
+					const x = this.area.margens.l + (i + 0.5) * this.categorias.distancia;
 					context.fillText(dia.getDate().toString(), x, y);
 				}
 			}
@@ -893,12 +855,13 @@ class GUI {
 					} else {
 						context.fillStyle = this.barras.corNoPrazo;
 					}
-					let dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
+					const dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
 					if (this.dados.has(dia.getTime())) {
-						let x = this.area.margens.l + (i + 0.5) * this.categorias.distancia - larguraBarra / 2;
-						let valor = this.dados.get(dia.getTime())!;
-						let altura = (valor / this.escala.maximo) * this.area.dimensoes.altura;
-						let y = this.dimensoes.altura - this.area.margens.b - altura;
+						const x =
+							this.area.margens.l + (i + 0.5) * this.categorias.distancia - larguraBarra / 2;
+						const valor = this.dados.get(dia.getTime())!;
+						const altura = (valor / this.escala.maximo) * this.area.dimensoes.altura;
+						const y = this.dimensoes.altura - this.area.margens.b - altura;
 						context.fillRect(x, y, larguraBarra, altura);
 					}
 				}
@@ -908,9 +871,9 @@ class GUI {
 				const maximo = Math.max.apply(null, quantidades);
 				this.calcularDadosEscala(maximo);
 				const distanciaMinima = 2 * this.dimensoes.espacamento + 2 * this.texto.altura;
-				let secundariaOk = this.assegurarDistanciaMinima('unidadeSecundaria', distanciaMinima);
+				const secundariaOk = this.assegurarDistanciaMinima('unidadeSecundaria', distanciaMinima);
 				if (secundariaOk) return;
-				let primariaOk = this.assegurarDistanciaMinima('unidadePrimaria', distanciaMinima);
+				const primariaOk = this.assegurarDistanciaMinima('unidadePrimaria', distanciaMinima);
 				if (primariaOk) {
 					this.escala.unidadeSecundaria = this.escala.unidadePrimaria;
 				} else {
@@ -951,9 +914,9 @@ class GUI {
 				let tamanhoIdealEncontrado = false;
 				[1, 2, 2.5, 5, 10].forEach(mult => {
 					if (tamanhoIdealEncontrado) return;
-					let novoIntervalo = this.escala[unidade] * mult;
+					const novoIntervalo = this.escala[unidade] * mult;
 					if (novoIntervalo % 1 !== 0) return;
-					let novoMaximo = Math.ceil(this.escala.maximo / novoIntervalo) * novoIntervalo;
+					const novoMaximo = Math.ceil(this.escala.maximo / novoIntervalo) * novoIntervalo;
 					if ((novoMaximo / novoIntervalo) * distancia <= this.area.dimensoes.altura) {
 						tamanhoIdealEncontrado = true;
 						if (mult !== 1) {
@@ -1116,7 +1079,7 @@ class Localizador implements InfoLocalizador {
 				const paginaAtual = doc!.querySelector<HTMLInputElement>('input#hdnInfraPaginaAtual');
 				if (!paginaAtual) throw new Error('Não foi possível localizar a página atual.');
 				paginaAtual.value = String(pagina);
-				let form = paginaAtual.form;
+				const form = paginaAtual.form;
 				if (!form) throw new Error('Formulário não encontrado.');
 				url = form.action;
 				data = new FormData(form);
@@ -1248,7 +1211,7 @@ class LocalizadorFactory {
 	static fromLinha(linha: HTMLTableRowElement): Localizador {
 		const separador = ' - ';
 		const siglaNome = linha.cells[0]?.textContent?.trim() || '';
-		let partesSiglaNome = siglaNome.split(separador);
+		const partesSiglaNome = siglaNome.split(separador);
 		if (partesSiglaNome.length < 2)
 			throw new Error(`Não foi possível analisar o nome do localizador: "${siglaNome}".`);
 		let sigla: string | undefined;
@@ -1332,7 +1295,7 @@ class Localizadores extends Array<Localizador> {
 				return d;
 			})
 			.map(d => d.toUTCString())[0]!;
-		for (let key in cookiesNovos) {
+		for (const key in cookiesNovos) {
 			const valorAntigo = cookiesAntigos[key];
 			const valorNovo = cookiesNovos[key];
 			if (typeof valorAntigo !== 'undefined' && valorNovo !== valorAntigo) {
@@ -1411,10 +1374,6 @@ const COMPETENCIA_JUIZADO_MIN = 9,
 
 const DOMINGO = 0,
 	SEGUNDA = 1,
-	TERCA = 2,
-	QUARTA = 3,
-	QUINTA = 4,
-	SEXTA = 5,
 	SABADO = 6;
 
 function adiantarParaSabado(data: Date) {
@@ -1482,7 +1441,14 @@ const calcularInspecao = memoize((ano: number) => {
 const calcularInspecaoData = calcularProximo(0, calcularInspecao);
 
 function calcularAtraso(a: Date, b: Date) {
-	let [ascendente, menor, maior] = a <= b ? [true, a, b] : [false, b, a];
+	let ascendente = true,
+		menor = a,
+		maior = b;
+	if (a > b) {
+		ascendente = false;
+		menor = b;
+		maior = a;
+	}
 	let recesso = calcularRecessoData(menor);
 	let inspecao = calcularInspecaoData(menor);
 	let proximaSuspensao: { tipo: 'recesso' | 'inspecao'; inicio: Date; retorno: Date } =
@@ -2105,8 +2071,8 @@ class ProcessoFactory {
 			const linhas = Array.from(tabela.rows).reverse();
 			lembretes = linhas.map(linha => {
 				if (linha.cells.length < 4) throw new Error('Não foi possível obter lembrete do processo.');
-				let usuario = linha.cells[2]!.textContent;
-				let celulaTexto = linha.cells[3]!;
+				const usuario = linha.cells[2]!.textContent;
+				const celulaTexto = linha.cells[3]!;
 				celulaTexto.innerHTML = celulaTexto.innerHTML.replace(/<br.*?>/g, '\0\n');
 				return `${celulaTexto.textContent} (${usuario})`;
 			});
@@ -2132,7 +2098,6 @@ class ProcessoFactory {
 		const localizadores = LocalizadoresProcessoFactory.fromCelula(linha.cells[7]!);
 		const breakUltimoEvento = linha.cells[8]!.querySelector('br');
 		const dataUltimoEvento = parseDataHora(breakUltimoEvento?.previousSibling?.textContent!);
-		const ultimoEvento = breakUltimoEvento?.nextSibling?.textContent!;
 		const dataInclusaoLocalizador = parseDataHora(linha.cells[9]!.textContent!);
 		const textoPrioridade = linha.cells[10]!.textContent;
 		if (textoPrioridade === 'Sim') {
@@ -2182,16 +2147,16 @@ function adicionarBotaoComVinculo(localizadores: Localizadores) {
 
 function main() {
 	if (/\?acao=usuario_tipo_monitoramento_localizador_listar&/.test(location.search)) {
-		let tabela = document.getElementById('divInfraAreaTabela')?.querySelector('table');
+		const tabela = document.getElementById('divInfraAreaTabela')?.querySelector('table');
 		if (!tabela) throw new Error('Não foi possível obter a tabela de localizadores.');
-		let localizadores = LocalizadoresFactory.fromTabela(tabela);
+		const localizadores = LocalizadoresFactory.fromTabela(tabela);
 		adicionarBotaoComVinculo(localizadores);
 	} else if (/\?acao=localizador_processos_lista&/.test(location.search)) {
 		/* do nothing */
 	} else if (/&acao_origem=principal&/.test(location.search)) {
-		let tabela = document.getElementById('fldLocalizadores')?.querySelector('table');
+		const tabela = document.getElementById('fldLocalizadores')?.querySelector('table');
 		if (!tabela) throw new Error('Não foi possível obter a tabela de localizadores.');
-		let localizadores = LocalizadoresFactory.fromTabelaPainel(tabela);
+		const localizadores = LocalizadoresFactory.fromTabelaPainel(tabela);
 		adicionarBotaoComVinculo(localizadores);
 	}
 }
@@ -2212,17 +2177,24 @@ function parseCookies(texto: string) {
 function parseDataHora(texto: string) {
 	const partes = texto.split(/\W/g).map(Number);
 	if (partes.length < 6) throw new Error(`Data/hora não reconhecida: "${texto}".`);
-	let [d, m, y, h, i, s] = partes as [number, number, number, number, number, number, ...number[]];
+	const [d, m, y, h, i, s] = partes as [
+		number,
+		number,
+		number,
+		number,
+		number,
+		number,
+		...number[],
+	];
 	return new Date(y, m - 1, d, h, i, s);
 }
 function parsePares(pares: string[]) {
 	return pares.reduce<Record<string, string>>((obj, par) => {
-		let nome: string, valores: string[], valor: string;
 		const dividido = par.split('=');
 		if (dividido.length < 2) throw new Error(`Não foi possível analisar o texto "${par}".`);
-		[nome, ...valores] = dividido as [string, ...string[]];
-		nome = unescape(nome);
-		valor = unescape(valores.join('='));
+		const [escapedNome, ...valores] = dividido as [string, ...string[]];
+		const nome = unescape(escapedNome);
+		const valor = unescape(valores.join('='));
 		obj[nome] = valor;
 		return obj;
 	}, {});
