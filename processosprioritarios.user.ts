@@ -1774,6 +1774,9 @@ const infoMeta: InfoMeta = {
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
 	},
+	'721552920360416260216834737727' /* 6PRO Analisar emenda */: {
+		MOVIMENTO: minhasRegras.Analisar,
+	},
 	'721307551490768040230000000001' /* 9EXE Ag contrarrazões */: {
 		MOVIMENTO: minhasRegras.Cumprir,
 	},
