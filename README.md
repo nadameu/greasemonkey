@@ -1,5 +1,4 @@
-Greasemonkey
-============
+# Greasemonkey
 
 Coleção de scripts de usuário para o complemento Greasemonkey, do Firefox.
 

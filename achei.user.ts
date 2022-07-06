@@ -10,8 +10,10 @@
 
 const reSigla = /^Sigla:\s*(\S+)\s*$/;
 
-const safe = <a, b>(f: (_: a) => b) => (x: a | null | undefined): b | null | undefined =>
-	x == null ? (x as null | undefined) : f(x);
+const safe =
+	<a, b>(f: (_: a) => b) =>
+	(x: a | null | undefined): b | null | undefined =>
+		x == null ? (x as null | undefined) : f(x);
 
 const fromNullable = <T>(x: T | null | undefined, msg: string): Promise<T> =>
 	x == null ? Promise.reject(new Error(msg)) : Promise.resolve(x);
