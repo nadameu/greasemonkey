@@ -1700,6 +1700,18 @@ const infoMeta: InfoMeta = {
 		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
 		'MOVIMENTO': minhasRegras.ProcessoParado,
 	},
+	'721657212513154512241730859228' /* 3DIR Ag precatório 22 */: {
+		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
+		'MOVIMENTO': minhasRegras.ProcessoParado,
+	},
+	'721657212513154512241735980372' /* 3DIR Ag precatório 22 e 23 */: {
+		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
+		'MOVIMENTO': minhasRegras.ProcessoParado,
+	},
+	'721657212513154512241740268890' /* 3DIR Ag precatório sem data */: {
+		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
+		'MOVIMENTO': minhasRegras.ProcessoParado,
+	},
 	'721307551490768040230000000002' /* 3DIR Ag pagamento RPV */: {
 		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoRPV,
 		'MOVIMENTO': minhasRegras.ProcessoParado,
