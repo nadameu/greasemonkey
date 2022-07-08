@@ -1,3 +1,4 @@
+/*!
 // ==UserScript==
 // @name Processos prioritários
 // @namespace   http://nadameu.com.br/processos-prioritarios
@@ -9,12 +10,14 @@
 // @version 27.3.0
 // @grant none
 // ==/UserScript==
-
+*/
 /* eslint-env es6, browser */
 
-interface Window {
-	infraExibirAviso(permiteCancelar: boolean, texto: string): void;
-	infraOcultarAviso(): void;
+declare global {
+	interface Window {
+		infraExibirAviso(permiteCancelar: boolean, texto: string): void;
+		infraOcultarAviso(): void;
+	}
 }
 
 const CompetenciasCorregedoria = {
@@ -52,34 +55,33 @@ class GUI {
 		};
 
 		const estilos = document.createElement('style');
-		estilos.innerHTML = [
-			'tr.infraTrEscura { background-color: #f0f0f0; }',
-			'.gmProcessos { display: inline-block; margin: 0 0.25ex; padding: 0 0.5ex; font-weight: bold; min-width: 3.5ex; line-height: 1.5em; border: 2px solid transparent; border-radius: 1ex; text-align: center; color: black; }',
-			'.gmProcessos.gmPrioridade0 { background-color: #ff8a8a; }',
-			'.gmProcessos.gmPrioridade1 { background-color: #f84; }',
-			'.gmProcessos.gmPrioridade2 { background-color: #ff8; }',
-			'.gmProcessos.gmPrioridade3 { background-color: #8aff8a; }',
-			'.gmProcessos.gmVazio { opacity: 0.25; background-color: inherit; color: #888; }',
-			'.gmPeticoes { display: inline-block; margin-right: 1ex; width: 15px; height: 15px; line-height: 15px; background: red; color: white; border: 1px solid red; text-align: center; border-radius: 50%; font-size: 12px; }',
-			'.gmPeticoes.gmVazio { visibility: hidden; }',
-			'.gmDetalhes td:first-child { padding-left: 0; }',
-			'.gmNaoMostrarClasses .gmDetalheClasse { display: none; }',
-			'.gmNaoMostrarDiasParaFim .gmDiasParaFim { display: none; }',
-			'.gmLocalizadorExtra { display: inline-block; float: right; background: #eee; border: 1px solid #aaa; color: #333; padding: 2px; margin: 0 3px 0 0; border-radius: 3px; font-size: 0.9em; }',
-			'.gmBaloes { float: right; }',
-			'.gmBotoesLocalizador { margin-right: 3ex; }',
-			'.gmAtualizar { font-size: 1em; background: #ccc; padding: 4px; border-radius: 4px; margin-right: 1ex; }',
-			'.gmFiltrar { font-size: 1em; background: #ccc; padding: 4px; border-radius: 4px; margin-right: 1ex; }',
-			'.gmFiltrado .gmFiltrar { display: none; }',
-			'.gmDetalhesAberto { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }',
-			'.gmDetalhes meter { width: 10ex; }',
-			'.gmDetalhes meter.gmExcesso { width: 20ex; }',
-			'.gmLembreteProcesso { width: 2ex; height: 2ex; margin: 0 1ex; border-width: 0; }',
-			'.gmLembreteProcessoVazio { opacity: 0; pointer-events: none; }',
-			'.gmPorcentagem { display: inline-block; width: 6ex; text-align: right; }',
-			'.gmPrioridade { display: none; color: red; }',
-			'.gmPrazoMetade .gmPrioridade { display: inline; }',
-		].join('\n');
+		estilos.innerHTML = /* css */ `
+tr.infraTrEscura { background-color: #f0f0f0; }
+.gmProcessos { display: inline-block; margin: 0 0.25ex; padding: 0 0.5ex; font-weight: bold; min-width: 3.5ex; line-height: 1.5em; border: 2px solid transparent; border-radius: 1ex; text-align: center; color: black; }
+.gmProcessos.gmPrioridade0 { background-color: #ff8a8a; }
+.gmProcessos.gmPrioridade1 { background-color: #f84; }
+.gmProcessos.gmPrioridade2 { background-color: #ff8; }
+.gmProcessos.gmPrioridade3 { background-color: #8aff8a; }
+.gmProcessos.gmVazio { opacity: 0.25; background-color: inherit; color: #888; }
+.gmPeticoes { display: inline-block; margin-right: 1ex; width: 15px; height: 15px; line-height: 15px; background: red; color: white; border: 1px solid red; text-align: center; border-radius: 50%; font-size: 12px; }
+.gmPeticoes.gmVazio { visibility: hidden; }
+.gmDetalhes td:first-child { padding-left: 0; }
+.gmNaoMostrarClasses .gmDetalheClasse { display: none; }
+.gmNaoMostrarDiasParaFim .gmDiasParaFim { display: none; }
+.gmLocalizadorExtra { display: inline-block; float: right; background: #eee; border: 1px solid #aaa; color: #333; padding: 2px; margin: 0 3px 0 0; border-radius: 3px; font-size: 0.9em; }
+.gmBaloes { float: right; }
+.gmBotoesLocalizador { margin-right: 3ex; }
+.gmAtualizar { font-size: 1em; background: #ccc; padding: 4px; border-radius: 4px; margin-right: 1ex; }
+.gmFiltrar { font-size: 1em; background: #ccc; padding: 4px; border-radius: 4px; margin-right: 1ex; }
+.gmFiltrado .gmFiltrar { display: none; }
+.gmDetalhesAberto { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+.gmDetalhes meter { width: 10ex; }
+.gmDetalhes meter.gmExcesso { width: 20ex; }
+.gmLembreteProcesso { width: 2ex; height: 2ex; margin: 0 1ex; border-width: 0; }
+.gmLembreteProcessoVazio { opacity: 0; pointer-events: none; }
+.gmPorcentagem { display: inline-block; width: 6ex; text-align: right; }
+.gmPrioridade { display: none; color: red; }
+.gmPrazoMetade .gmPrioridade { display: inline; }`;
 		const head = document.querySelector('head');
 		if (!head) throw new Error('Erro ao localizar o elemento "head".');
 		head.appendChild(estilos);
@@ -434,13 +436,7 @@ class GUI {
 		exibir(texto = 'Carregando dados dos processos...') {
 			window.infraExibirAviso(
 				false,
-				[
-					'<center>',
-					`${texto}<br/>`,
-					'<progress id="gmProgresso" value="0" max="1"></progress><br/>',
-					'<output id="gmSaida"></output>',
-					'</center>',
-				].join(''),
+				`<center>${texto}<br/><progress id="gmProgresso" value="0" max="1"></progress><br/><output id="gmSaida"></output></center>`,
 			);
 			progresso = document.getElementById('gmProgresso') as HTMLProgressElement;
 			saida = document.getElementById('gmSaida') as HTMLOutputElement;
@@ -545,7 +541,6 @@ class GUI {
 		while (tBody.firstChild) tBody.removeChild(tBody.firstChild);
 
 		const qtd = localizadores.map(loc => loc.processos.length).reduce((acc, x) => acc + x, 0);
-		console.log({ qtd });
 		const info = localizadores
 			.map(info => ({
 				info,
@@ -578,28 +573,18 @@ class GUI {
 			const row = document.createElement('tr');
 			css = css === 'Clara' ? 'Escura' : 'Clara';
 			row.className = `infraTr${css}`;
-			let html = '<td class="infraTd">';
-			html += `<a href="${proc.link.href}" target="_blank">`;
-			html += proc.numprocFormatado;
-			html += '</a>';
-			html += '</td>';
-			html += '<td class="infraTd" style="text-align: right;">';
-			html += `${proc.localizadores
+			let html = `<td class="infraTd"><a href="${proc.link.href}" target="_blank">${
+				proc.numprocFormatado
+			}</a></td><td class="infraTd" style="text-align: right;">${proc.localizadores
 				.filter(l => l.id !== localizador.infoLink!.id)
 				.map(l => l.sigla)
-				.join('<br>')}`;
-			html += '</td>';
-			html += '<td class="infraTd">';
-			html += `${localizador.nomeExibicao}`;
-			html += '</td>';
-			html += '<td class="infraTd">';
-			html += `<progress value="${proc.atrasoPorcentagem + 1}"></progress>`;
-			html += '</td>';
-			html += '<td class="infraTd">';
-			html += new Intl.NumberFormat('pt-BR', { style: 'percent' }).format(
-				proc.atrasoPorcentagem + 1,
-			);
-			html += '</td>';
+				.join('<br>')}</td><td class="infraTd">${
+				localizador.nomeExibicao
+			}</td><td class="infraTd"><progress value="${
+				proc.atrasoPorcentagem + 1
+			}"></progress></td><td class="infraTd">${new Intl.NumberFormat('pt-BR', {
+				style: 'percent',
+			}).format(proc.atrasoPorcentagem + 1)}</td>`;
 			row.innerHTML = html;
 			tBody.appendChild(row);
 		}
@@ -966,7 +951,7 @@ const obterFormularioRelatorioGeral = memoize(async () => {
 	if (!form) throw new Error('Formulário do relatório geral não encontrado.');
 	return form;
 });
-async function trataHTML(localizador: Localizador, doc: HTMLDocument): Promise<Localizador> {
+async function trataHTML(localizador: Localizador, doc: HTMLDocument) {
 	const pagina = Number(doc.querySelector<HTMLInputElement>('input#hdnInfraPaginaAtual')?.value);
 	if (isNaN(pagina)) throw new Error('Não foi possível obter a página.');
 	const quantidadeProcessosCarregados = parseInt(
@@ -984,23 +969,23 @@ async function trataHTML(localizador: Localizador, doc: HTMLDocument): Promise<L
 	linhas.forEach(linha => {
 		localizador.processos.push(ProcessoFactory.fromLinha(linha));
 	});
-	if (pagina > 0) return localizador;
+	if (pagina > 0) return;
 	const todas = doc.querySelector<HTMLSelectElement>('select#selInfraPaginacaoSuperior');
 	if (todas) {
 		console.info('Buscando próximas páginas', localizador.nomeExibicao);
 		await Promise.all(
-			Array.from({ length: todas.options.length - 1 }, (_, i) => i + 1).map(p =>
-				localizador.obterPagina(p, doc),
+			Array.from({ length: todas.options.length - 1 }, (_, i) =>
+				localizador.obterPagina(i + 1, doc),
 			),
 		);
-		return localizador;
+		return;
 	}
 	const proxima = doc.getElementById('lnkInfraProximaPaginaSuperior');
 	if (proxima) {
 		console.info('Buscando próxima página', localizador.nomeExibicao);
 		return localizador.obterPagina(pagina + 1, doc);
 	}
-	return localizador;
+	return;
 }
 interface InfoLocalizador {
 	infoLink?: { link: HTMLAnchorElement; id: string };
@@ -1048,14 +1033,14 @@ class Localizador implements InfoLocalizador {
 		this.quantidadeProcessosNaoFiltrados = quantidadeProcessosNaoFiltrados;
 	}
 
-	obterPagina(pagina: 0): Promise<Localizador>;
-	obterPagina(pagina: number, doc: HTMLDocument): Promise<Localizador>;
-	async obterPagina(pagina: number, doc?: HTMLDocument): Promise<Localizador> {
+	obterPagina(pagina: 0): Promise<void>;
+	obterPagina(pagina: number, doc: HTMLDocument): Promise<void>;
+	async obterPagina(pagina: number, doc?: HTMLDocument) {
 		try {
 			let url: string, data: FormData;
 			if (!this.infoLink)
 				throw new Error(
-					'Não foi possível obter o endereço da página do localizador "' + this.nomeExibicao + '".',
+					`Não foi possível obter o endereço da página do localizador "${this.nomeExibicao}".`,
 				);
 			if (pagina === 0) {
 				url = this.infoLink.link.href;
@@ -1173,7 +1158,7 @@ class Localizador implements InfoLocalizador {
 		const infoLink = this.infoLink;
 		const link = infoLink?.link;
 		if (!link?.href) {
-			return Promise.resolve(this);
+			return;
 		}
 		if (!infoLink) throw new Error('Localizador não possui identificador');
 		await this.obterPagina(0);
@@ -1187,15 +1172,15 @@ class Localizador implements InfoLocalizador {
 				case 'composto': {
 					const sigla = localizadorProcesso.sigla;
 					const siglaComSeparador = `${sigla} - `;
-					const nome = this.infoNome.siglaNome.substr(siglaComSeparador.length);
-					this.infoNome = { tipo: 'separado', sigla, nome, siglaNome: [sigla, nome].join(' - ') };
+					const nome = this.infoNome.siglaNome.slice(siglaComSeparador.length);
+					this.infoNome = { tipo: 'separado', sigla, nome, siglaNome: `${sigla} - ${nome}` };
 					break;
 				}
 
 				case 'nome': {
 					const sigla = localizadorProcesso.sigla;
 					const nome = this.infoNome.nome;
-					this.infoNome = { tipo: 'separado', sigla, nome, siglaNome: [sigla, nome].join(' - ') };
+					this.infoNome = { tipo: 'separado', sigla, nome, siglaNome: `${sigla} - ${nome}` };
 					break;
 				}
 
@@ -1204,7 +1189,6 @@ class Localizador implements InfoLocalizador {
 			}
 			this.lembrete = localizadorProcesso.lembrete;
 		}
-		return this;
 	}
 }
 class LocalizadorFactory {
@@ -1286,8 +1270,7 @@ class Localizadores extends Array<Localizador> {
 
 	async obterProcessos() {
 		const cookiesAntigos = parseCookies(document.cookie);
-		const promises = this.map(loc => loc.obterProcessos());
-		await Promise.all(promises);
+		await Promise.all(this.map(loc => loc.obterProcessos()));
 		const cookiesNovos = parseCookies(document.cookie);
 		const expira = [new Date()]
 			.map(d => {
@@ -1298,8 +1281,14 @@ class Localizadores extends Array<Localizador> {
 		for (const key in cookiesNovos) {
 			const valorAntigo = cookiesAntigos[key];
 			const valorNovo = cookiesNovos[key];
-			if (typeof valorAntigo !== 'undefined' && valorNovo !== valorAntigo) {
-				document.cookie = `${escape(key)}=${escape(valorAntigo)}; expires=${expira}`;
+			if (
+				(valorNovo?.match(/^\w+;\d+;[SN;]+/) ?? true) &&
+				valorAntigo !== undefined &&
+				valorNovo !== valorAntigo
+			) {
+				document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(
+					valorAntigo,
+				)}; expires=${expira}`;
 			}
 		}
 	}
@@ -2143,7 +2132,7 @@ function adicionarBotaoComVinculo(localizadores: Localizadores) {
 		'click',
 		() => {
 			gui.avisoCarregando.atualizar(0, localizadores.quantidadeProcessosNaoFiltrados);
-			localizadores.obterProcessos().then(function () {
+			localizadores.obterProcessos().then(() => {
 				gui.avisoCarregando.ocultar();
 				gui.atualizarBotaoAcao();
 				localizadores.forEach(function (localizador) {
@@ -2205,8 +2194,8 @@ function parsePares(pares: string[]) {
 		const dividido = par.split('=');
 		if (dividido.length < 2) throw new Error(`Não foi possível analisar o texto "${par}".`);
 		const [escapedNome, ...valores] = dividido as [string, ...string[]];
-		const nome = unescape(escapedNome);
-		const valor = unescape(valores.join('='));
+		const nome = decodeURIComponent(escapedNome);
+		const valor = decodeURIComponent(valores.join('='));
 		obj[nome] = valor;
 		return obj;
 	}, {});
