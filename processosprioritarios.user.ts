@@ -935,14 +935,7 @@ const obterFormularioRelatorioGeral = memoize(async () => {
 		.filter(link => new URL(link.href).searchParams.get('acao') === 'relatorio_geral_listar')
 		.map(link => link.href)[0];
 	if (!url) throw new Error('Não foi possível obter o link para o relatório geral.');
-	const doc = await new Promise<Document>((resolve, reject) => {
-		const xml = new XMLHttpRequest();
-		xml.open('GET', url);
-		xml.responseType = 'document';
-		xml.onerror = reject;
-		xml.onload = () => resolve(xml.response as Document);
-		xml.send(null);
-	});
+	const doc = await XHR('GET', url);
 	console.log('Página relatório geral obtida', doc);
 	const consultar = doc.getElementById('btnConsultar');
 	if (!(consultar instanceof HTMLButtonElement))
@@ -951,7 +944,7 @@ const obterFormularioRelatorioGeral = memoize(async () => {
 	if (!form) throw new Error('Formulário do relatório geral não encontrado.');
 	return form;
 });
-async function trataHTML(localizador: Localizador, doc: HTMLDocument) {
+async function trataHTML(localizador: Localizador, doc: Document) {
 	const pagina = Number(doc.querySelector<HTMLInputElement>('input#hdnInfraPaginaAtual')?.value);
 	if (isNaN(pagina)) throw new Error('Não foi possível obter a página.');
 	const quantidadeProcessosCarregados = parseInt(
@@ -1069,15 +1062,7 @@ class Localizador implements InfoLocalizador {
 				url = form.action;
 				data = new FormData(form);
 			}
-			const doc_1 = await new Promise<HTMLDocument>((resolve, reject) => {
-				const xml = new XMLHttpRequest();
-				xml.open('POST', url);
-				xml.responseType = 'document';
-				xml.onerror = reject;
-				xml.onload = () => resolve(xml.response);
-				xml.send(data);
-			});
-			return trataHTML(this, doc_1);
+			return trataHTML(this, await XHR('POST', url, data));
 		} catch (e) {
 			console.error(e);
 			throw e;
@@ -1099,14 +1084,7 @@ class Localizador implements InfoLocalizador {
 		data.set('optchkcClasse', 'S');
 		data.set('hdnInfraPaginaAtual', pagina.toString());
 		data.set('selRpvPrecatorio', 'null');
-		const doc = await new Promise<HTMLDocument>((resolve, reject) => {
-			const xml = new XMLHttpRequest();
-			xml.open(method, url);
-			xml.responseType = 'document';
-			xml.onerror = reject;
-			xml.onload = () => resolve(xml.response);
-			xml.send(data);
-		});
+		const doc = await XHR(method, url, data);
 		const tabela = doc.getElementById('tabelaLocalizadores');
 		const quantidadeProcessosCarregados = parseInt(
 			doc.querySelector<HTMLInputElement>('input#hdnInfraNroItens')?.value ?? '',
@@ -2210,6 +2188,21 @@ function memoize<T, U>(fn: (_: T) => U): (_: T) => U {
 		}
 		return store.get(x)!;
 	};
+}
+
+function XHR(
+	method: string,
+	url: string | URL,
+	data: Document | XMLHttpRequestBodyInit | null = null,
+) {
+	return new Promise<Document>((resolve, reject) => {
+		const xml = new XMLHttpRequest();
+		xml.open(method, url);
+		xml.responseType = 'document';
+		xml.onerror = reject;
+		xml.onload = () => resolve(xml.response);
+		xml.send(data);
+	});
 }
 
 export {};
