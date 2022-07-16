@@ -6,6 +6,7 @@ importers:
     specifiers:
       '@babel/core': ^7.18.5
       '@babel/preset-env': ^7.18.2
+      '@nadameu/userscript': workspace:^1.0.0
       '@rollup/plugin-babel': ^5.3.1
       '@rollup/plugin-commonjs': ^22.0.0
       '@rollup/plugin-node-resolve': ^13.3.0
@@ -23,6 +24,7 @@ importers:
     devDependencies:
       '@babel/core': 7.18.5
       '@babel/preset-env': 7.18.2_@babel+core@7.18.5
+      '@nadameu/userscript': link:lib/userscript
       '@rollup/plugin-babel': 5.3.1_sv676bwafkpdswyxsjxdo54k54
       '@rollup/plugin-commonjs': 22.0.0_rollup@2.75.6
       '@rollup/plugin-node-resolve': 13.3.0_rollup@2.75.6
@@ -57,6 +59,19 @@ importers:
       '@nadameu/opaque': link:../opaque
 
   lib/resolvable:
+    specifiers: {}
+
+  lib/userscript:
+    specifiers:
+      '@nadameu/predicates': workspace:^1.0.0
+      esbuild: ^0.14.49
+      esbuild-register: ^3.3.3
+    dependencies:
+      '@nadameu/predicates': link:../predicates
+      esbuild: 0.14.49
+      esbuild-register: 3.3.3_esbuild@0.14.49
+
+  userscripts/achei:
     specifiers: {}
 
   userscripts/baixa-acordo-inss:
@@ -1722,7 +1737,6 @@ packages:
     cpu: [x64]
     os: [android]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-android-arm64/0.14.49:
@@ -1731,7 +1745,6 @@ packages:
     cpu: [arm64]
     os: [android]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-darwin-64/0.14.49:
@@ -1740,7 +1753,6 @@ packages:
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-darwin-arm64/0.14.49:
@@ -1749,7 +1761,6 @@ packages:
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-freebsd-64/0.14.49:
@@ -1758,7 +1769,6 @@ packages:
     cpu: [x64]
     os: [freebsd]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-freebsd-arm64/0.14.49:
@@ -1767,7 +1777,6 @@ packages:
     cpu: [arm64]
     os: [freebsd]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-linux-32/0.14.49:
@@ -1776,7 +1785,6 @@ packages:
     cpu: [ia32]
     os: [linux]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-linux-64/0.14.49:
@@ -1785,7 +1793,6 @@ packages:
     cpu: [x64]
     os: [linux]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-linux-arm/0.14.49:
@@ -1794,7 +1801,6 @@ packages:
     cpu: [arm]
     os: [linux]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-linux-arm64/0.14.49:
@@ -1803,7 +1809,6 @@ packages:
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-linux-mips64le/0.14.49:
@@ -1812,7 +1817,6 @@ packages:
     cpu: [mips64el]
     os: [linux]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-linux-ppc64le/0.14.49:
@@ -1821,7 +1825,6 @@ packages:
     cpu: [ppc64]
     os: [linux]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-linux-riscv64/0.14.49:
@@ -1830,7 +1833,6 @@ packages:
     cpu: [riscv64]
     os: [linux]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-linux-s390x/0.14.49:
@@ -1839,7 +1841,6 @@ packages:
     cpu: [s390x]
     os: [linux]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-netbsd-64/0.14.49:
@@ -1848,7 +1849,6 @@ packages:
     cpu: [x64]
     os: [netbsd]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-openbsd-64/0.14.49:
@@ -1857,8 +1857,15 @@ packages:
     cpu: [x64]
     os: [openbsd]
     requiresBuild: true
-    dev: true
     optional: true
+
+  /esbuild-register/3.3.3_esbuild@0.14.49:
+    resolution: {integrity: sha512-eFHOkutgIMJY5gc8LUp/7c+LLlDqzNi9T6AwCZ2WKKl3HmT+5ef3ZRyPPxDOynInML0fgaC50yszPKfPnjC0NQ==}
+    peerDependencies:
+      esbuild: '>=0.12 <1'
+    dependencies:
+      esbuild: 0.14.49
+    dev: false
 
   /esbuild-sunos-64/0.14.49:
     resolution: {integrity: sha512-4c8Zowp+V3zIWje329BeLbGh6XI9c/rqARNaj5yPHdC61pHI9UNdDxT3rePPJeWcEZVKjkiAS6AP6kiITp7FSw==}
@@ -1866,7 +1873,6 @@ packages:
     cpu: [x64]
     os: [sunos]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-windows-32/0.14.49:
@@ -1875,7 +1881,6 @@ packages:
     cpu: [ia32]
     os: [win32]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-windows-64/0.14.49:
@@ -1884,7 +1889,6 @@ packages:
     cpu: [x64]
     os: [win32]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild-windows-arm64/0.14.49:
@@ -1893,7 +1897,6 @@ packages:
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
-    dev: true
     optional: true
 
   /esbuild/0.14.49:
@@ -1922,7 +1925,6 @@ packages:
       esbuild-windows-32: 0.14.49
       esbuild-windows-64: 0.14.49
       esbuild-windows-arm64: 0.14.49
-    dev: true
 
   /escalade/3.1.1:
     resolution: {integrity: sha512-k0er2gUkLf8O0zKJiAhmkTnJlTvINGv7ygDNPbeIsX/TJjGJZHuh9B2UxbsaEkmlEo9MfhrSzmhIlhRlI2GXnw==}

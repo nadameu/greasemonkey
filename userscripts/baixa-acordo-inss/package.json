@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "build": "userscript build",
     "test": "vitest run",
     "test:watch": "vitest watch"
   },

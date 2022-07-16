@@ -7,14 +7,60 @@
 // @grant none
 // ==/UserScript==
 
-var escapeStringRegexp = string => {
-  if (typeof string !== 'string') {
-    throw new TypeError('Expected a string');
-  }
-
-  return string.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __commonJS = (cb, mod) =>
+  function __require() {
+    return (
+      mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports
+    );
+  };
+var __export = (target, all2) => {
+  for (var name in all2) __defProp(target, name, { get: all2[name], enumerable: true });
 };
+var __copyProps = (to, from, except, desc) => {
+  if ((from && typeof from === 'object') || typeof from === 'function') {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, {
+          get: () => from[key],
+          enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable,
+        });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (
+  (target = mod != null ? __create(__getProtoOf(mod)) : {}),
+  __copyProps(
+    isNodeMode || !mod || !mod.__esModule
+      ? __defProp(target, 'default', { value: mod, enumerable: true })
+      : target,
+    mod
+  )
+);
 
+// ../../node_modules/.pnpm/escape-string-regexp@4.0.0/node_modules/escape-string-regexp/index.js
+var require_escape_string_regexp = __commonJS({
+  '../../node_modules/.pnpm/escape-string-regexp@4.0.0/node_modules/escape-string-regexp/index.js'(
+    exports,
+    module
+  ) {
+    'use strict';
+    module.exports = string => {
+      if (typeof string !== 'string') {
+        throw new TypeError('Expected a string');
+      }
+      return string.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
+    };
+  },
+});
+
+// ../../node_modules/.pnpm/descriptive-regexp@0.3.0/node_modules/descriptive-regexp/dist/esm/index.js
+var import_escape_string_regexp = __toESM(require_escape_string_regexp());
 function concat(...exprs) {
   return RegExp(exprs.map(toSource).join(''));
 }
@@ -25,7 +71,7 @@ function toSource(expr) {
   return fromExpr(expr).source;
 }
 function literal(text) {
-  return RegExp(escapeStringRegexp(text));
+  return RegExp((0, import_escape_string_regexp.default)(text));
 }
 function oneOf(...exprs) {
   return RegExp(`(?:${exprs.map(toSource).join('|')})`);
@@ -40,13 +86,15 @@ function match(text, expr) {
   return text.match(fromExpr(expr));
 }
 
+// src/referentes.ts
 function obterReferencias(descricao) {
-  const match = descricao.match(/Refer\. +aos? Eventos?\:? +((?:(?:\d+, *)*\d+ *e *)?\d+)/);
-  if (!match) return [];
-  const textoEventos = match[1].split(/, *| *e */g);
+  const match2 = descricao.match(/Refer\. +aos? Eventos?\:? +((?:(?:\d+, *)*\d+ *e *)?\d+)/);
+  if (!match2) return [];
+  const textoEventos = match2[1].split(/, *| *e */g);
   return textoEventos.map(Number).sort((a, b) => a - b);
 }
 
+// src/Resultado/defs.ts
 function Ok(valor) {
   return { isValido: true, valor };
 }
@@ -54,6 +102,26 @@ function Invalido(razoes) {
   return { isValido: false, razoes };
 }
 
+// src/Resultado/functions.ts
+var functions_exports = {};
+__export(functions_exports, {
+  chain: () => chain,
+  lift2: () => lift2,
+  map: () => map,
+  sequence: () => sequence,
+  sequenceObj: () => sequenceObj,
+  traverse: () => traverse,
+  traverseObj: () => traverseObj,
+});
+function chain(fx, f) {
+  return fx.isValido ? f(fx.valor) : fx;
+}
+function map(fx, f) {
+  return fx.isValido ? Ok(f(fx.valor)) : fx;
+}
+function lift2(fa, fb, f) {
+  return map(sequence([fa, fb]), ([a, b]) => f(a, b));
+}
 function traverse(xs, f) {
   return _traverseEntries(xs.entries(), f, []);
 }
@@ -73,18 +141,23 @@ function _traverseEntries(entries, f, resultado = {}) {
   if (!valido) return Invalido(razoess.flat());
   return Ok(resultado);
 }
+function sequence(xs) {
+  return traverse(xs, x => x);
+}
 function sequenceObj(obj) {
   return traverseObj(obj, x => x);
 }
 
+// src/safePipe.ts
 function safePipe(a, ...fs) {
-  return fs.reduce((a, f) => (a == null ? a : f(a)), a);
+  return fs.reduce((a2, f) => (a2 == null ? a2 : f(a2)), a);
 }
 
+// src/index.ts
 main();
 function main() {
   const eventos = obterEventos();
-  const resultadosTerminativos = sequenceObj({
+  const resultadosTerminativos = functions_exports.sequenceObj({
     localizadores: verificarLocalizadores(),
     sentenca: verificarSentenca(eventos),
     autores: verificarAutores(),
@@ -103,11 +176,11 @@ function main() {
     verificarPagamentoPerito,
   } = comEventos(eventos);
   const peritos = queryAll('a[data-parte="PERITO"]').map(textContent);
-  const resultadoInterno = sequenceObj({
+  const resultadoInterno = functions_exports.sequenceObj({
     transito: verificarTransito(sentenca),
     cumprimentoObrigacaoFazer: verificarCumprimentoObricacaoFazer(sentenca),
-    autores: traverse(autores, verificarPagamentoAutor),
-    peritos: traverse(peritos, verificarPagamentoPerito),
+    autores: functions_exports.traverse(autores, verificarPagamentoAutor),
+    peritos: functions_exports.traverse(peritos, verificarPagamentoPerito),
   });
   adicionarEstilos();
   if (!resultadoInterno.isValido) {
@@ -288,7 +361,7 @@ function comEventos(eventos) {
           )
       );
       const intimacaoAgencia = [pedidoTED, despachoTED]
-        .filter(x => x !== undefined)
+        .filter(x => x !== void 0)
         .map(ref =>
           encontrarEventoReferente(ref, ({ descricao }) =>
             test(
@@ -297,7 +370,7 @@ function comEventos(eventos) {
             )
           )
         )
-        .find(x => x !== undefined);
+        .find(x => x !== void 0);
       if (!intimacaoAgencia)
         if (!despachoTED)
           return Invalido([`Há pedido de TED sem despacho (evento ${pedidoTED.ordinal}).`]);
@@ -449,7 +522,7 @@ function comEventos(eventos) {
 }
 function adicionarEstilos() {
   const style = document.createElement('style');
-  style.innerText = /*css*/ `
+  style.innerText = `
 .infra-styles .gm-aviso {
   display: inline-block;
   margin: 4px;
@@ -515,83 +588,6 @@ function intercalate(separator, elements) {
 function all(...bools) {
   return bools.every(x => x);
 }
-/*
-type Arvore = DadosEvento[];
-interface DadosEvento {
-  ordinal: number;
-  descricao: string;
-  referentes: DadosEvento[];
-}
-
-function construirArvore(eventos: Evento[]): Arvore {
-  const eventosOrdenados = Object.freeze(eventos.slice().sort(compareBy(x => x.ordinal)));
-  const dados: { [key: number]: DadosEvento } = {};
-  const arvore: Arvore = [];
-  let situacao: 'MOVIMENTO' | 'DESPACHO' | 'SENTENÇA' = 'MOVIMENTO';
-  let ordinalMudancaSituacao = 0;
-  for (const { ordinal, descricao, referenciados: orig, despSent } of eventosOrdenados) {
-    let referenciados = orig;
-    const dadosEvento = { descricao, ordinal, referentes: [] };
-    dados[ordinal] = dadosEvento;
-    if (despSent) {
-      if (ehConclusaoParaDespacho(descricao)) {
-        switch (situacao) {
-          case 'MOVIMENTO':
-            situacao = 'DESPACHO';
-            ordinalMudancaSituacao = ordinal;
-            break;
-
-          default:
-            throw new Error(`Evento de conclusão na situação errada (evento ${ordinal}).`);
-        }
-      } else if (ehConclusaoParaSentenca(descricao)) {
-        switch (situacao) {
-          case 'MOVIMENTO':
-            situacao = 'SENTENÇA';
-            ordinalMudancaSituacao = ordinal;
-            break;
-
-          default:
-            throw new Error(`Evento de conclusão na situação errada (evento ${ordinal}).`);
-        }
-      } else {
-        situacao = 'MOVIMENTO';
-        if (referenciados.length === 0) {
-          referenciados = [ordinalMudancaSituacao];
-        }
-        ordinalMudancaSituacao = ordinal;
-      }
-    }
-    let vezesAdicionado = 0;
-    if (referenciados.length > 0) {
-      for (const referenciado of referenciados) {
-        if (dados[referenciado]) {
-          dados[referenciado].referentes.push(dadosEvento);
-          vezesAdicionado++;
-        }
-      }
-    }
-    if (vezesAdicionado === 0) {
-      arvore.push(dados[ordinal]);
-    }
-  }
-  return arvore;
-}
-
-function ehConclusaoParaDespacho(descricao: string) {
-  return RE.test(
-    descricao,
-    RE.exactly(RE.oneOf('Autos com Juiz para Despacho/Decisão', 'Conclusos para decisão/despacho'))
-  );
-}
-  
-function ehConclusaoParaSentenca(descricao: string) {
-  return RE.test(
-    descricao,
-    RE.exactly(RE.oneOf('Autos com Juiz para Sentença', 'Conclusos para julgamento'))
-  );
-}
-*/
 function ehIntimacao(descricao) {
   return test(
     descricao,

@@ -1,0 +1,11 @@
+{
+  "name": "@nadameu/userscript",
+  "version": "1.0.0",
+  "bin": "src/index.ts",
+  "devDependencies": {},
+  "dependencies": {
+    "@nadameu/predicates": "workspace:^1.0.0",
+    "esbuild": "^0.14.49",
+    "esbuild-register": "^3.3.3"
+  }
+}

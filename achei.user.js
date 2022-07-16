@@ -14,6 +14,7 @@
 // @grant       none
 // ==/UserScript==
 
+// src/index.ts
 function main(doc) {
   const dominio = getDominio(doc);
   if (!dominio) throw new Error('Não foi possível verificar o domínio.');
@@ -28,20 +29,20 @@ function main(doc) {
   const s = qtd > 1 ? 's' : '';
   console.log(`${qtd} link${s} criado${s}`);
 }
-const dominios = {
+var dominios = {
   1: 'trf4',
   2: 'jfrs',
   3: 'jfsc',
   4: 'jfpr',
 };
-const getDominio = doc => {
+var getDominio = doc => {
   const value = doc.querySelector('input[name="local"]:checked')?.value;
   if (!value) return null;
   if (!(value in dominios)) return null;
   return dominios[value];
 };
-const getFormulario = doc => doc.querySelector('form[name="formulario"]');
-const getNodeInfo = formulario => {
+var getFormulario = doc => doc.querySelector('form[name="formulario"]');
+var getNodeInfo = formulario => {
   const nodeInfo = [];
   for (const sibling of siblings(formulario))
     for (const node of flattenTabela(sibling)) {
@@ -58,22 +59,20 @@ function* flattenTabela(node) {
     yield* node.querySelector('td:nth-child(2)')?.childNodes ?? [];
   yield node;
 }
-const getNodeSigla = node => {
+var getNodeSigla = node => {
   const text = node.textContent;
   if (!text) return null;
   const sigla = siglaFromText(text);
   if (!sigla) return null;
   return { node, sigla };
 };
-const reSigla = /^\s*Sigla:\s*(\S+)\s*(\(antiga:\s*\S+\s*\))?\s*$/;
-const siglaFromText = text => {
+var reSigla = /^\s*Sigla:\s*(\S+)\s*(\(antiga:\s*\S+\s*\))?\s*$/;
+var siglaFromText = text => {
   const match = text.match(reSigla);
   if (!match) return null;
   if (match[2]) {
-    // Possui sigla antiga e nova
     return match[1];
   } else {
-    // Possui somente sigla nova
     return match[1].toLowerCase();
   }
 };
