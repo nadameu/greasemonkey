@@ -20,7 +20,7 @@ function comecar() {
       if (xhr.responseText.match(/"saldo_valor_disponivel"/)) {
         atualizar('saldo');
       } else if (xhr.responseText.match(/"htmlBloqueiosConta"/)) {
-        atualizar('bloqueios'); 
+        atualizar('bloqueios');
       }
     },
   });
