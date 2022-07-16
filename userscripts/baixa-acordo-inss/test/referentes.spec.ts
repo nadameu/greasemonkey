@@ -1,5 +1,4 @@
-import { expect } from 'chai';
-import { it } from 'mocha';
+import { expect, it } from 'vitest';
 import { obterReferencias } from '../src/referentes';
 
 it('Um evento', () => {
