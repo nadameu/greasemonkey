@@ -5,9 +5,8 @@ const dominios = {
   '4': 'jfpr',
 } as const;
 
-export function getDominio(doc: Document) {
+export async function getDominio(doc: Document) {
   const value = doc.querySelector<HTMLInputElement>('input[name="local"]:checked')?.value;
-  if (!value) return null;
-  if (!(value in dominios)) return null;
-  return dominios[value as keyof typeof dominios];
+  if (value && value in dominios) return dominios[value as keyof typeof dominios];
+  throw new Error('Não foi possível verificar o domínio.');
 }

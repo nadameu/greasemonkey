@@ -1,18 +1,10 @@
 import { describe, expect, MockedFunction, test, vitest } from 'vitest';
 import { main } from '../src/main';
 
-type Result<a, b> = { isOk: true; value: a } | { isOk: false; reason: b };
-function Ok<a, b = never>(value: a): Result<a, b> {
-  return { isOk: true, value };
-}
-function Err<b, a = never>(reason: b): Result<a, b> {
-  return { isOk: false, reason };
-}
-
 function createTest(
   name: string,
   fn: () => (
-    result: Result<unknown, unknown>,
+    result: PromiseSettledResult<void>,
     log: MockedFunction<{ (...args: any[]): void }>
   ) => void
 ) {
@@ -23,19 +15,23 @@ function createTest(
 `;
     const after = fn();
     const log = vitest.fn();
-    return main({ doc: document, log }).then(
-      value => after(Ok(value), log),
-      reason => after(Err(reason), log)
-    );
+    return Promise.allSettled([main({ doc: document, log })]).then(([x]) => after(x, log));
   });
 }
 
 describe('main', () => {
+  createTest('sem local e sem formulario', () => {
+    document.getElementsByName('local')[0]?.remove();
+    document.getElementsByName('formulario')[0]?.remove();
+    return (resultado, log) => {
+      expect(resultado.status).toBe('rejected');
+    };
+  });
   createTest('sem local', () => {
     document.getElementsByName('local')[0]?.remove();
 
     return (resultado, log) => {
-      expect(resultado).toEqual(Err(new Error('Não foi possível verificar o domínio.')));
+      expect(resultado.status).toBe('rejected');
     };
   });
 
@@ -44,7 +40,7 @@ describe('main', () => {
     input.value = '999';
 
     return (resultado, log) => {
-      expect(resultado).toEqual(Err(new Error('Não foi possível verificar o domínio.')));
+      expect(resultado.status).toBe('rejected');
     };
   });
 
@@ -52,13 +48,13 @@ describe('main', () => {
     document.getElementsByName('formulario')[0]?.remove();
 
     return (resultado, log) => {
-      expect(resultado).toEqual(Err(new Error('Não foi possível obter o formulário.')));
+      expect(resultado.status).toBe('rejected');
     };
   });
 
   createTest('nenhum nome', () => {
     return (resultado, log) => {
-      expect(resultado).toEqual(Ok(void 0));
+      expect(resultado.status).toBe('fulfilled');
       expect(log).toHaveBeenCalledWith('0 link criado');
     };
   });
@@ -71,7 +67,7 @@ describe('main', () => {
     );
 
     return (resultado, log) => {
-      expect(resultado).toEqual(Ok(void 0));
+      expect(resultado.status).toBe('fulfilled');
       expect(log).toHaveBeenCalledWith('1 link criado');
       expect(document.body).toMatchSnapshot();
     };
@@ -94,7 +90,7 @@ nonononon<br>
     );
 
     return (resultado, log) => {
-      expect(resultado).toEqual(Ok(void 0));
+      expect(resultado.status).toBe('fulfilled');
       expect(log).toHaveBeenCalledWith('2 links criados');
       expect(document.body).toMatchSnapshot();
     };
@@ -117,7 +113,7 @@ nonononon<br></td></tr></table>
     );
 
     return (resultado, log) => {
-      expect(resultado).toEqual(Ok(void 0));
+      expect(resultado.status).toBe('fulfilled');
       expect(log).toHaveBeenCalledWith('2 links criados');
       expect(document.body).toMatchSnapshot();
     };
@@ -132,7 +128,7 @@ nonononon<br></td></tr></table>
     );
 
     return (resultado, log) => {
-      expect(resultado).toEqual(Ok(void 0));
+      expect(resultado.status).toBe('fulfilled');
       expect(log).toHaveBeenCalledWith('0 link criado');
       expect(document.body).toMatchSnapshot();
     };
@@ -162,7 +158,7 @@ nonononon<br></td></tr></table>
         );
 
         return (resultado, log) => {
-          expect(resultado).toEqual(Ok(void 0));
+          expect(resultado.status).toBe('fulfilled');
           expect(log).toHaveBeenCalledWith('2 links criados');
           expect(document.body).toMatchSnapshot();
         };

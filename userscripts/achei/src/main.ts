@@ -2,12 +2,10 @@ import { makeCriarLinks } from './makeCriarLinks';
 import { getNodeInfo } from './getNodeInfo';
 import { getFormulario } from './getFormulario';
 import { getDominio } from './getDominio';
+import { validate } from './validate';
 
 export async function main({ doc, log }: { doc: Document; log: typeof console.log }) {
-  const dominio = getDominio(doc);
-  if (!dominio) throw new Error('Não foi possível verificar o domínio.');
-  const formulario = getFormulario(doc);
-  if (!formulario) throw new Error('Não foi possível obter o formulário.');
+  const [dominio, formulario] = await validate([getDominio(doc), getFormulario(doc)]);
   const criarLinks = makeCriarLinks(doc, dominio);
   const nodeInfo = getNodeInfo(formulario);
   for (const nodeSigla of nodeInfo) {
