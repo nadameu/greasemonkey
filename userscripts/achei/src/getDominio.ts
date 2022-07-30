@@ -7,6 +7,6 @@ const dominios = {
 
 export async function getDominio(doc: Document) {
   const value = doc.querySelector<HTMLInputElement>('input[name="local"]:checked')?.value;
-  if (value && value in dominios) return dominios[value as keyof typeof dominios];
-  throw new Error('Não foi possível verificar o domínio.');
+  if (!value || !(value in dominios)) throw new Error('Não foi possível verificar o domínio.');
+  return dominios[value as keyof typeof dominios];
 }

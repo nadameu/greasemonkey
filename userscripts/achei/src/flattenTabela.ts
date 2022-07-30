@@ -1,5 +1,6 @@
-export function* flattenTabela(node: Node) {
+export function flattenTabela(node: Node): Node[] {
+  const nodes = [node];
   if (node instanceof HTMLTableElement)
-    yield* node.querySelector('td:nth-child(2)')?.childNodes ?? [];
-  yield node;
+    return Array.from<Node>(node.querySelector('td:nth-child(2)')?.childNodes ?? []).concat(nodes);
+  return nodes;
 }
