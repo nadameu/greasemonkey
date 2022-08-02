@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name Preenchimento dados baixa
-// @version 5.2.1
+// @version 6.0.0
 // @author nadameu
 // @namespace http://nadameu.com.br/baixa
 // @include /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=baixa_arquivamento_processo_etapa_(1|3)&/
@@ -89,16 +89,6 @@ function fromArray(array) {
     names.add(name);
   }
   return gruposNaoVazios;
-}
-
-function ocultarMenuLateral(wrapper, sidebar) {
-  wrapper.style.transition = 'none';
-  wrapper.classList.remove('abre-automaticamente');
-  wrapper.classList.add('toggled');
-  sidebar.style.transition = 'none';
-  wrapper.getBoundingClientRect(); // Forçar paint do navegador
-  wrapper.style.transition = '';
-  sidebar.style.transition = '';
 }
 
 const debounce = (ms, callback) => {
@@ -241,9 +231,8 @@ function valoresDecrescentes(as, bs) {
   return Math.max(...bs.map(({ valor }) => valor)) - Math.max(...as.map(({ valor }) => valor));
 }
 
-function etapa1({ baixar, pendencias, wrapper, sidebar }) {
+function etapa1({ baixar, pendencias }) {
   adicionarEstilos(estilos$1);
-  ocultarMenuLateral(wrapper, sidebar);
   adicionarBotaoFecharAposBaixar(pendencias);
   const osd = OSD(
     'Digite a soma das opções que deseja selecionar. Pressione ENTER para confirmar.'
@@ -338,9 +327,7 @@ function main() {
   if (etapa === '1') {
     const baixar = query('input#sbmBaixa');
     const pendencias = query('#fldPendencias');
-    const wrapper = query('#wrapper');
-    const sidebar = query('#sidebar-wrapper');
-    etapa1({ baixar, pendencias, wrapper, sidebar });
+    etapa1({ baixar, pendencias });
   } else if (etapa === '3') {
     etapa3();
   } else {
