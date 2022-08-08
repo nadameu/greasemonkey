@@ -1,4 +1,5 @@
-'use strict';
+// processosprioritarios.user.ts
+/*!
 // ==UserScript==
 // @name Processos prioritários
 // @namespace   http://nadameu.com.br/processos-prioritarios
@@ -7,54 +8,18 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.3.0
+// @version 27.4.0
 // @grant none
 // ==/UserScript==
-const CompetenciasCorregedoria = {
+*/
+var CompetenciasCorregedoria = {
 	JUIZADO: 1,
 	CIVEL: 2,
 	CRIMINAL: 3,
 	EXECUCAO_FISCAL: 4,
 };
-const Situacoes = {
-	'MOVIMENTO': 3,
-	'MOVIMENTO-AGUARDA DESPACHO': 2,
-	'MOVIMENTO-AGUARDA SENTENÇA': 4,
-	'INICIAL': 1,
-	'INDEFINIDA': 5,
-};
-const RegrasCorregedoria = {
-	[CompetenciasCorregedoria.JUIZADO]: {
-		[Situacoes['INICIAL']]: 10,
-		[Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 15,
-		[Situacoes['MOVIMENTO']]: 10,
-		[Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 45,
-		[Situacoes['INDEFINIDA']]: 30,
-	},
-	[CompetenciasCorregedoria.CIVEL]: {
-		[Situacoes['INICIAL']]: 10,
-		[Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 20,
-		[Situacoes['MOVIMENTO']]: 15,
-		[Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60,
-		[Situacoes['INDEFINIDA']]: 60,
-	},
-	[CompetenciasCorregedoria.CRIMINAL]: {
-		[Situacoes['INICIAL']]: 15,
-		[Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 20,
-		[Situacoes['MOVIMENTO']]: 15,
-		[Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60,
-		[Situacoes['INDEFINIDA']]: 30,
-	},
-	[CompetenciasCorregedoria.EXECUCAO_FISCAL]: {
-		[Situacoes['INICIAL']]: 10,
-		[Situacoes['MOVIMENTO-AGUARDA DESPACHO']]: 60,
-		[Situacoes['MOVIMENTO']]: 25,
-		[Situacoes['MOVIMENTO-AGUARDA SENTENÇA']]: 60,
-		[Situacoes['INDEFINIDA']]: 120,
-	},
-};
-const invalidSymbols = /[&<>"]/g;
-const replacementSymbols = { '&': 'amp', '<': 'lt', '>': 'gt', '"': 'quot' };
+var invalidSymbols = /[&<>"]/g;
+var replacementSymbols = { '&': 'amp', '<': 'lt', '>': 'gt', '"': 'quot' };
 function safeHTML(strings, ...vars) {
 	return vars.reduce(
 		(result, variable, i) =>
@@ -64,10 +29,10 @@ function safeHTML(strings, ...vars) {
 		strings[0],
 	);
 }
-let button = null;
-let progresso = null;
-let saida = null;
-class GUI {
+var button = null;
+var progresso = null;
+var saida = null;
+var GUI = class {
 	constructor() {
 		this.avisoCarregando = {
 			acrescentar(qtd) {
@@ -89,13 +54,7 @@ class GUI {
 			exibir(texto = 'Carregando dados dos processos...') {
 				window.infraExibirAviso(
 					false,
-					[
-						'<center>',
-						`${texto}<br/>`,
-						'<progress id="gmProgresso" value="0" max="1"></progress><br/>',
-						'<output id="gmSaida"></output>',
-						'</center>',
-					].join(''),
+					`<center>${texto}<br/><progress id="gmProgresso" value="0" max="1"></progress><br/><output id="gmSaida"></output></center>`,
 				);
 				progresso = document.getElementById('gmProgresso');
 				saida = document.getElementById('gmSaida');
@@ -110,34 +69,33 @@ class GUI {
 			throw new Error('Função não implementada.');
 		};
 		const estilos = document.createElement('style');
-		estilos.innerHTML = [
-			'tr.infraTrEscura { background-color: #f0f0f0; }',
-			'.gmProcessos { display: inline-block; margin: 0 0.25ex; padding: 0 0.5ex; font-weight: bold; min-width: 3.5ex; line-height: 1.5em; border: 2px solid transparent; border-radius: 1ex; text-align: center; color: black; }',
-			'.gmProcessos.gmPrioridade0 { background-color: #ff8a8a; }',
-			'.gmProcessos.gmPrioridade1 { background-color: #f84; }',
-			'.gmProcessos.gmPrioridade2 { background-color: #ff8; }',
-			'.gmProcessos.gmPrioridade3 { background-color: #8aff8a; }',
-			'.gmProcessos.gmVazio { opacity: 0.25; background-color: inherit; color: #888; }',
-			'.gmPeticoes { display: inline-block; margin-right: 1ex; width: 15px; height: 15px; line-height: 15px; background: red; color: white; border: 1px solid red; text-align: center; border-radius: 50%; font-size: 12px; }',
-			'.gmPeticoes.gmVazio { visibility: hidden; }',
-			'.gmDetalhes td:first-child { padding-left: 0; }',
-			'.gmNaoMostrarClasses .gmDetalheClasse { display: none; }',
-			'.gmNaoMostrarDiasParaFim .gmDiasParaFim { display: none; }',
-			'.gmLocalizadorExtra { display: inline-block; float: right; background: #eee; border: 1px solid #aaa; color: #333; padding: 2px; margin: 0 3px 0 0; border-radius: 3px; font-size: 0.9em; }',
-			'.gmBaloes { float: right; }',
-			'.gmBotoesLocalizador { margin-right: 3ex; }',
-			'.gmAtualizar { font-size: 1em; background: #ccc; padding: 4px; border-radius: 4px; margin-right: 1ex; }',
-			'.gmFiltrar { font-size: 1em; background: #ccc; padding: 4px; border-radius: 4px; margin-right: 1ex; }',
-			'.gmFiltrado .gmFiltrar { display: none; }',
-			'.gmDetalhesAberto { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }',
-			'.gmDetalhes meter { width: 10ex; }',
-			'.gmDetalhes meter.gmExcesso { width: 20ex; }',
-			'.gmLembreteProcesso { width: 2ex; height: 2ex; margin: 0 1ex; border-width: 0; }',
-			'.gmLembreteProcessoVazio { opacity: 0; pointer-events: none; }',
-			'.gmPorcentagem { display: inline-block; width: 6ex; text-align: right; }',
-			'.gmPrioridade { display: none; color: red; }',
-			'.gmPrazoMetade .gmPrioridade { display: inline; }',
-		].join('\n');
+		estilos.innerHTML = `
+tr.infraTrEscura { background-color: #f0f0f0; }
+.gmProcessos { display: inline-block; margin: 0 0.25ex; padding: 0 0.5ex; font-weight: bold; min-width: 3.5ex; line-height: 1.5em; border: 2px solid transparent; border-radius: 1ex; text-align: center; color: black; }
+.gmProcessos.gmPrioridade0 { background-color: #ff8a8a; }
+.gmProcessos.gmPrioridade1 { background-color: #f84; }
+.gmProcessos.gmPrioridade2 { background-color: #ff8; }
+.gmProcessos.gmPrioridade3 { background-color: #8aff8a; }
+.gmProcessos.gmVazio { opacity: 0.25; background-color: inherit; color: #888; }
+.gmPeticoes { display: inline-block; margin-right: 1ex; width: 15px; height: 15px; line-height: 15px; background: red; color: white; border: 1px solid red; text-align: center; border-radius: 50%; font-size: 12px; }
+.gmPeticoes.gmVazio { visibility: hidden; }
+.gmDetalhes td:first-child { padding-left: 0; }
+.gmNaoMostrarClasses .gmDetalheClasse { display: none; }
+.gmNaoMostrarDiasParaFim .gmDiasParaFim { display: none; }
+.gmLocalizadorExtra { display: inline-block; float: right; background: #eee; border: 1px solid #aaa; color: #333; padding: 2px; margin: 0 3px 0 0; border-radius: 3px; font-size: 0.9em; }
+.gmBaloes { float: right; }
+.gmBotoesLocalizador { margin-right: 3ex; }
+.gmAtualizar { font-size: 1em; background: #ccc; padding: 4px; border-radius: 4px; margin-right: 1ex; }
+.gmFiltrar { font-size: 1em; background: #ccc; padding: 4px; border-radius: 4px; margin-right: 1ex; }
+.gmFiltrado .gmFiltrar { display: none; }
+.gmDetalhesAberto { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+.gmDetalhes meter { width: 10ex; }
+.gmDetalhes meter.gmExcesso { width: 20ex; }
+.gmLembreteProcesso { width: 2ex; height: 2ex; margin: 0 1ex; border-width: 0; }
+.gmLembreteProcessoVazio { opacity: 0; pointer-events: none; }
+.gmPorcentagem { display: inline-block; width: 6ex; text-align: right; }
+.gmPrioridade { display: none; color: red; }
+.gmPrazoMetade .gmPrioridade { display: inline; }`;
 		const head = document.querySelector('head');
 		if (!head) throw new Error('Erro ao localizar o elemento "head".');
 		head.appendChild(estilos);
@@ -152,7 +110,7 @@ class GUI {
 			`Processos com prazo a vencer nos próximos ${DIAS_A_FRENTE} dias`,
 			'Processos no prazo',
 		];
-		const MILISSEGUNDOS_EM_UM_DIA = 864e5;
+		const MILISSEGUNDOS_EM_UM_DIA2 = 864e5;
 		const ULTIMA_HORA = 23;
 		const ULTIMO_MINUTO = 59;
 		const ULTIMO_SEGUNDO = 59;
@@ -167,7 +125,7 @@ class GUI {
 			ULTIMO_SEGUNDO,
 			ULTIMO_MILISSEGUNDO,
 		);
-		const atrasoAVencer = (agora.getTime() - aVencer.getTime()) / MILISSEGUNDOS_EM_UM_DIA;
+		const atrasoAVencer = (agora.getTime() - aVencer.getTime()) / MILISSEGUNDOS_EM_UM_DIA2;
 		const prioridades = [
 			localizador.processos.filter(processo => processo.atrasoPorcentagem >= 1),
 			localizador.processos.filter(
@@ -215,7 +173,7 @@ class GUI {
 			);
 		}
 		const processosComPeticao = localizador.processos.filter(processo => {
-			let localizadoresPeticao = processo.localizadores.filter(
+			const localizadoresPeticao = processo.localizadores.filter(
 				localizadorProcesso =>
 					localizadorProcesso.sigla === 'PETIÇÃO' ||
 					localizadorProcesso.sigla === 'SUSPENSOS-RETORNO',
@@ -324,7 +282,7 @@ class GUI {
 			$('html').animate({ scrollTop: $(balao).offset().top - $(window).innerHeight() / 2 }, 'fast');
 			const MENOR = -1,
 				IGUAL = 0,
-				MAIOR = +1;
+				MAIOR = 1;
 			processos.sort((a, b) => {
 				if (a.termoPrazoCorregedoria < b.termoPrazoCorregedoria) return MENOR;
 				if (a.termoPrazoCorregedoria > b.termoPrazoCorregedoria) return MAIOR;
@@ -334,8 +292,7 @@ class GUI {
 				const linhaNova = linha.parentElement.insertRow(linha.rowIndex + 1 + indiceProcesso);
 				const atraso = Math.round(processo.atraso);
 				linhaNova.className = 'infraTrClara gmDetalhes';
-				const DIGITOS_CLASSE = 6,
-					DIGITOS_COMPETENCIA = 2;
+				const DIGITOS_COMPETENCIA = 2;
 				linhaNova.dataset.classe = String(processo.numClasse);
 				linhaNova.dataset.competencia = (
 					'0'.repeat(DIGITOS_COMPETENCIA) + processo.numCompetencia
@@ -370,8 +327,8 @@ class GUI {
 					IDEAL = 0.5;
 				let indicePrioridadeProcesso = -1;
 				if (typeof indicePrioridade === 'undefined') {
-					prioridades.forEach((processos, indice) => {
-						if (processos.includes(processo)) {
+					prioridades.forEach((processos2, indice) => {
+						if (processos2.includes(processo)) {
 							indicePrioridadeProcesso = indice;
 						}
 					});
@@ -443,32 +400,28 @@ class GUI {
 					localizador.infoLink ? localizador.infoLink.id : '0'
 				}Prioridade${indicePrioridade}`,
 			);
-			balao === null || balao === void 0
-				? void 0
-				: balao.addEventListener(
-						'click',
-						evt => {
-							evt.preventDefault();
-							evt.stopPropagation();
-							alternarDetalhes(balao, processos, indicePrioridade);
-						},
-						false,
-				  );
+			balao?.addEventListener(
+				'click',
+				evt => {
+					evt.preventDefault();
+					evt.stopPropagation();
+					alternarDetalhes(balao, processos, indicePrioridade);
+				},
+				false,
+			);
 		});
 		const balaoPeticoes = document.getElementById(
 			`gmLocalizador${localizador.infoLink.id}Peticoes`,
 		);
-		balaoPeticoes === null || balaoPeticoes === void 0
-			? void 0
-			: balaoPeticoes.addEventListener(
-					'click',
-					function (evt) {
-						evt.preventDefault();
-						evt.stopPropagation();
-						alternarDetalhes(balaoPeticoes, processosComPeticao);
-					},
-					false,
-			  );
+		balaoPeticoes?.addEventListener(
+			'click',
+			function (evt) {
+				evt.preventDefault();
+				evt.stopPropagation();
+				alternarDetalhes(balaoPeticoes, processosComPeticao);
+			},
+			false,
+		);
 	}
 	criarBotaoAcao(localizadores) {
 		const frag = document.createDocumentFragment();
@@ -548,50 +501,37 @@ class GUI {
 		}
 	}
 	atualizarTabelaExtra(localizadores) {
-		var _a, _b, _c, _d, _e, _f, _g;
 		let tabela = document.querySelector('table.gmTabelaExtra');
 		if (!tabela) {
 			tabela = document.createElement('table');
 			tabela.className = 'gmTabelaExtra';
-			(_c =
-				(_b =
-					(_a = localizadores[0]) === null || _a === void 0
-						? void 0
-						: _a.linha.closest('table')) === null || _b === void 0
-					? void 0
-					: _b.parentNode) === null || _c === void 0
-				? void 0
-				: _c.appendChild(tabela);
+			localizadores[0]?.linha.closest('table')?.parentNode?.appendChild(tabela);
 			tabela.createTBody();
 		}
 		const tBody = tabela.tBodies[0];
 		while (tBody.firstChild) tBody.removeChild(tBody.firstChild);
 		const qtd = localizadores.map(loc => loc.processos.length).reduce((acc, x) => acc + x, 0);
-		console.log({ qtd });
 		const info = localizadores
-			.map(info => ({
-				info,
-				linha: info.linha,
-				processos: info.processos
-					.map(info => ({ info, valor: info.atrasoPorcentagem + 1 }))
-					.map(({ info, valor }) => ({ info, valor: valor < 1 ? valor / qtd : valor }))
+			.map(info2 => ({
+				info: info2,
+				linha: info2.linha,
+				processos: info2.processos
+					.map(info3 => ({ info: info3, valor: info3.atrasoPorcentagem + 1 }))
+					.map(({ info: info3, valor }) => ({
+						info: info3,
+						valor: valor < 1 ? valor / qtd : valor,
+					}))
 					.sort((a, b) => b.valor - a.valor),
 			}))
-			.map(({ info, linha, processos }) => ({
-				info,
+			.map(({ info: info2, linha, processos }) => ({
+				info: info2,
 				linha,
 				processos,
 				valor: processos.reduce((acc, { valor }) => acc + valor, 0),
 			}))
 			.sort((a, b) => b.valor - a.valor);
-		(_e = (_d = localizadores[0]) === null || _d === void 0 ? void 0 : _d.linha.parentNode) ===
-			null || _e === void 0
-			? void 0
-			: _e.querySelectorAll('.gmDetalhes').forEach(x => x.remove());
-		(_g = (_f = localizadores[0]) === null || _f === void 0 ? void 0 : _f.linha.parentNode) ===
-			null || _g === void 0
-			? void 0
-			: _g.append(...info.map(loc => loc.linha));
+		localizadores[0]?.linha.parentNode?.querySelectorAll('.gmDetalhes').forEach(x => x.remove());
+		localizadores[0]?.linha.parentNode?.append(...info.map(loc => loc.linha));
 		const temp = localizadores.map(localizador =>
 			localizador.processos.map(processo => ({ processo, localizador })),
 		);
@@ -604,28 +544,18 @@ class GUI {
 			const row = document.createElement('tr');
 			css = css === 'Clara' ? 'Escura' : 'Clara';
 			row.className = `infraTr${css}`;
-			let html = '<td class="infraTd">';
-			html += `<a href="${proc.link.href}" target="_blank">`;
-			html += proc.numprocFormatado;
-			html += '</a>';
-			html += '</td>';
-			html += '<td class="infraTd" style="text-align: right;">';
-			html += `${proc.localizadores
+			let html = `<td class="infraTd"><a href="${proc.link.href}" target="_blank">${
+				proc.numprocFormatado
+			}</a></td><td class="infraTd" style="text-align: right;">${proc.localizadores
 				.filter(l => l.id !== localizador.infoLink.id)
 				.map(l => l.sigla)
-				.join('<br>')}`;
-			html += '</td>';
-			html += '<td class="infraTd">';
-			html += `${localizador.nomeExibicao}`;
-			html += '</td>';
-			html += '<td class="infraTd">';
-			html += `<progress value="${proc.atrasoPorcentagem + 1}"></progress>`;
-			html += '</td>';
-			html += '<td class="infraTd">';
-			html += new Intl.NumberFormat('pt-BR', { style: 'percent' }).format(
-				proc.atrasoPorcentagem + 1,
-			);
-			html += '</td>';
+				.join('<br>')}</td><td class="infraTd">${
+				localizador.nomeExibicao
+			}</td><td class="infraTd"><progress value="${
+				proc.atrasoPorcentagem + 1
+			}"></progress></td><td class="infraTd">${new Intl.NumberFormat('pt-BR', {
+				style: 'percent',
+			}).format(proc.atrasoPorcentagem + 1)}</td>`;
 			row.innerHTML = html;
 			tBody.appendChild(row);
 		}
@@ -639,87 +569,36 @@ class GUI {
 				Array.from(canvases).forEach(canvas => canvas.parentNode.removeChild(canvas));
 			}
 		}
-		function extrairProcessos(localizadores) {
-			const processos = new Map();
+		function extrairProcessos(localizadores2) {
+			const processos2 = /* @__PURE__ */ new Map();
 			const agora = new Date(),
 				hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
-			localizadores.forEach(localizador => {
+			localizadores2.forEach(localizador => {
 				localizador.processos.forEach(processo => {
 					const numproc = processo.numproc;
 					const termo = processo.termoPrazoCorregedoria,
 						dataTermo = new Date(termo.getFullYear(), termo.getMonth(), termo.getDate());
 					const timestamp = Math.max(hoje.getTime(), dataTermo.getTime());
-					if (processos.has(numproc)) {
-						const timestampAntigo = processos.get(numproc),
+					if (processos2.has(numproc)) {
+						const timestampAntigo = processos2.get(numproc),
 							timestampNovo = Math.min(timestampAntigo, timestamp);
-						processos.set(numproc, timestampNovo);
+						processos2.set(numproc, timestampNovo);
 					} else {
-						processos.set(numproc, timestamp);
+						processos2.set(numproc, timestamp);
 					}
 				});
 			});
-			return processos;
+			return processos2;
 		}
-		function extrairDatas(processos) {
-			const datas = new Map();
-			for (let timestamp of processos.values()) {
-				let valorAtual = datas.get(timestamp) || 0;
+		function extrairDatas(processos2) {
+			const datas = /* @__PURE__ */ new Map();
+			for (const timestamp of processos2.values()) {
+				const valorAtual = datas.get(timestamp) || 0;
 				datas.set(timestamp, valorAtual + 1);
 			}
 			return datas;
 		}
 		class Grafico {
-			constructor() {
-				this.dimensoes = {
-					get largura() {
-						const areaTela = document.querySelector('#divInfraAreaTelaD');
-						if (!areaTela) throw new Error('Elemento "#divInfraAreaTelaD" não encontrado.');
-						return Math.min(1024, areaTela.clientWidth);
-					},
-					altura: 400,
-					margem: 3,
-					espacamento: 5,
-				};
-				this.linha = { espessura: 1, cor: 'rgba(255, 255, 255, 0.9)' };
-				this.corFundo = 'rgb(51, 51, 51)';
-				this.texto = {
-					altura: 10,
-					cor: 'hsla(180, 100%, 87%, 0.87)',
-					corSecundaria: 'hsla(180, 100%, 87%, 0.5)',
-				};
-				this.escala = {
-					maximo: 20,
-					unidadePrimaria: 10,
-					unidadeSecundaria: 5,
-					largura: 2 * this.texto.altura,
-					linhaPrimaria: { espessura: 2, cor: '#888' },
-					linhaSecundaria: { espessura: 0.5, cor: '#666' },
-				};
-				let self = this;
-				this.categorias = {
-					quantidade: 1,
-					get distancia() {
-						return self.area.dimensoes.largura / self.categorias.quantidade;
-					},
-				};
-				this.barras = {
-					corVencido: 'hsla(15, 80%, 75%, 1)',
-					corProximosDias: 'hsla(60, 100%, 75%, 1)',
-					corNoPrazo: 'hsla(120, 75%, 80%, 1)',
-					espacamento: 0.2,
-					/* valor entre 0 e 1, proporcional à largura disponível */ get largura() {
-						return self.categorias.distancia * (1 - self.barras.espacamento);
-					},
-				};
-				const canvas = document.createElement('canvas');
-				canvas.width = this.dimensoes.largura;
-				canvas.height = this.dimensoes.altura;
-				this.canvas = canvas;
-				const context = this.canvas.getContext('2d');
-				if (!context) throw new Error('Não foi possível obter o contexto 2D do elemento "canvas".');
-				this.context = context;
-				this.dados = new Map();
-			}
 			get area() {
 				const area = {
 					corFundo: 'rgba(102, 102, 102, 0.25)',
@@ -749,6 +628,57 @@ class GUI {
 					maximo = hoje + 30 * UM_DIA;
 				return new Map(Array.from(this.dados.entries()).filter(([dia]) => dia <= maximo));
 			}
+			constructor() {
+				this.dimensoes = {
+					get largura() {
+						const areaTela2 = document.querySelector('#divInfraAreaTelaD');
+						if (!areaTela2) throw new Error('Elemento "#divInfraAreaTelaD" não encontrado.');
+						return Math.min(1024, areaTela2.clientWidth);
+					},
+					altura: 400,
+					margem: 3,
+					espacamento: 5,
+				};
+				this.linha = { espessura: 1, cor: 'rgba(255, 255, 255, 0.9)' };
+				this.corFundo = 'rgb(51, 51, 51)';
+				this.texto = {
+					altura: 10,
+					cor: 'hsla(180, 100%, 87%, 0.87)',
+					corSecundaria: 'hsla(180, 100%, 87%, 0.5)',
+				};
+				this.escala = {
+					maximo: 20,
+					unidadePrimaria: 10,
+					unidadeSecundaria: 5,
+					largura: 2 * this.texto.altura,
+					linhaPrimaria: { espessura: 2, cor: '#888' },
+					linhaSecundaria: { espessura: 0.5, cor: '#666' },
+				};
+				const self = this;
+				this.categorias = {
+					quantidade: 1,
+					get distancia() {
+						return self.area.dimensoes.largura / self.categorias.quantidade;
+					},
+				};
+				this.barras = {
+					corVencido: 'hsla(15, 80%, 75%, 1)',
+					corProximosDias: 'hsla(60, 100%, 75%, 1)',
+					corNoPrazo: 'hsla(120, 75%, 80%, 1)',
+					espacamento: 0.2,
+					get largura() {
+						return self.categorias.distancia * (1 - self.barras.espacamento);
+					},
+				};
+				const canvas = document.createElement('canvas');
+				canvas.width = this.dimensoes.largura;
+				canvas.height = this.dimensoes.altura;
+				this.canvas = canvas;
+				const context = this.canvas.getContext('2d');
+				if (!context) throw new Error('Não foi possível obter o contexto 2D do elemento "canvas".');
+				this.context = context;
+				this.dados = /* @__PURE__ */ new Map();
+			}
 			inserirDados(dados) {
 				this.dados = dados;
 			}
@@ -768,10 +698,10 @@ class GUI {
 				context.fillStyle = this.corFundo;
 				context.fillRect(0, 0, this.dimensoes.largura, this.dimensoes.altura);
 				context.beginPath();
-				let x = this.dimensoes.margem;
-				let y = x;
-				let w = this.dimensoes.largura - 2 * this.dimensoes.margem;
-				let h = this.dimensoes.altura - 2 * this.dimensoes.margem;
+				const x = this.dimensoes.margem;
+				const y = x;
+				const w = this.dimensoes.largura - 2 * this.dimensoes.margem;
+				const h = this.dimensoes.altura - 2 * this.dimensoes.margem;
 				context.rect(x, y, w, h);
 				context.lineWidth = this.linha.espessura;
 				context.strokeStyle = this.linha.cor;
@@ -811,8 +741,8 @@ class GUI {
 						context.strokeStyle = this.escala.linhaSecundaria.cor;
 						context.lineWidth = this.escala.linhaSecundaria.espessura;
 					}
-					let proporcao = i / this.escala.maximo;
-					let y =
+					const proporcao = i / this.escala.maximo;
+					const y =
 						this.dimensoes.altura - this.area.margens.b - proporcao * this.area.dimensoes.altura;
 					context.fillText(i.toString(), xTexto, y);
 					context.beginPath();
@@ -834,8 +764,8 @@ class GUI {
 					this.dimensoes.altura -
 					(this.dimensoes.margem + this.linha.espessura / 2 + this.area.margens.b) / 2;
 				for (let i = 0; i < this.categorias.quantidade; i += step) {
-					let dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
-					let x = this.area.margens.l + (i + 0.5) * this.categorias.distancia;
+					const dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
+					const x = this.area.margens.l + (i + 0.5) * this.categorias.distancia;
 					context.fillText(dia.getDate().toString(), x, y);
 				}
 			}
@@ -852,12 +782,13 @@ class GUI {
 					} else {
 						context.fillStyle = this.barras.corNoPrazo;
 					}
-					let dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
+					const dia = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + i);
 					if (this.dados.has(dia.getTime())) {
-						let x = this.area.margens.l + (i + 0.5) * this.categorias.distancia - larguraBarra / 2;
-						let valor = this.dados.get(dia.getTime());
-						let altura = (valor / this.escala.maximo) * this.area.dimensoes.altura;
-						let y = this.dimensoes.altura - this.area.margens.b - altura;
+						const x =
+							this.area.margens.l + (i + 0.5) * this.categorias.distancia - larguraBarra / 2;
+						const valor = this.dados.get(dia.getTime());
+						const altura = (valor / this.escala.maximo) * this.area.dimensoes.altura;
+						const y = this.dimensoes.altura - this.area.margens.b - altura;
 						context.fillRect(x, y, larguraBarra, altura);
 					}
 				}
@@ -867,9 +798,9 @@ class GUI {
 				const maximo = Math.max.apply(null, quantidades);
 				this.calcularDadosEscala(maximo);
 				const distanciaMinima = 2 * this.dimensoes.espacamento + 2 * this.texto.altura;
-				let secundariaOk = this.assegurarDistanciaMinima('unidadeSecundaria', distanciaMinima);
+				const secundariaOk = this.assegurarDistanciaMinima('unidadeSecundaria', distanciaMinima);
 				if (secundariaOk) return;
-				let primariaOk = this.assegurarDistanciaMinima('unidadePrimaria', distanciaMinima);
+				const primariaOk = this.assegurarDistanciaMinima('unidadePrimaria', distanciaMinima);
 				if (primariaOk) {
 					this.escala.unidadeSecundaria = this.escala.unidadePrimaria;
 				} else {
@@ -907,9 +838,9 @@ class GUI {
 				let tamanhoIdealEncontrado = false;
 				[1, 2, 2.5, 5, 10].forEach(mult => {
 					if (tamanhoIdealEncontrado) return;
-					let novoIntervalo = this.escala[unidade] * mult;
+					const novoIntervalo = this.escala[unidade] * mult;
 					if (novoIntervalo % 1 !== 0) return;
-					let novoMaximo = Math.ceil(this.escala.maximo / novoIntervalo) * novoIntervalo;
+					const novoMaximo = Math.ceil(this.escala.maximo / novoIntervalo) * novoIntervalo;
 					if ((novoMaximo / novoIntervalo) * distancia <= this.area.dimensoes.altura) {
 						tamanhoIdealEncontrado = true;
 						if (mult !== 1) {
@@ -936,21 +867,14 @@ class GUI {
 		}
 		return GUI._instance;
 	}
-}
-const obterFormularioRelatorioGeral = memoize(async () => {
+};
+var obterFormularioRelatorioGeral = memoize(async () => {
 	const links = document.querySelectorAll('#main-menu a[href]');
 	const url = Array.from(links)
 		.filter(link => new URL(link.href).searchParams.get('acao') === 'relatorio_geral_listar')
 		.map(link => link.href)[0];
 	if (!url) throw new Error('Não foi possível obter o link para o relatório geral.');
-	const doc = await new Promise((resolve, reject) => {
-		const xml = new XMLHttpRequest();
-		xml.open('GET', url);
-		xml.responseType = 'document';
-		xml.onerror = reject;
-		xml.onload = () => resolve(xml.response);
-		xml.send(null);
-	});
+	const doc = await XHR('GET', url);
 	console.log('Página relatório geral obtida', doc);
 	const consultar = doc.getElementById('btnConsultar');
 	if (!(consultar instanceof HTMLButtonElement))
@@ -960,20 +884,10 @@ const obterFormularioRelatorioGeral = memoize(async () => {
 	return form;
 });
 async function trataHTML(localizador, doc) {
-	var _a, _b, _c;
-	const pagina = Number(
-		(_a = doc.querySelector('input#hdnInfraPaginaAtual')) === null || _a === void 0
-			? void 0
-			: _a.value,
-	);
+	const pagina = Number(doc.querySelector('input#hdnInfraPaginaAtual')?.value);
 	if (isNaN(pagina)) throw new Error('Não foi possível obter a página.');
 	const quantidadeProcessosCarregados = parseInt(
-		(_c =
-			(_b = doc.querySelector('input#hdnInfraNroItens')) === null || _b === void 0
-				? void 0
-				: _b.value) !== null && _c !== void 0
-			? _c
-			: '',
+		doc.querySelector('input#hdnInfraNroItens')?.value ?? '',
 	);
 	if (isNaN(quantidadeProcessosCarregados))
 		throw new Error('Não foi possível obter a quantidade de processos analisados.');
@@ -985,25 +899,31 @@ async function trataHTML(localizador, doc) {
 	linhas.forEach(linha => {
 		localizador.processos.push(ProcessoFactory.fromLinha(linha));
 	});
-	if (pagina > 0) return localizador;
+	if (pagina > 0) return;
 	const todas = doc.querySelector('select#selInfraPaginacaoSuperior');
 	if (todas) {
 		console.info('Buscando próximas páginas', localizador.nomeExibicao);
 		await Promise.all(
-			Array.from({ length: todas.options.length - 1 }, (_, i) => i + 1).map(p =>
-				localizador.obterPagina(p, doc),
+			Array.from({ length: todas.options.length - 1 }, (_, i) =>
+				localizador.obterPagina(i + 1, doc),
 			),
 		);
-		return localizador;
+		return;
 	}
 	const proxima = doc.getElementById('lnkInfraProximaPaginaSuperior');
 	if (proxima) {
 		console.info('Buscando próxima página', localizador.nomeExibicao);
 		return localizador.obterPagina(pagina + 1, doc);
 	}
-	return localizador;
+	return;
 }
-class Localizador {
+var Localizador = class {
+	get nomeExibicao() {
+		return this.infoNome.tipo === 'composto' ? this.infoNome.siglaNome : this.infoNome.nome;
+	}
+	get quantidadeProcessos() {
+		return Number(this.infoLink?.link.textContent ?? '0');
+	}
 	constructor({ infoNome, infoLink, lembrete, linha, processos, quantidadeProcessosNaoFiltrados }) {
 		this.infoNome = infoNome;
 		this.infoLink = infoLink;
@@ -1012,24 +932,12 @@ class Localizador {
 		this.processos = processos;
 		this.quantidadeProcessosNaoFiltrados = quantidadeProcessosNaoFiltrados;
 	}
-	get nomeExibicao() {
-		return this.infoNome.tipo === 'composto' ? this.infoNome.siglaNome : this.infoNome.nome;
-	}
-	get quantidadeProcessos() {
-		var _a, _b;
-		return Number(
-			(_b = (_a = this.infoLink) === null || _a === void 0 ? void 0 : _a.link.textContent) !==
-				null && _b !== void 0
-				? _b
-				: '0',
-		);
-	}
 	async obterPagina(pagina, doc) {
 		try {
 			let url, data;
 			if (!this.infoLink)
 				throw new Error(
-					'Não foi possível obter o endereço da página do localizador "' + this.nomeExibicao + '".',
+					`Não foi possível obter o endereço da página do localizador "${this.nomeExibicao}".`,
 				);
 			if (pagina === 0) {
 				url = this.infoLink.link.href;
@@ -1053,27 +961,18 @@ class Localizador {
 				const paginaAtual = doc.querySelector('input#hdnInfraPaginaAtual');
 				if (!paginaAtual) throw new Error('Não foi possível localizar a página atual.');
 				paginaAtual.value = String(pagina);
-				let form = paginaAtual.form;
+				const form = paginaAtual.form;
 				if (!form) throw new Error('Formulário não encontrado.');
 				url = form.action;
 				data = new FormData(form);
 			}
-			const doc_1 = await new Promise((resolve, reject) => {
-				const xml = new XMLHttpRequest();
-				xml.open('POST', url);
-				xml.responseType = 'document';
-				xml.onerror = reject;
-				xml.onload = () => resolve(xml.response);
-				xml.send(data);
-			});
-			return trataHTML(this, doc_1);
+			return trataHTML(this, await XHR('POST', url, data));
 		} catch (e) {
 			console.error(e);
 			throw e;
 		}
 	}
 	async obterPrazosPagina(pagina = 0) {
-		var _a, _b, _c, _d, _e, _f;
 		if (!this.infoLink)
 			throw new Error(
 				`Não foi possível obter o endereço da página do localizador "${this.nomeExibicao}".`,
@@ -1089,38 +988,20 @@ class Localizador {
 		data.set('optchkcClasse', 'S');
 		data.set('hdnInfraPaginaAtual', pagina.toString());
 		data.set('selRpvPrecatorio', 'null');
-		const doc = await new Promise((resolve, reject) => {
-			const xml = new XMLHttpRequest();
-			xml.open(method, url);
-			xml.responseType = 'document';
-			xml.onerror = reject;
-			xml.onload = () => resolve(xml.response);
-			xml.send(data);
-		});
+		const doc = await XHR(method, url, data);
 		const tabela = doc.getElementById('tabelaLocalizadores');
 		const quantidadeProcessosCarregados = parseInt(
-			(_b =
-				(_a = doc.querySelector('input#hdnInfraNroItens')) === null || _a === void 0
-					? void 0
-					: _a.value) !== null && _b !== void 0
-				? _b
-				: '',
+			doc.querySelector('input#hdnInfraNroItens')?.value ?? '',
 		);
 		if (isNaN(quantidadeProcessosCarregados))
 			throw new Error('Não foi possível obter a quantidade de processos analisados.');
 		if (tabela) {
-			console.log(
-				pagina,
-				this.infoNome,
-				(_c = tabela.querySelector('caption')) === null || _c === void 0 ? void 0 : _c.textContent,
-			);
+			console.log(pagina, this.infoNome, tabela.querySelector('caption')?.textContent);
 			const linhasList = tabela.querySelectorAll('tr[data-classe]');
 			const linhas = Array.from(linhasList);
-			const processosComPrazoAberto = new Set();
+			const processosComPrazoAberto = /* @__PURE__ */ new Set();
 			linhas.forEach(linha => {
-				var _a;
-				const link =
-					(_a = linha.cells[1]) === null || _a === void 0 ? void 0 : _a.querySelector('a[href]');
+				const link = linha.cells[1]?.querySelector('a[href]');
 				if (!link) throw new Error('Link não encontrado.');
 				const numproc = new URL(link.href).searchParams.get('num_processo');
 				processosComPrazoAberto.add(numproc);
@@ -1133,27 +1014,21 @@ class Localizador {
 		}
 		if (doc.getElementById('lnkProximaPaginaSuperior')) {
 			const paginaAtual = parseInt(
-				(_e =
-					(_d = doc.querySelector('select#selInfraPaginacaoSuperior')) === null || _d === void 0
-						? void 0
-						: _d.value) !== null && _e !== void 0
-					? _e
-					: '',
+				doc.querySelector('select#selInfraPaginacaoSuperior')?.value ?? '',
 			);
 			if (isNaN(paginaAtual)) throw new Error('Não foi possível detectar a página atual.');
 			const paginaNova = paginaAtual < 2 ? 2 : paginaAtual + 1;
 			return this.obterPrazosPagina(paginaNova);
 		}
 		const gui = GUI.getInstance();
-		const qtd = parseInt((_f = this.infoLink.link.textContent) !== null && _f !== void 0 ? _f : '');
+		const qtd = parseInt(this.infoLink.link.textContent ?? '');
 		if (isNaN(qtd)) throw new Error('Erro ao obter a quantidade de processos.');
 		gui.avisoCarregando.acrescentar(qtd);
 		return this;
 	}
 	async excluirPrazosAbertos() {
-		var _a;
-		const link = (_a = this.infoLink) === null || _a === void 0 ? void 0 : _a.link;
-		if (!(link === null || link === void 0 ? void 0 : link.href)) {
+		const link = this.infoLink?.link;
+		if (!link?.href) {
 			return Promise.resolve(this);
 		}
 		await this.obterPrazosPagina(0);
@@ -1163,9 +1038,9 @@ class Localizador {
 	async obterProcessos() {
 		this.processos = [];
 		const infoLink = this.infoLink;
-		const link = infoLink === null || infoLink === void 0 ? void 0 : infoLink.link;
-		if (!(link === null || link === void 0 ? void 0 : link.href)) {
-			return Promise.resolve(this);
+		const link = infoLink?.link;
+		if (!link?.href) {
+			return;
 		}
 		if (!infoLink) throw new Error('Localizador não possui identificador');
 		await this.obterPagina(0);
@@ -1179,14 +1054,14 @@ class Localizador {
 				case 'composto': {
 					const sigla = localizadorProcesso.sigla;
 					const siglaComSeparador = `${sigla} - `;
-					const nome = this.infoNome.siglaNome.substr(siglaComSeparador.length);
-					this.infoNome = { tipo: 'separado', sigla, nome, siglaNome: [sigla, nome].join(' - ') };
+					const nome = this.infoNome.siglaNome.slice(siglaComSeparador.length);
+					this.infoNome = { tipo: 'separado', sigla, nome, siglaNome: `${sigla} - ${nome}` };
 					break;
 				}
 				case 'nome': {
 					const sigla = localizadorProcesso.sigla;
 					const nome = this.infoNome.nome;
-					this.infoNome = { tipo: 'separado', sigla, nome, siglaNome: [sigla, nome].join(' - ') };
+					this.infoNome = { tipo: 'separado', sigla, nome, siglaNome: `${sigla} - ${nome}` };
 					break;
 				}
 				case 'separado':
@@ -1194,19 +1069,13 @@ class Localizador {
 			}
 			this.lembrete = localizadorProcesso.lembrete;
 		}
-		return this;
 	}
-}
-class LocalizadorFactory {
+};
+var LocalizadorFactory = class {
 	static fromLinha(linha) {
-		var _a, _b, _c, _d;
 		const separador = ' - ';
-		const siglaNome =
-			((_b = (_a = linha.cells[0]) === null || _a === void 0 ? void 0 : _a.textContent) === null ||
-			_b === void 0
-				? void 0
-				: _b.trim()) || '';
-		let partesSiglaNome = siglaNome.split(separador);
+		const siglaNome = linha.cells[0]?.textContent?.trim() || '';
+		const partesSiglaNome = siglaNome.split(separador);
 		if (partesSiglaNome.length < 2)
 			throw new Error(`Não foi possível analisar o nome do localizador: "${siglaNome}".`);
 		let sigla;
@@ -1222,19 +1091,17 @@ class LocalizadorFactory {
 		});
 		const link = linha.querySelector('a');
 		if (!link) throw new Error(`Link para a lista de processos não encontrada: "${siglaNome}".`);
-		const match = (
-			((_c = link.textContent) === null || _c === void 0 ? void 0 : _c.trim()) || ''
-		).match(/^\d+$/);
+		const match = (link.textContent?.trim() || '').match(/^\d+$/);
 		if (!match) throw new Error(`Quantidade de processos não encontrada: "${siglaNome}".`);
 		const textoQtdProcessos = match[0];
 		const quantidadeProcessosNaoFiltrados = parseInt(textoQtdProcessos);
 		let id;
 		if (link.href) {
 			const camposGet = new URL(link.href).searchParams;
-			id = (_d = camposGet.get('selLocalizador')) !== null && _d !== void 0 ? _d : undefined;
+			id = camposGet.get('selLocalizador') ?? void 0;
 		}
 		return new Localizador({
-			infoLink: id ? { id, link } : undefined,
+			infoLink: id ? { id, link } : void 0,
 			infoNome:
 				sigla && nome
 					? { tipo: 'separado', sigla, nome, siglaNome }
@@ -1245,36 +1112,26 @@ class LocalizadorFactory {
 		});
 	}
 	static fromLinhaPainel(linha) {
-		var _a, _b, _c, _d, _e;
-		const nome =
-			(_c =
-				(_b = (_a = linha.cells[0]) === null || _a === void 0 ? void 0 : _a.textContent) === null ||
-				_b === void 0
-					? void 0
-					: _b.match(/^Processos com Localizador\s+"(.*)"$/)) === null || _c === void 0
-				? void 0
-				: _c[1];
+		const nome = linha.cells[0]?.textContent?.match(/^Processos com Localizador\s+"(.*)"$/)?.[1];
 		if (!nome) throw new Error('Nome do localizador não encontrado.');
 		const link = linha.querySelector('a,u');
 		if (!link) throw new Error('Link não encontrado.');
-		const quantidadeProcessosNaoFiltrados = parseInt(
-			(_d = link.textContent) !== null && _d !== void 0 ? _d : '',
-		);
+		const quantidadeProcessosNaoFiltrados = parseInt(link.textContent ?? '');
 		let id;
 		if (link instanceof HTMLAnchorElement) {
 			const camposGet = new URL(link.href).searchParams;
-			id = (_e = camposGet.get('selLocalizador')) !== null && _e !== void 0 ? _e : undefined;
+			id = camposGet.get('selLocalizador') ?? void 0;
 		}
 		return new Localizador({
-			infoLink: id ? { id, link: link } : undefined,
+			infoLink: id ? { id, link } : void 0,
 			infoNome: { tipo: 'nome', nome },
 			linha,
 			processos: [],
 			quantidadeProcessosNaoFiltrados,
 		});
 	}
-}
-class Localizadores extends Array {
+};
+var Localizadores = class extends Array {
 	constructor(tabela) {
 		super();
 		this.tabela = tabela;
@@ -1290,8 +1147,7 @@ class Localizadores extends Array {
 	}
 	async obterProcessos() {
 		const cookiesAntigos = parseCookies(document.cookie);
-		const promises = this.map(loc => loc.obterProcessos());
-		await Promise.all(promises);
+		await Promise.all(this.map(loc => loc.obterProcessos()));
 		const cookiesNovos = parseCookies(document.cookie);
 		const expira = [new Date()]
 			.map(d => {
@@ -1299,16 +1155,22 @@ class Localizadores extends Array {
 				return d;
 			})
 			.map(d => d.toUTCString())[0];
-		for (let key in cookiesNovos) {
+		for (const key in cookiesNovos) {
 			const valorAntigo = cookiesAntigos[key];
 			const valorNovo = cookiesNovos[key];
-			if (typeof valorAntigo !== 'undefined' && valorNovo !== valorAntigo) {
-				document.cookie = `${escape(key)}=${escape(valorAntigo)}; expires=${expira}`;
+			if (
+				(valorNovo?.match(/^\w+;\d+;[SN;]+/) ?? true) &&
+				valorAntigo !== void 0 &&
+				valorNovo !== valorAntigo
+			) {
+				document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(
+					valorAntigo,
+				)}; expires=${expira}`;
 			}
 		}
 	}
-}
-class LocalizadoresFactory {
+};
+var LocalizadoresFactory = class {
 	static fromTabela(tabela) {
 		const localizadores = new Localizadores(tabela);
 		const linhas = [...tabela.querySelectorAll('tr[class^="infraTr"]')];
@@ -1325,48 +1187,28 @@ class LocalizadoresFactory {
 		});
 		return localizadores;
 	}
-}
-class LocalizadorProcessoFactory {
+};
+var LocalizadorProcessoFactory = class {
 	static fromInput(input) {
-		var _a, _b, _c, _d, _e, _f;
 		const id = input.value;
 		const elementoNome = input.nextSibling;
 		if (!elementoNome) throw new Error('Não foi possível obter o nome do localizador.');
 		const principal = elementoNome.nodeName.toLowerCase() === 'u';
-		const sigla =
-			(_b = (_a = elementoNome.textContent) === null || _a === void 0 ? void 0 : _a.trim()) !==
-				null && _b !== void 0
-				? _b
-				: '';
+		const sigla = elementoNome.textContent?.trim() ?? '';
 		if (!sigla) throw new Error('Localizador não possui sigla.');
 		const linkLembrete = elementoNome.nextElementSibling;
 		let lembrete;
-		if (
-			linkLembrete === null || linkLembrete === void 0
-				? void 0
-				: linkLembrete.attributes.hasOwnProperty('onmouseover')
-		) {
-			const onmouseover =
-				(_d =
-					(_c = linkLembrete.attributes.getNamedItem('onmouseover')) === null || _c === void 0
-						? void 0
-						: _c.value) !== null && _d !== void 0
-					? _d
-					: '';
+		if (linkLembrete?.attributes.hasOwnProperty('onmouseover')) {
+			const onmouseover = linkLembrete.attributes.getNamedItem('onmouseover')?.value ?? '';
 			lembrete =
-				(_f =
-					(_e = onmouseover.match(
-						/^return infraTooltipMostrar\('Obs: (.*) \/ ([^(]+)\(([^)]+)\)','',400\);$/,
-					)) === null || _e === void 0
-						? void 0
-						: _e[1]) !== null && _f !== void 0
-					? _f
-					: undefined;
+				onmouseover.match(
+					/^return infraTooltipMostrar\('Obs: (.*) \/ ([^(]+)\(([^)]+)\)','',400\);$/,
+				)?.[1] ?? void 0;
 		}
 		return { id, lembrete, principal, sigla };
 	}
-}
-class LocalizadoresProcessoFactory {
+};
+var LocalizadoresProcessoFactory = class {
 	static fromCelula(celula) {
 		const localizadoresProcesso = [...celula.getElementsByTagName('input')].map(
 			LocalizadorProcessoFactory.fromInput,
@@ -1376,23 +1218,19 @@ class LocalizadoresProcessoFactory {
 			throw new Error('Não foi possível definir o localizador principal.');
 		return Object.assign(localizadoresProcesso, { principal: principais[0] });
 	}
-}
-const MILISSEGUNDOS_EM_UM_DIA = 864e5;
-const COMPETENCIA_JUIZADO_MIN = 9,
-	COMPETENCIA_JUIZADO_MAX = 20,
-	COMPETENCIA_CRIMINAL_MIN = 21,
-	COMPETENCIA_CRIMINAL_MAX = 30,
-	COMPETENCIA_EF_MIN = 41,
-	COMPETENCIA_EF_MAX = 43,
-	CLASSE_EF = 99,
-	CLASSE_CARTA_PRECATORIA = 60;
-const DOMINGO = 0,
-	SEGUNDA = 1,
-	TERCA = 2,
-	QUARTA = 3,
-	QUINTA = 4,
-	SEXTA = 5,
-	SABADO = 6;
+};
+var MILISSEGUNDOS_EM_UM_DIA = 864e5;
+var COMPETENCIA_JUIZADO_MIN = 9;
+var COMPETENCIA_JUIZADO_MAX = 20;
+var COMPETENCIA_CRIMINAL_MIN = 21;
+var COMPETENCIA_CRIMINAL_MAX = 30;
+var COMPETENCIA_EF_MIN = 41;
+var COMPETENCIA_EF_MAX = 43;
+var CLASSE_EF = 99;
+var CLASSE_CARTA_PRECATORIA = 60;
+var DOMINGO = 0;
+var SEGUNDA = 1;
+var SABADO = 6;
 function adiantarParaSabado(data) {
 	let ajuste = 0;
 	switch (data.getDay()) {
@@ -1417,10 +1255,10 @@ function prorrogarParaSegunda(data) {
 	}
 	return new Date(data.getFullYear(), data.getMonth(), data.getDate() + ajuste);
 }
-const JANEIRO = 0,
-	MAIO = 4,
-	DEZEMBRO = 11;
-const calcularRecesso = memoize(ano => {
+var JANEIRO = 0;
+var MAIO = 4;
+var DEZEMBRO = 11;
+var calcularRecesso = memoize(ano => {
 	const inicio = adiantarParaSabado(new Date(ano, DEZEMBRO, 20));
 	const retorno = prorrogarParaSegunda(new Date(ano + 1, JANEIRO, 7));
 	return { inicio, retorno };
@@ -1434,18 +1272,24 @@ function calcularProximo(ajusteAno, fn) {
 		return datas;
 	};
 }
-const calcularRecessoData = calcularProximo(-1, calcularRecesso);
-const calcularInspecao = memoize(ano => {
-	// Menor data possível para a terceira segunda-feira do mês
+var calcularRecessoData = calcularProximo(-1, calcularRecesso);
+var calcularInspecao = memoize(ano => {
 	const quinzeMaio = new Date(ano, MAIO, 15);
 	const diasAteSegundaFeira = (SEGUNDA - quinzeMaio.getDay() + 7) % 7;
 	const inicio = new Date(ano, MAIO, 15 + diasAteSegundaFeira);
 	const retorno = new Date(ano, MAIO, inicio.getDate() + 7);
 	return { inicio, retorno };
 });
-const calcularInspecaoData = calcularProximo(0, calcularInspecao);
+var calcularInspecaoData = calcularProximo(0, calcularInspecao);
 function calcularAtraso(a, b) {
-	let [ascendente, menor, maior] = a <= b ? [true, a, b] : [false, b, a];
+	let ascendente = true,
+		menor = a,
+		maior = b;
+	if (a > b) {
+		ascendente = false;
+		menor = b;
+		maior = a;
+	}
 	let recesso = calcularRecessoData(menor);
 	let inspecao = calcularInspecaoData(menor);
 	let proximaSuspensao =
@@ -1477,7 +1321,7 @@ function calcularAtraso(a, b) {
 	}
 	return ascendente ? absoluto : -absoluto;
 }
-const minhasRegras = {
+var minhasRegras = {
 	AgAssinaturaJuiz: {
 		campoDataConsiderada: 'dataInclusaoLocalizador',
 		dias: {
@@ -1586,6 +1430,15 @@ const minhasRegras = {
 			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 52,
 		},
 	},
+	PrescricaoIntercorrente: {
+		campoDataConsiderada: 'dataSituacao',
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 1800,
+			[CompetenciasCorregedoria.CIVEL]: 1800,
+			[CompetenciasCorregedoria.CRIMINAL]: 1800,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 1800,
+		},
+	},
 	ProcessoParado: {
 		campoDataConsiderada: 'dataUltimoEvento',
 		dias: {
@@ -1641,52 +1494,64 @@ const minhasRegras = {
 		},
 	},
 };
-const infoMeta = {
-	'721307546622562490210000000013' /* Devolução Turma */: {
+var infoMeta = {
+	'721307546622562490210000000013': {
 		MOVIMENTO: minhasRegras.Analisar,
 	},
-	'721612283838905044100680025624' /* 3DIR Ag pedido TED */: {
+	'721612283838905044100680025624': {
 		MOVIMENTO: minhasRegras.Prazo05,
 	},
-	'721308334450542230220000000003' /* 3DIR Ag pagar BB/CEF */: {
+	'721308334450542230220000000003': {
 		MOVIMENTO: minhasRegras.Prazo10,
 	},
-	'721434640434691780220000000004' /* 3DIR Ag saque +1 ano */: {
+	'721434640434691780220000000004': {
 		MOVIMENTO: minhasRegras.Prazo30,
 	},
-	'721362003373237310210000000001' /* 3DIR Ag Juiz assinar */: {
+	'721362003373237310210000000001': {
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.AgAssinaturaJuiz,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.AgAssinaturaJuiz,
 	},
-	'721448979119064340240000000001' /* 3DIR Ag pagamento precatório */: {
+	'721448979119064340240000000001': {
 		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
 		'MOVIMENTO': minhasRegras.ProcessoParado,
 	},
-	'721307551490768040230000000002' /* 3DIR Ag pagamento RPV */: {
+	'721657212513154512241730859228': {
+		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
+		'MOVIMENTO': minhasRegras.ProcessoParado,
+	},
+	'721657212513154512241735980372': {
+		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
+		'MOVIMENTO': minhasRegras.ProcessoParado,
+	},
+	'721657212513154512241740268890': {
+		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
+		'MOVIMENTO': minhasRegras.ProcessoParado,
+	},
+	'721307551490768040230000000002': {
 		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoRPV,
 		'MOVIMENTO': minhasRegras.ProcessoParado,
 	},
-	'721423260735024680230000000001' /* 3DIR Ag prazo */: {
+	'721423260735024680230000000001': {
 		'MOVIMENTO': minhasRegras.CumprirPrioridade,
 		'SUSP/SOBR-P.Decisão Judicial': minhasRegras.Suspensao,
 	},
-	'721596120821598545737898280283' /* 3DIR Agendar Zoom */: {
+	'721596120821598545737898280283': {
 		MOVIMENTO: minhasRegras.Cumprir,
 	},
-	'721307546545352560220000000002' /* 3DIR Baixa */: { MOVIMENTO: minhasRegras.Cumprir },
-	'721377617310101250210000000001' /* 3DIR Baixa Demo */: { MOVIMENTO: minhasRegras.Cumprir },
-	'721473784358242940217525843407' /* 3DIR Baixa Turma */: { MOVIMENTO: minhasRegras.Cumprir },
-	'721307546545352560220000000004' /* 3DIR Cumprimento */: {
+	'721307546545352560220000000002': { MOVIMENTO: minhasRegras.Cumprir },
+	'721377617310101250210000000001': { MOVIMENTO: minhasRegras.Cumprir },
+	'721473784358242940217525843407': { MOVIMENTO: minhasRegras.Cumprir },
+	'721307546545352560220000000004': {
 		BAIXADO: minhasRegras.CumprirPrioridade,
 	},
-	'721307546545352560220000000001' /* 3DIR Direção */: {
+	'721307546545352560220000000001': {
 		'MOVIMENTO': minhasRegras.UmDiaNoLocalizador,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
 	},
-	'721593790295233093891502637047' /* 3DIR Entrega */: { MOVIMENTO: minhasRegras.ProcessoParado },
-	'721484231615301020214955770825' /* 3DIR Extrato CEF */: { MOVIMENTO: minhasRegras.Cumprir },
-	'721394121597912040240000000001' /* 3DIR RPV Prontas */: {
+	'721593790295233093891502637047': { MOVIMENTO: minhasRegras.ProcessoParado },
+	'721484231615301020214955770825': { MOVIMENTO: minhasRegras.Cumprir },
+	'721394121597912040240000000001': {
 		MOVIMENTO: {
 			campoDataConsiderada: 'dataUltimoEvento',
 			dias: {
@@ -1697,98 +1562,107 @@ const infoMeta = {
 			},
 		},
 	},
-	'721523553899874850256893780310' /* 3DIR Temporário */: {
+	'721523553899874850256893780310': {
 		'MOVIMENTO': minhasRegras.UmDiaNoLocalizador,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
 	},
-	'721552920360416260216834737727' /* 6PRO Analisar emenda */: {
+	'721552920360416260216834737727': {
 		MOVIMENTO: minhasRegras.Analisar,
 	},
-	'721307551490768040230000000001' /* 9EXE Ag contrarrazões */: {
+	'721307551490768040230000000001': {
 		MOVIMENTO: minhasRegras.Cumprir,
 	},
-	'721562943669373244747535696808' /* 9EXE Ag decisão supe */: {
+	'721562943669373244747535696808': {
 		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
 	},
-	'721583337216547742495762572419' /* 9EXE Ag Fazer INSS 1 */: {
+	'721583337216547742495762572419': {
 		MOVIMENTO: minhasRegras.Prazo30,
 	},
-	'721607866102094019347001221238' /* 9EXE Ag prov. partes baixa */: {
+	'721583337216547742495766327569': {
+		MOVIMENTO: minhasRegras.Prazo30,
+	},
+	'721607866102094019347001221238': {
 		MOVIMENTO: minhasRegras.Analisar,
 	},
-	'721307552681884870230000000002' /* 9EXE Ag providência partes */: {
+	'721307552681884870230000000002': {
 		MOVIMENTO: minhasRegras.Analisar,
 	},
-	'721308062479869640210000000001' /* 9EXE Ag recurso */: {
+	'721308062479869640210000000001': {
 		MOVIMENTO: minhasRegras.Cumprir,
 	},
-	'721552920360416260216979817401' /* 9EXE Analisar recurso */: {
+	'721552920360416260216979817401': {
 		MOVIMENTO: minhasRegras.Cumprir,
 	},
-	'721307635473840010210000000001' /* 9EXE Cálculo devolvido */: {
+	'721307635473840010210000000001': {
 		MOVIMENTO: minhasRegras.Analisar,
 	},
-	'721507130986103060244491911387' /* 9EXE Descumprimento INSS */: {
+	'721507130986103060244491911387': {
 		MOVIMENTO: minhasRegras.AnalisarPrioridade,
 	},
-	'721307554204880400230000000001' /* 9EXE Digitar RPV */: {
+	'721307554204880400230000000001': {
 		MOVIMENTO: minhasRegras.Cumprir,
 	},
-	'721307558985430470230000000001' /* 9EXE Exp RPV */: {
+	'721307558985430470230000000001': {
 		MOVIMENTO: minhasRegras.Prazo05,
 	},
-	'721507130986103060244448466387' /* 9EXE Habilitação sucessores */: {
+	'721507130986103060244448466387': {
 		MOVIMENTO: minhasRegras.Analisar,
 	},
-	'721507130986103060244459513559' /* 9EXE Honorários de sucumbência */: {
+	'721507130986103060244459513559': {
 		MOVIMENTO: minhasRegras.Analisar,
 	},
-	'721547820988212490231284718313' /* 9EXE Ord impugnação */: {
+	'721547820988212490231284718313': {
 		MOVIMENTO: minhasRegras.Analisar,
 	},
-	'721544193174836710212300925863' /* 9EXE P. física */: {
+	'721544193174836710212300925863': {
 		MOVIMENTO: minhasRegras.Analisar,
 	},
-	'721400171914790310250000000002' /* 9EXE Rec Assessoria */: {
+	'721400171914790310250000000002': {
 		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
 	},
-	'721544107305944230242168515535' /* 9EXE Suspensos */: {
+	'721544107305944230242168515535': {
 		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
 		'SUSP/SOBR-Aguarda Julg.Embg.': minhasRegras.Suspensao,
 		'SUSP/SOBR-P.Decisão Judicial': minhasRegras.Suspensao,
 		'SUSP/SOBR-Parcel.Débito.': minhasRegras.Suspensao,
 	},
-	'721535037528900780222902466001' /* 9EXE Triagem */: {
+	'721544452440114210217814629387': {
+		'SUSP/SOBR-Parcel.Débito.': minhasRegras.PrescricaoIntercorrente,
+	},
+	'721535037528900780222902466001': {
 		MOVIMENTO: minhasRegras.AnalisarPrioridade,
 	},
-	'721583337216547742495846775052' /* 9EXE Verif obrigação fazer 1 */: {
+	'721583337216547742495846775052': {
 		MOVIMENTO: minhasRegras.Cumprir,
 	},
-	'721583337216547742495856888118' /* 9EXE Verif obrigação fazer M */: {
+	'721583337216547742495852422554': {
 		MOVIMENTO: minhasRegras.Cumprir,
 	},
-	'721483972730880570255881334762' /* C/ Luciana */: {
+	'721583337216547742495856888118': {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
+	'721483972730880570255881334762': {
 		'MOVIMENTO': minhasRegras.Cumprir,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
 	},
-	'721527261655975790236901397942' /* C/ Paulo */: {
+	'721527261655975790236901397942': {
 		'MOVIMENTO': minhasRegras.Cumprir,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
 	},
-	'721548256047652070237271128328' /* META 2 */: {
+	'721548256047652070237271128328': {
 		'MOVIMENTO': minhasRegras.CumprirPrioridade,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.DespacharPrioridade,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.SentenciarPrioridade,
 		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
 	},
-	'771387208544881780110000003529' /* PEDIDO DE TED AUTOMÁTICO */: {
+	'771387208544881780110000003529': {
 		MOVIMENTO: minhasRegras.CumprirPrioridade,
 	},
-	'721335971440797820230000000084' /* REQ INTIMADA */: { MOVIMENTO: minhasRegras.Cumprir },
-	'721426007793151980220000000102' /* REQ PAGA LIBERADA */: {
+	'721335971440797820230000000084': { MOVIMENTO: minhasRegras.Cumprir },
+	'721426007793151980220000000102': {
 		MOVIMENTO: {
 			campoDataConsiderada: 'dataUltimoEvento',
 			dias: {
@@ -1799,28 +1673,28 @@ const infoMeta = {
 			},
 		},
 	},
-	'721335971440797820230000000033' /* REQ PREPARADA INTIMAÇÃO */: {
+	'721335971440797820230000000033': {
 		MOVIMENTO: minhasRegras.ProcessoParado,
 	},
-	'721335971440797820230000000135' /* REQ PROCESSADA */: { MOVIMENTO: minhasRegras.ProcessoParado },
-	'721495116809325210234371229829' /* Conta Req +1Ano com Saldo - BAIXADO */: {
+	'721335971440797820230000000135': { MOVIMENTO: minhasRegras.ProcessoParado },
+	'721495116809325210234371229829': {
 		BAIXADO: {
 			...minhasRegras.Analisar,
 			campoDataConsiderada: 'dataInclusaoLocalizador',
 		},
 	},
-	'721274465163072970240000000027' /* TRF RECEBIDOS */: {
+	'721274465163072970240000000027': {
 		MOVIMENTO: minhasRegras.Analisar,
 	},
-	'721273070396362990240000000266' /* TRF/TR BAIXADOS */: { '*': minhasRegras.Analisar },
-	'721273070396362990240000000076' /* TRF/TR DECISÃO */: {
+	'721273070396362990240000000266': { '*': minhasRegras.Analisar },
+	'721273070396362990240000000076': {
 		'*': minhasRegras.Analisar,
 	},
-	'721273070396362990240000000171' /* TRF/TR JULGADOS */: {
+	'721273070396362990240000000171': {
 		'*': minhasRegras.Analisar,
 	},
 };
-class Processo {
+var Processo = class {
 	constructor({
 		classe,
 		dadosComplementares,
@@ -1860,7 +1734,7 @@ class Processo {
 		this.situacao = situacao;
 	}
 	get atraso() {
-		if (this._atraso === undefined) {
+		if (this._atraso === void 0) {
 			const hoje = new Date();
 			this._atraso = calcularAtraso(this.termoPrazoCorregedoria, hoje) / MILISSEGUNDOS_EM_UM_DIA;
 		}
@@ -1889,27 +1763,15 @@ class Processo {
 		return CompetenciasCorregedoria.CIVEL;
 	}
 	get campoDataConsiderada() {
-		var _a;
-		if (this._campoDataConsiderada === undefined) {
+		if (this._campoDataConsiderada === void 0) {
 			const infos =
-				(_a = this.localizadores
+				this.localizadores
 					.map(loc => {
-						var _a, _b, _c, _d, _e, _f;
-						return (_f =
-							(_c =
-								(_b =
-									(_a = infoMeta[loc.id]) === null || _a === void 0
-										? void 0
-										: _a[this.situacao]) === null || _b === void 0
-									? void 0
-									: _b.campoDataConsiderada) !== null && _c !== void 0
-								? _c
-								: (_e = (_d = infoMeta[loc.id]) === null || _d === void 0 ? void 0 : _d['*']) ===
-										null || _e === void 0
-								? void 0
-								: _e.campoDataConsiderada) !== null && _f !== void 0
-							? _f
-							: null;
+						return (
+							infoMeta[loc.id]?.[this.situacao]?.campoDataConsiderada ??
+							infoMeta[loc.id]?.['*']?.campoDataConsiderada ??
+							null
+						);
 					})
 					.reduce((prev, curr) =>
 						prev === null
@@ -1921,41 +1783,21 @@ class Processo {
 							: this[curr] < this[prev]
 							? curr
 							: prev,
-					)) !== null && _a !== void 0
-					? _a
-					: 'dataSituacao';
+					) ?? 'dataSituacao';
 			this._campoDataConsiderada = infos;
 		}
 		return this._campoDataConsiderada;
 	}
 	get prazoCorregedoria() {
-		var _a;
-		if (this._prazoCorregedoria === undefined) {
+		if (this._prazoCorregedoria === void 0) {
 			const infos =
-				(_a = this.localizadores
+				this.localizadores
 					.map(loc => {
-						var _a, _b, _c, _d, _e, _f, _g, _h;
-						return (_h =
-							(_d =
-								(_c =
-									(_b =
-										(_a = infoMeta[loc.id]) === null || _a === void 0
-											? void 0
-											: _a[this.situacao]) === null || _b === void 0
-										? void 0
-										: _b.dias) === null || _c === void 0
-									? void 0
-									: _c[this.competenciaCorregedoria]) !== null && _d !== void 0
-								? _d
-								: (_g =
-										(_f = (_e = infoMeta[loc.id]) === null || _e === void 0 ? void 0 : _e['*']) ===
-											null || _f === void 0
-											? void 0
-											: _f.dias) === null || _g === void 0
-								? void 0
-								: _g[this.competenciaCorregedoria]) !== null && _h !== void 0
-							? _h
-							: null;
+						return (
+							infoMeta[loc.id]?.[this.situacao]?.dias?.[this.competenciaCorregedoria] ??
+							infoMeta[loc.id]?.['*']?.dias?.[this.competenciaCorregedoria] ??
+							null
+						);
 					})
 					.reduce((prev, curr) =>
 						prev === null
@@ -1965,9 +1807,7 @@ class Processo {
 							: curr === null
 							? prev
 							: Math.min(prev, curr),
-					)) !== null && _a !== void 0
-					? _a
-					: 1;
+					) ?? 1;
 			this._prazoCorregedoria = infos;
 		}
 		return this._prazoCorregedoria;
@@ -1980,14 +1820,7 @@ class Processo {
 	}
 	get termoPrazoCorregedoria() {
 		if (this._termoPrazoCorregedoria === null) {
-			let data = new Date(this[this.campoDataConsiderada].getTime());
-			let recesso = calcularRecessoData(data);
-			let inspecao = calcularInspecaoData(data);
-			let proximaSuspensao =
-				recesso.inicio < inspecao.inicio
-					? { tipo: 'recesso', ...recesso }
-					: { tipo: 'inspecao', ...inspecao };
-			function ajustarSuspensoes() {
+			let ajustarSuspensoes2 = function () {
 				const temp = proximaSuspensao.retorno.getTime();
 				if (proximaSuspensao.tipo === 'inspecao') {
 					inspecao = calcularInspecao(inspecao.retorno.getFullYear() + 1);
@@ -1997,14 +1830,22 @@ class Processo {
 					proximaSuspensao = { tipo: 'inspecao', ...inspecao };
 				}
 				return new Date(temp);
-			}
-			if (data >= proximaSuspensao.inicio) data = ajustarSuspensoes();
+			};
+			var ajustarSuspensoes = ajustarSuspensoes2;
+			let data = new Date(this[this.campoDataConsiderada].getTime());
+			let recesso = calcularRecessoData(data);
+			let inspecao = calcularInspecaoData(data);
+			let proximaSuspensao =
+				recesso.inicio < inspecao.inicio
+					? { tipo: 'recesso', ...recesso }
+					: { tipo: 'inspecao', ...inspecao };
+			if (data >= proximaSuspensao.inicio) data = ajustarSuspensoes2();
 			let prazo = this.prazoCorregedoria * MILISSEGUNDOS_EM_UM_DIA;
 			while (true) {
 				const tempoAteProximaSuspensao = proximaSuspensao.inicio.getTime() - data.getTime();
 				if (tempoAteProximaSuspensao < prazo) {
 					prazo -= tempoAteProximaSuspensao;
-					data = ajustarSuspensoes();
+					data = ajustarSuspensoes2();
 				} else {
 					data.setTime(data.getTime() + prazo);
 					break;
@@ -2014,10 +1855,9 @@ class Processo {
 		}
 		return this._termoPrazoCorregedoria;
 	}
-}
-class ProcessoFactory {
+};
+var ProcessoFactory = class {
 	static fromLinha(linha) {
-		var _a, _b, _c, _d, _e, _f, _g;
 		if (linha.cells.length < 11) throw new Error('Não foi possível obter os dados do processo.');
 		const numClasse = linha.dataset.classe;
 		const numCompetencia = Number(linha.dataset.competencia);
@@ -2029,13 +1869,7 @@ class ProcessoFactory {
 		let lembretes = [];
 		if (links.length === 2) {
 			const onmouseover =
-				(_b =
-					(_a = [...links[1].attributes].filter(attr => attr.name === 'onmouseover')[0]) === null ||
-					_a === void 0
-						? void 0
-						: _a.value) !== null && _b !== void 0
-					? _b
-					: '';
+				[...links[1].attributes].filter(attr => attr.name === 'onmouseover')[0]?.value ?? '';
 			const match = onmouseover.match(/^return infraTooltipMostrar\('([^']+)','Lembretes',400\);$/);
 			if (!match) throw new Error('Não foi possível obter lembretes do processo.');
 			const [, codigoLembrete] = match;
@@ -2043,29 +1877,17 @@ class ProcessoFactory {
 			div.innerHTML = codigoLembrete;
 			const tabela = div.childNodes[0];
 			const linhas = Array.from(tabela.rows).reverse();
-			lembretes = linhas.map(linha => {
-				if (linha.cells.length < 4) throw new Error('Não foi possível obter lembrete do processo.');
-				let usuario = linha.cells[2].textContent;
-				let celulaTexto = linha.cells[3];
+			lembretes = linhas.map(linha2 => {
+				if (linha2.cells.length < 4)
+					throw new Error('Não foi possível obter lembrete do processo.');
+				const usuario = linha2.cells[2].textContent;
+				const celulaTexto = linha2.cells[3];
 				celulaTexto.innerHTML = celulaTexto.innerHTML.replace(/<br.*?>/g, '\0\n');
 				return `${celulaTexto.textContent} (${usuario})`;
 			});
 		}
-		const textoSigilo =
-			(_d =
-				(_c = linha.cells[1].getElementsByTagName('br')[0]) === null || _c === void 0
-					? void 0
-					: _c.nextSibling) === null || _d === void 0
-				? void 0
-				: _d.textContent;
-		const sigilo = Number(
-			(_e =
-				textoSigilo === null || textoSigilo === void 0
-					? void 0
-					: textoSigilo.match(/Nível ([0-5])/)) === null || _e === void 0
-				? void 0
-				: _e[1],
-		);
+		const textoSigilo = linha.cells[1].getElementsByTagName('br')[0]?.nextSibling?.textContent;
+		const sigilo = Number(textoSigilo?.match(/Nível ([0-5])/)?.[1]);
 		if (isNaN(sigilo)) throw new Error('Não foi possível obter o nível de sigilo do processo.');
 		const situacao = linha.cells[2].textContent;
 		const juizo = linha.cells[3].textContent;
@@ -2074,7 +1896,7 @@ class ProcessoFactory {
 		const dataSituacao = new Date();
 		dataSituacao.setDate(dataSituacao.getDate() - diasNaSituacao);
 		const labelsDadosComplementares = [...linha.cells[6].getElementsByTagName('label')];
-		const dadosComplementares = new Set();
+		const dadosComplementares = /* @__PURE__ */ new Set();
 		let classe;
 		if (labelsDadosComplementares.length === 0) {
 			classe = linha.cells[6].textContent;
@@ -2084,21 +1906,7 @@ class ProcessoFactory {
 		}
 		const localizadores = LocalizadoresProcessoFactory.fromCelula(linha.cells[7]);
 		const breakUltimoEvento = linha.cells[8].querySelector('br');
-		const dataUltimoEvento = parseDataHora(
-			(_f =
-				breakUltimoEvento === null || breakUltimoEvento === void 0
-					? void 0
-					: breakUltimoEvento.previousSibling) === null || _f === void 0
-				? void 0
-				: _f.textContent,
-		);
-		const ultimoEvento =
-			(_g =
-				breakUltimoEvento === null || breakUltimoEvento === void 0
-					? void 0
-					: breakUltimoEvento.nextSibling) === null || _g === void 0
-				? void 0
-				: _g.textContent;
+		const dataUltimoEvento = parseDataHora(breakUltimoEvento?.previousSibling?.textContent);
 		const dataInclusaoLocalizador = parseDataHora(linha.cells[9].textContent);
 		const textoPrioridade = linha.cells[10].textContent;
 		if (textoPrioridade === 'Sim') {
@@ -2124,7 +1932,7 @@ class ProcessoFactory {
 			situacao,
 		});
 	}
-}
+};
 function adicionarBotaoComVinculo(localizadores) {
 	const gui = GUI.getInstance();
 	const botao = gui.criarBotaoAcao(localizadores);
@@ -2132,7 +1940,7 @@ function adicionarBotaoComVinculo(localizadores) {
 		'click',
 		() => {
 			gui.avisoCarregando.atualizar(0, localizadores.quantidadeProcessosNaoFiltrados);
-			localizadores.obterProcessos().then(function () {
+			localizadores.obterProcessos().then(() => {
 				gui.avisoCarregando.ocultar();
 				gui.atualizarBotaoAcao();
 				localizadores.forEach(function (localizador) {
@@ -2145,26 +1953,17 @@ function adicionarBotaoComVinculo(localizadores) {
 		false,
 	);
 }
-// @ts-ignore
 function main() {
-	var _a, _b;
 	if (/\?acao=usuario_tipo_monitoramento_localizador_listar&/.test(location.search)) {
-		let tabela =
-			(_a = document.getElementById('divInfraAreaTabela')) === null || _a === void 0
-				? void 0
-				: _a.querySelector('table');
+		const tabela = document.getElementById('divInfraAreaTabela')?.querySelector('table');
 		if (!tabela) throw new Error('Não foi possível obter a tabela de localizadores.');
-		let localizadores = LocalizadoresFactory.fromTabela(tabela);
+		const localizadores = LocalizadoresFactory.fromTabela(tabela);
 		adicionarBotaoComVinculo(localizadores);
 	} else if (/\?acao=localizador_processos_lista&/.test(location.search)) {
-		/* do nothing */
 	} else if (/&acao_origem=principal&/.test(location.search)) {
-		let tabela =
-			(_b = document.getElementById('fldLocalizadores')) === null || _b === void 0
-				? void 0
-				: _b.querySelector('table');
+		const tabela = document.getElementById('fldLocalizadores')?.querySelector('table');
 		if (!tabela) throw new Error('Não foi possível obter a tabela de localizadores.');
-		let localizadores = LocalizadoresFactory.fromTabelaPainel(tabela);
+		const localizadores = LocalizadoresFactory.fromTabelaPainel(tabela);
 		adicionarBotaoComVinculo(localizadores);
 	}
 }
@@ -2185,27 +1984,36 @@ function parseCookies(texto) {
 function parseDataHora(texto) {
 	const partes = texto.split(/\W/g).map(Number);
 	if (partes.length < 6) throw new Error(`Data/hora não reconhecida: "${texto}".`);
-	let [d, m, y, h, i, s] = partes;
+	const [d, m, y, h, i, s] = partes;
 	return new Date(y, m - 1, d, h, i, s);
 }
 function parsePares(pares) {
 	return pares.reduce((obj, par) => {
-		let nome, valores, valor;
 		const dividido = par.split('=');
 		if (dividido.length < 2) throw new Error(`Não foi possível analisar o texto "${par}".`);
-		[nome, ...valores] = dividido;
-		nome = unescape(nome);
-		valor = unescape(valores.join('='));
+		const [escapedNome, ...valores] = dividido;
+		const nome = decodeURIComponent(escapedNome);
+		const valor = decodeURIComponent(valores.join('='));
 		obj[nome] = valor;
 		return obj;
 	}, {});
 }
 function memoize(fn) {
-	const store = new Map();
+	const store = /* @__PURE__ */ new Map();
 	return x => {
 		if (!store.has(x)) {
 			store.set(x, fn(x));
 		}
 		return store.get(x);
 	};
+}
+function XHR(method, url, data = null) {
+	return new Promise((resolve, reject) => {
+		const xml = new XMLHttpRequest();
+		xml.open(method, url);
+		xml.responseType = 'document';
+		xml.onerror = reject;
+		xml.onload = () => resolve(xml.response);
+		xml.send(data);
+	});
 }

@@ -7,7 +7,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.3.0
+// @version 27.4.0
 // @grant none
 // ==/UserScript==
 */
@@ -1591,6 +1591,15 @@ const minhasRegras = {
 			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 52,
 		},
 	},
+	PrescricaoIntercorrente: {
+		campoDataConsiderada: 'dataSituacao' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 1800,
+			[CompetenciasCorregedoria.CIVEL]: 1800,
+			[CompetenciasCorregedoria.CRIMINAL]: 1800,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 1800,
+		},
+	},
 	ProcessoParado: {
 		campoDataConsiderada: 'dataUltimoEvento' as const,
 		dias: {
@@ -1731,6 +1740,9 @@ const infoMeta: InfoMeta = {
 	'721583337216547742495762572419' /* 9EXE Ag Fazer INSS 1 */: {
 		MOVIMENTO: minhasRegras.Prazo30,
 	},
+	'721583337216547742495766327569' /* 9EXE Ag Fazer INSS 1 */: {
+		MOVIMENTO: minhasRegras.Prazo30,
+	},
 	'721607866102094019347001221238' /* 9EXE Ag prov. partes baixa */: {
 		MOVIMENTO: minhasRegras.Analisar,
 	},
@@ -1776,10 +1788,16 @@ const infoMeta: InfoMeta = {
 		'SUSP/SOBR-P.Decisão Judicial': minhasRegras.Suspensao,
 		'SUSP/SOBR-Parcel.Débito.': minhasRegras.Suspensao,
 	},
+	'721544452440114210217814629387' /* 9EXE Suspensos 921 */: {
+		'SUSP/SOBR-Parcel.Débito.': minhasRegras.PrescricaoIntercorrente,
+	},
 	'721535037528900780222902466001' /* 9EXE Triagem */: {
 		MOVIMENTO: minhasRegras.AnalisarPrioridade,
 	},
 	'721583337216547742495846775052' /* 9EXE Verif obrigação fazer 1 */: {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
+	'721583337216547742495852422554' /* 9EXE Verif obrigação fazer 2 */: {
 		MOVIMENTO: minhasRegras.Cumprir,
 	},
 	'721583337216547742495856888118' /* 9EXE Verif obrigação fazer M */: {
