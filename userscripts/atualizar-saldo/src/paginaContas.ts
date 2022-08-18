@@ -1,6 +1,7 @@
 import { expectUnreachable } from '@nadameu/expect-unreachable';
 import { Handler } from '@nadameu/handler';
 import * as p from '@nadameu/predicates';
+import { createStore } from './createStore';
 import { NumProc } from './NumProc';
 import { obterProcessosAguardando, removerProcessoAguardando } from './processosAguardando';
 
@@ -18,22 +19,24 @@ declare function atualizarSaldo(
 const PREFIXO_MSG = '<Atualizar saldo RPV>: ';
 const PREFIXO_MSG_HTML = PREFIXO_MSG.replace('<', '&lt;').replace('>', '&gt;');
 
-const estados = {
-  ATUALIZANDO_BLOQUEIOS: 'atualizando-bloqueios',
-  ATUALIZANDO_SALDO: 'atualizando-saldo',
-  CONTAS_ATUALIZADAS: 'contas-atualizadas',
-  ERRO: 'erro',
-  OBTER_CONTAS: 'obter-contas',
-} as const;
-type Estados = typeof estados;
+class TransicaoInvalida extends Error {
+  name = 'TransicaoInvalida';
+  constructor(public estado: any, public acao: any) {
+    super('Transição inválida.');
+  }
+}
+
 type Estado =
-  | { tipo: Estados['ATUALIZANDO_BLOQUEIOS']; fns: Array<() => void>; conta: number }
-  | { tipo: Estados['ATUALIZANDO_SALDO']; fns: Array<() => void>; conta: number }
-  | { tipo: Estados['CONTAS_ATUALIZADAS']; qtd: number }
-  | { tipo: Estados['ERRO']; erro: Error }
-  | { tipo: Estados['OBTER_CONTAS'] };
-type Acao = (estado: Estado, dispatch: Dispatch) => Estado;
-type Dispatch = Handler<Acao>;
+  | { type: 'ATUALIZANDO_BLOQUEIOS'; fns: Array<() => void>; conta: number }
+  | { type: 'ATUALIZANDO_SALDO'; fns: Array<() => void>; conta: number }
+  | { type: 'CONTAS_ATUALIZADAS'; qtd: number }
+  | { type: 'ERRO'; erro: Error }
+  | { type: 'OBTER_CONTAS' };
+type Acao =
+  | { type: 'CONTAS_OBTIDAS'; fns: Array<() => void> }
+  | { type: 'SALDO_ATUALIZADO' }
+  | { type: 'BLOQUEIOS_ATUALIZADOS' }
+  | { type: 'ERRO_ATUALIZACAO'; erro: string };
 
 export async function paginaContas(numproc: NumProc) {
   if (!obterProcessosAguardando().includes(numproc)) return;
@@ -49,18 +52,63 @@ export async function paginaContas(numproc: NumProc) {
     document.createElement('output'),
     barra.nextSibling
   );
-  const render = (estado: Estado) => {
+
+  const store = createStore<Estado, Acao>(function* () {
+    let estado: Estado = { type: 'OBTER_CONTAS' };
+    while (true) {
+      const acao: Acao | undefined = yield estado;
+      if (!acao) continue;
+
+      if (estado.type === 'OBTER_CONTAS') {
+        if (acao.type === 'CONTAS_OBTIDAS') {
+          if (acao.fns.length === 0) {
+            estado = { type: 'CONTAS_ATUALIZADAS', qtd: 0 };
+          } else {
+            estado = { type: 'ATUALIZANDO_SALDO', fns: acao.fns, conta: 0 };
+            ouvirXHR(makeHandler(x => store.dispatch(x)));
+            estado.fns[0]!();
+          }
+          continue;
+        }
+      } else if (estado.type === 'ATUALIZANDO_SALDO') {
+        if (acao.type === 'SALDO_ATUALIZADO') {
+          estado = { type: 'ATUALIZANDO_BLOQUEIOS', fns: estado.fns, conta: estado.conta };
+          continue;
+        } else if (acao.type === 'ERRO_ATUALIZACAO') {
+          estado = { type: 'ERRO', erro: new Error('Erro na atualização das contas.') };
+          continue;
+        }
+      } else if (estado.type === 'ATUALIZANDO_BLOQUEIOS') {
+        if (acao.type === 'BLOQUEIOS_ATUALIZADOS') {
+          const proxima: number = estado.conta + 1;
+          if (proxima >= estado.fns.length) {
+            estado = { type: 'CONTAS_ATUALIZADAS', qtd: estado.fns.length };
+          } else {
+            estado = { type: 'ATUALIZANDO_SALDO', fns: estado.fns, conta: proxima };
+            estado.fns[proxima]!();
+          }
+          continue;
+        } else if (acao.type === 'ERRO_ATUALIZACAO') {
+          estado = { type: 'ERRO', erro: new Error('Erro na atualização das contas.') };
+          continue;
+        }
+      }
+      throw new TransicaoInvalida(estado, acao);
+    }
+  });
+
+  store.subscribe(estado => {
     output.innerHTML = obterHtml(estado);
 
     function obterHtml(estado: Estado) {
-      switch (estado.tipo) {
-        case estados.ATUALIZANDO_BLOQUEIOS:
+      switch (estado.type) {
+        case 'ATUALIZANDO_BLOQUEIOS':
           return mensagem(`Atualizando bloqueios da conta ${estado.conta + 1}...`);
 
-        case estados.ATUALIZANDO_SALDO:
+        case 'ATUALIZANDO_SALDO':
           return mensagem(`Atualizando saldo da conta ${estado.conta + 1}...`);
 
-        case estados.CONTAS_ATUALIZADAS:
+        case 'CONTAS_ATUALIZADAS':
           if (estado.qtd === 0) {
             return mensagem(`Não é possível atualizar o saldo das contas.`, 'erro');
           } else {
@@ -68,10 +116,10 @@ export async function paginaContas(numproc: NumProc) {
             return mensagem(`${estado.qtd} conta${s} atualizada${s}.`, 'fim');
           }
 
-        case estados.ERRO:
+        case 'ERRO':
           return mensagem(estado.erro.message, 'erro');
 
-        case estados.OBTER_CONTAS:
+        case 'OBTER_CONTAS':
           return mensagem(`Obtendo dados sobre as contas...`);
 
         default:
@@ -89,62 +137,8 @@ export async function paginaContas(numproc: NumProc) {
       if (style) return `<span style="${style}">${PREFIXO_MSG_HTML}${texto}</span>`;
       else return `${PREFIXO_MSG_HTML}${texto}`;
     }
-  };
+  });
 
-  const dispatch: Dispatch = (() => {
-    let estado: Estado = { tipo: estados.OBTER_CONTAS };
-    render(estado);
-    return f => {
-      const proximo = f(estado, dispatch);
-      if (proximo !== estado) {
-        estado = proximo;
-        render(estado);
-      }
-    };
-  })();
-  const estadoErro = (msg?: string): Estado => ({ tipo: estados.ERRO, erro: new Error(msg) });
-  const acoes = {
-    bloqueiosAtualizados: (): Acao => estado => {
-      if (estado.tipo !== estados.ATUALIZANDO_BLOQUEIOS)
-        return estadoErro(`Estado inválido: ${JSON.stringify(estado)}`);
-      const proxima = estado.conta + 1;
-      if (proxima >= estado.fns.length) {
-        return { tipo: estados.CONTAS_ATUALIZADAS, qtd: estado.fns.length };
-      } else {
-        estado.fns[proxima]!();
-        return { tipo: estados.ATUALIZANDO_SALDO, fns: estado.fns, conta: proxima };
-      }
-    },
-    contasObtidas:
-      (fns: Array<() => void>): Acao =>
-      (estado, dispatch) => {
-        if (estado.tipo !== estados.OBTER_CONTAS)
-          return estadoErro(`Estado inválido: ${JSON.stringify(estado)}`);
-        if (fns.length === 0) return { tipo: estados.CONTAS_ATUALIZADAS, qtd: 0 };
-        ouvirXHR(makeHandler(dispatch));
-        fns[0]!();
-        return { tipo: estados.ATUALIZANDO_SALDO, fns, conta: 0 };
-      },
-    erroAtualizacao:
-      (texto: string): Acao =>
-      estado => {
-        switch (estado.tipo) {
-          case estados.ATUALIZANDO_SALDO:
-            return estadoErro(`Erro atualizando saldo da conta ${estado.conta + 1}.`);
-
-          case estados.ATUALIZANDO_BLOQUEIOS:
-            return estadoErro(`Erro atualizando os bloqueios da conta ${estado.conta + 1}.`);
-
-          default:
-            return estadoErro(`Estado inválido: ${JSON.stringify(estado)}`);
-        }
-      },
-    saldoAtualizado: (): Acao => estado => {
-      if (estado.tipo !== estados.ATUALIZANDO_SALDO)
-        return estadoErro(`Estado inválido: ${JSON.stringify(estado)}`);
-      return { tipo: estados.ATUALIZANDO_BLOQUEIOS, fns: estado.fns, conta: estado.conta };
-    },
-  };
   obterContas();
   return;
 
@@ -152,7 +146,7 @@ export async function paginaContas(numproc: NumProc) {
     const linksAtualizar = document.querySelectorAll<HTMLAnchorElement>(
       'a[href^="javascript:atualizarSaldo("]'
     );
-    if (linksAtualizar.length === 0) return dispatch(acoes.contasObtidas([]));
+    if (linksAtualizar.length === 0) return store.dispatch({ type: 'CONTAS_OBTIDAS', fns: [] });
     const jsLinkRE =
       /^javascript:atualizarSaldo\('(?<numProcessoOriginario>\d{20})','(?<agencia>\d{4})',(?<conta>\d+),'(?<idProcesso>\d+)','(?<numProcesso>\d{20})',(?<numBanco>\d{3}),'(?<idRequisicaoBeneficiarioPagamento>\d+)',(?<qtdMovimentos>\d+)\)$/;
     const temCamposObrigatorios = p.hasShape({
@@ -199,7 +193,7 @@ export async function paginaContas(numproc: NumProc) {
           qtdMovimentos
         );
     });
-    dispatch(acoes.contasObtidas(fnsAtualizacao));
+    store.dispatch({ type: 'CONTAS_OBTIDAS', fns: fnsAtualizacao });
   }
 
   function ouvirXHR(handler: Handler<{ resultado: string; texto: string }>) {
@@ -210,16 +204,16 @@ export async function paginaContas(numproc: NumProc) {
     });
   }
 
-  function makeHandler(dispatch: Dispatch): Handler<{ resultado: string; texto: string }> {
+  function makeHandler(dispatch: Handler<Acao>): Handler<{ resultado: string; texto: string }> {
     return ({ resultado, texto }) => {
-      console.debug({ resultado, texto });
-      if (resultado !== 'success') {
-        dispatch(acoes.erroAtualizacao(texto));
-      } else if (texto.match(/"saldo_valor_disponivel"/)) {
-        dispatch(acoes.saldoAtualizado());
-      } else if (texto.match(/"htmlBloqueiosConta"/)) {
-        dispatch(acoes.bloqueiosAtualizados());
+      if (resultado === 'success') {
+        if (texto.match(/"saldo_valor_disponivel"/)) {
+          return dispatch({ type: 'SALDO_ATUALIZADO' });
+        } else if (texto.match(/"htmlBloqueiosConta"/)) {
+          return dispatch({ type: 'BLOQUEIOS_ATUALIZADOS' });
+        }
       }
+      dispatch({ type: 'ERRO_ATUALIZACAO', erro: texto });
     };
   }
 }
