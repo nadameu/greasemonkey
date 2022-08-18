@@ -11,8 +11,12 @@ export function assert(condition: boolean, message?: string): asserts condition 
   if (!condition) throw new AssertionError(message);
 }
 
+export function check<T, U extends T>(
+  predicate: Negate<U>,
+  value: T,
+  message?: string
+): Exclude<T, U>;
 export function check<T>(predicate: Predicate<T>, value: unknown, message?: string): T;
-export function check<T, U>(predicate: Negate<U>, value: T | U, message?: string): T;
 export function check<T>(predicate: Predicate<T>, value: unknown, message?: string): T {
   assert(predicate(value), message);
   return value;
