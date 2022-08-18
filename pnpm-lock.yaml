@@ -6,7 +6,7 @@ importers:
     specifiers:
       '@babel/core': ^7.18.5
       '@babel/preset-env': ^7.18.2
-      '@nadameu/userscript': workspace:^1.0.0
+      '@nadameu/userscript': ^1.0.0
       '@rollup/plugin-babel': ^5.3.1
       '@rollup/plugin-commonjs': ^22.0.0
       '@rollup/plugin-node-resolve': ^13.3.0
@@ -41,6 +41,12 @@ importers:
       typescript: 4.7.3
 
   lib/Query:
+    specifiers:
+      '@nadameu/expect-unreachable': ^1.0.0
+    dependencies:
+      '@nadameu/expect-unreachable': link:../expect-unreachable
+
+  lib/expect-unreachable:
     specifiers: {}
 
   lib/handler:
@@ -63,7 +69,7 @@ importers:
 
   lib/userscript:
     specifiers:
-      '@nadameu/predicates': workspace:^1.0.0
+      '@nadameu/predicates': ^1.0.0
       esbuild: ^0.14.49
       esbuild-register: ^3.3.3
     dependencies:
@@ -81,6 +87,16 @@ importers:
       jsdom: 20.0.0
       vitest: 0.19.1_c8@7.12.0+jsdom@20.0.0
 
+  userscripts/atualizar-saldo:
+    specifiers:
+      '@nadameu/expect-unreachable': ^1.0.0
+      '@nadameu/opaque': ^1.0.0
+      '@nadameu/predicates': ^1.0.0
+    dependencies:
+      '@nadameu/expect-unreachable': link:../../lib/expect-unreachable
+      '@nadameu/opaque': link:../../lib/opaque
+      '@nadameu/predicates': link:../../lib/predicates
+
   userscripts/baixa-acordo-inss:
     specifiers:
       descriptive-regexp: ^0.3.0
@@ -92,8 +108,8 @@ importers:
 
   userscripts/renajud:
     specifiers:
-      '@nadameu/predicates': workspace:^1.0.0
-      '@nadameu/resolvable': workspace:^1.0.0
+      '@nadameu/predicates': ^1.0.0
+      '@nadameu/resolvable': ^1.0.0
       descriptive-regexp: ^0.3.0
     dependencies:
       '@nadameu/predicates': link:../../lib/predicates
