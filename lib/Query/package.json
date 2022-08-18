@@ -1,4 +1,7 @@
 {
   "name": "@nadameu/query",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "dependencies": {
+    "@nadameu/expect-unreachable": "^1.0.0"
+  }
 }

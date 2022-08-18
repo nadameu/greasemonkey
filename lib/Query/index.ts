@@ -1,3 +1,5 @@
+import { expectUnreachable } from '@nadameu/expect-unreachable';
+
 export type Query<T> = Fail<T> | One<T> | Many<T>;
 interface QueryBase<T> {
   history: string[];
@@ -45,9 +47,6 @@ export interface One<T> extends QueryMaybeBase<T> {
   tag: 'One';
   value: T;
 }
-const ensureExhaustive = (x: never) => {
-  throw new Error(`Unhandled case: ${x}.`);
-};
 export function One<T>(value: T, history: string[]): One<T> {
   return {
     tag: 'One',
@@ -101,7 +100,7 @@ export function One<T>(value: T, history: string[]): One<T> {
         return Many(result.values, newHistory);
 
       default:
-        return ensureExhaustive(result);
+        return expectUnreachable(result);
     }
   }
 }
