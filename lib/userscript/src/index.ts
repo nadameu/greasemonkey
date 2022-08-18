@@ -69,12 +69,47 @@ async function main() {
       banner: { js: banner },
       bundle: true,
       charset: 'utf8',
+      define: { DEVELOPMENT: 'false' },
       entryPoints: [json.entry],
       format: 'esm',
       outfile: json.outfile,
       target: 'firefox91',
     });
     console.log('ok');
+    process.exit(0);
+  }
+  if (command === 'serve') {
+    let json: ValidJson;
+    try {
+      json = JSON.parse(await fs.promises.readFile(jsonPath, { encoding: 'utf-8' }));
+      p.assert(isValidJson(json), 'Invalid JSON.');
+    } catch (e) {
+      const cause = e instanceof Error ? e : undefined;
+      throw new Error('Invalid JSON.', { cause });
+    }
+
+    const banner = await fs.promises.readFile(json.metadata, { encoding: 'utf-8' });
+
+    const result = await esbuild.serve(
+      {
+        host: 'localhost',
+        onRequest(req) {
+          console.log('requested', req.path, '@', new Date(Date.now()).toLocaleTimeString());
+        },
+      },
+      {
+        banner: { js: banner },
+        bundle: true,
+        charset: 'utf8',
+        define: { DEVELOPMENT: 'true' },
+        entryPoints: [json.entry],
+        format: 'esm',
+        outfile: json.outfile,
+        target: 'firefox91',
+      }
+    );
+    console.log(`Serving on http://${result.host}:${result.port}/`);
+    await result.wait;
     process.exit(0);
   }
 }
