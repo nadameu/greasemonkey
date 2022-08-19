@@ -2,5 +2,15 @@
   "name": "@nadameu/resolvable",
   "version": "1.0.0",
   "main": "./index.ts",
-  "types": "./index.ts"
+  "types": "./index.ts",
+  "dependencies": {
+    "@nadameu/handler": "^1.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^0.22.1"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest watch"
+  }
 }
