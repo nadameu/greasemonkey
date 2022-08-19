@@ -46,6 +46,9 @@ importers:
     dependencies:
       '@nadameu/expect-unreachable': link:../expect-unreachable
 
+  lib/create-element:
+    specifiers: {}
+
   lib/expect-unreachable:
     specifiers: {}
 
