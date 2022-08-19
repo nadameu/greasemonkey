@@ -6,13 +6,14 @@ interface Resolvable<T> {
 }
 
 export function createResolvable<T>(): readonly [Promise<T>, Resolvable<T>] {
-  const resolvable = {} as {
+  const resolvable = function (resolve: Handler<T>, reject: Handler<any>) {
+    resolvable.resolve = resolve;
+    resolvable.reject = reject;
+  } as {
+    (resolve: Handler<T>, reject: Handler<any>): void;
     resolve: Handler<T>;
     reject: Handler<any>;
   };
-  const promise = new Promise<T>((res, rej) => {
-    resolvable.resolve = res;
-    resolvable.reject = rej;
-  });
+  const promise = new Promise<T>(resolvable);
   return [promise, resolvable];
 }

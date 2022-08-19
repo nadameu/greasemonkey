@@ -46,6 +46,12 @@ importers:
     dependencies:
       '@nadameu/expect-unreachable': link:../expect-unreachable
 
+  lib/create-dispatcher:
+    specifiers:
+      vitest: ^0.22.1
+    devDependencies:
+      vitest: 0.22.1
+
   lib/create-element:
     specifiers: {}
 
