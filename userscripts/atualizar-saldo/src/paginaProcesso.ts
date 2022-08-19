@@ -1,48 +1,38 @@
+import { h } from '@nadameu/create-element';
+import { Handler } from '@nadameu/handler';
 import { check, isNotNull } from '@nadameu/predicates';
 import { NumProc } from './NumProc';
 import { adicionarProcessoAguardando } from './processosAguardando';
 
 export async function paginaProcesso(numproc: NumProc) {
-  const capa = check(isNotNull, document.getElementById('fldCapa'), 'Capa não encontrada.');
-  const linkContas = check(
-    isNotNull,
-    document.querySelector<HTMLAnchorElement>('a#labelPrecatorios'),
-    'Link não encontrado.'
-  );
-  const url = linkContas.href;
-  await modificarPaginaProcesso({ capa, numproc, url });
-}
-
-async function modificarPaginaProcesso({
-  capa,
-  numproc,
-  url,
-}: {
-  capa: HTMLElement;
-  numproc: NumProc;
-  url: string;
-}) {
-  const botao = document.createElement('button');
-  botao.type = 'button';
-  botao.textContent = 'Atualizar saldo RPV';
-  // botao.addEventListener('click', makeOnBotaoClick({ botao, numproc, url }), { once: true });
-  botao.addEventListener('click', makeOnBotaoClick({ botao, numproc, url }));
+  const capa = await obterCapa();
+  const url = await obterLink().then(link => link.href);
+  const botao = h('button', { type: 'button' }, 'Atualizar saldo RPV');
   capa.insertAdjacentElement('beforebegin', botao);
+
+  let emit: Handler<'CLICKED'>;
+  botao.addEventListener('click', evt => {
+    evt.preventDefault();
+    emit('CLICKED');
+  });
+
+  do {
+    const result = await new Promise<'CLICKED'>(res => (emit = res));
+    if (result === 'CLICKED') {
+      adicionarProcessoAguardando(numproc);
+      window.open(url);
+    }
+  } while (true);
 }
 
-function makeOnBotaoClick({
-  botao,
-  numproc,
-  url,
-}: {
-  botao: HTMLButtonElement;
-  numproc: NumProc;
-  url: string;
-}) {
-  return function onBotaoClick(evt: Event) {
-    evt.preventDefault();
-    // botao.disabled = true;
-    adicionarProcessoAguardando(numproc);
-    window.open(url);
-  };
+async function obterLink() {
+  return obter<HTMLAnchorElement>('a#labelPrecatorios', 'Link não encontrado.');
+}
+
+async function obterCapa() {
+  return obter('#fldCapa', 'Capa não encontrada.');
+}
+
+async function obter<T extends HTMLElement>(selector: string, msg: string) {
+  return check(isNotNull, document.querySelector<T>(selector), msg);
 }

@@ -98,15 +98,19 @@ importers:
 
   userscripts/atualizar-saldo:
     specifiers:
+      '@nadameu/create-element': workspace:^1.0.0
       '@nadameu/expect-unreachable': workspace:^1.0.0
       '@nadameu/handler': workspace:^1.0.0
       '@nadameu/opaque': workspace:^1.0.0
       '@nadameu/predicates': workspace:^1.1.1
+      '@nadameu/resolvable': workspace:^1.0.0
     dependencies:
+      '@nadameu/create-element': link:../../lib/create-element
       '@nadameu/expect-unreachable': link:../../lib/expect-unreachable
       '@nadameu/handler': link:../../lib/handler
       '@nadameu/opaque': link:../../lib/opaque
       '@nadameu/predicates': link:../../lib/predicates
+      '@nadameu/resolvable': link:../../lib/resolvable
 
   userscripts/baixa-acordo-inss:
     specifiers:
