@@ -108,7 +108,8 @@ async function main() {
         target: 'firefox91',
       }
     );
-    console.log(`Serving on http://${result.host}:${result.port}/`);
+    const filename = path.basename(json.outfile);
+    console.log(`Serving on http://${result.host}:${result.port}/${filename}`);
     await result.wait;
     process.exit(0);
   }
