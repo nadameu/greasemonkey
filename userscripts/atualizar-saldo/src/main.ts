@@ -17,6 +17,7 @@ export async function main() {
   const numproc = new URL(document.location.href).searchParams.get('num_processo');
   p.assert(p.isNotNull(numproc), 'Número do processo não encontrado.');
   p.assert(isNumproc(numproc), `Número de processo inválido: "${numproc}".`);
+
   switch (acao) {
     case 'processo_selecionar':
       return paginaProcesso(numproc);
