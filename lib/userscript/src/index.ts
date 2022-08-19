@@ -110,6 +110,17 @@ async function main() {
     );
     const filename = path.basename(json.outfile);
     console.log(`Serving on http://${result.host}:${result.port}/${filename}`);
+    console.log('Press Ctrl + C to stop.');
+
+    process.stdin.setRawMode(true);
+    process.stdin.on('data', buffer => {
+      if (buffer[0] === 0x03) {
+        result.stop();
+      } else {
+        console.log('Press Ctrl + C to stop.');
+      }
+    });
+
     await result.wait;
     process.exit(0);
   }
