@@ -1,28 +1,50 @@
+import { createDispatcher } from '@nadameu/create-dispatcher';
 import { h } from '@nadameu/create-element';
-import { Handler } from '@nadameu/handler';
+import { expectUnreachable } from '@nadameu/expect-unreachable';
 import { check, isNotNull } from '@nadameu/predicates';
 import { NumProc } from './NumProc';
 import { adicionarProcessoAguardando } from './processosAguardando';
 
 export async function paginaProcesso(numproc: NumProc) {
-  const capa = await obterCapa();
-  const url = await obterLink().then(link => link.href);
+  const [capa, url] = await Promise.all([obterCapa(), obterLink().then(link => link.href)]);
+  await modificarPaginaProcesso({ capa, numproc, url });
+}
+async function modificarPaginaProcesso({
+  capa,
+  numproc,
+  url,
+}: {
+  capa: HTMLElement;
+  numproc: NumProc;
+  url: string;
+}) {
   const botao = h('button', { type: 'button' }, 'Atualizar saldo RPV');
+  botao.addEventListener('click', onClick);
   capa.insertAdjacentElement('beforebegin', botao);
 
-  let emit: Handler<'CLICKED'>;
-  botao.addEventListener('click', evt => {
-    evt.preventDefault();
-    emit('CLICKED');
-  });
+  const dispatcher = createDispatcher<'CLICK'>();
 
-  do {
-    const result = await new Promise<'CLICKED'>(res => (emit = res));
-    if (result === 'CLICKED') {
-      adicionarProcessoAguardando(numproc);
-      window.open(url);
+  try {
+    for await (const evt of dispatcher) {
+      if (evt === 'CLICK') {
+        adicionarProcessoAguardando(numproc);
+        window.open(url);
+      } else {
+        expectUnreachable(evt);
+      }
     }
-  } while (true);
+  } catch (e) {
+    botao.disabled = true;
+    window.alert('Ocorreu um erro com a atualização de saldo de RPV.');
+  } finally {
+    dispatcher.end();
+    botao.removeEventListener('click', onClick);
+  }
+
+  function onClick(evt: Event) {
+    evt.preventDefault();
+    dispatcher.dispatch('CLICK');
+  }
 }
 
 async function obterLink() {
