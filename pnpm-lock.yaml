@@ -104,13 +104,15 @@ importers:
 
   userscripts/atualizar-saldo:
     specifiers:
-      '@nadameu/create-element': workspace:^1.0.0
-      '@nadameu/expect-unreachable': workspace:^1.0.0
-      '@nadameu/handler': workspace:^1.0.0
-      '@nadameu/opaque': workspace:^1.0.0
-      '@nadameu/predicates': workspace:^1.1.1
-      '@nadameu/resolvable': workspace:^1.0.0
+      '@nadameu/create-dispatcher': ^1.0.0
+      '@nadameu/create-element': ^1.0.0
+      '@nadameu/expect-unreachable': ^1.0.0
+      '@nadameu/handler': ^1.0.0
+      '@nadameu/opaque': ^1.0.0
+      '@nadameu/predicates': ^1.1.1
+      '@nadameu/resolvable': ^1.0.0
     dependencies:
+      '@nadameu/create-dispatcher': link:../../lib/create-dispatcher
       '@nadameu/create-element': link:../../lib/create-element
       '@nadameu/expect-unreachable': link:../../lib/expect-unreachable
       '@nadameu/handler': link:../../lib/handler
