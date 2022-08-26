@@ -7,6 +7,5 @@
 // @homepage    http://www.nadameu.com.br/
 // @supportURL  https://github.com/nadameu/greasemonkey/issues
 // @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf
-// @include     https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-retirar.jsf
 // @version     22.0.1
 // ==/UserScript==
