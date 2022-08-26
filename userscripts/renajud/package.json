@@ -3,5 +3,9 @@
     "@nadameu/predicates": "^1.0.0",
     "@nadameu/resolvable": "^1.0.0",
     "descriptive-regexp": "^0.3.0"
+  },
+  "scripts": {
+    "build": "userscript build",
+    "start": "userscript serve"
   }
 }
