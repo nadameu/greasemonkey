@@ -1,5 +1,4 @@
 import { inserir } from './paginas/inserir';
-import { retirar } from './paginas/retirar';
 import * as RE from 'descriptive-regexp';
 
 export async function main() {
@@ -9,8 +8,6 @@ export async function main() {
   switch (acao) {
     case 'insercao':
       return inserir();
-    case 'retirar':
-      return retirar();
     default:
       throw new Error(`Ação desconhecida: ${acao}.`);
   }
