@@ -1,12 +1,13 @@
 {
   "dependencies": {
-    "@nadameu/create-dispatcher": "^1.0.0",
+    "@nadameu/finite-state-machine": "^1.0.0",
     "@nadameu/create-element": "^1.0.0",
     "@nadameu/expect-unreachable": "^1.0.0",
     "@nadameu/handler": "^1.0.0",
     "@nadameu/opaque": "^1.0.0",
     "@nadameu/predicates": "^1.1.1",
-    "@nadameu/resolvable": "^1.0.0"
+    "@nadameu/resolvable": "^1.0.0",
+    "adt-ts": "^0.6.0"
   },
   "scripts": {
     "build": "userscript build",
