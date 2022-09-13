@@ -1,4 +1,4 @@
-import { Either, Left, Right, traverse, validateMap } from '@nadameu/either';
+import { Either, Left, Right, traverse } from '@nadameu/either';
 import { expectUnreachable } from '@nadameu/expect-unreachable';
 import { createFiniteStateMachine } from '@nadameu/finite-state-machine';
 import { Handler } from '@nadameu/handler';
