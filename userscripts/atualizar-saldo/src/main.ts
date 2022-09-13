@@ -1,31 +1,56 @@
-import * as p from '@nadameu/predicates';
 import { expectUnreachable } from '@nadameu/expect-unreachable';
+import * as p from '@nadameu/predicates';
+import { E, makeApplicativeValidation, maybeBool, O, pipeValue, semigroupArray } from 'adt-ts';
 import { isNumproc } from './NumProc';
-import { paginaProcesso } from './paginaProcesso';
 import { paginaContas } from './paginaContas';
+import { paginaProcesso } from './paginaProcesso';
 
 const isAcaoReconhecida = p.isAnyOf(
   p.isLiteral('processo_selecionar'),
   p.isLiteral('processo_precatorio_rpv')
 );
 
-export async function main() {
-  const acao = new URL(document.location.href).searchParams.get('acao');
-  p.assert(p.isNotNull(acao), 'Página desconhecida.');
-  p.assert(isAcaoReconhecida(acao), `Ação desconhecida: "${acao}".`);
+export function main() {
+  const params = new URL(document.location.href).searchParams;
+  const acao = pipeValue(
+    params.get('acao'),
+    maybeBool(p.isNotNull),
+    E.noteL(() => [new Error('Página desconhecida')]),
+    E.bind(acao =>
+      pipeValue(
+        acao,
+        maybeBool(isAcaoReconhecida),
+        E.noteL(() => [new Error(`Ação desconhecida: "${acao}".`)])
+      )
+    )
+  );
 
-  const numproc = new URL(document.location.href).searchParams.get('num_processo');
-  p.assert(p.isNotNull(numproc), 'Número do processo não encontrado.');
-  p.assert(isNumproc(numproc), `Número de processo inválido: "${numproc}".`);
+  const numproc = pipeValue(
+    params.get('num_processo'),
+    maybeBool(p.isNotNull),
+    E.noteL(() => [new Error('Número do processo não encontrado.')]),
+    E.bind(numproc =>
+      pipeValue(
+        numproc,
+        maybeBool(isNumproc),
+        E.noteL(() => [new Error(`Número de processo inválido: "${numproc}".`)])
+      )
+    )
+  );
 
-  switch (acao) {
-    case 'processo_selecionar':
-      return paginaProcesso(numproc);
+  return pipeValue(
+    O.sequence(makeApplicativeValidation(semigroupArray))({ acao, numproc }),
+    E.map(({ acao, numproc }) => {
+      switch (acao) {
+        case 'processo_selecionar':
+          return paginaProcesso(numproc);
 
-    case 'processo_precatorio_rpv':
-      return paginaContas(numproc);
+        case 'processo_precatorio_rpv':
+          return paginaContas(numproc);
 
-    default:
-      expectUnreachable(acao);
-  }
+        default:
+          return expectUnreachable(acao);
+      }
+    })
+  );
 }
