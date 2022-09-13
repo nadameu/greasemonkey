@@ -1,14 +1,21 @@
 export type Either<a, b> = Left<a, b> | Right<b, a>;
 
 abstract class _Either<a, b> {
-  chain<c>(f: (_: b) => Either<a, c>): Either<a, c> {
-    return this.match({ Left: () => this as unknown as Left<a>, Right: f });
+  catch<c>(f: (_: a) => Either<c, b>): Either<c, b>;
+  catch<c>(this: Left<a> | Right<b>, f: (_: a) => Either<c, b>): Either<c, b> {
+    return this.match({ Left: f, Right: () => this as Right<b> });
   }
-  mapLeft<c>(f: (_: a) => c): Either<c, b> {
-    return this.match({ Left: (x) => Left(f(x)), Right: () => this as unknown as Right<b> });
+  chain<c>(f: (_: b) => Either<a, c>): Either<a, c>;
+  chain<c>(this: Left<a> | Right<b>, f: (_: b) => Either<a, c>): Either<a, c> {
+    return this.match({ Left: () => this as Left<a>, Right: f });
   }
-  map<c>(f: (_: b) => c): Either<a, c> {
-    return this.match({ Left: () => this as unknown as Left<a>, Right: (x) => Right(f(x)) });
+  mapLeft<c>(f: (_: a) => c): Either<c, b>;
+  mapLeft<c>(this: Left<a> | Right<b>, f: (_: a) => c): Either<c, b> {
+    return this.match({ Left: x => Left(f(x)), Right: () => this as Right<b> });
+  }
+  map<c>(f: (_: b) => c): Either<a, c>;
+  map<c>(this: Left<a> | Right<b>, f: (_: b) => c): Either<a, c> {
+    return this.match({ Left: () => this as Left<a>, Right: x => Right(f(x)) });
   }
   abstract match<c>(matchers: { Left: (leftValue: a) => c; Right: (rightValue: b) => c }): c;
 }
@@ -58,7 +65,7 @@ export function sequence<a, b, c, d>(
 ): Either<a, [b, c, d]>;
 export function sequence<a, b>(eithers: Iterable<Either<a, b>>): Either<a, b[]>;
 export function sequence<a, b>(eithers: Iterable<Either<a, b>>): Either<a, b[]> {
-  return traverse(eithers, (x) => x);
+  return traverse(eithers, x => x);
 }
 
 export function traverse<a, b, c>(
@@ -81,7 +88,7 @@ export function validateAll<a, b, c, d>(
 ): Either<a[], [b, c, d]>;
 export function validateAll<a, b>(eithers: Iterable<Either<a, b>>): Either<a[], b[]>;
 export function validateAll<a, b>(eithers: Iterable<Either<a, b>>): Either<a[], b[]> {
-  return validateMap(eithers, (x) => x);
+  return validateMap(eithers, x => x);
 }
 
 export function validateMap<a, b, c>(
@@ -90,7 +97,7 @@ export function validateMap<a, b, c>(
 ): Either<b[], c[]> {
   const errors: b[] = [];
   const results: c[] = [];
-  Array.from(collection, transform).forEach((either) => {
+  Array.from(collection, transform).forEach(either => {
     if (either.isLeft) {
       errors.push(either.leftValue);
     } else {
