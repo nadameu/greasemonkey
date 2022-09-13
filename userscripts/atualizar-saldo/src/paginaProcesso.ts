@@ -75,68 +75,179 @@ function modificarPaginaProcesso({
   }
 
   {
-    const output = h('output');
-    const botao = h('button', { type: 'button', disabled: true, hidden: true });
-    const div = h('div', null, output, botao);
-    informacoesAdicionais.insertAdjacentElement('beforebegin', div);
+    interface JSX {
+      tag: string;
+      props: { style?: Record<string, string>; [key: string]: any };
+      children: Array<string | JSX>;
+    }
 
-    type Properties =
-      | { mostrar: 'output'; mensagem: string; erro: boolean }
-      | { mostrar: 'button'; mensagem: string };
+    function t(tag: JSX['tag'], props: JSX['props'], ...children: Array<string | JSX>): JSX {
+      return { tag, props, children };
+    }
 
-    function propriedades(estado: Estado): Properties {
+    function render(estado: Estado): JSX {
       switch (estado.status) {
         case 'AGUARDA_VERIFICACAO_SALDO':
-          return { mostrar: 'output', mensagem: 'Verificando contas com saldo...', erro: false };
+          return t('output', {}, 'Verificando contas com saldo...');
 
         case 'COM_CONTA':
-          return { mostrar: 'button', mensagem: 'Atualizar saldo RPV' };
+          return t('button', { onClick }, 'Atualizar saldo RPV');
 
         case 'SEM_CONTA':
-          return { mostrar: 'button', mensagem: 'Verificar saldo RPV' };
+          return t('button', { onClick }, 'Verificar saldo RPV');
 
         case 'ERRO':
-          return {
-            mostrar: 'output',
-            mensagem: 'Ocorreu um erro com a atualização de saldo de RPV.',
-            erro: true,
-          };
+          return t(
+            'output',
+            { style: { color: 'red' } },
+            'Ocorreu um erro com a atualização de saldo de RPV.'
+          );
 
         default:
           return expectUnreachable(estado);
       }
     }
 
-    let estadoAnterior: Estado;
-    let exibicaoAnterior: Properties = { mostrar: 'output', mensagem: '', erro: false };
-    const sub = fsm.subscribe(estado => {
-      if (estado === estadoAnterior) return;
-      estadoAnterior = estado;
+    function mount(jsx: JSX, before: HTMLElement) {
+      let elt = create(jsx);
+      before.insertAdjacentElement('beforebegin', elt);
+      return function patch(newJSX: JSX) {
+        elt = patchElement(elt, newJSX, jsx);
+        jsx = newJSX;
+        function patchElement(element: HTMLElement, newJSX: JSX, oldJSX: JSX): HTMLElement {
+          if (newJSX.tag !== oldJSX.tag) {
+            for (const [key, value] of Object.entries(oldJSX.props)) {
+              if (/^on/.test(key)) {
+                element.removeEventListener(key.slice(2).toLowerCase(), value);
+              }
+            }
+            const newElement = create(newJSX);
+            element.replaceWith(newElement);
+            return newElement;
+          }
 
-      const exibicao = propriedades(estado);
-      if (exibicao.mostrar === 'button') {
-        if (exibicaoAnterior.mostrar === 'output') {
-          output.hidden = true;
+          // Remover propriedades conflitantes
+          for (const [key, value] of Object.entries(oldJSX.props)) {
+            if (key === 'style') {
+              const oldStyles = value as Record<string, string>;
+              const newStyles = newJSX.props.style ?? {};
+              for (const key of Object.keys(oldStyles)) {
+                if (!(key in newStyles)) {
+                  (element.style as any)[key] = '';
+                }
+              }
+            } else if (/^on/.test(key)) {
+              if (newJSX.props[key] !== value) {
+                element.removeEventListener(key.slice(2).toLowerCase(), value);
+              }
+            } else {
+              if (newJSX.props[key] !== value) {
+                (element as any)[key] = null;
+              }
+            }
+          }
 
-          botao.hidden = false;
-          botao.disabled = false;
-          botao.addEventListener('click', onClick);
+          // Definir propriedades
+          for (const [key, value] of Object.entries(newJSX.props)) {
+            if (key === 'style') {
+              const css = value;
+              for (const [key, value] of Object.entries(css)) {
+                (element.style as any)[key] = value;
+              }
+            } else if (/^on/.test(key)) {
+              element.addEventListener(key.slice(2).toLowerCase(), value);
+            } else {
+              (element as any)[key] = value;
+            }
+          }
+
+          // Ajustar filhos
+          const removed = new Map<string, Array<{ element: HTMLElement; jsx: JSX }>>();
+          let oldIndex = 0;
+          let newIndex = 0;
+          while (true) {
+            const oldChild = oldJSX.children[oldIndex]!;
+            const newChild = newJSX.children[newIndex]!;
+            if (!newChild) {
+              break;
+            } else if (!oldChild) {
+              if (typeof newChild === 'string') {
+                element.append(newChild);
+              } else {
+                if (removed.has(newChild.tag)) {
+                  const elts = removed.get(newChild.tag)!;
+                  const first = elts.pop()!;
+                  if (elts.length === 0) {
+                    removed.delete(newChild.tag);
+                  }
+                  element.appendChild(patchElement(first.element, newChild, first.jsx));
+                } else {
+                  element.appendChild(create(newChild));
+                }
+              }
+              newIndex += 1;
+            } else if (typeof oldChild === 'string' && typeof newChild === 'string') {
+              if (newChild !== oldChild) {
+                element.childNodes[newIndex]!.textContent = newChild;
+                oldIndex += 1;
+                newIndex += 1;
+              } else {
+                oldIndex += 1;
+                newIndex += 1;
+              }
+            } else if (typeof oldChild === 'string') {
+              element.childNodes[newIndex]!.remove();
+              oldIndex += 1;
+            } else if (typeof newChild === 'string') {
+              removed.set(
+                oldChild.tag,
+                (removed.get(oldChild.tag) ?? []).concat([
+                  { element: element.childNodes[newIndex] as HTMLElement, jsx: oldChild },
+                ])
+              );
+              element.removeChild(element.childNodes[newIndex]!);
+              oldIndex += 1;
+            } else {
+              patchElement(element.childNodes[newIndex] as HTMLElement, newChild, oldChild);
+              oldIndex += 1;
+              newIndex += 1;
+            }
+          }
+          return element;
         }
-        botao.textContent = exibicao.mensagem;
-      } else if (exibicao.mostrar === 'output') {
-        if (exibicaoAnterior.mostrar === 'button') {
-          botao.removeEventListener('click', onClick);
-          botao.disabled = true;
-          botao.hidden = true;
-
-          output.hidden = false;
+      };
+      function create(jsx: JSX): HTMLElement {
+        const elt = document.createElement(jsx.tag);
+        for (const [key, value] of Object.entries(jsx.props)) {
+          if (key === 'style') {
+            const css = value;
+            for (const [key, value] of Object.entries(css)) {
+              (elt.style as any)[key] = value;
+            }
+          } else if (/^on/.test(key)) {
+            elt.addEventListener(key.slice(2).toLowerCase(), value);
+          } else {
+            (elt as any)[key] = value;
+          }
         }
-        output.style.color = exibicao.erro ? 'red' : 'inherit';
-        output.textContent = exibicao.mensagem;
-      } else {
-        expectUnreachable(exibicao);
+        for (const child of jsx.children) {
+          if (typeof child === 'string') {
+            elt.appendChild(document.createTextNode(child));
+          } else {
+            elt.appendChild(create(child));
+          }
+        }
+        return elt;
       }
-      exibicaoAnterior = exibicao;
+    }
+
+    let patch: ReturnType<typeof mount> | undefined;
+    const sub = fsm.subscribe(estado => {
+      if (!patch) {
+        patch = mount(render(estado), informacoesAdicionais);
+      } else {
+        patch(render(estado));
+      }
     });
   }
 
