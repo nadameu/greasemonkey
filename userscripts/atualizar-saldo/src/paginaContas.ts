@@ -56,7 +56,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
           if (fns.length === 0) {
             return { status: 'CONTAS_ATUALIZADAS', qtd: 0 };
           } else {
-            ouvirXHR((x) => fsm.dispatch(mapXHR(x)));
+            ouvirXHR(x => fsm.dispatch(mapXHR(x)));
             fns[0]!();
             return { status: 'ATUALIZANDO_SALDO', fns, conta: 0 };
           }
@@ -153,7 +153,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
       idRequisicaoBeneficiarioPagamento: p.isString,
       qtdMovimentos: p.isString,
     });
-    const fnsAtualizacao = traverse(linksAtualizar, (link) => {
+    const fnsAtualizacao = traverse(linksAtualizar, link => {
       const groups = link.href.match(jsLinkRE)?.groups;
       if (!temCamposObrigatorios(groups))
         return Left(new Error(`Link de atualização desconhecido: "${link.href}".`));
@@ -187,10 +187,10 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
       );
     });
     fnsAtualizacao.match({
-      Left: (error) => {
+      Left: error => {
         fsm.dispatch({ type: 'ERRO_ATUALIZACAO', erro: error.message });
       },
-      Right: (fns) => {
+      Right: fns => {
         fsm.dispatch({ type: 'CONTAS_OBTIDAS', fns });
       },
     });
