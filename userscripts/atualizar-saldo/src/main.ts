@@ -1,41 +1,36 @@
-import { expectUnreachable } from '@nadameu/expect-unreachable';
+import { Either, Left, Right, validateAll } from '@nadameu/either';
 import * as p from '@nadameu/predicates';
-import { Left, Right, Either, validateAll } from '@nadameu/either';
-import { isNumproc } from './NumProc';
+import { isNumproc, NumProc } from './NumProc';
 import { paginaContas } from './paginaContas';
 import { paginaProcesso } from './paginaProcesso';
 
+const paginas = {
+  processo_selecionar: paginaProcesso,
+  processo_precatorio_rpv: paginaContas,
+};
+
 const isAcaoReconhecida = p.isAnyOf(
-  p.isLiteral('processo_selecionar'),
-  p.isLiteral('processo_precatorio_rpv')
+  ...(Object.keys(paginas) as Array<keyof typeof paginas>).map(k => p.isLiteral(k))
 );
+type AcaoReconhecida = p.Static<typeof isAcaoReconhecida>;
 
 export function main() {
   const params = new URL(document.location.href).searchParams;
-  const acao = ((acao) =>
-    p.isNull(acao)
-      ? Left(new Error('Página desconhecida'))
-      : !isAcaoReconhecida(acao)
-      ? Left(new Error(`Ação desconhecida: "${acao}".`))
-      : Right(acao))(params.get('acao'));
+  return validateAll([obterAcao(params), obterNumProc(params)]).chain(([acao, numproc]) =>
+    paginas[acao](numproc)
+  );
+}
 
-  const numproc = ((numproc) =>
-    p.isNull(numproc)
-      ? Left(new Error('Número do processo não encontrado.'))
-      : !isNumproc(numproc)
-      ? Left(new Error(`Número de processo inválido: "${numproc}".`))
-      : Right(numproc))(params.get('num_processo'));
+function obterAcao(params: URLSearchParams): Either<Error, AcaoReconhecida> {
+  const acao = params.get('acao');
+  if (p.isNull(acao)) return Left(new Error('Página desconhecida'));
+  if (!isAcaoReconhecida(acao)) return Left(new Error(`Ação desconhecida: "${acao}".`));
+  return Right(acao);
+}
 
-  return validateAll([acao, numproc]).chain(([acao, numproc]) => {
-    switch (acao) {
-      case 'processo_selecionar':
-        return paginaProcesso(numproc);
-
-      case 'processo_precatorio_rpv':
-        return paginaContas(numproc);
-
-      default:
-        return expectUnreachable(acao);
-    }
-  });
+function obterNumProc(params: URLSearchParams): Either<Error, NumProc> {
+  const numproc = params.get('num_processo');
+  if (p.isNull(numproc)) return Left(new Error('Número do processo não encontrado.'));
+  if (!isNumproc(numproc)) return Left(new Error(`Número de processo inválido: "${numproc}".`));
+  return Right(numproc);
 }
