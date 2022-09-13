@@ -1,60 +1,148 @@
-import { createDispatcher } from '@nadameu/create-dispatcher';
 import { h } from '@nadameu/create-element';
 import { expectUnreachable } from '@nadameu/expect-unreachable';
-import { check, isNotNull } from '@nadameu/predicates';
+import * as p from '@nadameu/predicates';
+import { E, makeApplicativeValidation, maybeBool, O, pipeValue, semigroupArray } from 'adt-ts';
+import { createFiniteStateMachine } from '@nadameu/finite-state-machine';
 import { NumProc } from './NumProc';
 import { adicionarProcessoAguardando } from './processosAguardando';
+import { TransicaoInvalida } from './TransicaoInvalida';
 
-export async function paginaProcesso(numproc: NumProc) {
-  const [capa, url] = await Promise.all([obterCapa(), obterLink().then(link => link.href)]);
-  await modificarPaginaProcesso({ capa, numproc, url });
+export function paginaProcesso(numproc: NumProc) {
+  return pipeValue(
+    O.sequence(makeApplicativeValidation(semigroupArray))({
+      informacoesAdicionais: obterInformacoesAdicionais(),
+      link: obterLink(),
+    }),
+    E.map(({ informacoesAdicionais, link }) =>
+      modificarPaginaProcesso({ informacoesAdicionais, link, numproc, url: link.href })
+    )
+  );
 }
-async function modificarPaginaProcesso({
-  capa,
+
+function modificarPaginaProcesso({
+  informacoesAdicionais,
+  link,
   numproc,
   url,
 }: {
-  capa: HTMLElement;
+  informacoesAdicionais: HTMLElement;
+  link: HTMLAnchorElement;
   numproc: NumProc;
   url: string;
 }) {
-  const botao = h('button', { type: 'button' }, 'Atualizar saldo RPV');
+  type Estado =
+    | { status: 'AGUARDA_VERIFICACAO_SALDO' }
+    | { status: 'COM_CONTA' }
+    | { status: 'SEM_CONTA' }
+    | { status: 'ERRO' };
+  type Acao = { type: 'SALDO_VERIFICADO'; haConta: boolean } | { type: 'CLIQUE' };
+  const fsm = createFiniteStateMachine<Estado, Acao>(
+    { status: 'AGUARDA_VERIFICACAO_SALDO' },
+    {
+      AGUARDA_VERIFICACAO_SALDO: {
+        SALDO_VERIFICADO: (acao, estado) => {
+          if (acao.haConta) {
+            return { status: 'COM_CONTA' };
+          } else {
+            return { status: 'SEM_CONTA' };
+          }
+        },
+      },
+      COM_CONTA: {
+        CLIQUE: (acao, estado) => {
+          adicionarProcessoAguardando(numproc);
+          window.open(url);
+          return estado;
+        },
+      },
+      SEM_CONTA: {
+        CLIQUE: (acao, estado) => {
+          window.open(url);
+          return estado;
+        },
+      },
+      ERRO: {},
+    },
+    (estado, acao) => ({
+      status: 'ERRO',
+      erro: new TransicaoInvalida(estado, acao),
+    })
+  );
+  const botao = h(
+    'button',
+    { type: 'button', className: 'infraButton', disabled: true },
+    'Verificando contas com saldo...'
+  );
   botao.addEventListener('click', onClick);
-  capa.insertAdjacentElement('beforebegin', botao);
+  informacoesAdicionais.insertAdjacentElement('beforebegin', botao);
 
-  const dispatcher = createDispatcher<'CLICK'>();
+  const timer = window.setInterval(() => {
+    if (link.textContent === '') return;
+    window.clearInterval(timer);
+    fsm.dispatch({ type: 'SALDO_VERIFICADO', haConta: link.textContent === 'Há conta com saldo' });
+  }, 100);
 
-  try {
-    for await (const evt of dispatcher) {
-      if (evt === 'CLICK') {
-        adicionarProcessoAguardando(numproc);
-        window.open(url);
-      } else {
-        expectUnreachable(evt);
+  {
+    let ultimo: Estado;
+    const subscription = fsm.subscribe(estado => {
+      if (estado === ultimo) return;
+      ultimo = estado;
+
+      let desconectar = false;
+
+      switch (estado.status) {
+        case 'AGUARDA_VERIFICACAO_SALDO':
+          botao.disabled = true;
+          botao.textContent = 'Verificando contas com saldo...';
+          break;
+
+        case 'SEM_CONTA':
+          botao.disabled = false;
+          botao.textContent = 'Verificar saldo RPV';
+          desconectar = true;
+          break;
+
+        case 'COM_CONTA':
+          botao.disabled = false;
+          botao.textContent = 'Atualizar saldo RPV';
+          desconectar = true;
+          break;
+
+        case 'ERRO':
+          const div = h('div', null, 'Ocorreu um erro com a atualização de saldo de RPV.');
+          div.style.color = 'red';
+          botao.removeEventListener('click', onClick);
+          botao.replaceWith(div);
+          desconectar = true;
+          break;
+
+        default:
+          expectUnreachable(estado);
       }
-    }
-  } catch (e) {
-    botao.disabled = true;
-    window.alert('Ocorreu um erro com a atualização de saldo de RPV.');
-  } finally {
-    dispatcher.end();
-    botao.removeEventListener('click', onClick);
+      if (desconectar) {
+        subscription.unsubscribe();
+      }
+    });
   }
 
   function onClick(evt: Event) {
     evt.preventDefault();
-    dispatcher.dispatch('CLICK');
+    fsm.dispatch({ type: 'CLIQUE' });
   }
 }
 
-async function obterLink() {
+function obterLink() {
   return obter<HTMLAnchorElement>('a#labelPrecatorios', 'Link não encontrado.');
 }
 
-async function obterCapa() {
-  return obter('#fldCapa', 'Capa não encontrada.');
+function obterInformacoesAdicionais() {
+  return obter('#fldInformacoesAdicionais', 'InformacoesAdicionais não encontrada.');
 }
 
-async function obter<T extends HTMLElement>(selector: string, msg: string) {
-  return check(isNotNull, document.querySelector<T>(selector), msg);
+function obter<T extends HTMLElement>(selector: string, msg: string) {
+  return pipeValue(
+    document.querySelector<T>(selector),
+    maybeBool(p.isNotNull),
+    E.noteL(() => [new Error(msg)])
+  );
 }
