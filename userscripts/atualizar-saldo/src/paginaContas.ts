@@ -1,3 +1,4 @@
+import { Either, Left, Right, traverse, validateMap } from '@nadameu/either';
 import { expectUnreachable } from '@nadameu/expect-unreachable';
 import { createFiniteStateMachine } from '@nadameu/finite-state-machine';
 import { Handler } from '@nadameu/handler';
@@ -32,8 +33,8 @@ type Acao =
   | { type: 'BLOQUEIOS_ATUALIZADOS' }
   | { type: 'ERRO_ATUALIZACAO'; erro: string };
 
-export async function paginaContas(numproc: NumProc) {
-  if (!obterProcessosAguardando().includes(numproc)) return;
+export function paginaContas(numproc: NumProc): Either<Error[], void> {
+  if (!obterProcessosAguardando().includes(numproc)) return Right(undefined as void);
   removerProcessoAguardando(numproc);
 
   const barra = document.getElementById('divInfraBarraLocalizacao');
@@ -55,7 +56,7 @@ export async function paginaContas(numproc: NumProc) {
           if (fns.length === 0) {
             return { status: 'CONTAS_ATUALIZADAS', qtd: 0 };
           } else {
-            ouvirXHR(x => fsm.dispatch(mapXHR(x)));
+            ouvirXHR((x) => fsm.dispatch(mapXHR(x)));
             fns[0]!();
             return { status: 'ATUALIZANDO_SALDO', fns, conta: 0 };
           }
@@ -91,6 +92,7 @@ export async function paginaContas(numproc: NumProc) {
 
   fsm.subscribe(render);
   obterContas();
+  return Right(undefined as void);
 
   function render(estado: Estado) {
     output.innerHTML = obterHtml(estado);
@@ -151,13 +153,11 @@ export async function paginaContas(numproc: NumProc) {
       idRequisicaoBeneficiarioPagamento: p.isString,
       qtdMovimentos: p.isString,
     });
-    const fnsAtualizacao = Array.from(linksAtualizar, link =>
-      p.check(
-        temCamposObrigatorios,
-        link.href.match(jsLinkRE)?.groups,
-        'Link de atualização desconhecido.'
-      )
-    ).map(groups => {
+    const fnsAtualizacao = traverse(linksAtualizar, (link) => {
+      const groups = link.href.match(jsLinkRE)?.groups;
+      if (!temCamposObrigatorios(groups))
+        return Left(new Error(`Link de atualização desconhecido: "${link.href}".`));
+
       const {
         numProcessoOriginario,
         agencia,
@@ -173,7 +173,7 @@ export async function paginaContas(numproc: NumProc) {
         Number(strBanco),
         Number(strQtdMovimentos),
       ];
-      return () =>
+      return Right(() =>
         atualizarSaldo(
           numProcessoOriginario,
           agencia,
@@ -183,9 +183,17 @@ export async function paginaContas(numproc: NumProc) {
           numBanco,
           idRequisicaoBeneficiarioPagamento,
           qtdMovimentos
-        );
+        )
+      );
     });
-    fsm.dispatch({ type: 'CONTAS_OBTIDAS', fns: fnsAtualizacao });
+    fnsAtualizacao.match({
+      Left: (error) => {
+        fsm.dispatch({ type: 'ERRO_ATUALIZACAO', erro: error.message });
+      },
+      Right: (fns) => {
+        fsm.dispatch({ type: 'CONTAS_OBTIDAS', fns });
+      },
+    });
   }
 
   function ouvirXHR(handler: Handler<{ resultado: string; texto: string }>) {
