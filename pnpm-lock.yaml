@@ -119,6 +119,7 @@ importers:
       '@nadameu/either': ^1.0.0
       '@nadameu/expect-unreachable': ^1.0.0
       '@nadameu/finite-state-machine': ^1.0.0
+      '@nadameu/handler': ^1.0.0
       '@nadameu/opaque': ^1.0.0
       '@nadameu/predicates': ^1.1.1
       '@nadameu/resolvable': ^1.0.0
@@ -127,6 +128,7 @@ importers:
       '@nadameu/either': link:../../lib/either
       '@nadameu/expect-unreachable': link:../../lib/expect-unreachable
       '@nadameu/finite-state-machine': link:../../lib/finite-state-machine
+      '@nadameu/handler': link:../../lib/handler
       '@nadameu/opaque': link:../../lib/opaque
       '@nadameu/predicates': link:../../lib/predicates
       '@nadameu/resolvable': link:../../lib/resolvable
