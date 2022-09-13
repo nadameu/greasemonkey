@@ -1,6 +1,17 @@
 import { Handler } from '@nadameu/handler';
 
-export function createStore<S, A extends { type: string }>(fn: () => Iterator<S, never, A>) {
+interface Store<S, A extends { type: string }> {
+  dispatch(action: A): void;
+  getState(): S;
+  subscribe(f: Handler<S>): Subscription;
+}
+interface Subscription {
+  unsubscribe(): void;
+}
+
+export function createStore<S, A extends { type: string }>(
+  fn: () => Iterator<S, never, A>
+): Store<S, A> {
   const it = fn();
   const listeners = new Set<Handler<S>>();
 
