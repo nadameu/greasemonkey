@@ -1,6 +1,6 @@
 import { main } from './main';
 
-main().catch(err => {
+main().mapLeft((err) => {
   console.group('<atualizar-saldo>');
   console.error(err);
   console.groupEnd();

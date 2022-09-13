@@ -1,21 +1,16 @@
 import { h } from '@nadameu/create-element';
+import { Either, Left, Right, validateAll } from '@nadameu/either';
 import { expectUnreachable } from '@nadameu/expect-unreachable';
-import * as p from '@nadameu/predicates';
-import { E, makeApplicativeValidation, maybeBool, O, pipeValue, semigroupArray } from 'adt-ts';
 import { createFiniteStateMachine } from '@nadameu/finite-state-machine';
+import * as p from '@nadameu/predicates';
 import { NumProc } from './NumProc';
 import { adicionarProcessoAguardando } from './processosAguardando';
 import { TransicaoInvalida } from './TransicaoInvalida';
 
-export function paginaProcesso(numproc: NumProc) {
-  return pipeValue(
-    O.sequence(makeApplicativeValidation(semigroupArray))({
-      informacoesAdicionais: obterInformacoesAdicionais(),
-      link: obterLink(),
-    }),
-    E.map(({ informacoesAdicionais, link }) =>
+export function paginaProcesso(numproc: NumProc): Either<Error[], void> {
+  return validateAll([obterInformacoesAdicionais(), obterLink()]).map(
+    ([informacoesAdicionais, link]) =>
       modificarPaginaProcesso({ informacoesAdicionais, link, numproc, url: link.href })
-    )
   );
 }
 
@@ -84,7 +79,7 @@ function modificarPaginaProcesso({
 
   {
     let ultimo: Estado;
-    const subscription = fsm.subscribe(estado => {
+    const subscription = fsm.subscribe((estado) => {
       if (estado === ultimo) return;
       ultimo = estado;
 
@@ -140,9 +135,7 @@ function obterInformacoesAdicionais() {
 }
 
 function obter<T extends HTMLElement>(selector: string, msg: string) {
-  return pipeValue(
-    document.querySelector<T>(selector),
-    maybeBool(p.isNotNull),
-    E.noteL(() => [new Error(msg)])
-  );
+  const elt = document.querySelector<T>(selector);
+  if (p.isNull(elt)) return Left(new Error(msg));
+  else return Right(elt);
 }

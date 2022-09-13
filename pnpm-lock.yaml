@@ -93,9 +93,6 @@ importers:
     devDependencies:
       vitest: 0.22.1
 
-  lib/result:
-    specifiers: {}
-
   lib/userscript:
     specifiers:
       '@nadameu/predicates': ^1.0.0
@@ -119,22 +116,20 @@ importers:
   userscripts/atualizar-saldo:
     specifiers:
       '@nadameu/create-element': ^1.0.0
+      '@nadameu/either': ^1.0.0
       '@nadameu/expect-unreachable': ^1.0.0
       '@nadameu/finite-state-machine': ^1.0.0
-      '@nadameu/handler': ^1.0.0
       '@nadameu/opaque': ^1.0.0
       '@nadameu/predicates': ^1.1.1
       '@nadameu/resolvable': ^1.0.0
-      adt-ts: ^0.6.0
     dependencies:
       '@nadameu/create-element': link:../../lib/create-element
+      '@nadameu/either': link:../../lib/either
       '@nadameu/expect-unreachable': link:../../lib/expect-unreachable
       '@nadameu/finite-state-machine': link:../../lib/finite-state-machine
-      '@nadameu/handler': link:../../lib/handler
       '@nadameu/opaque': link:../../lib/opaque
       '@nadameu/predicates': link:../../lib/predicates
       '@nadameu/resolvable': link:../../lib/resolvable
-      adt-ts: 0.6.0
 
   userscripts/baixa-acordo-inss:
     specifiers:
@@ -1559,12 +1554,6 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
     dev: true
-
-  /adt-ts/0.6.0:
-    resolution: {integrity: sha512-9UN+IWAguSL57KV32QMMflAgDOJ16acJ0oyjBks9q8EjJBRQDu5udj88FuJZ9GR6woOyRMnoXtBKNNivyCgmCg==}
-    dependencies:
-      tslib: 2.4.0
-    dev: false
 
   /agent-base/6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
@@ -3246,6 +3235,7 @@ packages:
   /source-map/0.6.1:
     resolution: {integrity: sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==}
     engines: {node: '>=0.10.0'}
+    requiresBuild: true
     dev: true
     optional: true
 
@@ -3391,6 +3381,7 @@ packages:
 
   /tslib/2.4.0:
     resolution: {integrity: sha512-d6xOpEDfsi2CZVlPQzGeux8XMwLT9hssAsaPYExaQMuYskwb+x1x7J371tWlbBdWHroy99KnVB6qIkUbs5X3UQ==}
+    dev: true
 
   /type-check/0.3.2:
     resolution: {integrity: sha512-ZCmOJdvOWDBYJlzAoFkC+Q0+bUyEOS1ltgp1MGU03fqHG+dbi9tBFU2Rd9QKiDZFAYrhPh2JUf7rZRIuHRKtOg==}
