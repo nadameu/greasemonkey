@@ -18,6 +18,15 @@
       color: white;
       box-shadow: 0 2px 4px hsla(0, 0%, 0%, 0.5);
       background: var(--regular-bg);
+      &:disabled,
+      &:disabled:hover,
+      &:disabled:focus,
+      &:disabled:active {
+        background: #ccc;
+        color: #888;
+        box-shadow: 0 2px 4px hsla(0, 0%, 0%, 0.5);
+        translate: none;
+      }
       &:hover,
       &:focus {
         background: var(--highlighted-bg);
@@ -25,7 +34,6 @@
       &:active {
         box-shadow: none;
         translate: 0 2px;
-        // background: var(--highlighted-bg);
       }
     }
     output {
