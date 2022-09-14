@@ -1,16 +1,32 @@
 {
+  "name": "atualizar-saldos",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Atualiza o saldo de contas judiciais",
+  "author": "nadameu",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && vite build",
+    "dev": "vite",
+    "preview": "vite preview"
+  },
   "dependencies": {
-    "@nadameu/finite-state-machine": "^1.0.0",
     "@nadameu/create-element": "^1.0.0",
     "@nadameu/either": "^1.0.0",
     "@nadameu/expect-unreachable": "^1.0.0",
+    "@nadameu/finite-state-machine": "^1.0.0",
     "@nadameu/handler": "^1.0.0",
     "@nadameu/opaque": "^1.0.0",
     "@nadameu/predicates": "^1.1.1",
-    "@nadameu/resolvable": "^1.0.0"
+    "@nadameu/resolvable": "^1.0.0",
+    "preact": "10.11.0"
   },
-  "scripts": {
-    "build": "userscript build",
-    "start": "userscript serve"
+  "devDependencies": {
+    "@babel/core": "^7.19.0",
+    "@preact/preset-vite": "^2.4.0",
+    "sass": "^1.54.9",
+    "typescript": "^4.8.3",
+    "vite": "^3.1.0",
+    "vite-plugin-monkey": "^2.4.1"
   }
 }
