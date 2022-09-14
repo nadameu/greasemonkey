@@ -1,11 +1,11 @@
-import { Either, Left, Right, validateAll } from '@nadameu/either';
-import { expectUnreachable } from '@nadameu/expect-unreachable';
+import { Either, validateAll } from '@nadameu/either';
 import { createFiniteStateMachine } from '@nadameu/finite-state-machine';
-import * as p from '@nadameu/predicates';
+import { Handler } from '@nadameu/handler';
+import { JSX, render } from 'preact';
 import { NumProc } from './NumProc';
+import { obter } from './obter';
 import { adicionarProcessoAguardando } from './processosAguardando';
 import { TransicaoInvalida } from './TransicaoInvalida';
-import { FunctionComponent, render } from 'preact';
 
 export function paginaProcesso(numproc: NumProc): Either<Error[], void> {
   return validateAll([obterInformacoesAdicionais(), obterLink()]).map(
@@ -14,24 +14,24 @@ export function paginaProcesso(numproc: NumProc): Either<Error[], void> {
   );
 }
 
-function modificarPaginaProcesso({
-  informacoesAdicionais,
+type Estado =
+  | { status: 'AGUARDA_VERIFICACAO_SALDO'; tentativas: number }
+  | { status: 'COM_CONTA' }
+  | { status: 'SEM_CONTA' }
+  | { status: 'ERRO' };
+
+type Acao = { type: 'TICK' } | { type: 'CLIQUE' };
+
+function criarFSM({
   link,
   numproc,
   url,
 }: {
-  informacoesAdicionais: HTMLElement;
   link: HTMLAnchorElement;
   numproc: NumProc;
   url: string;
 }) {
-  type Estado =
-    | { status: 'AGUARDA_VERIFICACAO_SALDO'; tentativas: number }
-    | { status: 'COM_CONTA' }
-    | { status: 'SEM_CONTA' }
-    | { status: 'ERRO' };
-  type Acao = { type: 'TICK' } | { type: 'CLIQUE' };
-  const fsm = createFiniteStateMachine<Estado, Acao>(
+  return createFiniteStateMachine<Estado, Acao>(
     { status: 'AGUARDA_VERIFICACAO_SALDO', tentativas: 0 },
     {
       AGUARDA_VERIFICACAO_SALDO: {
@@ -66,6 +66,20 @@ function modificarPaginaProcesso({
     },
     (estado, acao) => ({ status: 'ERRO', erro: new TransicaoInvalida(estado, acao) })
   );
+}
+
+function modificarPaginaProcesso({
+  informacoesAdicionais,
+  link,
+  numproc,
+  url,
+}: {
+  informacoesAdicionais: HTMLElement;
+  link: HTMLAnchorElement;
+  numproc: NumProc;
+  url: string;
+}) {
+  const fsm = criarFSM({ link, numproc, url });
 
   {
     const timer = window.setInterval(() => {
@@ -79,51 +93,14 @@ function modificarPaginaProcesso({
     });
   }
 
-  const App: FunctionComponent<{ estado: Estado }> = ({ estado }) => {
-    switch (estado.status) {
-      case 'AGUARDA_VERIFICACAO_SALDO':
-        return <output>Verificando contas com saldo...</output>;
-
-      case 'COM_CONTA':
-        return (
-          <>
-            <output class="saldo">Há conta(s) com saldo.</output>
-            <br />
-            <button onClick={onClick}>Atualizar </button>
-          </>
-        );
-
-      case 'SEM_CONTA':
-        return (
-          <>
-            <output class="zerado">Sem saldo em conta(s).</output>
-            <br />
-            <button onClick={onClick}>Abrir página</button>
-          </>
-        );
-
-      case 'ERRO':
-        return (
-          <>
-            <output class="erro">Ocorreu um erro com a atualização de saldo de RPV.</output>
-            <br />
-            <button onClick={onClick}>Abrir página</button>
-          </>
-        );
-
-      default:
-        return expectUnreachable(estado);
-    }
-  };
-
   let div: HTMLElement | undefined;
   const sub = fsm.subscribe(estado => {
     if (!div) {
       div = document.createElement('div');
-      div.className = 'gm-atualizar-saldo';
+      div.className = 'gm-atualizar-saldo__processo';
       informacoesAdicionais.insertAdjacentElement('beforebegin', div);
     }
-    render(<App estado={estado} />, div);
+    render(<App {...{ estado, onClick }} />, div);
   });
 
   function onClick(evt: Event) {
@@ -132,16 +109,55 @@ function modificarPaginaProcesso({
   }
 }
 
+function App(props: { estado: Estado; onClick: Handler<Event> }): JSX.Element;
+function App({ estado, onClick }: { estado: Estado; onClick: Handler<Event> }) {
+  if (estado.status === 'AGUARDA_VERIFICACAO_SALDO') {
+    return <output>Verificando contas com saldo...</output>;
+  }
+
+  interface InfoMensagem {
+    classe: string;
+    mensagem: string;
+    rotuloBotao: string;
+  }
+  const infoMensagem = ((): InfoMensagem => {
+    switch (estado.status) {
+      case 'COM_CONTA':
+        return {
+          classe: 'saldo',
+          mensagem: 'Há conta(s) com saldo.',
+          rotuloBotao: 'Atualizar',
+        };
+
+      case 'SEM_CONTA':
+        return {
+          classe: 'zerado',
+          mensagem: 'Sem saldo em conta(s).',
+          rotuloBotao: 'Abrir página',
+        };
+
+      case 'ERRO':
+        return {
+          classe: 'erro',
+          mensagem: 'Ocorreu um erro com a atualização de saldo de RPV.',
+          rotuloBotao: 'Abrir página',
+        };
+    }
+  })();
+  return (
+    <>
+      <span class={infoMensagem.classe}>{infoMensagem.mensagem}</span>{' '}
+      <button type="button" onClick={onClick}>
+        {infoMensagem.rotuloBotao}
+      </button>
+    </>
+  );
+}
+
 function obterLink() {
   return obter<HTMLAnchorElement>('a#labelPrecatorios', 'Link não encontrado.');
 }
 
 function obterInformacoesAdicionais() {
   return obter('#fldInformacoesAdicionais', 'Tabela de informações adicionais não encontrada.');
-}
-
-function obter<T extends HTMLElement>(selector: string, msg: string) {
-  const elt = document.querySelector<T>(selector);
-  if (p.isNull(elt)) return Left(new Error(msg));
-  else return Right(elt);
 }
