@@ -58,7 +58,12 @@ function modificarPaginaProcesso({
           return estado;
         },
       },
-      ERRO: {},
+      ERRO: {
+        CLIQUE: (_, estado) => {
+          window.open(url);
+          return estado;
+        },
+      },
     },
     (estado, acao) => ({ status: 'ERRO', erro: new TransicaoInvalida(estado, acao) })
   );
@@ -81,13 +86,31 @@ function modificarPaginaProcesso({
         return <output>Verificando contas com saldo...</output>;
 
       case 'COM_CONTA':
-        return <button onClick={onClick}>Atualizar saldo RPV</button>;
+        return (
+          <>
+            <output class="saldo">Há conta(s) com saldo.</output>
+            <br />
+            <button onClick={onClick}>Atualizar </button>
+          </>
+        );
 
       case 'SEM_CONTA':
-        return <button onClick={onClick}>Verificar saldo RPV</button>;
+        return (
+          <>
+            <output class="zerado">Sem saldo em conta(s).</output>
+            <br />
+            <button onClick={onClick}>Abrir página</button>
+          </>
+        );
 
       case 'ERRO':
-        return <output class="erro">Ocorreu um erro com a atualização de saldo de RPV.</output>;
+        return (
+          <>
+            <output class="erro">Ocorreu um erro com a atualização de saldo de RPV.</output>
+            <br />
+            <button onClick={onClick}>Abrir página</button>
+          </>
+        );
 
       default:
         return expectUnreachable(estado);
