@@ -1,12 +1,11 @@
 import { Either, Left, Right, traverse } from '@nadameu/either';
-import { expectUnreachable } from '@nadameu/expect-unreachable';
-import { createFiniteStateMachine } from '@nadameu/finite-state-machine';
 import { Handler } from '@nadameu/handler';
 import * as p from '@nadameu/predicates';
+import { render } from 'preact';
+import { makeTaggedUnion, MemberType, none } from 'safety-match';
+import { createStore } from './createStore';
 import { NumProc } from './NumProc';
 import { obterProcessosAguardando, removerProcessoAguardando } from './processosAguardando';
-import { TransicaoInvalida } from './TransicaoInvalida';
-import { render } from 'preact';
 
 declare function atualizarSaldo(
   numProcessoOriginario: string,
@@ -19,22 +18,19 @@ declare function atualizarSaldo(
   qtdMovimentos: number
 ): void;
 
-const PREFIXO_MSG = '<Atualizar saldo RPV>: ';
-const PREFIXO_MSG_HTML = PREFIXO_MSG.replace('<', '&lt;').replace('>', '&gt;');
+const Estado = makeTaggedUnion({
+  Ocioso: (infoContas: InfoConta[]) => ({ infoContas }),
+  Atualizando: (infoContas: InfoConta[], conta: number) => ({ infoContas, conta }),
+  Erro: (erro: Error) => ({ erro }),
+});
+type Estado = MemberType<typeof Estado>;
 
-type Estado =
-  | { status: 'ATUALIZANDO_BLOQUEIOS'; fns: Array<() => void>; conta: number }
-  | { status: 'ATUALIZANDO_SALDO'; fns: Array<() => void>; conta: number }
-  | { status: 'CONTAS_ATUALIZADAS'; qtd: number }
-  | { status: 'ERRO'; erro: Error }
-  | { status: 'CONTAS_OBTIDAS'; fns: Array<() => void> }
-  | { status: 'OBTER_CONTAS' };
-type Acao =
-  | { type: 'CLIQUE' }
-  | { type: 'CONTAS_OBTIDAS'; fns: Array<() => void> }
-  | { type: 'SALDO_ATUALIZADO' }
-  | { type: 'BLOQUEIOS_ATUALIZADOS' }
-  | { type: 'ERRO_ATUALIZACAO'; erro: string };
+const Acao = makeTaggedUnion({
+  Atualizar: none,
+  SaldoAtualizado: (saldo: number) => ({ saldo }),
+  ErroComunicacao: (mensagem?: string) => ({ mensagem }),
+});
+type Acao = MemberType<typeof Acao>;
 
 export function paginaContas(numproc: NumProc): Either<Error[], void> {
   const atualizarAutomaticamente = obterProcessosAguardando().includes(numproc);
@@ -44,215 +40,213 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
 
   const barra = document.getElementById('divInfraBarraLocalizacao');
   if (!barra) {
-    const msg = 'Não foi possível obter um local para exibir o resultado.';
-    window.alert(`${PREFIXO_MSG}${msg}`);
-    throw new Error(msg);
+    return Left([new Error('Barra de localização não encontrada.')]);
   }
   const div = document.createElement('div');
-  div.className = 'gm-atualizar-saldo';
-  const output = barra.insertAdjacentElement('afterend', div)!;
+  div.className = 'gm-atualizar-saldo__contas';
+  barra.insertAdjacentElement('afterend', div)!;
 
-  const fsm = createFiniteStateMachine<Estado, Acao>(
-    { status: 'OBTER_CONTAS' },
-    {
-      OBTER_CONTAS: {
-        CONTAS_OBTIDAS: ({ fns }) => {
-          if (fns.length === 0 || !atualizarAutomaticamente) {
-            return { status: 'CONTAS_OBTIDAS', fns };
-          } else {
-            ouvirXHR(x => fsm.dispatch(mapXHR(x)));
-            fns[0]!();
-            return { status: 'ATUALIZANDO_SALDO', fns, conta: 0 };
-          }
+  const store = createStore<Estado, Acao>(
+    () =>
+      obterContas().match<Estado>({
+        Left: Estado.Erro,
+        Right: Estado.Ocioso,
+      }),
+    (estado, acao) =>
+      acao.match({
+        Atualizar: () =>
+          estado.match({
+            Erro: () => estado,
+            Ocioso: ({ infoContas }) => {
+              ouvirXHR(x => store.dispatch(x));
+              const primeiraConta = findIndex(infoContas, x => x.atualizacao !== null);
+              if (primeiraConta < 0) {
+                // Existem contas, mas não podem ser atualizadas. Ex.: Banco do Brasil
+                return estado;
+              }
+              infoContas[primeiraConta]!.atualizacao!();
+              return Estado.Atualizando(infoContas, primeiraConta);
+            },
+            Atualizando: () =>
+              Estado.Erro(new Error('Tentativa de atualização durante outra atualização.')),
+          }),
+        SaldoAtualizado: ({ saldo }) =>
+          estado.match({
+            Erro: () => estado,
+            Ocioso: () => estado,
+            Atualizando: ({ conta, infoContas }) => {
+              const infoNova = infoContas
+                .slice(0, conta)
+                .concat([{ saldo, atualizacao: null }])
+                .concat(infoContas.slice(conta + 1));
+              const proxima = findIndex(infoNova, x => x.atualizacao !== null, conta + 1);
+              if (proxima < 0) return Estado.Ocioso(infoNova);
+              infoNova[proxima]!.atualizacao!();
+              return Estado.Atualizando(infoNova, proxima);
+            },
+          }),
+        ErroComunicacao: ({ mensagem = 'Ocorreu um erro na atualização dos saldos.' }) => {
+          console.error(new Error(mensagem));
+          return estado.match({ Erro: () => estado, _: () => Estado.Erro(new Error(mensagem)) });
         },
-      },
-      ATUALIZANDO_SALDO: {
-        SALDO_ATUALIZADO: (_, { fns, conta }) => ({ status: 'ATUALIZANDO_BLOQUEIOS', fns, conta }),
-        ERRO_ATUALIZACAO: ({ erro }) => ({
-          status: 'ERRO',
-          erro: new Error('Erro na atualização das contas.'),
-        }),
-      },
-      ATUALIZANDO_BLOQUEIOS: {
-        BLOQUEIOS_ATUALIZADOS: (acao, estado) => {
-          const proxima = estado.conta + 1;
-          if (proxima >= estado.fns.length) {
-            return { status: 'CONTAS_ATUALIZADAS', qtd: estado.fns.length };
-          } else {
-            estado.fns[proxima]!();
-            return { status: 'ATUALIZANDO_SALDO', fns: estado.fns, conta: proxima };
-          }
-        },
-        ERRO_ATUALIZACAO: ({ erro }) => ({
-          status: 'ERRO',
-          erro: new Error('Erro na atualização das contas.'),
-        }),
-      },
-      CONTAS_ATUALIZADAS: {},
-      CONTAS_OBTIDAS: {
-        CLIQUE: (acao, estado) => {
-          ouvirXHR(x => fsm.dispatch(mapXHR(x)));
-          estado.fns[0]!();
-          return { status: 'ATUALIZANDO_SALDO', fns: estado.fns, conta: 0 };
-        },
-      },
-      ERRO: {},
-    },
-    (estado, acao) => ({ status: 'ERRO', erro: new TransicaoInvalida(estado, acao) })
+      })
   );
 
-  fsm.subscribe(update);
-  obterContas();
+  store.subscribe(update);
+  if (atualizarAutomaticamente) {
+    store.dispatch(Acao.Atualizar);
+  }
   return Right(undefined as void);
 
   function App({ estado }: { estado: Estado }) {
-    let mensagem: string;
-    switch (estado.status) {
-      case 'OBTER_CONTAS':
+    return estado.match({
+      Atualizando: ({ conta }) => <span>Atualizando conta {conta + 1}...</span>,
+      Ocioso: ({ infoContas }) => {
+        const contasComSaldo = infoContas.filter(x => x.saldo > 0).length;
+        const contasAtualizaveis = infoContas
+          .map(x => x.atualizacao)
+          .filter((x): x is () => void => x !== null);
+        const mensagem =
+          contasComSaldo === 0 ? (
+            <span class="zerado">Sem saldo em conta(s).</span>
+          ) : (
+            <span class="saldo">Há {contasComSaldo} conta(s) com saldo.</span>
+          );
+        const botao =
+          contasAtualizaveis.length === 0 ? null : <button onClick={onClick}>Atualizar</button>;
         return (
           <>
-            <output>Obtendo informações das contas...</output>
-          </>
-        );
-
-      case 'CONTAS_OBTIDAS':
-        return (
-          <>
-            <output class={estado.fns.length === 0 ? 'zerado' : 'saldo'}>
-              {estado.fns.length} conta(s) encontrada(s).
-            </output>
+            {mensagem}
             <br />
-            <button onClick={onClick} disabled={estado.fns.length === 0}>
-              Atualizar
-            </button>
+            {botao}
           </>
         );
-
-      case 'ATUALIZANDO_BLOQUEIOS':
-        return (
-          <>
-            <output>Atualizando bloqueios da conta {estado.conta + 1}...</output>
-          </>
-        );
-
-      case 'ATUALIZANDO_SALDO':
-        return (
-          <>
-            <output>Atualizando saldo da conta {estado.conta + 1}...</output>
-          </>
-        );
-
-      case 'CONTAS_ATUALIZADAS':
-        return (
-          <>
-            <output>{estado.qtd} conta(s) atualizada(s).</output>
-          </>
-        );
-
-      case 'ERRO':
-        return (
-          <>
-            <output class="erro">{estado.erro.message}</output>
-          </>
-        );
-
-      default:
-        expectUnreachable(estado);
-    }
-    return (
-      <>
-        <output>Mensagem</output>
-        <br />
-        <button onClick={onClick}>Atualizar saldos</button>
-      </>
-    );
+      },
+      Erro: ({ erro }) => (
+        <>
+          <span class="erro">{erro.message}</span>
+        </>
+      ),
+    });
   }
 
   function onClick(evt: Event) {
     evt.preventDefault();
-    fsm.dispatch({ type: 'CLIQUE' });
+    store.dispatch(Acao.Atualizar);
   }
 
   function update(estado: Estado) {
     render(<App estado={estado} />, div);
   }
-
-  function obterContas() {
-    const linksAtualizar = document.querySelectorAll<HTMLAnchorElement>(
-      'a[href^="javascript:atualizarSaldo("]'
-    );
-    if (linksAtualizar.length === 0) return fsm.dispatch({ type: 'CONTAS_OBTIDAS', fns: [] });
-    const jsLinkRE =
-      /^javascript:atualizarSaldo\('(?<numProcessoOriginario>\d{20})','(?<agencia>\d{4})',(?<conta>\d+),'(?<idProcesso>\d+)','(?<numProcesso>\d{20})',(?<numBanco>\d{3}),'(?<idRequisicaoBeneficiarioPagamento>\d+)',(?<qtdMovimentos>\d+)\)$/;
-    const temCamposObrigatorios = p.hasShape({
-      numProcessoOriginario: p.isString,
-      agencia: p.isString,
-      conta: p.isString,
-      idProcesso: p.isString,
-      numProcesso: p.isString,
-      numBanco: p.isString,
-      idRequisicaoBeneficiarioPagamento: p.isString,
-      qtdMovimentos: p.isString,
-    });
-    const fnsAtualizacao = traverse(linksAtualizar, link => {
-      const groups = link.href.match(jsLinkRE)?.groups;
-      if (!temCamposObrigatorios(groups))
-        return Left(new Error(`Link de atualização desconhecido: "${link.href}".`));
-
-      const {
-        numProcessoOriginario,
-        agencia,
-        conta: strConta,
-        idProcesso,
-        numProcesso,
-        numBanco: strBanco,
-        idRequisicaoBeneficiarioPagamento,
-        qtdMovimentos: strQtdMovimentos,
-      } = groups;
-      const [conta, numBanco, qtdMovimentos] = [
-        Number(strConta),
-        Number(strBanco),
-        Number(strQtdMovimentos),
-      ];
-      return Right(() =>
-        atualizarSaldo(
-          numProcessoOriginario,
-          agencia,
-          conta,
-          idProcesso,
-          numProcesso,
-          numBanco,
-          idRequisicaoBeneficiarioPagamento,
-          qtdMovimentos
-        )
-      );
-    });
-    fnsAtualizacao.match({
-      Left: error => {
-        fsm.dispatch({ type: 'ERRO_ATUALIZACAO', erro: error.message });
-      },
-      Right: fns => {
-        fsm.dispatch({ type: 'CONTAS_OBTIDAS', fns });
-      },
-    });
+  function obterContas(): Either<Error, InfoConta[]> {
+    const tabela = document.querySelector<HTMLTableElement>('#divInfraAreaDadosDinamica > table');
+    if (!tabela) return Right([]);
+    return traverse(
+      tabela.querySelectorAll<HTMLTableRowElement>('tr[id^="tdConta"]'),
+      obterInfoContaLinha
+    ).mapLeft(e => new Error('Erro ao obter dados das contas.' + e));
   }
 
-  function ouvirXHR(handler: Handler<{ resultado: string; texto: string }>) {
+  function ouvirXHR(handler: Handler<Acao>) {
     $.ajaxSetup({
       complete(xhr, resultado) {
-        handler({ resultado, texto: xhr.responseText });
+        if (!p.hasShape({ url: p.isString })(this)) return;
+        const url = new URL(this.url, document.location.href);
+        if (!/\/controlador_ajax\.php$/.test(url.pathname)) return;
+        if (url.searchParams.get('acao_ajax') !== 'atualizar_precatorio_rpv') return;
+        try {
+          p.check(p.isLiteral(200), xhr.status);
+          const responseXML = xhr.responseXML;
+          if (responseXML) {
+            const erros = responseXML.querySelectorAll('erros > erro');
+            const mensagem =
+              erros.length === 0
+                ? undefined
+                : Array.from(erros, erro => erro.getAttribute('descricao')?.trim() ?? '')
+                    .filter(x => x !== '')
+                    .join('\n') || undefined;
+            return handler(Acao.ErroComunicacao(mensagem));
+          }
+          const json = p.check(
+            p.hasShape({ saldo_valor_total_sem_formatacao: p.isString }),
+            xhr.responseJSON
+          );
+          const novoSaldo = p.check(
+            (x): x is number => !Number.isNaN(x),
+            Number(json.saldo_valor_total_sem_formatacao)
+          );
+          return handler(Acao.SaldoAtualizado(novoSaldo));
+        } catch (err) {
+          const mensagem = err instanceof Error ? err.message : undefined;
+          return handler(Acao.ErroComunicacao(mensagem));
+        }
       },
     });
   }
+}
 
-  function mapXHR({ resultado, texto }: { resultado: string; texto: string }): Acao {
-    if (resultado === 'success') {
-      if (texto.match(/"saldo_valor_disponivel"/)) {
-        return { type: 'SALDO_ATUALIZADO' };
-      } else if (texto.match(/"htmlBloqueiosConta"/)) {
-        return { type: 'BLOQUEIOS_ATUALIZADOS' };
-      }
+interface InfoConta {
+  saldo: number;
+  atualizacao: (() => void) | null;
+}
+
+const jsLinkRE =
+  /^javascript:atualizarSaldo\('(\d{20})','(\d{4})',(\d+),'(\d+)','(\d{20})',(\d{3}),'(\d+)',(\d+)\)$/;
+
+function obterInfoContaLinha(row: HTMLTableRowElement): Either<null, InfoConta> {
+  if (row.cells.length !== 15) return Left(null);
+  const celulaSaldo = row.querySelector('td[id^="saldoRemanescente"]');
+  if (!celulaSaldo) return Left(null);
+  const textoSaldo = celulaSaldo.textContent ?? '';
+  const match = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
+  if (!match || match.length < 2) return Left(null);
+  const [, numeros] = match as [string, string];
+  const saldo = Number(numeros.replace(/\./g, '').replace(',', '.'));
+  const link = row.cells[row.cells.length - 1]!.querySelector<HTMLAnchorElement>(
+    'a[href^="javascript:atualizarSaldo("]'
+  );
+  let atualizacao: (() => void) | null = null;
+  if (link) {
+    const match = link.href.match(jsLinkRE);
+    if (!match || match.length < 9) return Left(null);
+    const [
+      _,
+      numProcessoOriginario,
+      agencia,
+      strConta,
+      idProcesso,
+      numProcesso,
+      strBanco,
+      idRequisicaoBeneficiarioPagamento,
+      strQtdMovimentos,
+    ] = match as [string, string, string, string, string, string, string, string, string];
+    const [conta, numBanco, qtdMovimentos] = [
+      Number(strConta),
+      Number(strBanco),
+      Number(strQtdMovimentos),
+    ].filter(x => !Number.isNaN(x));
+    if (conta === undefined || numBanco === undefined || qtdMovimentos === undefined) {
+      return Left(null);
     }
-    return { type: 'ERRO_ATUALIZACAO', erro: texto };
+    atualizacao = () =>
+      atualizarSaldo(
+        numProcessoOriginario,
+        agencia,
+        conta,
+        idProcesso,
+        numProcesso,
+        numBanco,
+        idRequisicaoBeneficiarioPagamento,
+        qtdMovimentos
+      );
   }
+  return Right({ saldo, atualizacao });
+}
+
+function findIndex<T>(xs: ArrayLike<T>, pred: (_: T) => boolean, startAt = 0) {
+  const len = xs.length;
+  for (let i = startAt; i < len; i++) {
+    if (pred(xs[i]!)) return i;
+  }
+  return -1;
 }

@@ -1,6 +1,6 @@
 import { Handler } from '@nadameu/handler';
 
-interface Store<S, A extends { type: string }> {
+interface Store<S, A> {
   dispatch(action: A): void;
   getState(): S;
   subscribe(f: Handler<S>): Subscription;
@@ -9,28 +9,26 @@ interface Subscription {
   unsubscribe(): void;
 }
 
-export function createStore<S, A extends { type: string }>(
-  fn: () => Iterator<S, never, A>
+export function createStore<S, A>(
+  getInitialState: () => S,
+  reducer: (state: S, action: A) => S
 ): Store<S, A> {
-  const it = fn();
   const listeners = new Set<Handler<S>>();
-
-  return {
-    dispatch(action: A): void {
-      const result = it.next(action);
-      listeners.forEach(l => l(result.value));
-    },
-    getState(): S {
-      return it.next().value;
-    },
-    subscribe(f: Handler<S>): { unsubscribe(): void } {
-      listeners.add(f);
-      f(it.next().value);
-      return {
-        unsubscribe() {
-          listeners.delete(f);
-        },
-      };
-    },
-  };
+  let state = getInitialState();
+  return { dispatch, getState, subscribe };
+  function dispatch(action: A) {
+    state = reducer(state, action);
+    for (const l of listeners) l(state);
+  }
+  function getState() {
+    return state;
+  }
+  function subscribe(listener: Handler<S>): { unsubscribe(): void } {
+    listeners.add(listener);
+    listener(state);
+    return { unsubscribe };
+    function unsubscribe() {
+      listeners.delete(listener);
+    }
+  }
 }
