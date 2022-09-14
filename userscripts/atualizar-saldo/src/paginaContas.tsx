@@ -6,6 +6,7 @@ import * as p from '@nadameu/predicates';
 import { NumProc } from './NumProc';
 import { obterProcessosAguardando, removerProcessoAguardando } from './processosAguardando';
 import { TransicaoInvalida } from './TransicaoInvalida';
+import { render } from 'preact';
 
 declare function atualizarSaldo(
   numProcessoOriginario: string,
@@ -26,16 +27,20 @@ type Estado =
   | { status: 'ATUALIZANDO_SALDO'; fns: Array<() => void>; conta: number }
   | { status: 'CONTAS_ATUALIZADAS'; qtd: number }
   | { status: 'ERRO'; erro: Error }
+  | { status: 'CONTAS_OBTIDAS'; fns: Array<() => void> }
   | { status: 'OBTER_CONTAS' };
 type Acao =
+  | { type: 'CLIQUE' }
   | { type: 'CONTAS_OBTIDAS'; fns: Array<() => void> }
   | { type: 'SALDO_ATUALIZADO' }
   | { type: 'BLOQUEIOS_ATUALIZADOS' }
   | { type: 'ERRO_ATUALIZACAO'; erro: string };
 
 export function paginaContas(numproc: NumProc): Either<Error[], void> {
-  if (!obterProcessosAguardando().includes(numproc)) return Right(undefined as void);
-  removerProcessoAguardando(numproc);
+  const atualizarAutomaticamente = obterProcessosAguardando().includes(numproc);
+  if (atualizarAutomaticamente) {
+    removerProcessoAguardando(numproc);
+  }
 
   const barra = document.getElementById('divInfraBarraLocalizacao');
   if (!barra) {
@@ -43,18 +48,17 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
     window.alert(`${PREFIXO_MSG}${msg}`);
     throw new Error(msg);
   }
-  const output = barra.parentNode!.insertBefore(
-    document.createElement('output'),
-    barra.nextSibling
-  );
+  const div = document.createElement('div');
+  div.className = 'gm-atualizar-saldo';
+  const output = barra.insertAdjacentElement('afterend', div)!;
 
   const fsm = createFiniteStateMachine<Estado, Acao>(
     { status: 'OBTER_CONTAS' },
     {
       OBTER_CONTAS: {
         CONTAS_OBTIDAS: ({ fns }) => {
-          if (fns.length === 0) {
-            return { status: 'CONTAS_ATUALIZADAS', qtd: 0 };
+          if (fns.length === 0 || !atualizarAutomaticamente) {
+            return { status: 'CONTAS_OBTIDAS', fns };
           } else {
             ouvirXHR(x => fsm.dispatch(mapXHR(x)));
             fns[0]!();
@@ -85,55 +89,92 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
         }),
       },
       CONTAS_ATUALIZADAS: {},
+      CONTAS_OBTIDAS: {
+        CLIQUE: (acao, estado) => {
+          ouvirXHR(x => fsm.dispatch(mapXHR(x)));
+          estado.fns[0]!();
+          return { status: 'ATUALIZANDO_SALDO', fns: estado.fns, conta: 0 };
+        },
+      },
       ERRO: {},
     },
     (estado, acao) => ({ status: 'ERRO', erro: new TransicaoInvalida(estado, acao) })
   );
 
-  fsm.subscribe(render);
+  fsm.subscribe(update);
   obterContas();
   return Right(undefined as void);
 
-  function render(estado: Estado) {
-    output.innerHTML = obterHtml(estado);
+  function App({ estado }: { estado: Estado }) {
+    let mensagem: string;
+    switch (estado.status) {
+      case 'OBTER_CONTAS':
+        return (
+          <>
+            <output>Obtendo informações das contas...</output>
+          </>
+        );
 
-    function obterHtml(estado: Estado) {
-      switch (estado.status) {
-        case 'ATUALIZANDO_BLOQUEIOS':
-          return mensagem(`Atualizando bloqueios da conta ${estado.conta + 1}...`);
+      case 'CONTAS_OBTIDAS':
+        return (
+          <>
+            <output class={estado.fns.length === 0 ? 'zerado' : 'saldo'}>
+              {estado.fns.length} conta(s) encontrada(s).
+            </output>
+            <br />
+            <button onClick={onClick} disabled={estado.fns.length === 0}>
+              Atualizar
+            </button>
+          </>
+        );
 
-        case 'ATUALIZANDO_SALDO':
-          return mensagem(`Atualizando saldo da conta ${estado.conta + 1}...`);
+      case 'ATUALIZANDO_BLOQUEIOS':
+        return (
+          <>
+            <output>Atualizando bloqueios da conta {estado.conta + 1}...</output>
+          </>
+        );
 
-        case 'CONTAS_ATUALIZADAS':
-          if (estado.qtd === 0) {
-            return mensagem(`Não é possível atualizar o saldo das contas.`, 'erro');
-          } else {
-            const s = estado.qtd > 1 ? 's' : '';
-            return mensagem(`${estado.qtd} conta${s} atualizada${s}.`, 'fim');
-          }
+      case 'ATUALIZANDO_SALDO':
+        return (
+          <>
+            <output>Atualizando saldo da conta {estado.conta + 1}...</output>
+          </>
+        );
 
-        case 'ERRO':
-          return mensagem(estado.erro.message, 'erro');
+      case 'CONTAS_ATUALIZADAS':
+        return (
+          <>
+            <output>{estado.qtd} conta(s) atualizada(s).</output>
+          </>
+        );
 
-        case 'OBTER_CONTAS':
-          return mensagem(`Obtendo dados sobre as contas...`);
+      case 'ERRO':
+        return (
+          <>
+            <output class="erro">{estado.erro.message}</output>
+          </>
+        );
 
-        default:
-          return expectUnreachable(estado);
-      }
+      default:
+        expectUnreachable(estado);
     }
+    return (
+      <>
+        <output>Mensagem</output>
+        <br />
+        <button onClick={onClick}>Atualizar saldos</button>
+      </>
+    );
+  }
 
-    function mensagem(texto: string, estilo?: 'fim' | 'erro') {
-      const style =
-        estilo === 'fim'
-          ? 'color: darkgreen;'
-          : estilo === 'erro'
-          ? 'color: red; font-weight: bold;'
-          : null;
-      if (style) return `<span style="${style}">${PREFIXO_MSG_HTML}${texto}</span>`;
-      else return `${PREFIXO_MSG_HTML}${texto}`;
-    }
+  function onClick(evt: Event) {
+    evt.preventDefault();
+    fsm.dispatch({ type: 'CLIQUE' });
+  }
+
+  function update(estado: Estado) {
+    render(<App estado={estado} />, div);
   }
 
   function obterContas() {
