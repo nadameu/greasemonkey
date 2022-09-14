@@ -6,7 +6,6 @@ import { NumProc } from './NumProc';
 import { adicionarProcessoAguardando } from './processosAguardando';
 import { TransicaoInvalida } from './TransicaoInvalida';
 import { FunctionComponent, render } from 'preact';
-import './paginaProcesso.scss';
 
 export function paginaProcesso(numproc: NumProc): Either<Error[], void> {
   return validateAll([obterInformacoesAdicionais(), obterLink()]).map(
