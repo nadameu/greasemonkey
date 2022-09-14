@@ -3,6 +3,7 @@ import * as p from '@nadameu/predicates';
 import { isNumproc, NumProc } from './NumProc';
 import { paginaContas } from './paginaContas';
 import { paginaProcesso } from './paginaProcesso';
+import './main.scss';
 
 const paginas = {
   processo_selecionar: paginaProcesso,
