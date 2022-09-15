@@ -144,7 +144,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
     return traverse(
       tabela.querySelectorAll<HTMLTableRowElement>('tr[id^="tdConta"]'),
       obterInfoContaLinha
-    ).mapLeft(e => new Error('Erro ao obter dados das contas.' + e));
+    ).mapLeft(e => new Error('Erro ao obter dados das contas.'));
   }
 
   function ouvirXHR(handler: Handler<Acao>) {
