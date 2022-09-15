@@ -15,6 +15,11 @@ function buildUrl(acao: string) {
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  build: {
+    outDir: '../..',
+    emptyOutDir: false,
+    target: 'firefox91',
+  },
   plugins: [
     preact(),
     monkey({
