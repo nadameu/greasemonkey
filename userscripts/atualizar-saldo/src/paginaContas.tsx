@@ -2,7 +2,7 @@ import { Either, Left, Right, traverse } from '@nadameu/either';
 import { Handler } from '@nadameu/handler';
 import * as p from '@nadameu/predicates';
 import { render } from 'preact';
-import { makeTaggedUnion, MemberType, none } from 'safety-match';
+import { createTaggedUnion, Static } from './match';
 import { createStore } from './createStore';
 import { NumProc } from './NumProc';
 import { obterProcessosAguardando, removerProcessoAguardando } from './processosAguardando';
@@ -18,19 +18,19 @@ declare function atualizarSaldo(
   qtdMovimentos: number
 ): void;
 
-const Estado = makeTaggedUnion({
-  Ocioso: (infoContas: InfoConta[]) => ({ infoContas }),
+const Estado = createTaggedUnion({
+  Ocioso: (infoContas: InfoConta[]) => infoContas,
   Atualizando: (infoContas: InfoConta[], conta: number) => ({ infoContas, conta }),
-  Erro: (erro: Error) => ({ erro }),
+  Erro: (erro: Error) => erro,
 });
-type Estado = MemberType<typeof Estado>;
+type Estado = Static<typeof Estado>;
 
-const Acao = makeTaggedUnion({
-  Atualizar: none,
+const Acao = createTaggedUnion({
+  Atualizar: null,
   SaldoAtualizado: (saldo: number) => ({ saldo }),
   ErroComunicacao: (mensagem?: string) => ({ mensagem }),
 });
-type Acao = MemberType<typeof Acao>;
+type Acao = Static<typeof Acao>;
 
 export function paginaContas(numproc: NumProc): Either<Error[], void> {
   const atualizarAutomaticamente = obterProcessosAguardando().includes(numproc);
@@ -57,7 +57,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
         Atualizar: () =>
           estado.match({
             Erro: () => estado,
-            Ocioso: ({ infoContas }) => {
+            Ocioso: infoContas => {
               ouvirXHR(x => store.dispatch(x));
               const primeiraConta = findIndex(infoContas, x => x.atualizacao !== null);
               if (primeiraConta < 0) {
@@ -101,7 +101,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
   function App({ estado }: { estado: Estado }) {
     return estado.match({
       Atualizando: ({ conta }) => <span>Atualizando conta {conta + 1}...</span>,
-      Ocioso: ({ infoContas }) => {
+      Ocioso: infoContas => {
         const contasComSaldo = infoContas.filter(x => x.saldo > 0).length;
         const contasAtualizaveis = infoContas
           .map(x => x.atualizacao)
@@ -122,7 +122,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
           </>
         );
       },
-      Erro: ({ erro }) => (
+      Erro: erro => (
         <>
           <span class="erro">{erro.message}</span>
         </>
