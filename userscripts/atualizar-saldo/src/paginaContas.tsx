@@ -196,7 +196,11 @@ const jsLinkRE =
 function obterInfoContaLinha(row: HTMLTableRowElement): Either<null, InfoConta> {
   if (row.cells.length !== 15) return Left(null);
   const celulaSaldo = row.querySelector('td[id^="saldoRemanescente"]');
-  if (!celulaSaldo) return Left(null);
+  if (!celulaSaldo) {
+    if ((row.cells[12]?.textContent ?? '').match(/^Valor estornado/))
+      return Right({ saldo: 0, atualizacao: null });
+    return Left(null);
+  }
   const textoSaldo = celulaSaldo.textContent ?? '';
   const match = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
   if (!match || match.length < 2) return Left(null);
