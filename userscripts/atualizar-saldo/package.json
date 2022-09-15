@@ -19,8 +19,7 @@
     "@nadameu/opaque": "^1.0.0",
     "@nadameu/predicates": "^1.1.1",
     "@nadameu/resolvable": "^1.0.0",
-    "preact": "10.11.0",
-    "safety-match": "^0.4.4"
+    "preact": "10.11.0"
   },
   "devDependencies": {
     "@babel/core": "^7.19.0",
