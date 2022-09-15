@@ -147,7 +147,7 @@ function App({ estado, onClick }: { estado: Estado; onClick: Handler<Event> }) {
   return (
     <>
       <span class={infoMensagem.classe}>{infoMensagem.mensagem}</span>{' '}
-      <button type="button" onClick={onClick}>
+      <button type="button" onClick={onClick} class={infoMensagem.classe}>
         {infoMensagem.rotuloBotao}
       </button>
     </>
