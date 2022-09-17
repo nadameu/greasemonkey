@@ -1,24 +1,8 @@
 type CreatorFn<Args extends any[] = any[], Result = unknown> = (...args: Args) => Result;
 type Definitions<D> = { [K in keyof D]: CreatorFn | null };
 
-function matchNotFound(_data?: unknown) {
-  throw new Error('Match not found.');
-}
-
-class Variant {
-  constructor(readonly tag: keyof any) {}
-  match(matchers: Record<keyof any, Function>, otherwise: Function = matchNotFound) {
-    return this.tag in matchers ? matchers[this.tag]!() : otherwise();
-  }
-}
-
-class VariantWith<Data> extends Variant {
-  constructor(tag: keyof any, readonly data: Data) {
-    super(tag);
-  }
-  match(matchers: Record<keyof any, Function>, otherwise: Function = matchNotFound) {
-    return this.tag in matchers ? matchers[this.tag]!(this.data) : otherwise(this.data);
-  }
+function matchNotFound(variant: Tagged<keyof any>) {
+  throw new Error(`Not matched: "${String(variant.tag)}".`);
 }
 
 interface Tagged<Tag extends keyof any> {
@@ -35,28 +19,31 @@ type PartialMatchers<T extends AnyTagged, P extends T['tag'], U> = {
     ? () => U
     : never;
 };
-type Matchers<T extends AnyTagged, U> = {
+type Matchers<T extends AnyTagged> = {
   [K in T['tag']]: T extends TaggedWith<K, infer Data>
-    ? (data: Data) => U
+    ? (data: Data) => unknown
     : T extends Tagged<K>
-    ? () => U
+    ? () => unknown
     : never;
 };
 
-export function match<T extends AnyTagged, U>(obj: T, matchers: Matchers<T, U>): U;
+export function match<T extends AnyTagged, M extends Matchers<T>>(
+  obj: T,
+  matchers: M
+): M[keyof M] extends (...args: any[]) => infer U ? U : never;
 export function match<T extends AnyTagged, P extends T['tag'], U>(
   obj: T,
   matchers: PartialMatchers<T, P, U>,
-  otherwise: () => U
+  otherwise: (tagged: Extract<T, { tag: Exclude<T['tag'], P> }>) => U
 ): U;
-export function match() {}
-
-const result0 = match(null as any as MyType, {
-  Pending: () => 42,
-  Rejected: ({ error }) => 3,
-  Resolved: x => x,
-});
-const result1 = match(null as any as MyType, { Resolved: x => x, Pending: () => 8 }, () => 3);
+export function match(
+  obj: TaggedWith<keyof any, unknown>,
+  matchers: Record<keyof any, Function>,
+  otherwise: Function = matchNotFound
+) {
+  if (!obj.tag) throw new Error(`Object does not have a valid 'tag' property.`);
+  return obj.tag in matchers ? matchers[obj.tag]!(obj.data) : otherwise(obj);
+}
 
 export function createTaggedUnion<D extends Definitions<D>>(definitions: D) {
   type Tagged<Tag extends keyof any> = {
@@ -70,13 +57,9 @@ export function createTaggedUnion<D extends Definitions<D>>(definitions: D) {
   type TaggedWith<Tag extends keyof any, Data> = Tagged<Tag> & {
     data: Data;
   };
-  // type TaggedWith<K extends keyof D, R = unknown> = { [T in TagName]: K } & R extends infer Dict
-  //   ? { [K in keyof Dict]: Dict[K] }
-  //   : never;
   type MembersDict = {
     [K in keyof D]: D[K] extends CreatorFn<any[], infer R> ? TaggedWith<K, R> : Tagged<K>;
   };
-  // type Tagged = MembersDict[keyof D];
   type GetConstructors = {
     result: {
       [K in keyof D]: D[K] extends CreatorFn<infer A>
@@ -92,67 +75,24 @@ export function createTaggedUnion<D extends Definitions<D>>(definitions: D) {
 
   type Remaining<P extends keyof D> = MembersDict[P];
 
-  // type GetMatch = {
-  //   result: {
-  //     <P extends keyof D, U>(
-  //       obj: Tagged,
-  //       matchers: PartialMatchers<P, U>,
-  //       otherwise: (_: Remaining<Exclude<keyof D, P>>) => U
-  //     ): U;
-  //     <U>(obj: Tagged, matchers: Matchers<U>): U;
-  //   };
-  // };
-
-  const constructors: Partial<Record<keyof D, unknown>> = {};
-  for (const [tag, ctor] of Object.entries(definitions) as [keyof D, CreatorFn | null][]) {
-    constructors[tag] =
-      ctor === null ? new Variant(tag) : (...args: any[]) => new VariantWith(tag, ctor(...args));
+  const ctors: Partial<Record<keyof D, unknown>> = {};
+  for (const [tag, f] of Object.entries(definitions) as [keyof D, CreatorFn | null][]) {
+    if (f === null) {
+      const ctor = { tag } as Tagged<keyof D>;
+      ctor.match = match.bind(null, ctor) as Tagged<keyof D>['match'];
+      ctors[tag] = ctor;
+    } else {
+      ctors[tag] = (...args: any[]) => {
+        const ctor = { tag, data: f(...args) } as TaggedWith<keyof D, unknown>;
+        ctor.match = match.bind(null, ctor) as TaggedWith<keyof D, unknown>['match'];
+        return ctor;
+      };
+    }
   }
 
-  return constructors as GetConstructors['result'];
+  return ctors as GetConstructors['result'];
 }
 
 export type Static<C extends Record<keyof C, unknown>> = {
   [K in keyof C]: C[K] extends CreatorFn<any[], infer R> ? R : C[K];
 }[keyof C];
-
-const MyType = createTaggedUnion({
-  Pending: null,
-  Resolved: (value: number) => value,
-  Rejected: (msg?: string, cause?: Error) => ({ error: new Error(msg, { cause }) }),
-});
-
-const pending = MyType.Pending;
-const resolved = MyType.Resolved(42);
-const rejected = MyType.Rejected('a');
-
-type MyType = Static<typeof MyType>;
-
-const result = (rejected as MyType).match({
-  Pending: () => 42,
-  Rejected: () => 3,
-  Resolved: () => 17,
-});
-const result2 = (pending as MyType).match({ Resolved: x => x }, x => x.tag.length);
-
-function manualMatch(obj: MyType): number {
-  switch (obj.tag) {
-    case 'Pending':
-      obj;
-      return 0;
-
-    case 'Rejected':
-      obj;
-      return 1;
-
-    case 'Resolved':
-      obj;
-      return 2;
-
-    default:
-      return obj;
-  }
-}
-
-type A<T> = { real: (T extends 2 | 4 ? never : { value: T })['value'] };
-type B = A<1 | 2 | 3 | 4 | 5>;
