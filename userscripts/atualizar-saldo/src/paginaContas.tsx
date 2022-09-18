@@ -2,8 +2,8 @@ import { Either, Left, Right, traverse } from '@nadameu/either';
 import { Handler } from '@nadameu/handler';
 import * as p from '@nadameu/predicates';
 import { render } from 'preact';
-import { createTaggedUnion, Static } from './match';
 import { createStore } from './createStore';
+import { createTaggedUnion, Static } from './match';
 import { NumProc } from './NumProc';
 import { obterProcessosAguardando, removerProcessoAguardando } from './processosAguardando';
 
@@ -87,7 +87,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
           }),
         ErroComunicacao: ({ mensagem = 'Ocorreu um erro na atualização dos saldos.' }) => {
           console.error(new Error(mensagem));
-          return estado.match({ Erro: () => estado, }, () => Estado.Erro(new Error(mensagem)));
+          return estado.match({ Erro: () => estado }, () => Estado.Erro(new Error(mensagem)));
         },
       })
   );
