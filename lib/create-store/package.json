@@ -1,0 +1,9 @@
+{
+  "name": "@nadameu/create-store",
+  "version": "1.0.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "devDependencies": {
+    "@nadameu/handler": "workspace:^1.0.0"
+  }
+}

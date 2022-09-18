@@ -55,6 +55,12 @@ importers:
   lib/create-element:
     specifiers: {}
 
+  lib/create-store:
+    specifiers:
+      '@nadameu/handler': workspace:^1.0.0
+    devDependencies:
+      '@nadameu/handler': link:../handler
+
   lib/either:
     specifiers: {}
 
