@@ -41,7 +41,7 @@ export function match(
   matchers: Record<keyof any, Function>,
   otherwise: Function = matchNotFound
 ) {
-  if (!obj.tag) throw new Error(`Object does not have a valid 'tag' property.`);
+  if (!obj.tag) throw new Error('Object does not have a valid "tag" property.');
   return obj.tag in matchers ? matchers[obj.tag]!(obj.data) : otherwise(obj);
 }
 
