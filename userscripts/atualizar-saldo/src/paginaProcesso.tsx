@@ -1,11 +1,11 @@
 import { Either, validateAll } from '@nadameu/either';
-import { createFiniteStateMachine } from '@nadameu/finite-state-machine';
 import { Handler } from '@nadameu/handler';
 import { JSX, render } from 'preact';
+import { createStore } from './createStore';
+import { createTaggedUnion, match, Static } from './match';
 import { NumProc } from './NumProc';
 import { obter } from './obter';
 import { adicionarProcessoAguardando } from './processosAguardando';
-import { TransicaoInvalida } from './TransicaoInvalida';
 
 export function paginaProcesso(numproc: NumProc): Either<Error[], void> {
   return validateAll([obterInformacoesAdicionais(), obterLink()]).map(
@@ -14,15 +14,18 @@ export function paginaProcesso(numproc: NumProc): Either<Error[], void> {
   );
 }
 
-type Estado =
-  | { status: 'AGUARDA_VERIFICACAO_SALDO'; tentativas: number }
-  | { status: 'COM_CONTA' }
-  | { status: 'SEM_CONTA' }
-  | { status: 'ERRO' };
+const Estado = createTaggedUnion({
+  AguardaVerificacaoSaldo: (tentativas: number) => tentativas,
+  ComConta: null,
+  SemConta: null,
+  Erro: null,
+});
+type Estado = Static<typeof Estado>;
 
-type Acao = { type: 'TICK' } | { type: 'CLIQUE' };
+const Acao = createTaggedUnion({ Tick: null, Clique: null });
+type Acao = Static<typeof Acao>;
 
-function criarFSM({
+function criarArmazem({
   link,
   numproc,
   url,
@@ -31,40 +34,41 @@ function criarFSM({
   numproc: NumProc;
   url: string;
 }) {
-  return createFiniteStateMachine<Estado, Acao>(
-    { status: 'AGUARDA_VERIFICACAO_SALDO', tentativas: 0 },
-    {
-      AGUARDA_VERIFICACAO_SALDO: {
-        TICK: (acao, estado) => {
-          if (link.textContent === '') {
-            if (estado.tentativas > 30) return { status: 'ERRO' };
-            return { status: 'AGUARDA_VERIFICACAO_SALDO', tentativas: estado.tentativas + 1 };
-          }
-          if (link.textContent === 'Há conta com saldo') return { status: 'COM_CONTA' };
-          return { status: 'SEM_CONTA' };
-        },
-      },
-      COM_CONTA: {
-        CLIQUE: (acao, estado) => {
-          adicionarProcessoAguardando(numproc);
-          window.open(url);
-          return estado;
-        },
-      },
-      SEM_CONTA: {
-        CLIQUE: (acao, estado) => {
-          window.open(url);
-          return estado;
-        },
-      },
-      ERRO: {
-        CLIQUE: (_, estado) => {
-          window.open(url);
-          return estado;
-        },
-      },
-    },
-    (estado, acao) => ({ status: 'ERRO', erro: new TransicaoInvalida(estado, acao) })
+  return createStore<Estado, Acao>(
+    () => Estado.AguardaVerificacaoSaldo(0),
+    (estado, acao) =>
+      acao.match({
+        Tick: () =>
+          estado.match(
+            {
+              AguardaVerificacaoSaldo: tentativas => {
+                if (link.textContent === '') {
+                  if (tentativas > 30) return Estado.Erro;
+                  return Estado.AguardaVerificacaoSaldo(tentativas + 1);
+                }
+                if (link.textContent === 'Há conta com saldo') return Estado.ComConta;
+                return Estado.SemConta;
+              },
+              Erro: () => estado,
+            },
+            () => Estado.Erro
+          ),
+        Clique: () =>
+          estado.match(
+            {
+              ComConta: () => {
+                adicionarProcessoAguardando(numproc);
+                window.open(url);
+                return estado;
+              },
+              AguardaVerificacaoSaldo: () => Estado.Erro,
+            },
+            () => {
+              window.open(url);
+              return estado;
+            }
+          ),
+      })
   );
 }
 
@@ -79,14 +83,14 @@ function modificarPaginaProcesso({
   numproc: NumProc;
   url: string;
 }) {
-  const fsm = criarFSM({ link, numproc, url });
+  const store = criarArmazem({ link, numproc, url });
 
   {
     const timer = window.setInterval(() => {
-      fsm.dispatch({ type: 'TICK' });
+      store.dispatch(Acao.Tick);
     }, 100);
-    const sub = fsm.subscribe(estado => {
-      if (estado.status !== 'AGUARDA_VERIFICACAO_SALDO') {
+    const sub = store.subscribe(estado => {
+      if (estado.tag !== 'AguardaVerificacaoSaldo') {
         window.clearInterval(timer);
         sub.unsubscribe();
       }
@@ -94,7 +98,7 @@ function modificarPaginaProcesso({
   }
 
   let div: HTMLElement | undefined;
-  const sub = fsm.subscribe(estado => {
+  const sub = store.subscribe(estado => {
     if (!div) {
       div = document.createElement('div');
       div.className = 'gm-atualizar-saldo__processo';
@@ -105,13 +109,13 @@ function modificarPaginaProcesso({
 
   function onClick(evt: Event) {
     evt.preventDefault();
-    fsm.dispatch({ type: 'CLIQUE' });
+    store.dispatch(Acao.Clique);
   }
 }
 
 function App(props: { estado: Estado; onClick: Handler<Event> }): JSX.Element;
 function App({ estado, onClick }: { estado: Estado; onClick: Handler<Event> }) {
-  if (estado.status === 'AGUARDA_VERIFICACAO_SALDO') {
+  if (estado.tag === 'AguardaVerificacaoSaldo') {
     return <output>Verificando contas com saldo...</output>;
   }
 
@@ -120,30 +124,23 @@ function App({ estado, onClick }: { estado: Estado; onClick: Handler<Event> }) {
     mensagem: string;
     rotuloBotao: string;
   }
-  const infoMensagem = ((): InfoMensagem => {
-    switch (estado.status) {
-      case 'COM_CONTA':
-        return {
-          classe: 'saldo',
-          mensagem: 'Há conta(s) com saldo.',
-          rotuloBotao: 'Atualizar',
-        };
-
-      case 'SEM_CONTA':
-        return {
-          classe: 'zerado',
-          mensagem: 'Sem saldo em conta(s).',
-          rotuloBotao: 'Abrir página',
-        };
-
-      case 'ERRO':
-        return {
-          classe: 'erro',
-          mensagem: 'Ocorreu um erro com a atualização de saldo de RPV.',
-          rotuloBotao: 'Abrir página',
-        };
-    }
-  })();
+  const infoMensagem: InfoMensagem = match(estado, {
+    ComConta: () => ({
+      classe: 'saldo',
+      mensagem: 'Há conta(s) com saldo.',
+      rotuloBotao: 'Atualizar',
+    }),
+    SemConta: () => ({
+      classe: 'zerado',
+      mensagem: 'Sem saldo em conta(s).',
+      rotuloBotao: 'Abrir página',
+    }),
+    Erro: () => ({
+      classe: 'erro',
+      mensagem: 'Ocorreu um erro com a atualização de saldo de RPV.',
+      rotuloBotao: 'Abrir página',
+    }),
+  });
   return (
     <>
       <span class={infoMensagem.classe}>{infoMensagem.mensagem}</span>{' '}
