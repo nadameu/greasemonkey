@@ -2,5 +2,11 @@
   "name": "@nadameu/match",
   "version": "1.0.0",
   "main": "./index.ts",
-  "types": "./index.ts"
+  "types": "./index.ts",
+  "devDependencies": {
+    "vitest": "^0.23.4"
+  },
+  "scripts": {
+    "test": "vitest run"
+  }
 }
