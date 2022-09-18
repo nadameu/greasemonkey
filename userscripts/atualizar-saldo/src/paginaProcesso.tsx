@@ -1,8 +1,8 @@
 import { Either, validateAll } from '@nadameu/either';
 import { Handler } from '@nadameu/handler';
 import { JSX, render } from 'preact';
-import { createStore } from './createStore';
-import { createTaggedUnion, match, Static } from './match';
+import { createStore } from '@nadameu/create-store';
+import { createTaggedUnion, match, Static } from '@nadameu/match';
 import { NumProc } from './NumProc';
 import { obter } from './obter';
 import { adicionarProcessoAguardando } from './processosAguardando';
