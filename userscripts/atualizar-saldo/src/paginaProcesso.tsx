@@ -1,8 +1,8 @@
+import { createStore } from '@nadameu/create-store';
 import { Either, validateAll } from '@nadameu/either';
 import { Handler } from '@nadameu/handler';
-import { JSX, render } from 'preact';
-import { createStore } from '@nadameu/create-store';
 import { createTaggedUnion, match, Static } from '@nadameu/match';
+import { JSX, render } from 'preact';
 import { NumProc } from './NumProc';
 import { obter } from './obter';
 import { adicionarProcessoAguardando } from './processosAguardando';
@@ -26,35 +26,51 @@ function modificarPaginaProcesso({
   url: string;
 }) {
   const Estado = createTaggedUnion({
-    AguardaVerificacaoSaldo: (tentativas: number) => ({ tentativas }),
+    AguardaVerificacaoSaldo: null,
     ComConta: (verificarAutomaticamente: boolean = false) => ({ verificarAutomaticamente }),
     SemConta: null,
     Erro: null,
   });
   type Estado = Static<typeof Estado>;
 
-  const Acao = createTaggedUnion({ Tick: null, Clique: (alvo: 'BOTAO' | 'LINK') => ({ alvo }) });
+  const Acao = createTaggedUnion({
+    Erro: null,
+    VerificacaoTerminada: (haContaComSaldo: boolean) => ({ haContaComSaldo }),
+    Clique: (alvo: 'BOTAO' | 'LINK') => ({ alvo }),
+  });
   type Acao = Static<typeof Acao>;
 
   const store = createStore<Estado, Acao>(
-    () => Estado.AguardaVerificacaoSaldo(0),
+    () => {
+      let tentativas = 30;
+      const timer = window.setInterval(() => {
+        if (link.textContent === '') {
+          if (--tentativas < 0) {
+            window.clearInterval(timer);
+            store.dispatch(Acao.Erro);
+          }
+        } else {
+          window.clearInterval(timer);
+          if (link.textContent === 'Há conta com saldo')
+            store.dispatch(Acao.VerificacaoTerminada(true));
+          else store.dispatch(Acao.VerificacaoTerminada(false));
+        }
+      }, 100);
+
+      return Estado.AguardaVerificacaoSaldo;
+    },
     (estado, acao) =>
       acao.match({
-        Tick: () =>
+        VerificacaoTerminada: ({ haContaComSaldo }) =>
           estado.match(
             {
-              AguardaVerificacaoSaldo: ({ tentativas }) => {
-                if (link.textContent === '') {
-                  if (tentativas > 30) return Estado.Erro;
-                  return Estado.AguardaVerificacaoSaldo(tentativas + 1);
-                }
-                if (link.textContent === 'Há conta com saldo') return Estado.ComConta();
-                return Estado.SemConta;
-              },
               Erro: () => estado,
+              AguardaVerificacaoSaldo: () =>
+                haContaComSaldo ? Estado.ComConta() : Estado.SemConta,
             },
             () => Estado.Erro
           ),
+        Erro: () => estado.match({ Erro: () => estado }, () => Estado.Erro),
         Clique: ({ alvo }) =>
           estado.match(
             {
@@ -72,18 +88,6 @@ function modificarPaginaProcesso({
           ),
       })
   );
-
-  {
-    const timer = window.setInterval(() => {
-      store.dispatch(Acao.Tick);
-    }, 100);
-    const sub = store.subscribe(estado => {
-      if (estado.tag !== 'AguardaVerificacaoSaldo') {
-        window.clearInterval(timer);
-        sub.unsubscribe();
-      }
-    });
-  }
 
   let div: HTMLElement | undefined;
   const sub = store.subscribe(estado => {
