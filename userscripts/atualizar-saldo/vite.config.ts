@@ -27,7 +27,11 @@ export default defineConfig({
       userscript: {
         name: { 'pt-BR': 'Atualizar saldos' },
         namespace: 'http://nadameu.com.br',
-        match: [...buildUrl('processo_precatorio_rpv'), ...buildUrl('processo_selecionar')],
+        match: [
+          ...buildUrl('processo_precatorio_rpv'),
+          ...buildUrl('processo_selecionar'),
+          ...buildUrl('processo_depositos_judiciais'),
+        ],
       },
       build: {
         externalGlobals: {
