@@ -111,7 +111,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
             },
           }),
         ErroComunicacao: (mensagem = 'Ocorreu um erro na atualização dos saldos.') =>
-          estado.match({ Erro: () => estado }, () => {
+          estado.matchOr({ Erro: () => estado }, () => {
             bc.destroy();
             return Estado.Erro(new Error(mensagem));
           }),

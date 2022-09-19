@@ -4,6 +4,6 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "dependencies": {
-    "@nadameu/opaque": "^1.0.0"
+    "@nadameu/opaque": "workspace:^1.0.0"
   }
 }

@@ -98,7 +98,7 @@ function modificarPaginaProcesso({
             Erro: () => estado,
           }),
         Erro: () =>
-          estado.match({ Erro: () => estado }, () => {
+          estado.matchOr({ Erro: () => estado }, () => {
             bc.destroy();
             return Estado.Erro;
           }),
