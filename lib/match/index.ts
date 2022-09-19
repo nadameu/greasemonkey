@@ -11,10 +11,32 @@ interface Tagged<Tag extends keyof any> {
 interface TaggedWith<Tag extends keyof any, Data> extends Tagged<Tag> {
   data: Data;
 }
-class _TaggedWith<Tag extends keyof any, Data> implements TaggedWith<Tag, Data> {
-  constructor(public tag: Tag, public data: Data) {}
-  match(matchers: {}, otherwise?: Function) {
-    return match(this, matchers, otherwise as never);
+class Matching<Tag extends keyof any> implements Tagged<Tag> {
+  constructor(public tag: Tag) {}
+  match<U>(matchers: { [K in Tag]: () => U }): U;
+  match(matchers: Matchers<this>) {
+    return _match(this as AnyTagged as TaggedWith<Tag, unknown>, matchers);
+  }
+
+  matchOr<U>(matchers: {}, otherwise: (tagged: Matching<Tag>) => U): U {
+    return _match(this as AnyTagged as TaggedWith<Tag, unknown>, matchers, otherwise);
+  }
+}
+
+class MatchingWith<Tag extends keyof any, Data>
+  extends Matching<Tag>
+  implements TaggedWith<Tag, Data>
+{
+  constructor(tag: Tag, public data: Data) {
+    super(tag);
+  }
+  match<U>(matchers: { [K in Tag]: (data: Data) => U }): U;
+  match(matchers: Matchers<this>) {
+    return _match(this, matchers);
+  }
+
+  matchOr<U>(matchers: {}, otherwise: (tagged: MatchingWith<Tag, Data>) => U): U {
+    return _match(this, matchers, otherwise);
   }
 }
 type AnyTagged = Tagged<keyof any> | TaggedWith<keyof any, unknown>;
@@ -33,16 +55,7 @@ type Matchers<T extends AnyTagged> = {
     : never;
 };
 
-export function match<T extends AnyTagged, M extends Matchers<T>>(
-  obj: T,
-  matchers: M
-): M[keyof M] extends (...args: any[]) => infer U ? U : never;
-export function match<T extends AnyTagged, P extends T['tag'], U>(
-  obj: T,
-  matchers: PartialMatchers<T, P, U>,
-  otherwise: (tagged: Extract<T, { tag: Exclude<T['tag'], P> }>) => U
-): U;
-export function match(
+function _match(
   obj: TaggedWith<keyof any, unknown>,
   matchers: Record<keyof any, Function>,
   otherwise: Function = matchNotFound
@@ -51,46 +64,36 @@ export function match(
   return obj.tag in matchers ? matchers[obj.tag]!(obj.data) : otherwise(obj);
 }
 
+export function match<T extends AnyTagged, M extends Matchers<T>>(
+  obj: T,
+  matchers: M
+): M[keyof M] extends (...args: any[]) => infer U ? U : never {
+  return _match(obj as TaggedWith<keyof any, unknown>, matchers);
+}
+
+export function matchOr<T extends AnyTagged, P extends T['tag'], U>(
+  obj: T,
+  matchers: PartialMatchers<T, P, U>,
+  otherwise: (tagged: Extract<T, { tag: Exclude<T['tag'], P> }>) => U
+): U {
+  return _match(obj as TaggedWith<keyof any, unknown>, matchers, otherwise);
+}
+
 export function createTaggedUnion<D extends Definitions<D>>(definitions: D) {
-  type Tagged<Tag extends keyof any> = {
-    tag: Tag;
-    match<U>(matchers: Matchers<U>): U;
-    match<P extends keyof D, U>(
-      matchers: PartialMatchers<P, U>,
-      otherwise: (_: Remaining<Exclude<keyof D, P>>) => U
-    ): U;
-  };
-  type TaggedWith<Tag extends keyof any, Data> = Tagged<Tag> & {
-    data: Data;
-  };
-  type MembersDict = {
-    [K in keyof D]: D[K] extends CreatorFn<any[], infer R> ? TaggedWith<K, R> : Tagged<K>;
-  };
-  type GetConstructors = {
-    result: {
-      [K in keyof D]: D[K] extends CreatorFn<infer A>
-        ? (...args: A) => MembersDict[K]
-        : MembersDict[K];
-    };
-  };
-
-  type PartialMatchers<P extends keyof D, U> = {
-    [K in P]: MembersDict[K] extends TaggedWith<K, infer Data> ? (data: Data) => U : () => U;
-  };
-  type Matchers<U> = PartialMatchers<keyof D, U>;
-
-  type Remaining<P extends keyof D> = MembersDict[P];
-
   const ctors: Partial<Record<keyof D, unknown>> = {};
   for (const [tag, f] of Object.entries(definitions) as [keyof D, CreatorFn | null][]) {
     if (f === null) {
-      ctors[tag] = new _TaggedWith(tag, undefined as never);
+      ctors[tag] = new Matching(tag);
     } else {
-      ctors[tag] = (...args: any[]) => new _TaggedWith(tag, f(...args));
+      ctors[tag] = (...args: any[]) => new MatchingWith(tag, f(...args));
     }
   }
 
-  return ctors as GetConstructors['result'];
+  return ctors as {
+    [K in keyof D]: D[K] extends CreatorFn<infer A, infer D>
+      ? (...args: A) => MatchingWith<K, D>
+      : Matching<K>;
+  };
 }
 
 export type Static<C extends Record<keyof C, unknown>> = {
