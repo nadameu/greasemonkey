@@ -31,7 +31,7 @@ class _Left<a, b = never> extends _Either<a, b> implements Left<a, b> {
   constructor(public leftValue: a) {
     super();
   }
-  match<c>({ Left }: { Left: (leftValue: a) => c; Right: (rightValue: b) => c }): c {
+  match<c>({ Left }: { Left: (leftValue: a) => c }): c {
     return Left(this.leftValue);
   }
 }
@@ -50,7 +50,7 @@ class _Right<b, a = never> extends _Either<a, b> implements Right<b, a> {
   constructor(public rightValue: b) {
     super();
   }
-  match<c>({ Right }: { Left: (leftValue: a) => c; Right: (rightValue: b) => c }): c {
+  match<c>({ Right }: { Right: (rightValue: b) => c }): c {
     return Right(this.rightValue);
   }
 }
@@ -97,13 +97,11 @@ export function validateMap<a, b, c>(
 ): Either<b[], c[]> {
   const errors: b[] = [];
   const results: c[] = [];
-  Array.from(collection, transform).forEach(either => {
-    if (either.isLeft) {
-      errors.push(either.leftValue);
-    } else {
-      results.push(either.rightValue);
-    }
-  });
+  for (const value of collection) {
+    const either = transform(value);
+    if (either.isLeft) errors.push(either.leftValue);
+    else results.push(either.rightValue);
+  }
   if (errors.length > 0) return Left(errors);
   return Right(results);
 }
