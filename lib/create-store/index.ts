@@ -1,11 +1,11 @@
 import { Handler } from '@nadameu/handler';
 
-interface Store<S, A> {
+export interface Store<S, A> {
   dispatch(action: A): void;
   getState(): S;
   subscribe(f: Handler<S>): Subscription;
 }
-interface Subscription {
+export interface Subscription {
   unsubscribe(): void;
 }
 

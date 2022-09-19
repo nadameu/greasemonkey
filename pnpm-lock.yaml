@@ -58,8 +58,10 @@ importers:
   lib/create-store:
     specifiers:
       '@nadameu/handler': workspace:^1.0.0
+      vitest: ^0.23.4
     devDependencies:
       '@nadameu/handler': link:../handler
+      vitest: 0.23.4
 
   lib/either:
     specifiers: {}

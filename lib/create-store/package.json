@@ -4,6 +4,11 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "devDependencies": {
-    "@nadameu/handler": "workspace:^1.0.0"
+    "@nadameu/handler": "workspace:^1.0.0",
+    "vitest": "^0.23.4"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
   }
 }
