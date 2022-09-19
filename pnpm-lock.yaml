@@ -136,6 +136,7 @@ importers:
   userscripts/atualizar-saldo:
     specifiers:
       '@babel/core': ^7.19.0
+      '@nadameu/create-broadcast-service': ^1.0.0
       '@nadameu/create-element': ^1.0.0
       '@nadameu/create-store': ^1.0.0
       '@nadameu/either': ^1.0.0
@@ -152,6 +153,7 @@ importers:
       vite: ^3.1.0
       vite-plugin-monkey: ^2.4.1
     dependencies:
+      '@nadameu/create-broadcast-service': link:../../lib/create-broadcast-service
       '@nadameu/create-element': link:../../lib/create-element
       '@nadameu/create-store': link:../../lib/create-store
       '@nadameu/either': link:../../lib/either

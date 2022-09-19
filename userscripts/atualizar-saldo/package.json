@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@nadameu/create-broadcast-service": "^1.0.0",
     "@nadameu/create-element": "^1.0.0",
     "@nadameu/create-store": "^1.0.0",
     "@nadameu/either": "^1.0.0",

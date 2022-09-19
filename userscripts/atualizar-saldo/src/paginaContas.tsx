@@ -1,11 +1,11 @@
+import { createStore } from '@nadameu/create-store';
 import { Either, Left, Right, traverse } from '@nadameu/either';
 import { Handler } from '@nadameu/handler';
+import { createTaggedUnion, match, Static } from '@nadameu/match';
 import * as p from '@nadameu/predicates';
 import { render } from 'preact';
-import { createStore } from '@nadameu/create-store';
-import { createTaggedUnion, Static } from '@nadameu/match';
+import { createMsgService, Mensagem } from './Mensagem';
 import { NumProc } from './NumProc';
-import { obterProcessosAguardando, removerProcessoAguardando } from './processosAguardando';
 
 declare function atualizarSaldo(
   numProcessoOriginario: string,
@@ -33,11 +33,6 @@ const Acao = createTaggedUnion({
 type Acao = Static<typeof Acao>;
 
 export function paginaContas(numproc: NumProc): Either<Error[], void> {
-  const atualizarAutomaticamente = obterProcessosAguardando().includes(numproc);
-  if (atualizarAutomaticamente) {
-    removerProcessoAguardando(numproc);
-  }
-
   const barra = document.getElementById('divInfraBarraLocalizacao');
   if (!barra) {
     return Left([new Error('Barra de localização não encontrada.')]);
@@ -46,12 +41,30 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
   div.className = 'gm-atualizar-saldo__contas';
   barra.insertAdjacentElement('afterend', div)!;
 
+  const bc = createMsgService();
   const store = createStore<Estado, Acao>(
-    () =>
-      obterContas().match<Estado>({
+    () => {
+      const estado = obterContas().match<Estado>({
         Left: Estado.Erro,
         Right: Estado.Ocioso,
-      }),
+      });
+      if (estado.tag !== 'Erro') {
+        bc.subscribe(msg =>
+          match(msg, {
+            InformaContas: () => {},
+            PerguntaAtualizar: () => {},
+            RespostaAtualizar: ({ numproc: msgNumproc, atualizar }) => {
+              if (msgNumproc !== numproc) return;
+              if (atualizar) {
+                store.dispatch(Acao.Atualizar);
+              }
+            },
+          })
+        );
+        bc.publish(Mensagem.PerguntaAtualizar(numproc));
+      }
+      return estado;
+    },
     (estado, acao) =>
       acao.match({
         Atualizar: () =>
@@ -62,6 +75,13 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
               const primeiraConta = findIndex(infoContas, x => x.atualizacao !== null);
               if (primeiraConta < 0) {
                 // Existem contas, mas não podem ser atualizadas. Ex.: Banco do Brasil
+                bc.publish(
+                  Mensagem.InformaContas(
+                    numproc,
+                    infoContas.map(x => x.saldo).filter(x => x > 0).length,
+                    false
+                  )
+                );
                 return estado;
               }
               infoContas[primeiraConta]!.atualizacao!();
@@ -75,27 +95,30 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
             Erro: () => estado,
             Ocioso: () => estado,
             Atualizando: ({ conta, infoContas }) => {
-              const infoNova = infoContas
+              const infoNova: InfoConta[] = infoContas
                 .slice(0, conta)
                 .concat([{ saldo, atualizacao: null }])
                 .concat(infoContas.slice(conta + 1));
               const proxima = findIndex(infoNova, x => x.atualizacao !== null, conta + 1);
-              if (proxima < 0) return Estado.Ocioso(infoNova);
+              if (proxima < 0) {
+                const qtdComSaldo = infoNova.map(x => x.saldo).filter(x => x > 0).length;
+                const permiteAtualizar = infoNova.some(x => x.atualizacao !== null);
+                bc.publish(Mensagem.InformaContas(numproc, qtdComSaldo, permiteAtualizar));
+                return Estado.Ocioso(infoNova);
+              }
               infoNova[proxima]!.atualizacao!();
               return Estado.Atualizando(infoNova, proxima);
             },
           }),
-        ErroComunicacao: (mensagem = 'Ocorreu um erro na atualização dos saldos.') => {
-          console.error(new Error(mensagem));
-          return estado.match({ Erro: () => estado }, () => Estado.Erro(new Error(mensagem)));
-        },
+        ErroComunicacao: (mensagem = 'Ocorreu um erro na atualização dos saldos.') =>
+          estado.match({ Erro: () => estado }, () => {
+            bc.destroy();
+            return Estado.Erro(new Error(mensagem));
+          }),
       })
   );
 
-  store.subscribe(update);
-  if (atualizarAutomaticamente) {
-    store.dispatch(Acao.Atualizar);
-  }
+  const sub = store.subscribe(update);
   return Right(undefined as void);
 
   function App({ estado }: { estado: Estado }) {
@@ -106,27 +129,28 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
         const contasAtualizaveis = infoContas
           .map(x => x.atualizacao)
           .filter((x): x is () => void => x !== null);
+        const classe = contasComSaldo === 0 ? 'zerado' : 'saldo';
+
         const mensagem =
-          contasComSaldo === 0 ? (
-            <span class="zerado">Sem saldo em conta(s).</span>
-          ) : (
-            <span class="saldo">Há {contasComSaldo} conta(s) com saldo.</span>
-          );
+          contasComSaldo === 0
+            ? 'Sem saldo em conta(s).'
+            : contasComSaldo === 1
+            ? 'Há 1 conta com saldo.'
+            : `Há ${contasComSaldo} contas com saldo.`;
         const botao =
           contasAtualizaveis.length === 0 ? null : <button onClick={onClick}>Atualizar</button>;
         return (
           <>
-            {mensagem}
+            <span class={classe}>{mensagem}</span>
             <br />
             {botao}
           </>
         );
       },
-      Erro: erro => (
-        <>
-          <span class="erro">{erro.message}</span>
-        </>
-      ),
+      Erro: erro => {
+        sub.unsubscribe();
+        return <span class="erro">{erro.message}</span>;
+      },
     });
   }
 
