@@ -1,5 +1,6 @@
 import { createStore } from '@nadameu/create-store';
 import { Either, validateAll } from '@nadameu/either';
+import { expectUnreachable } from '@nadameu/expect-unreachable';
 import { createTaggedUnion, match, Static } from '@nadameu/match';
 import { render } from 'preact';
 import { createMsgService, Mensagem } from './Mensagem';
@@ -7,30 +8,36 @@ import { NumProc } from './NumProc';
 import { obter } from './obter';
 
 export function paginaProcesso(numproc: NumProc): Either<Error[], void> {
-  return validateAll([obterInformacoesAdicionais(), obterLink()]).map(
-    ([informacoesAdicionais, link]) =>
-      modificarPaginaProcesso({ informacoesAdicionais, link, numproc, url: link.href })
+  return validateAll([obterInformacoesAdicionais(), obterLinkRPV(), obterLinkDepositos()]).map(
+    ([informacoesAdicionais, linkRPV, linkDepositos]) =>
+      modificarPaginaProcesso({ informacoesAdicionais, linkRPV, linkDepositos, numproc })
   );
 }
 
 function modificarPaginaProcesso({
   informacoesAdicionais,
-  link,
+  linkRPV,
+  linkDepositos,
   numproc,
-  url,
 }: {
   informacoesAdicionais: HTMLElement;
-  link: HTMLAnchorElement;
+  linkRPV: HTMLAnchorElement;
+  linkDepositos: HTMLAnchorElement;
   numproc: NumProc;
-  url: string;
 }) {
+  interface InfoTipo {
+    quantidade: number | undefined;
+    atualiza: boolean;
+  }
+  interface TipoContas {
+    rpv: InfoTipo;
+    depositos: InfoTipo;
+  }
+
   const Estado = createTaggedUnion({
     AguardaVerificacaoInicial: null,
-    AguardaAtualizacao: null,
-    Ocioso: (contasComSaldo: number | undefined, permiteAtualizar: boolean) => ({
-      contasComSaldo,
-      permiteAtualizar,
-    }),
+    AguardaAtualizacao: (dados: TipoContas) => dados,
+    Ocioso: (dados: TipoContas) => dados,
     Erro: null,
   });
   type Estado = Static<typeof Estado>;
@@ -38,11 +45,10 @@ function modificarPaginaProcesso({
   const Acao = createTaggedUnion({
     Erro: null,
     PaginaContasAberta: null,
-    VerificacaoTerminada: (contasComSaldo: number | undefined, permiteAtualizar: boolean) => ({
-      contasComSaldo,
-      permiteAtualizar,
-    }),
-    Clique: (alvo: 'BOTAO' | 'LINK') => ({ alvo }),
+    VerificacaoTerminada: (info: TipoContas) => info,
+    AtualizacaoRPV: (info: InfoTipo) => info,
+    AtualizacaoDepositos: (info: InfoTipo) => info,
+    Clique: (alvo: 'BOTAO_RPV' | 'LINK_RPV' | 'BOTAO_DEP' | 'LINK_DEP') => ({ alvo }),
   });
   type Acao = Static<typeof Acao>;
 
@@ -53,16 +59,26 @@ function modificarPaginaProcesso({
       let aguardarMilissegundos = 3000;
       const timer = window.setInterval(() => {
         aguardarMilissegundos -= INTERVALO;
-        if (link.textContent === '') {
+        if (linkRPV.textContent === '') {
           if (aguardarMilissegundos <= 0) {
             window.clearInterval(timer);
             store.dispatch(Acao.Erro);
           }
         } else {
           window.clearInterval(timer);
-          if (link.textContent === 'Há conta com saldo')
-            store.dispatch(Acao.VerificacaoTerminada(undefined, true));
-          else store.dispatch(Acao.VerificacaoTerminada(0, false));
+
+          const info: TipoContas = {
+            rpv: { quantidade: 0, atualiza: false },
+            depositos: { quantidade: 0, atualiza: false },
+          };
+
+          if (linkRPV.textContent === 'Há conta com saldo')
+            info.rpv = { quantidade: undefined, atualiza: true };
+
+          if (linkDepositos.textContent === 'Há conta com saldo')
+            info.depositos = { quantidade: undefined, atualiza: false };
+
+          store.dispatch(Acao.VerificacaoTerminada(info));
         }
       }, INTERVALO);
 
@@ -70,7 +86,13 @@ function modificarPaginaProcesso({
         match(msg, {
           InformaContas: ({ numproc: msgNumproc, qtdComSaldo, permiteAtualizar }) => {
             if (msgNumproc !== numproc) return;
-            store.dispatch(Acao.VerificacaoTerminada(qtdComSaldo, permiteAtualizar));
+            store.dispatch(
+              Acao.AtualizacaoRPV({ quantidade: qtdComSaldo, atualiza: permiteAtualizar })
+            );
+          },
+          InformaSaldoDeposito: ({ numproc: msgNumproc, qtdComSaldo }) => {
+            if (msgNumproc !== numproc) return;
+            store.dispatch(Acao.AtualizacaoDepositos({ quantidade: qtdComSaldo, atualiza: false }));
           },
           PerguntaAtualizar: ({ numproc: msgNumproc }) => {
             if (msgNumproc !== numproc) return;
@@ -84,14 +106,32 @@ function modificarPaginaProcesso({
     },
     (estado, acao) =>
       acao.match({
+        AtualizacaoDepositos: dados =>
+          estado.match({
+            AguardaAtualizacao: ({ rpv }) => Estado.AguardaAtualizacao({ rpv, depositos: dados }),
+            AguardaVerificacaoInicial: () => Estado.Erro,
+            Erro: () => estado,
+            Ocioso: ({ rpv }) => Estado.Ocioso({ rpv, depositos: dados }),
+          }),
+        AtualizacaoRPV: dados =>
+          estado.match({
+            AguardaAtualizacao: ({ depositos }) => Estado.Ocioso({ rpv: dados, depositos }),
+            AguardaVerificacaoInicial: () => Estado.Erro,
+            Erro: () => estado,
+            Ocioso: ({ depositos }) => Estado.Ocioso({ rpv: dados, depositos }),
+          }),
         Clique: ({ alvo }) =>
           estado.match({
             AguardaVerificacaoInicial: () => estado,
             AguardaAtualizacao: () => estado,
-            Ocioso: ({ contasComSaldo, permiteAtualizar }) => {
-              window.open(url);
-              if (alvo === 'BOTAO' && permiteAtualizar) {
-                return Estado.AguardaAtualizacao;
+            Ocioso: dados => {
+              if (alvo === 'BOTAO_DEP' || alvo === 'LINK_DEP') {
+                window.open(linkDepositos.href);
+              } else if (alvo === 'BOTAO_RPV' || alvo === 'LINK_RPV') {
+                window.open(linkRPV.href);
+                if (alvo === 'BOTAO_RPV' && dados.rpv.atualiza) {
+                  return Estado.AguardaAtualizacao(dados);
+                }
               }
               return estado;
             },
@@ -112,8 +152,8 @@ function modificarPaginaProcesso({
             Ocioso: () => estado,
             Erro: () => estado,
           }),
-        VerificacaoTerminada: ({ contasComSaldo, permiteAtualizar }) => {
-          const ocioso = Estado.Ocioso(contasComSaldo, permiteAtualizar);
+        VerificacaoTerminada: dados => {
+          const ocioso = Estado.Ocioso(dados);
           return estado.match({
             AguardaVerificacaoInicial: () => ocioso,
             AguardaAtualizacao: () => ocioso,
@@ -130,72 +170,118 @@ function modificarPaginaProcesso({
       div = document.createElement('div');
       div.className = 'gm-atualizar-saldo__processo';
       informacoesAdicionais.insertAdjacentElement('beforebegin', div);
-      link.addEventListener('click', onClick);
+      linkRPV.addEventListener('click', onClick);
+      linkDepositos.addEventListener('click', onClick);
     }
     render(<App {...{ estado, onClick }} />, div);
   });
 
   function onClick(evt: Event) {
-    evt.preventDefault();
-    if (evt.target === link) {
-      store.dispatch(Acao.Clique('LINK'));
+    if (evt.target === linkRPV) {
+      store.dispatch(Acao.Clique('LINK_RPV'));
+    } else if (evt.target === linkDepositos) {
+      store.dispatch(Acao.Clique('LINK_DEP'));
     } else {
-      store.dispatch(Acao.Clique('BOTAO'));
+      const tipoBotao = (evt.target as HTMLElement | null)?.dataset.botao;
+      if (tipoBotao === 'RPV') {
+        store.dispatch(Acao.Clique('BOTAO_RPV'));
+      } else if (tipoBotao === 'DEP') {
+        store.dispatch(Acao.Clique('BOTAO_DEP'));
+      } else {
+        return;
+      }
     }
+    evt.preventDefault();
   }
 
   function App({ estado }: { estado: Estado }) {
     return match(estado, {
       AguardaVerificacaoInicial: () => <output>Verificando contas com saldo...</output>,
       AguardaAtualizacao: () => <output>Aguardando atualização das contas...</output>,
-      Ocioso: ({ contasComSaldo, permiteAtualizar }) => {
-        const classe = contasComSaldo === 0 ? 'zerado' : 'saldo';
-        const mensagem =
-          contasComSaldo === undefined
-            ? 'Há conta(s) com saldo.'
-            : contasComSaldo === 0
-            ? 'Sem saldo em conta(s).'
-            : contasComSaldo === 1
-            ? 'Há 1 conta com saldo.'
-            : `Há ${contasComSaldo} contas com saldo.`;
-        const rotuloBotao = permiteAtualizar ? 'Atualizar' : 'Abrir página';
-        return <MensagemComBotao {...{ classe, mensagem, rotuloBotao }} />;
+      Ocioso: ({ depositos, rpv }) => {
+        const qDep = depositos.quantidade;
+        const qRPV = rpv.quantidade;
+
+        const classe = qDep === 0 && qRPV === 0 ? 'zerado' : 'saldo';
+
+        type Q = '0' | '+' | '?' extends infer R extends string
+          ? '0' | '+' | '?' extends infer D extends string
+            ? `R${R}D${D}`
+            : never
+          : never;
+        const mensagem = ((resultado: Q): string => {
+          switch (resultado) {
+            case 'R0D0':
+              return 'Sem saldo em conta(s).';
+            case 'R0D+': {
+              const s = qDep ?? 0 > 1 ? 's' : '';
+              return `Há ${qDep} conta${s} de depósito judicial com saldo.`;
+            }
+            case 'R0D?':
+              return 'Há conta(s) de depósito judicial com saldo.';
+            case 'R+D0': {
+              const s = qRPV ?? 0 > 1 ? 's' : '';
+              return `Há ${qRPV} conta${s} de requisição de pagamento com saldo.`;
+            }
+            case 'R+D+':
+              const rs = qRPV ?? 0 > 1 ? 's' : '';
+              const ds = qDep ?? 0 > 1 ? 's' : '';
+              return `Há ${qRPV} conta${rs} de requisição de pagamento e ${qDep} conta${ds} de depósito judicial com saldo.`;
+            case 'R+D?':
+            case 'R?D+':
+            case 'R?D?':
+              return 'Há conta(s) de requisição de pagamento e de depósito judicial com saldo.';
+            case 'R?D0':
+              return 'Há conta(s) de requisição de pagamento com saldo.';
+
+            default:
+              return expectUnreachable(resultado);
+          }
+        })(
+          `R${qDep === undefined ? '?' : qDep === 0 ? '0' : '+'}D${
+            qRPV === undefined ? '?' : qRPV === 0 ? '0' : '+'
+          }`
+        );
+        return <MensagemComBotao {...{ classe, mensagem }} />;
       },
       Erro: () => {
         sub.unsubscribe();
+        linkRPV.removeEventListener('click', onClick);
+        linkDepositos.removeEventListener('click', onClick);
         return (
-          <MensagemComBotao
-            classe="erro"
-            mensagem="Ocorreu um erro com a atualização de saldo de RPV."
-            rotuloBotao="Abrir página"
-          />
+          <MensagemComBotao classe="erro" mensagem="Ocorreu um erro com a atualização de saldos." />
         );
       },
     });
   }
 
-  function MensagemComBotao({
-    classe,
-    mensagem,
-    rotuloBotao,
-  }: {
-    classe: string;
-    mensagem: string;
-    rotuloBotao: string;
-  }) {
+  function MensagemComBotao({ classe, mensagem }: { classe: string; mensagem: string }) {
     return (
       <>
         <span class={classe}>{mensagem}</span>{' '}
-        <button type="button" onClick={onClick} class={classe}>
-          {rotuloBotao}
+        <button type="button" data-botao="RPV" onClick={onClick} class={classe}>
+          RPVs/precatórios
+        </button>
+        <button type="button" data-botao="DEP" onClick={onClick} class={classe}>
+          Depósitos judiciais
         </button>
       </>
     );
   }
 }
 
-function obterLink() {
-  return obter<HTMLAnchorElement>('a#labelPrecatorios', 'Link não encontrado.');
+function obterLinkRPV() {
+  return obter<HTMLAnchorElement>(
+    'a#labelPrecatorios',
+    'Link para requisições de pagamento não encontrado.'
+  );
+}
+
+function obterLinkDepositos() {
+  return obter<HTMLAnchorElement>(
+    'a#labelDepositoJudicial',
+    'Link para depósitos judiciais não encontrado.'
+  );
 }
 
 function obterInformacoesAdicionais() {
