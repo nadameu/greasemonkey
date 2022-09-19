@@ -2,6 +2,6 @@
   "name": "@nadameu/query",
   "version": "1.0.0",
   "dependencies": {
-    "@nadameu/expect-unreachable": "^1.0.0"
+    "@nadameu/expect-unreachable": "workspace:^1.0.0"
   }
 }

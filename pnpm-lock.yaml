@@ -42,7 +42,7 @@ importers:
 
   lib/Query:
     specifiers:
-      '@nadameu/expect-unreachable': ^1.0.0
+      '@nadameu/expect-unreachable': workspace:^1.0.0
     dependencies:
       '@nadameu/expect-unreachable': link:../expect-unreachable
 
@@ -100,13 +100,13 @@ importers:
 
   lib/predicates:
     specifiers:
-      '@nadameu/opaque': ^1.0.0
+      '@nadameu/opaque': workspace:^1.0.0
     dependencies:
       '@nadameu/opaque': link:../opaque
 
   lib/resolvable:
     specifiers:
-      '@nadameu/handler': ^1.0.0
+      '@nadameu/handler': workspace:^1.0.0
       vitest: ^0.22.1
     dependencies:
       '@nadameu/handler': link:../handler
@@ -115,7 +115,7 @@ importers:
 
   lib/userscript:
     specifiers:
-      '@nadameu/predicates': ^1.0.0
+      '@nadameu/predicates': workspace:^1.0.0
       esbuild: ^0.14.49
       esbuild-register: ^3.3.3
     dependencies:
@@ -136,17 +136,17 @@ importers:
   userscripts/atualizar-saldo:
     specifiers:
       '@babel/core': ^7.19.0
-      '@nadameu/create-broadcast-service': ^1.0.0
-      '@nadameu/create-element': ^1.0.0
-      '@nadameu/create-store': ^1.0.0
-      '@nadameu/either': ^1.0.0
-      '@nadameu/expect-unreachable': ^1.0.0
-      '@nadameu/finite-state-machine': ^1.0.0
-      '@nadameu/handler': ^1.0.0
-      '@nadameu/match': ^1.0.0
-      '@nadameu/opaque': ^1.0.0
-      '@nadameu/predicates': ^1.1.1
-      '@nadameu/resolvable': ^1.0.0
+      '@nadameu/create-broadcast-service': workspace:^1.0.0
+      '@nadameu/create-element': workspace:^1.0.0
+      '@nadameu/create-store': workspace:^1.0.0
+      '@nadameu/either': workspace:^1.0.0
+      '@nadameu/expect-unreachable': workspace:^1.0.0
+      '@nadameu/finite-state-machine': workspace:^1.0.0
+      '@nadameu/handler': workspace:^1.0.0
+      '@nadameu/match': workspace:^2.0.0
+      '@nadameu/opaque': workspace:^1.0.0
+      '@nadameu/predicates': workspace:^1.1.1
+      '@nadameu/resolvable': workspace:^1.0.0
       '@preact/preset-vite': ^2.4.0
       preact: 10.11.0
       sass: ^1.54.9
@@ -183,8 +183,8 @@ importers:
 
   userscripts/renajud:
     specifiers:
-      '@nadameu/predicates': ^1.0.0
-      '@nadameu/resolvable': ^1.0.0
+      '@nadameu/predicates': workspace:^1.0.0
+      '@nadameu/resolvable': workspace:^1.0.0
       descriptive-regexp: ^0.3.0
     dependencies:
       '@nadameu/predicates': link:../../lib/predicates
