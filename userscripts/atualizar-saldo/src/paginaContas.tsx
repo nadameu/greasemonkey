@@ -52,6 +52,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
         bc.subscribe(msg =>
           match(msg, {
             InformaContas: () => {},
+            InformaSaldoDeposito: () => {},
             PerguntaAtualizar: () => {},
             RespostaAtualizar: ({ numproc: msgNumproc, atualizar }) => {
               if (msgNumproc !== numproc) return;
