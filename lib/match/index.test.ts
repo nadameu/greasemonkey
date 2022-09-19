@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { createTaggedUnion, match, Static } from '.';
+import { createTaggedUnion, match, matchOr, Static } from '.';
 
 test('create', () => {
   const MaybeNumber = createTaggedUnion({
@@ -28,13 +28,13 @@ test('match (method)', async () => {
   };
   const otherwise = () => Promise.reject(PromiseNumber.Pending);
 
-  const resolvedPromise = PromiseNumber.Resolved(42).match(matchers, otherwise);
+  const resolvedPromise = PromiseNumber.Resolved(42).matchOr(matchers, otherwise);
   await expect(resolvedPromise).resolves.toEqual(42);
 
-  const rejectedPromise = PromiseNumber.Rejected('error').match(matchers, otherwise);
+  const rejectedPromise = PromiseNumber.Rejected('error').matchOr(matchers, otherwise);
   await expect(rejectedPromise).rejects.toEqual('error');
 
-  const pendingPromise = PromiseNumber.Pending.match(matchers, otherwise);
+  const pendingPromise = PromiseNumber.Pending.matchOr(matchers, otherwise);
   await expect(pendingPromise).rejects.toStrictEqual(PromiseNumber.Pending);
 });
 
@@ -46,7 +46,7 @@ test('match (standalone)', () => {
   type T = typeof t0 | typeof t1 | typeof t2;
 
   const getResult = (t: T): number =>
-    match(
+    matchOr(
       t,
       {
         Tag1: x => x,
@@ -86,9 +86,9 @@ test.skip('typescript', () => {
   // @ts-expect-error
   maybe.match({ Nothing: () => 'no value' });
 
-  maybe.match({ Just: x => x, Nothing: () => 'no value' });
+  maybe.match({ Just: x => x.length, Nothing: () => 4 });
 
-  maybe.match({}, tagged =>
+  maybe.matchOr({}, tagged =>
     match(tagged, {
       Just: x => x,
       Nothing: () => 'no value',
