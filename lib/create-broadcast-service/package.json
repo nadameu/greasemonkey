@@ -1,0 +1,9 @@
+{
+  "name": "@nadameu/create-broadcast-service",
+  "version": "1.0.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "dependencies": {
+    "@nadameu/handler": "workspace:^1.0.0"
+  }
+}
