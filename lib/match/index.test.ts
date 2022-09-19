@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { createTaggedUnion, match } from '.';
+import { createTaggedUnion, match, Static } from '.';
 
 test('create', () => {
   const MaybeNumber = createTaggedUnion({
@@ -69,5 +69,29 @@ test('no tag', () => {
 test('no matcher', () => {
   expect(() => match({ tag: 'Abc' as 'Abc' }, {} as { Abc: () => number })).toThrow(
     'Not matched: "Abc".'
+  );
+});
+
+test.skip('typescript', () => {
+  const MaybeString = createTaggedUnion({ Nothing: null, Just: (x: string) => x });
+  type MaybeString = Static<typeof MaybeString>;
+  const maybe = MaybeString.Nothing as MaybeString;
+
+  // @ts-expect-error
+  maybe.match({});
+
+  // @ts-expect-error
+  maybe.match({ Just: x => x });
+
+  // @ts-expect-error
+  maybe.match({ Nothing: () => 'no value' });
+
+  maybe.match({ Just: x => x, Nothing: () => 'no value' });
+
+  maybe.match({}, tagged =>
+    match(tagged, {
+      Just: x => x,
+      Nothing: () => 'no value',
+    })
   );
 });
