@@ -1,11 +1,10 @@
 import { createStore } from '@nadameu/create-store';
 import { Either, validateAll } from '@nadameu/either';
-import { Handler } from '@nadameu/handler';
 import { createTaggedUnion, match, Static } from '@nadameu/match';
-import { JSX, render } from 'preact';
+import { render } from 'preact';
+import { createMsgService, Mensagem } from './Mensagem';
 import { NumProc } from './NumProc';
 import { obter } from './obter';
-import { adicionarProcessoAguardando } from './processosAguardando';
 
 export function paginaProcesso(numproc: NumProc): Either<Error[], void> {
   return validateAll([obterInformacoesAdicionais(), obterLink()]).map(
@@ -26,66 +25,102 @@ function modificarPaginaProcesso({
   url: string;
 }) {
   const Estado = createTaggedUnion({
-    AguardaVerificacaoSaldo: null,
-    ComConta: (verificarAutomaticamente: boolean = false) => ({ verificarAutomaticamente }),
-    SemConta: null,
+    AguardaVerificacaoInicial: null,
+    AguardaAtualizacao: null,
+    Ocioso: (contasComSaldo: number | undefined, permiteAtualizar: boolean) => ({
+      contasComSaldo,
+      permiteAtualizar,
+    }),
     Erro: null,
   });
   type Estado = Static<typeof Estado>;
 
   const Acao = createTaggedUnion({
     Erro: null,
-    VerificacaoTerminada: (haContaComSaldo: boolean) => ({ haContaComSaldo }),
+    PaginaContasAberta: null,
+    VerificacaoTerminada: (contasComSaldo: number | undefined, permiteAtualizar: boolean) => ({
+      contasComSaldo,
+      permiteAtualizar,
+    }),
     Clique: (alvo: 'BOTAO' | 'LINK') => ({ alvo }),
   });
   type Acao = Static<typeof Acao>;
 
+  const bc = createMsgService();
   const store = createStore<Estado, Acao>(
     () => {
-      let tentativas = 30;
+      const INTERVALO = 100;
+      let aguardarMilissegundos = 3000;
       const timer = window.setInterval(() => {
+        aguardarMilissegundos -= INTERVALO;
         if (link.textContent === '') {
-          if (--tentativas < 0) {
+          if (aguardarMilissegundos <= 0) {
             window.clearInterval(timer);
             store.dispatch(Acao.Erro);
           }
         } else {
           window.clearInterval(timer);
           if (link.textContent === 'Há conta com saldo')
-            store.dispatch(Acao.VerificacaoTerminada(true));
-          else store.dispatch(Acao.VerificacaoTerminada(false));
+            store.dispatch(Acao.VerificacaoTerminada(undefined, true));
+          else store.dispatch(Acao.VerificacaoTerminada(0, false));
         }
-      }, 100);
+      }, INTERVALO);
 
-      return Estado.AguardaVerificacaoSaldo;
+      bc.subscribe(msg => {
+        match(msg, {
+          InformaContas: ({ numproc: msgNumproc, qtdComSaldo, permiteAtualizar }) => {
+            if (msgNumproc !== numproc) return;
+            store.dispatch(Acao.VerificacaoTerminada(qtdComSaldo, permiteAtualizar));
+          },
+          PerguntaAtualizar: ({ numproc: msgNumproc }) => {
+            if (msgNumproc !== numproc) return;
+            store.dispatch(Acao.PaginaContasAberta);
+          },
+          RespostaAtualizar: () => {},
+        });
+      });
+
+      return Estado.AguardaVerificacaoInicial;
     },
     (estado, acao) =>
       acao.match({
-        VerificacaoTerminada: ({ haContaComSaldo }) =>
-          estado.match(
-            {
-              Erro: () => estado,
-              AguardaVerificacaoSaldo: () =>
-                haContaComSaldo ? Estado.ComConta() : Estado.SemConta,
-            },
-            () => Estado.Erro
-          ),
-        Erro: () => estado.match({ Erro: () => estado }, () => Estado.Erro),
         Clique: ({ alvo }) =>
-          estado.match(
-            {
-              ComConta: () => {
-                adicionarProcessoAguardando(numproc);
-                window.open(url);
-                return Estado.ComConta(alvo === 'BOTAO');
-              },
-              AguardaVerificacaoSaldo: () => Estado.Erro,
-            },
-            () => {
+          estado.match({
+            AguardaVerificacaoInicial: () => estado,
+            AguardaAtualizacao: () => estado,
+            Ocioso: ({ contasComSaldo, permiteAtualizar }) => {
               window.open(url);
+              if (alvo === 'BOTAO' && permiteAtualizar) {
+                return Estado.AguardaAtualizacao;
+              }
               return estado;
-            }
-          ),
+            },
+            Erro: () => estado,
+          }),
+        Erro: () =>
+          estado.match({ Erro: () => estado }, () => {
+            bc.destroy();
+            return Estado.Erro;
+          }),
+        PaginaContasAberta: () =>
+          estado.match({
+            AguardaVerificacaoInicial: () => Estado.Erro,
+            AguardaAtualizacao: () => {
+              bc.publish(Mensagem.RespostaAtualizar(numproc, true));
+              return estado;
+            },
+            Ocioso: () => estado,
+            Erro: () => estado,
+          }),
+        VerificacaoTerminada: ({ contasComSaldo, permiteAtualizar }) => {
+          const ocioso = Estado.Ocioso(contasComSaldo, permiteAtualizar);
+          return estado.match({
+            AguardaVerificacaoInicial: () => ocioso,
+            AguardaAtualizacao: () => ocioso,
+            Ocioso: () => ocioso,
+            Erro: () => estado,
+          });
+        },
       })
   );
 
@@ -109,39 +144,50 @@ function modificarPaginaProcesso({
     }
   }
 
-  function App(props: { estado: Estado; onClick: Handler<Event> }): JSX.Element;
-  function App({ estado, onClick }: { estado: Estado; onClick: Handler<Event> }) {
-    if (estado.tag === 'AguardaVerificacaoSaldo') {
-      return <output>Verificando contas com saldo...</output>;
-    }
-
-    interface InfoMensagem {
-      classe: string;
-      mensagem: string;
-      rotuloBotao: string;
-    }
-    const infoMensagem: InfoMensagem = match(estado, {
-      ComConta: () => ({
-        classe: 'saldo',
-        mensagem: 'Há conta(s) com saldo.',
-        rotuloBotao: 'Atualizar',
-      }),
-      SemConta: () => ({
-        classe: 'zerado',
-        mensagem: 'Sem saldo em conta(s).',
-        rotuloBotao: 'Abrir página',
-      }),
-      Erro: () => ({
-        classe: 'erro',
-        mensagem: 'Ocorreu um erro com a atualização de saldo de RPV.',
-        rotuloBotao: 'Abrir página',
-      }),
+  function App({ estado }: { estado: Estado }) {
+    return match(estado, {
+      AguardaVerificacaoInicial: () => <output>Verificando contas com saldo...</output>,
+      AguardaAtualizacao: () => <output>Aguardando atualização das contas...</output>,
+      Ocioso: ({ contasComSaldo, permiteAtualizar }) => {
+        const classe = contasComSaldo === 0 ? 'zerado' : 'saldo';
+        const mensagem =
+          contasComSaldo === undefined
+            ? 'Há conta(s) com saldo.'
+            : contasComSaldo === 0
+            ? 'Sem saldo em conta(s).'
+            : contasComSaldo === 1
+            ? 'Há 1 conta com saldo.'
+            : `Há ${contasComSaldo} contas com saldo.`;
+        const rotuloBotao = permiteAtualizar ? 'Atualizar' : 'Abrir página';
+        return <MensagemComBotao {...{ classe, mensagem, rotuloBotao }} />;
+      },
+      Erro: () => {
+        sub.unsubscribe();
+        return (
+          <MensagemComBotao
+            classe="erro"
+            mensagem="Ocorreu um erro com a atualização de saldo de RPV."
+            rotuloBotao="Abrir página"
+          />
+        );
+      },
     });
+  }
+
+  function MensagemComBotao({
+    classe,
+    mensagem,
+    rotuloBotao,
+  }: {
+    classe: string;
+    mensagem: string;
+    rotuloBotao: string;
+  }) {
     return (
       <>
-        <span class={infoMensagem.classe}>{infoMensagem.mensagem}</span>{' '}
-        <button type="button" onClick={onClick} class={infoMensagem.classe}>
-          {infoMensagem.rotuloBotao}
+        <span class={classe}>{mensagem}</span>{' '}
+        <button type="button" onClick={onClick} class={classe}>
+          {rotuloBotao}
         </button>
       </>
     );
