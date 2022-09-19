@@ -213,56 +213,85 @@ function modificarPaginaProcesso({
           switch (resultado) {
             case 'R0D0':
               return 'Sem saldo em conta(s).';
-            case 'R0D+': {
-              const s = qDep ?? 0 > 1 ? 's' : '';
-              return `Há ${qDep} conta${s} de depósito judicial com saldo.`;
-            }
-            case 'R0D?':
-              return 'Há conta(s) de depósito judicial com saldo.';
+
+            case 'R?D0':
             case 'R+D0': {
-              const s = qRPV ?? 0 > 1 ? 's' : '';
-              return `Há ${qRPV} conta${s} de requisição de pagamento com saldo.`;
+              const contasRPV =
+                qRPV === undefined ? 'conta(s)' : qRPV === 1 ? '1 conta' : `${qRPV} contas`;
+              return `Há ${contasRPV} de requisição de pagamento com saldo.`;
             }
+
+            case 'R0D?':
+            case 'R0D+': {
+              const contasDep =
+                qDep === undefined ? 'conta(s)' : qDep === 1 ? '1 conta' : `${qDep} contas`;
+              return `Há ${contasDep} de depósito judicial com saldo.`;
+            }
+
             case 'R+D+':
-              const rs = qRPV ?? 0 > 1 ? 's' : '';
-              const ds = qDep ?? 0 > 1 ? 's' : '';
+              const rs = (qRPV ?? 0) > 1 ? 's' : '';
+              const ds = (qDep ?? 0) > 1 ? 's' : '';
               return `Há ${qRPV} conta${rs} de requisição de pagamento e ${qDep} conta${ds} de depósito judicial com saldo.`;
+
             case 'R+D?':
             case 'R?D+':
             case 'R?D?':
               return 'Há conta(s) de requisição de pagamento e de depósito judicial com saldo.';
-            case 'R?D0':
-              return 'Há conta(s) de requisição de pagamento com saldo.';
 
             default:
               return expectUnreachable(resultado);
           }
         })(
-          `R${qDep === undefined ? '?' : qDep === 0 ? '0' : '+'}D${
-            qRPV === undefined ? '?' : qRPV === 0 ? '0' : '+'
+          `R${qRPV === undefined ? '?' : qRPV === 0 ? '0' : '+'}D${
+            qDep === undefined ? '?' : qDep === 0 ? '0' : '+'
           }`
         );
-        return <MensagemComBotao {...{ classe, mensagem }} />;
+        return <MensagemComBotao {...{ classe, mensagem, rpv: qRPV ?? -1, dep: qDep ?? -1 }} />;
       },
       Erro: () => {
         sub.unsubscribe();
         linkRPV.removeEventListener('click', onClick);
         linkDepositos.removeEventListener('click', onClick);
         return (
-          <MensagemComBotao classe="erro" mensagem="Ocorreu um erro com a atualização de saldos." />
+          <MensagemComBotao
+            classe="erro"
+            mensagem="Ocorreu um erro com a atualização de saldos."
+            rpv={0}
+            dep={0}
+          />
         );
       },
     });
   }
 
-  function MensagemComBotao({ classe, mensagem }: { classe: string; mensagem: string }) {
+  function MensagemComBotao({
+    classe,
+    mensagem,
+    rpv,
+    dep,
+  }: {
+    classe: string;
+    mensagem: string;
+    rpv: number;
+    dep: number;
+  }) {
     return (
       <>
         <span class={classe}>{mensagem}</span>{' '}
-        <button type="button" data-botao="RPV" onClick={onClick} class={classe}>
+        <button
+          type="button"
+          data-botao="RPV"
+          onClick={onClick}
+          class={rpv === 0 ? 'zerado' : 'saldo'}
+        >
           RPVs/precatórios
-        </button>
-        <button type="button" data-botao="DEP" onClick={onClick} class={classe}>
+        </button>{' '}
+        <button
+          type="button"
+          data-botao="DEP"
+          onClick={onClick}
+          class={dep === 0 ? 'zerado' : 'saldo'}
+        >
           Depósitos judiciais
         </button>
       </>
