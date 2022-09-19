@@ -11,6 +11,12 @@ interface Tagged<Tag extends keyof any> {
 interface TaggedWith<Tag extends keyof any, Data> extends Tagged<Tag> {
   data: Data;
 }
+class _TaggedWith<Tag extends keyof any, Data> implements TaggedWith<Tag, Data> {
+  constructor(public tag: Tag, public data: Data) {}
+  match(matchers: {}, otherwise?: Function) {
+    return match(this, matchers, otherwise as never);
+  }
+}
 type AnyTagged = Tagged<keyof any> | TaggedWith<keyof any, unknown>;
 type PartialMatchers<T extends AnyTagged, P extends T['tag'], U> = {
   [K in P]: T extends TaggedWith<K, infer Data>
@@ -78,15 +84,9 @@ export function createTaggedUnion<D extends Definitions<D>>(definitions: D) {
   const ctors: Partial<Record<keyof D, unknown>> = {};
   for (const [tag, f] of Object.entries(definitions) as [keyof D, CreatorFn | null][]) {
     if (f === null) {
-      const ctor = { tag } as Tagged<keyof D>;
-      ctor.match = match.bind(null, ctor) as Tagged<keyof D>['match'];
-      ctors[tag] = ctor;
+      ctors[tag] = new _TaggedWith(tag, undefined as never);
     } else {
-      ctors[tag] = (...args: any[]) => {
-        const ctor = { tag, data: f(...args) } as TaggedWith<keyof D, unknown>;
-        ctor.match = match.bind(null, ctor) as TaggedWith<keyof D, unknown>['match'];
-        return ctor;
-      };
+      ctors[tag] = (...args: any[]) => new _TaggedWith(tag, f(...args));
     }
   }
 
