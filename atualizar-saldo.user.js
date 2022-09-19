@@ -1,354 +1,1109 @@
 // ==UserScript==
-// @name        atualizar-saldos
-// @name:pt-BR  Atualizar saldos
-// @namespace   http://nadameu.com.br
-// @match       https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
-// @match       https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
-// @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
-// @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_precatorio_rpv&*
-// @match       https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
-// @match       https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
-// @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
-// @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
-// @grant       none
-// @version     2.0.0
-// @author      nadameu
-// @description Atualiza o saldo de contas judiciais
+// @name         atualizar-saldos
+// @name:pt-BR   Atualizar saldos
+// @namespace    http://nadameu.com.br
+// @version      2.0.0
+// @author       nadameu
+// @description  Atualiza o saldo de contas judiciais
+// @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
+// @match        https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
+// @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
+// @match        https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_precatorio_rpv&*
+// @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
+// @match        https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
+// @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
+// @match        https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
+// @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_depositos_judiciais&*
+// @match        https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=processo_depositos_judiciais&*
+// @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_depositos_judiciais&*
+// @match        https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_depositos_judiciais&*
+// @require      https://unpkg.com/preact@10.11.0/dist/preact.min.js
 // ==/UserScript==
 
-// ../../lib/predicates/index.ts
-var AssertionError = class extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "AssertionError";
+// use vite-plugin-monkey@2.4.1 at 2022-09-19T22:09:52.890Z
+
+(({ css: s = '' }) => {
+  const a = document.createElement('style');
+  (a.innerText = s), (a.dataset.source = 'vite-plugin-monkey'), document.head.appendChild(a);
+})({
+  css: '.infra-styles .gm-atualizar-saldo__contas span,.infra-styles .gm-atualizar-saldo__processo span{font-size:1.3em;line-height:2em;color:#220845}.infra-styles .gm-atualizar-saldo__contas span.zerado,.infra-styles .gm-atualizar-saldo__processo span.zerado{color:#655c70}.infra-styles .gm-atualizar-saldo__contas span.erro,.infra-styles .gm-atualizar-saldo__processo span.erro{color:#bd0f0f}.infra-styles .gm-atualizar-saldo__contas span.saldo,.infra-styles .gm-atualizar-saldo__processo span.saldo{color:#391070}.infra-styles .gm-atualizar-saldo__contas button,.infra-styles .gm-atualizar-saldo__processo button{--regular-bg: hsl(266, 25%, 40%);--highlighted-bg: hsl(266, 40%, 45%);--faded-bg: hsl(266, 10%, 40%);border:none;border-radius:4px;padding:4px 12px;font-size:1.3em;color:#fff;box-shadow:0 2px 4px #00000080;background:var(--regular-bg)}.infra-styles .gm-atualizar-saldo__contas button.zerado,.infra-styles .gm-atualizar-saldo__processo button.zerado{background:var(--faded-bg)}.infra-styles .gm-atualizar-saldo__contas button:hover,.infra-styles .gm-atualizar-saldo__contas button:focus,.infra-styles .gm-atualizar-saldo__processo button:hover,.infra-styles .gm-atualizar-saldo__processo button:focus{background:var(--highlighted-bg)}.infra-styles .gm-atualizar-saldo__contas button:active,.infra-styles .gm-atualizar-saldo__processo button:active{box-shadow:none;translate:0 2px}.infra-styles .gm-atualizar-saldo__processo{margin:0 2px 8px;border-left:4px solid hsl(266deg,75%,25%);padding:0 4px}.infra-styles .gm-atualizar-saldo__contas{border-left:4px solid hsl(266deg,75%,25%);padding:0 4px}',
+});
+
+(function (preact2) {
+  'use strict';
+  class _Either {
+    catch(f) {
+      return this.match({
+        Left: f,
+        Right: () => this,
+      });
+    }
+    chain(f) {
+      return this.match({
+        Left: () => this,
+        Right: f,
+      });
+    }
+    mapLeft(f) {
+      return this.match({
+        Left: x => Left(f(x)),
+        Right: () => this,
+      });
+    }
+    map(f) {
+      return this.match({
+        Left: () => this,
+        Right: x => Right(f(x)),
+      });
+    }
   }
-};
-function assert(condition, message) {
-  if (!condition)
-    throw new AssertionError(message);
-}
-function check(predicate, value, message) {
-  assert(predicate(value), message);
-  return value;
-}
-function isOfType(typeRepresentation) {
-  return (value) => typeof value === typeRepresentation;
-}
-var isNumber = /* @__PURE__ */ isOfType("number");
-var isOfTypeObject = /* @__PURE__ */ isOfType("object");
-var isString = /* @__PURE__ */ isOfType("string");
-function isLiteral(literal) {
-  return (value) => value === literal;
-}
-var isNull = /* @__PURE__ */ isLiteral(null);
-function negate(predicate) {
-  return (value) => !predicate(value);
-}
-var isNotNull = /* @__PURE__ */ negate(isNull);
-function refine(...predicates) {
-  return (value) => predicates.every((p) => p(value));
-}
-var isObject = /* @__PURE__ */ refine(isOfTypeObject, isNotNull);
-var isInteger = /* @__PURE__ */ refine(isNumber, (x) => Number.isInteger(x));
-var isNatural = /* @__PURE__ */ refine(isInteger, (x) => x > 0);
-var isNonNegativeInteger = /* @__PURE__ */ isAnyOf(
-  isLiteral(0),
-  isNatural
-);
-function isAnyOf(...predicates) {
-  return (value) => predicates.some((p) => p(value));
-}
-function isArray(predicate) {
-  return refine(
-    (value) => Array.isArray(value),
-    (xs) => xs.every(predicate)
-  );
-}
-function hasKeys(...keys) {
-  return refine(
-    isObject,
-    (obj) => keys.every((key) => key in obj)
-  );
-}
-function hasShape(predicates) {
-  const keys = Object.entries(predicates).map(
-    ([key, predicate]) => [
+  class _Left extends _Either {
+    constructor(leftValue) {
+      super();
+      this.leftValue = leftValue;
+      this.isLeft = true;
+      this.isRight = false;
+    }
+    match({ Left: Left2 }) {
+      return Left2(this.leftValue);
+    }
+  }
+  function Left(leftValue) {
+    return new _Left(leftValue);
+  }
+  class _Right extends _Either {
+    constructor(rightValue) {
+      super();
+      this.rightValue = rightValue;
+      this.isLeft = false;
+      this.isRight = true;
+    }
+    match({ Right: Right2 }) {
+      return Right2(this.rightValue);
+    }
+  }
+  function Right(rightValue) {
+    return new _Right(rightValue);
+  }
+  function traverse(collection, transform) {
+    const results = [];
+    for (const value of collection) {
+      const either = transform(value);
+      if (either.isLeft) return either;
+      results.push(either.rightValue);
+    }
+    return Right(results);
+  }
+  function validateAll(eithers) {
+    return validateMap(eithers, x => x);
+  }
+  function validateMap(collection, transform) {
+    const errors = [];
+    const results = [];
+    for (const value of collection) {
+      const either = transform(value);
+      if (either.isLeft) errors.push(either.leftValue);
+      else results.push(either.rightValue);
+    }
+    if (errors.length > 0) return Left(errors);
+    return Right(results);
+  }
+  class AssertionError extends Error {
+    constructor(message) {
+      super(message);
+      this.name = 'AssertionError';
+    }
+  }
+  function assert(condition, message) {
+    if (!condition) throw new AssertionError(message);
+  }
+  function check(predicate, value, message) {
+    assert(predicate(value), message);
+    return value;
+  }
+  function isOfType(typeRepresentation) {
+    return value => typeof value === typeRepresentation;
+  }
+  const isBoolean = /* @__PURE__ */ isOfType('boolean');
+  const isNumber = /* @__PURE__ */ isOfType('number');
+  const isOfTypeObject = /* @__PURE__ */ isOfType('object');
+  const isString = /* @__PURE__ */ isOfType('string');
+  function isLiteral(literal) {
+    return value => value === literal;
+  }
+  const isNull = /* @__PURE__ */ isLiteral(null);
+  function negate(predicate) {
+    return value => !predicate(value);
+  }
+  const isNotNull = /* @__PURE__ */ negate(isNull);
+  function refine(...predicates) {
+    return value => predicates.every(p => p(value));
+  }
+  const isObject = /* @__PURE__ */ refine(isOfTypeObject, isNotNull);
+  function isAnyOf(...predicates) {
+    return value => predicates.some(p => p(value));
+  }
+  function hasKeys(...keys) {
+    return refine(isObject, obj => keys.every(key => key in obj));
+  }
+  function hasShape(predicates) {
+    const keys = Object.entries(predicates).map(([key, predicate]) => [
       predicate.optional === true,
-      key
-    ]
-  );
-  const optional = keys.filter(([optional2]) => optional2).map(([, key]) => key);
-  const required = keys.filter(([optional2]) => !optional2).map(([, key]) => key);
-  return refine(
-    hasKeys(...required),
-    (obj) => required.every((key) => predicates[key](obj[key])) && optional.every((key) => key in obj ? predicates[key](obj[key]) : true)
-  );
-}
-
-// ../../lib/expect-unreachable/index.ts
-function expectUnreachable(value) {
-  throw new Error("Unexpected.");
-}
-
-// src/NumProc.ts
-var isNumproc = refine(isString, (x) => /^\d{20}$/.test(x));
-
-// src/processosAguardando.ts
-var STORAGE_KEY = "gm-atualizar-saldo-rpv";
-function obterProcessosAguardando() {
-  try {
-    return check(isArray(isNumproc), JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"));
-  } catch (_) {
-    return [];
+      key,
+    ]);
+    const optional = keys.filter(([optional2]) => optional2).map(([, key]) => key);
+    const required = keys.filter(([optional2]) => !optional2).map(([, key]) => key);
+    return refine(
+      hasKeys(...required),
+      obj =>
+        required.every(key => predicates[key](obj[key])) &&
+        optional.every(key => (key in obj ? predicates[key](obj[key]) : true))
+    );
   }
-}
-function adicionarProcessoAguardando(numproc) {
-  salvarProcessosAguardando(obterProcessosAguardando().concat([numproc]));
-}
-function removerProcessoAguardando(numproc) {
-  salvarProcessosAguardando(obterProcessosAguardando().filter((p) => p !== numproc));
-}
-function salvarProcessosAguardando(processos) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(processos));
-}
-
-// src/paginaProcesso.ts
-async function paginaProcesso(numproc) {
-  const capa = check(isNotNull, document.getElementById("fldCapa"), "Capa não encontrada.");
-  const linkContas = check(
-    isNotNull,
-    document.querySelector("a#labelPrecatorios"),
-    "Link não encontrado."
-  );
-  const url = linkContas.href;
-  await modificarPaginaProcesso({ capa, numproc, url });
-}
-async function modificarPaginaProcesso({
-  capa,
-  numproc,
-  url
-}) {
-  const botao = document.createElement("button");
-  botao.type = "button";
-  botao.textContent = "Atualizar saldo RPV";
-  botao.addEventListener("click", makeOnBotaoClick({ botao, numproc, url }));
-  capa.insertAdjacentElement("beforebegin", botao);
-}
-function makeOnBotaoClick({
-  botao,
-  numproc,
-  url
-}) {
-  return function onBotaoClick(evt) {
-    evt.preventDefault();
-    adicionarProcessoAguardando(numproc);
-    window.open(url);
-  };
-}
-
-// src/paginaContas.ts
-var PREFIXO_MSG = "<Atualizar saldo RPV>: ";
-var PREFIXO_MSG_HTML = PREFIXO_MSG.replace("<", "&lt;").replace(">", "&gt;");
-var estados = {
-  ATUALIZANDO_BLOQUEIOS: "atualizando-bloqueios",
-  ATUALIZANDO_SALDO: "atualizando-saldo",
-  CONTAS_ATUALIZADAS: "contas-atualizadas",
-  ERRO: "erro",
-  OBTER_CONTAS: "obter-contas"
-};
-async function paginaContas(numproc) {
-  if (!obterProcessosAguardando().includes(numproc))
-    return;
-  removerProcessoAguardando(numproc);
-  const barra = document.getElementById("divInfraBarraLocalizacao");
-  if (!barra) {
-    const msg = "Não foi possível obter um local para exibir o resultado.";
-    window.alert(`${PREFIXO_MSG}${msg}`);
-    throw new Error(msg);
+  function isTaggedUnion(tagName, union) {
+    return isAnyOf(
+      ...Object.entries(union).map(([tag, extraProperties]) =>
+        refine(
+          hasShape({
+            [tagName]: isLiteral(tag),
+          }),
+          hasShape(extraProperties)
+        )
+      )
+    );
   }
-  const output = barra.parentNode.insertBefore(
-    document.createElement("output"),
-    barra.nextSibling
-  );
-  const render = (estado) => {
-    output.innerHTML = obterHtml(estado);
-    function obterHtml(estado2) {
-      switch (estado2.tipo) {
-        case estados.ATUALIZANDO_BLOQUEIOS:
-          return mensagem(`Atualizando bloqueios da conta ${estado2.conta + 1}...`);
-        case estados.ATUALIZANDO_SALDO:
-          return mensagem(`Atualizando saldo da conta ${estado2.conta + 1}...`);
-        case estados.CONTAS_ATUALIZADAS:
-          if (estado2.qtd === 0) {
-            return mensagem(`Não é possível atualizar o saldo das contas.`, "erro");
-          } else {
-            const s = estado2.qtd > 1 ? "s" : "";
-            return mensagem(`${estado2.qtd} conta${s} atualizada${s}.`, "fim");
-          }
-        case estados.ERRO:
-          return mensagem(estado2.erro.message, "erro");
-        case estados.OBTER_CONTAS:
-          return mensagem(`Obtendo dados sobre as contas...`);
-        default:
-          return expectUnreachable(estado2);
-      }
-    }
-    function mensagem(texto, estilo) {
-      const style = estilo === "fim" ? "color: darkgreen;" : estilo === "erro" ? "color: red; font-weight: bold;" : null;
-      if (style)
-        return `<span style="${style}">${PREFIXO_MSG_HTML}${texto}</span>`;
-      else
-        return `${PREFIXO_MSG_HTML}${texto}`;
-    }
-  };
-  const dispatch = (() => {
-    let estado = { tipo: estados.OBTER_CONTAS };
-    render(estado);
-    return (f) => {
-      const proximo = f(estado, dispatch);
-      if (proximo !== estado) {
-        estado = proximo;
-        render(estado);
-      }
+  const isNumproc = refine(isString, x => /^\d{20}$/.test(x));
+  function createStore(getInitialState, reducer) {
+    const listeners = /* @__PURE__ */ new Set();
+    let state = getInitialState();
+    return {
+      dispatch,
+      getState,
+      subscribe,
     };
-  })();
-  const estadoErro = (msg) => ({ tipo: estados.ERRO, erro: new Error(msg) });
-  const acoes = {
-    bloqueiosAtualizados: () => (estado) => {
-      if (estado.tipo !== estados.ATUALIZANDO_BLOQUEIOS)
-        return estadoErro(`Estado inválido: ${JSON.stringify(estado)}`);
-      const proxima = estado.conta + 1;
-      if (proxima >= estado.fns.length) {
-        return { tipo: estados.CONTAS_ATUALIZADAS, qtd: estado.fns.length };
-      } else {
-        estado.fns[proxima]();
-        return { tipo: estados.ATUALIZANDO_SALDO, fns: estado.fns, conta: proxima };
-      }
-    },
-    contasObtidas: (fns) => (estado, dispatch2) => {
-      if (estado.tipo !== estados.OBTER_CONTAS)
-        return estadoErro(`Estado inválido: ${JSON.stringify(estado)}`);
-      if (fns.length === 0)
-        return { tipo: estados.CONTAS_ATUALIZADAS, qtd: 0 };
-      ouvirXHR(makeHandler(dispatch2));
-      fns[0]();
-      return { tipo: estados.ATUALIZANDO_SALDO, fns, conta: 0 };
-    },
-    erroAtualizacao: (texto) => (estado) => {
-      switch (estado.tipo) {
-        case estados.ATUALIZANDO_SALDO:
-          return estadoErro(`Erro atualizando saldo da conta ${estado.conta + 1}.`);
-        case estados.ATUALIZANDO_BLOQUEIOS:
-          return estadoErro(`Erro atualizando os bloqueios da conta ${estado.conta + 1}.`);
-        default:
-          return estadoErro(`Estado inválido: ${JSON.stringify(estado)}`);
-      }
-    },
-    saldoAtualizado: () => (estado) => {
-      if (estado.tipo !== estados.ATUALIZANDO_SALDO)
-        return estadoErro(`Estado inválido: ${JSON.stringify(estado)}`);
-      return { tipo: estados.ATUALIZANDO_BLOQUEIOS, fns: estado.fns, conta: estado.conta };
+    function dispatch(action) {
+      state = reducer(state, action);
+      for (const l of listeners) l(state);
     }
-  };
-  obterContas();
-  return;
-  function obterContas() {
-    const linksAtualizar = document.querySelectorAll(
+    function getState() {
+      return state;
+    }
+    function subscribe(listener) {
+      listeners.add(listener);
+      listener(state);
+      return {
+        unsubscribe,
+      };
+      function unsubscribe() {
+        listeners.delete(listener);
+      }
+    }
+  }
+  function matchNotFound(variant) {
+    throw new Error(`Not matched: "${String(variant.tag)}".`);
+  }
+  class Matching {
+    constructor(tag) {
+      this.tag = tag;
+    }
+    match(matchers) {
+      return _match(this, matchers);
+    }
+    matchOr(matchers, otherwise) {
+      return _match(this, matchers, otherwise);
+    }
+  }
+  class MatchingWith extends Matching {
+    constructor(tag, data) {
+      super(tag);
+      this.data = data;
+    }
+    match(matchers) {
+      return _match(this, matchers);
+    }
+    matchOr(matchers, otherwise) {
+      return _match(this, matchers, otherwise);
+    }
+  }
+  function _match(obj, matchers, otherwise = matchNotFound) {
+    if (!obj.tag) throw new Error('Object does not have a valid "tag" property.');
+    return obj.tag in matchers ? matchers[obj.tag](obj.data) : otherwise(obj);
+  }
+  function match(obj, matchers) {
+    return _match(obj, matchers);
+  }
+  function createTaggedUnion(definitions) {
+    const ctors = {};
+    for (const [tag, f] of Object.entries(definitions)) {
+      if (f === null) {
+        ctors[tag] = new Matching(tag);
+      } else {
+        ctors[tag] = (...args) => new MatchingWith(tag, f(...args));
+      }
+    }
+    return ctors;
+  }
+  function createBroadcastService(id, validate) {
+    const listeners = /* @__PURE__ */ new Set();
+    const bc = new BroadcastChannel(id);
+    bc.addEventListener('message', onMessage);
+    return {
+      destroy,
+      publish,
+      subscribe,
+    };
+    function onMessage(evt) {
+      if (validate(evt.data)) for (const listener of listeners) listener(evt.data);
+    }
+    function destroy() {
+      bc.removeEventListener('message', onMessage);
+      listeners.clear();
+      bc.close();
+    }
+    function publish(message) {
+      bc.postMessage(message);
+    }
+    function subscribe(listener) {
+      listeners.add(listener);
+      return {
+        unsubscribe() {
+          listeners.delete(listener);
+        },
+      };
+    }
+  }
+  const Mensagem = /* @__PURE__ */ createTaggedUnion({
+    InformaContas: (numproc, qtdComSaldo, permiteAtualizar) => ({
+      numproc,
+      qtdComSaldo,
+      permiteAtualizar,
+    }),
+    InformaSaldoDeposito: (numproc, qtdComSaldo) => ({
+      numproc,
+      qtdComSaldo,
+    }),
+    PerguntaAtualizar: numproc => ({
+      numproc,
+    }),
+    RespostaAtualizar: (numproc, atualizar) => ({
+      numproc,
+      atualizar,
+    }),
+  });
+  const isMensagem = /* @__PURE__ */ isTaggedUnion('tag', {
+    InformaContas: {
+      data: hasShape({
+        numproc: isNumproc,
+        qtdComSaldo: isNumber,
+        permiteAtualizar: isBoolean,
+      }),
+    },
+    InformaSaldoDeposito: {
+      data: hasShape({
+        numproc: isNumproc,
+        qtdComSaldo: isNumber,
+      }),
+    },
+    PerguntaAtualizar: {
+      data: hasShape({
+        numproc: isNumproc,
+      }),
+    },
+    RespostaAtualizar: {
+      data: hasShape({
+        numproc: isNumproc,
+        atualizar: isBoolean,
+      }),
+    },
+  });
+  function createMsgService() {
+    return createBroadcastService('gm-atualizar-saldo', isMensagem);
+  }
+  var _ = 0;
+  function o(o2, e, n, t, f) {
+    var l,
+      s,
+      u = {};
+    for (s in e) 'ref' == s ? (l = e[s]) : (u[s] = e[s]);
+    var a = {
+      type: o2,
+      props: u,
+      key: n,
+      ref: l,
+      __k: null,
+      __: null,
+      __b: 0,
+      __e: null,
+      __d: void 0,
+      __c: null,
+      __h: null,
+      constructor: void 0,
+      __v: --_,
+      __source: f,
+      __self: t,
+    };
+    if ('function' == typeof o2 && (l = o2.defaultProps))
+      for (s in l) void 0 === u[s] && (u[s] = l[s]);
+    return preact2.options.vnode && preact2.options.vnode(a), a;
+  }
+  const Estado$1 = createTaggedUnion({
+    Ocioso: infoContas => infoContas,
+    Atualizando: (infoContas, conta) => ({
+      infoContas,
+      conta,
+    }),
+    Erro: erro => erro,
+  });
+  const Acao$1 = createTaggedUnion({
+    Atualizar: null,
+    SaldoAtualizado: saldo => saldo,
+    ErroComunicacao: mensagem => mensagem,
+  });
+  function paginaContas(numproc) {
+    const barra = document.getElementById('divInfraBarraLocalizacao');
+    if (!barra) {
+      return Left([new Error('Barra de localiza\xE7\xE3o n\xE3o encontrada.')]);
+    }
+    const div = document.createElement('div');
+    div.className = 'gm-atualizar-saldo__contas';
+    barra.insertAdjacentElement('afterend', div);
+    const bc = createMsgService();
+    const store = createStore(
+      () => {
+        const estado = obterContas().match({
+          Left: Estado$1.Erro,
+          Right: Estado$1.Ocioso,
+        });
+        if (estado.tag !== 'Erro') {
+          bc.subscribe(msg =>
+            match(msg, {
+              InformaContas: () => {},
+              InformaSaldoDeposito: () => {},
+              PerguntaAtualizar: () => {},
+              RespostaAtualizar: ({ numproc: msgNumproc, atualizar }) => {
+                if (msgNumproc !== numproc) return;
+                if (atualizar) {
+                  store.dispatch(Acao$1.Atualizar);
+                }
+              },
+            })
+          );
+          bc.publish(Mensagem.PerguntaAtualizar(numproc));
+        }
+        return estado;
+      },
+      (estado, acao) =>
+        acao.match({
+          Atualizar: () =>
+            estado.match({
+              Erro: () => estado,
+              Ocioso: infoContas => {
+                ouvirXHR(x => store.dispatch(x));
+                const primeiraConta = findIndex(infoContas, x => x.atualizacao !== null);
+                if (primeiraConta < 0) {
+                  bc.publish(
+                    Mensagem.InformaContas(
+                      numproc,
+                      infoContas.map(x => x.saldo).filter(x => x > 0).length,
+                      false
+                    )
+                  );
+                  return estado;
+                }
+                infoContas[primeiraConta].atualizacao();
+                return Estado$1.Atualizando(infoContas, primeiraConta);
+              },
+              Atualizando: () =>
+                Estado$1.Erro(
+                  new Error('Tentativa de atualiza\xE7\xE3o durante outra atualiza\xE7\xE3o.')
+                ),
+            }),
+          SaldoAtualizado: saldo =>
+            estado.match({
+              Erro: () => estado,
+              Ocioso: () => estado,
+              Atualizando: ({ conta, infoContas }) => {
+                const infoNova = infoContas
+                  .slice(0, conta)
+                  .concat([
+                    {
+                      saldo,
+                      atualizacao: null,
+                    },
+                  ])
+                  .concat(infoContas.slice(conta + 1));
+                const proxima = findIndex(infoNova, x => x.atualizacao !== null, conta + 1);
+                if (proxima < 0) {
+                  const qtdComSaldo = infoNova.map(x => x.saldo).filter(x => x > 0).length;
+                  const permiteAtualizar = infoNova.some(x => x.atualizacao !== null);
+                  bc.publish(Mensagem.InformaContas(numproc, qtdComSaldo, permiteAtualizar));
+                  return Estado$1.Ocioso(infoNova);
+                }
+                infoNova[proxima].atualizacao();
+                return Estado$1.Atualizando(infoNova, proxima);
+              },
+            }),
+          ErroComunicacao: (mensagem = 'Ocorreu um erro na atualiza\xE7\xE3o dos saldos.') =>
+            estado.matchOr(
+              {
+                Erro: () => estado,
+              },
+              () => {
+                bc.destroy();
+                return Estado$1.Erro(new Error(mensagem));
+              }
+            ),
+        })
+    );
+    const sub = store.subscribe(update);
+    return Right(void 0);
+    function App({ estado }) {
+      return estado.match({
+        Atualizando: ({ conta }) =>
+          o('span', {
+            children: ['Atualizando conta ', conta + 1, '...'],
+          }),
+        Ocioso: infoContas => {
+          const contasComSaldo = infoContas.filter(x => x.saldo > 0).length;
+          const contasAtualizaveis = infoContas.map(x => x.atualizacao).filter(x => x !== null);
+          const classe = contasComSaldo === 0 ? 'zerado' : 'saldo';
+          const mensagem =
+            contasComSaldo === 0
+              ? 'Sem saldo em conta(s).'
+              : contasComSaldo === 1
+              ? 'H\xE1 1 conta com saldo.'
+              : `H\xE1 ${contasComSaldo} contas com saldo.`;
+          const botao =
+            contasAtualizaveis.length === 0
+              ? null
+              : o('button', {
+                  onClick,
+                  children: 'Atualizar',
+                });
+          return o(preact2.Fragment, {
+            children: [
+              o('span', {
+                class: classe,
+                children: mensagem,
+              }),
+              o('br', {}),
+              botao,
+            ],
+          });
+        },
+        Erro: erro => {
+          sub.unsubscribe();
+          return o('span', {
+            class: 'erro',
+            children: erro.message,
+          });
+        },
+      });
+    }
+    function onClick(evt) {
+      evt.preventDefault();
+      store.dispatch(Acao$1.Atualizar);
+    }
+    function update(estado) {
+      preact2.render(
+        o(App, {
+          estado,
+        }),
+        div
+      );
+    }
+    function obterContas() {
+      const tabela = document.querySelector('#divInfraAreaDadosDinamica > table');
+      if (!tabela) return Right([]);
+      return traverse(tabela.querySelectorAll('tr[id^="tdConta"]'), obterInfoContaLinha$1).mapLeft(
+        e => new Error('Erro ao obter dados das contas.')
+      );
+    }
+    function ouvirXHR(handler) {
+      $.ajaxSetup({
+        complete(xhr, resultado) {
+          if (
+            !hasShape({
+              url: isString,
+            })(this)
+          )
+            return;
+          const url = new URL(this.url, document.location.href);
+          if (!/\/controlador_ajax\.php$/.test(url.pathname)) return;
+          if (url.searchParams.get('acao_ajax') !== 'atualizar_precatorio_rpv') return;
+          try {
+            check(isLiteral(200), xhr.status);
+            const responseXML = xhr.responseXML;
+            if (responseXML) {
+              const erros = responseXML.querySelectorAll('erros > erro');
+              const mensagem =
+                erros.length === 0
+                  ? void 0
+                  : Array.from(erros, erro => erro.getAttribute('descricao')?.trim() ?? '')
+                      .filter(x => x !== '')
+                      .join('\n') || void 0;
+              return handler(Acao$1.ErroComunicacao(mensagem));
+            }
+            const json = check(
+              hasShape({
+                saldo_valor_total_sem_formatacao: isString,
+              }),
+              xhr.responseJSON
+            );
+            const novoSaldo = check(
+              x => !Number.isNaN(x),
+              Number(json.saldo_valor_total_sem_formatacao)
+            );
+            return handler(Acao$1.SaldoAtualizado(novoSaldo));
+          } catch (err) {
+            const mensagem = err instanceof Error ? err.message : void 0;
+            return handler(Acao$1.ErroComunicacao(mensagem));
+          }
+        },
+      });
+    }
+  }
+  const jsLinkRE =
+    /^javascript:atualizarSaldo\('(\d{20})','(\d{4})',(\d+),'(\d+)','(\d{20})',(\d{3}),'(\d+)',(\d+)\)$/;
+  function obterInfoContaLinha$1(row) {
+    if (row.cells.length !== 15) return Left(null);
+    const celulaSaldo = row.querySelector('td[id^="saldoRemanescente"]');
+    if (!celulaSaldo) {
+      if ((row.cells[12]?.textContent ?? '').match(/^Valor estornado/))
+        return Right({
+          saldo: 0,
+          atualizacao: null,
+        });
+      return Left(null);
+    }
+    const textoSaldo = celulaSaldo.textContent ?? '';
+    const match2 = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
+    if (!match2 || match2.length < 2) return Left(null);
+    const [, numeros] = match2;
+    const saldo = Number(numeros.replace(/\./g, '').replace(',', '.'));
+    const link = row.cells[row.cells.length - 1].querySelector(
       'a[href^="javascript:atualizarSaldo("]'
     );
-    if (linksAtualizar.length === 0)
-      return dispatch(acoes.contasObtidas([]));
-    const jsLinkRE = /^javascript:atualizarSaldo\('(?<numProcessoOriginario>\d{20})','(?<agencia>\d{4})',(?<conta>\d+),'(?<idProcesso>\d+)','(?<numProcesso>\d{20})',(?<numBanco>\d{3}),'(?<idRequisicaoBeneficiarioPagamento>\d+)',(?<qtdMovimentos>\d+)\)$/;
-    const temCamposObrigatorios = hasShape({
-      numProcessoOriginario: isString,
-      agencia: isString,
-      conta: isString,
-      idProcesso: isString,
-      numProcesso: isString,
-      numBanco: isString,
-      idRequisicaoBeneficiarioPagamento: isString,
-      qtdMovimentos: isString
-    });
-    const fnsAtualizacao = Array.from(
-      linksAtualizar,
-      (link) => check(
-        temCamposObrigatorios,
-        link.href.match(jsLinkRE)?.groups,
-        "Link de atualização desconhecido."
-      )
-    ).map((groups) => {
-      const {
+    let atualizacao = null;
+    if (link) {
+      const match3 = link.href.match(jsLinkRE);
+      if (!match3 || match3.length < 9) return Left(null);
+      const [
+        _2,
         numProcessoOriginario,
         agencia,
-        conta: strConta,
+        strConta,
         idProcesso,
         numProcesso,
-        numBanco: strBanco,
+        strBanco,
         idRequisicaoBeneficiarioPagamento,
-        qtdMovimentos: strQtdMovimentos
-      } = groups;
+        strQtdMovimentos,
+      ] = match3;
       const [conta, numBanco, qtdMovimentos] = [
         Number(strConta),
         Number(strBanco),
-        Number(strQtdMovimentos)
-      ];
-      return () => atualizarSaldo(
-        numProcessoOriginario,
-        agencia,
-        conta,
-        idProcesso,
-        numProcesso,
-        numBanco,
-        idRequisicaoBeneficiarioPagamento,
-        qtdMovimentos
+        Number(strQtdMovimentos),
+      ].filter(x => !Number.isNaN(x));
+      if (conta === void 0 || numBanco === void 0 || qtdMovimentos === void 0) {
+        return Left(null);
+      }
+      atualizacao = () =>
+        atualizarSaldo(
+          numProcessoOriginario,
+          agencia,
+          conta,
+          idProcesso,
+          numProcesso,
+          numBanco,
+          idRequisicaoBeneficiarioPagamento,
+          qtdMovimentos
+        );
+    }
+    return Right({
+      saldo,
+      atualizacao,
+    });
+  }
+  function findIndex(xs, pred, startAt = 0) {
+    const len = xs.length;
+    for (let i = startAt; i < len; i++) {
+      if (pred(xs[i])) return i;
+    }
+    return -1;
+  }
+  const Estado = createTaggedUnion({
+    Ocioso: infoContas => infoContas,
+    Erro: erro => erro,
+  });
+  const Acao = createTaggedUnion({
+    Atualizar: null,
+  });
+  function paginaDepositos(numproc) {
+    const barra = document.getElementById('divInfraBarraLocalizacao');
+    if (!barra) {
+      return Left([new Error('Barra de localiza\xE7\xE3o n\xE3o encontrada.')]);
+    }
+    const div = document.createElement('div');
+    div.className = 'gm-atualizar-saldo__contas';
+    barra.insertAdjacentElement('afterend', div);
+    const bc = createMsgService();
+    const store = createStore(
+      () =>
+        obterContas().match({
+          Left: Estado.Erro,
+          Right: infoContas => {
+            bc.publish(
+              Mensagem.InformaSaldoDeposito(numproc, infoContas.filter(x => x.saldo > 0).length)
+            );
+            bc.destroy();
+            return Estado.Ocioso(infoContas);
+          },
+        }),
+      (estado, acao) =>
+        acao.match({
+          Atualizar: () =>
+            estado.match({
+              Erro: () => estado,
+              Ocioso: () => {
+                consultarSaldoTodos();
+                return estado;
+              },
+            }),
+        })
+    );
+    const sub = store.subscribe(update);
+    return Right(void 0);
+    function App({ estado }) {
+      return estado.match({
+        Ocioso: infoContas => {
+          const contasComSaldo = infoContas.filter(x => x.saldo > 0).length;
+          const contasAtualizaveis = infoContas.filter(x => x.atualizacao).length;
+          const classe = contasComSaldo === 0 ? 'zerado' : 'saldo';
+          const mensagem =
+            contasComSaldo === 0
+              ? 'Sem saldo em conta(s).'
+              : contasComSaldo === 1
+              ? 'H\xE1 1 conta com saldo.'
+              : `H\xE1 ${contasComSaldo} contas com saldo.`;
+          const botao =
+            contasAtualizaveis === 0
+              ? null
+              : o('button', {
+                  onClick,
+                  children: 'Atualizar',
+                });
+          return o(preact2.Fragment, {
+            children: [
+              o('span', {
+                class: classe,
+                children: mensagem,
+              }),
+              o('br', {}),
+              botao,
+            ],
+          });
+        },
+        Erro: erro => {
+          sub.unsubscribe();
+          return o('span', {
+            class: 'erro',
+            children: erro.message,
+          });
+        },
+      });
+    }
+    function onClick(evt) {
+      evt.preventDefault();
+      store.dispatch(Acao.Atualizar);
+    }
+    function update(estado) {
+      preact2.render(
+        o(App, {
+          estado,
+        }),
+        div
+      );
+    }
+    function obterContas() {
+      const tabela = document.querySelector('table#tblSaldoConta');
+      if (!tabela) return Left(new Error('Tabela de contas n\xE3o encontrada'));
+      return traverse(
+        Array.from(tabela.querySelectorAll('tr[id^="tblSaldoContaROW"]')).filter(
+          x => !/Saldos$/.test(x.id)
+        ),
+        obterInfoContaLinha
+      ).mapLeft(e => new Error('Erro ao obter dados das contas.'));
+    }
+  }
+  function obterInfoContaLinha(row) {
+    if (row.cells.length !== 11) return Left(null);
+    const textoSaldo = row.cells[7].textContent ?? '';
+    const match2 = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
+    if (!match2 || match2.length < 2) return Left(null);
+    const [, numeros] = match2;
+    const saldo = Number(numeros.replace(/\./g, '').replace(',', '.'));
+    const link = row.cells[row.cells.length - 1].querySelector('a[onclick^="consultarSaldo("]');
+    const atualizacao = link !== null;
+    return Right({
+      saldo,
+      atualizacao,
+    });
+  }
+  function expectUnreachable(value) {
+    throw new Error('Unexpected.');
+  }
+  function obter(selector, msg) {
+    const elt = document.querySelector(selector);
+    if (isNull(elt)) return Left(new Error(msg));
+    else return Right(elt);
+  }
+  function paginaProcesso(numproc) {
+    return validateAll([obterInformacoesAdicionais(), obterLinkRPV(), obterLinkDepositos()]).map(
+      ([informacoesAdicionais, linkRPV, linkDepositos]) =>
+        modificarPaginaProcesso({
+          informacoesAdicionais,
+          linkRPV,
+          linkDepositos,
+          numproc,
+        })
+    );
+  }
+  function modificarPaginaProcesso({ informacoesAdicionais, linkRPV, linkDepositos, numproc }) {
+    const Estado2 = createTaggedUnion({
+      AguardaVerificacaoInicial: null,
+      AguardaAtualizacao: dados => dados,
+      Ocioso: dados => dados,
+      Erro: null,
+    });
+    const Acao2 = createTaggedUnion({
+      Erro: null,
+      PaginaContasAberta: null,
+      VerificacaoTerminada: info => info,
+      AtualizacaoRPV: info => info,
+      AtualizacaoDepositos: info => info,
+      Clique: alvo => ({
+        alvo,
+      }),
+    });
+    const bc = createMsgService();
+    const store = createStore(
+      () => {
+        const INTERVALO = 100;
+        let aguardarMilissegundos = 3e3;
+        const timer = window.setInterval(() => {
+          aguardarMilissegundos -= INTERVALO;
+          if (linkRPV.textContent === '') {
+            if (aguardarMilissegundos <= 0) {
+              window.clearInterval(timer);
+              store.dispatch(Acao2.Erro);
+            }
+          } else {
+            window.clearInterval(timer);
+            const info = {
+              rpv: {
+                quantidade: 0,
+                atualiza: false,
+              },
+              depositos: {
+                quantidade: 0,
+                atualiza: false,
+              },
+            };
+            if (linkRPV.textContent === 'H\xE1 conta com saldo')
+              info.rpv = {
+                quantidade: void 0,
+                atualiza: true,
+              };
+            if (linkDepositos.textContent === 'H\xE1 conta com saldo')
+              info.depositos = {
+                quantidade: void 0,
+                atualiza: false,
+              };
+            store.dispatch(Acao2.VerificacaoTerminada(info));
+          }
+        }, INTERVALO);
+        bc.subscribe(msg => {
+          match(msg, {
+            InformaContas: ({ numproc: msgNumproc, qtdComSaldo, permiteAtualizar }) => {
+              if (msgNumproc !== numproc) return;
+              store.dispatch(
+                Acao2.AtualizacaoRPV({
+                  quantidade: qtdComSaldo,
+                  atualiza: permiteAtualizar,
+                })
+              );
+            },
+            InformaSaldoDeposito: ({ numproc: msgNumproc, qtdComSaldo }) => {
+              if (msgNumproc !== numproc) return;
+              store.dispatch(
+                Acao2.AtualizacaoDepositos({
+                  quantidade: qtdComSaldo,
+                  atualiza: false,
+                })
+              );
+            },
+            PerguntaAtualizar: ({ numproc: msgNumproc }) => {
+              if (msgNumproc !== numproc) return;
+              store.dispatch(Acao2.PaginaContasAberta);
+            },
+            RespostaAtualizar: () => {},
+          });
+        });
+        return Estado2.AguardaVerificacaoInicial;
+      },
+      (estado, acao) =>
+        acao.match({
+          AtualizacaoDepositos: dados =>
+            estado.match({
+              AguardaAtualizacao: ({ rpv }) =>
+                Estado2.AguardaAtualizacao({
+                  rpv,
+                  depositos: dados,
+                }),
+              AguardaVerificacaoInicial: () => Estado2.Erro,
+              Erro: () => estado,
+              Ocioso: ({ rpv }) =>
+                Estado2.Ocioso({
+                  rpv,
+                  depositos: dados,
+                }),
+            }),
+          AtualizacaoRPV: dados =>
+            estado.match({
+              AguardaAtualizacao: ({ depositos }) =>
+                Estado2.Ocioso({
+                  rpv: dados,
+                  depositos,
+                }),
+              AguardaVerificacaoInicial: () => Estado2.Erro,
+              Erro: () => estado,
+              Ocioso: ({ depositos }) =>
+                Estado2.Ocioso({
+                  rpv: dados,
+                  depositos,
+                }),
+            }),
+          Clique: ({ alvo }) =>
+            estado.match({
+              AguardaVerificacaoInicial: () => estado,
+              AguardaAtualizacao: () => estado,
+              Ocioso: dados => {
+                if (alvo === 'BOTAO_DEP' || alvo === 'LINK_DEP') {
+                  window.open(linkDepositos.href);
+                } else if (alvo === 'BOTAO_RPV' || alvo === 'LINK_RPV') {
+                  window.open(linkRPV.href);
+                  if (alvo === 'BOTAO_RPV' && dados.rpv.atualiza) {
+                    return Estado2.AguardaAtualizacao(dados);
+                  }
+                }
+                return estado;
+              },
+              Erro: () => estado,
+            }),
+          Erro: () =>
+            estado.matchOr(
+              {
+                Erro: () => estado,
+              },
+              () => {
+                bc.destroy();
+                return Estado2.Erro;
+              }
+            ),
+          PaginaContasAberta: () =>
+            estado.match({
+              AguardaVerificacaoInicial: () => Estado2.Erro,
+              AguardaAtualizacao: () => {
+                bc.publish(Mensagem.RespostaAtualizar(numproc, true));
+                return estado;
+              },
+              Ocioso: () => estado,
+              Erro: () => estado,
+            }),
+          VerificacaoTerminada: dados => {
+            const ocioso = Estado2.Ocioso(dados);
+            return estado.match({
+              AguardaVerificacaoInicial: () => ocioso,
+              AguardaAtualizacao: () => ocioso,
+              Ocioso: () => ocioso,
+              Erro: () => estado,
+            });
+          },
+        })
+    );
+    let div;
+    const sub = store.subscribe(estado => {
+      if (!div) {
+        div = document.createElement('div');
+        div.className = 'gm-atualizar-saldo__processo';
+        informacoesAdicionais.insertAdjacentElement('beforebegin', div);
+        linkRPV.addEventListener('click', onClick);
+        linkDepositos.addEventListener('click', onClick);
+      }
+      preact2.render(
+        o(App, {
+          estado,
+          onClick,
+        }),
+        div
       );
     });
-    dispatch(acoes.contasObtidas(fnsAtualizacao));
-  }
-  function ouvirXHR(handler) {
-    $.ajaxSetup({
-      complete(xhr, resultado) {
-        handler({ resultado, texto: xhr.responseText });
+    function onClick(evt) {
+      if (evt.target === linkRPV) {
+        store.dispatch(Acao2.Clique('LINK_RPV'));
+      } else if (evt.target === linkDepositos) {
+        store.dispatch(Acao2.Clique('LINK_DEP'));
+      } else {
+        const tipoBotao = evt.target?.dataset.botao;
+        if (tipoBotao === 'RPV') {
+          store.dispatch(Acao2.Clique('BOTAO_RPV'));
+        } else if (tipoBotao === 'DEP') {
+          store.dispatch(Acao2.Clique('BOTAO_DEP'));
+        } else {
+          return;
+        }
       }
-    });
+      evt.preventDefault();
+    }
+    function App({ estado }) {
+      return match(estado, {
+        AguardaVerificacaoInicial: () =>
+          o('output', {
+            children: 'Verificando contas com saldo...',
+          }),
+        AguardaAtualizacao: () =>
+          o('output', {
+            children: 'Aguardando atualiza\xE7\xE3o das contas...',
+          }),
+        Ocioso: ({ depositos, rpv }) => {
+          const qDep = depositos.quantidade;
+          const qRPV = rpv.quantidade;
+          const classe = qDep === 0 && qRPV === 0 ? 'zerado' : 'saldo';
+          const mensagem = (resultado => {
+            switch (resultado) {
+              case 'R0D0':
+                return 'Sem saldo em conta(s).';
+              case 'R?D0':
+              case 'R+D0': {
+                const contasRPV =
+                  qRPV === void 0 ? 'conta(s)' : qRPV === 1 ? '1 conta' : `${qRPV} contas`;
+                return `H\xE1 ${contasRPV} de requisi\xE7\xE3o de pagamento com saldo.`;
+              }
+              case 'R0D?':
+              case 'R0D+': {
+                const contasDep =
+                  qDep === void 0 ? 'conta(s)' : qDep === 1 ? '1 conta' : `${qDep} contas`;
+                return `H\xE1 ${contasDep} de dep\xF3sito judicial com saldo.`;
+              }
+              case 'R+D+':
+                const rs = (qRPV ?? 0) > 1 ? 's' : '';
+                const ds = (qDep ?? 0) > 1 ? 's' : '';
+                return `H\xE1 ${qRPV} conta${rs} de requisi\xE7\xE3o de pagamento e ${qDep} conta${ds} de dep\xF3sito judicial com saldo.`;
+              case 'R+D?':
+              case 'R?D+':
+              case 'R?D?':
+                return 'H\xE1 conta(s) de requisi\xE7\xE3o de pagamento e de dep\xF3sito judicial com saldo.';
+              default:
+                return expectUnreachable();
+            }
+          })(
+            `R${qRPV === void 0 ? '?' : qRPV === 0 ? '0' : '+'}D${
+              qDep === void 0 ? '?' : qDep === 0 ? '0' : '+'
+            }`
+          );
+          return o(MensagemComBotao, {
+            classe,
+            mensagem,
+            rpv: qRPV ?? -1,
+            dep: qDep ?? -1,
+          });
+        },
+        Erro: () => {
+          sub.unsubscribe();
+          linkRPV.removeEventListener('click', onClick);
+          linkDepositos.removeEventListener('click', onClick);
+          return o(MensagemComBotao, {
+            classe: 'erro',
+            mensagem: 'Ocorreu um erro com a atualiza\xE7\xE3o de saldos.',
+            rpv: 0,
+            dep: 0,
+          });
+        },
+      });
+    }
+    function MensagemComBotao({ classe, mensagem, rpv, dep }) {
+      return o(preact2.Fragment, {
+        children: [
+          o('span', {
+            class: classe,
+            children: mensagem,
+          }),
+          ' ',
+          o('button', {
+            'type': 'button',
+            'data-botao': 'RPV',
+            onClick,
+            'class': rpv === 0 ? 'zerado' : 'saldo',
+            'children': 'RPVs/precat\xF3rios',
+          }),
+          ' ',
+          o('button', {
+            'type': 'button',
+            'data-botao': 'DEP',
+            onClick,
+            'class': dep === 0 ? 'zerado' : 'saldo',
+            'children': 'Dep\xF3sitos judiciais',
+          }),
+        ],
+      });
+    }
   }
-  function makeHandler(dispatch2) {
-    return ({ resultado, texto }) => {
-      console.debug({ resultado, texto });
-      if (resultado !== "success") {
-        dispatch2(acoes.erroAtualizacao(texto));
-      } else if (texto.match(/"saldo_valor_disponivel"/)) {
-        dispatch2(acoes.saldoAtualizado());
-      } else if (texto.match(/"htmlBloqueiosConta"/)) {
-        dispatch2(acoes.bloqueiosAtualizados());
-      }
-    };
+  function obterLinkRPV() {
+    return obter(
+      'a#labelPrecatorios',
+      'Link para requisi\xE7\xF5es de pagamento n\xE3o encontrado.'
+    );
   }
-}
-
-// src/main.ts
-var isAcaoReconhecida = isAnyOf(
-  isLiteral("processo_selecionar"),
-  isLiteral("processo_precatorio_rpv")
-);
-async function main() {
-  const acao = new URL(document.location.href).searchParams.get("acao");
-  assert(isNotNull(acao), "Página desconhecida.");
-  assert(isAcaoReconhecida(acao), `Ação desconhecida: "${acao}".`);
-  const numproc = new URL(document.location.href).searchParams.get("num_processo");
-  assert(isNotNull(numproc), "Número do processo não encontrado.");
-  assert(isNumproc(numproc), `Número de processo inválido: "${numproc}".`);
-  switch (acao) {
-    case "processo_selecionar":
-      return paginaProcesso(numproc);
-    case "processo_precatorio_rpv":
-      return paginaContas(numproc);
-    default:
-      expectUnreachable(acao);
+  function obterLinkDepositos() {
+    return obter('a#labelDepositoJudicial', 'Link para dep\xF3sitos judiciais n\xE3o encontrado.');
   }
-}
-
-// src/index.ts
-main().catch((err) => {
-  console.error(err);
-});
+  function obterInformacoesAdicionais() {
+    return obter(
+      '#fldInformacoesAdicionais',
+      'Tabela de informa\xE7\xF5es adicionais n\xE3o encontrada.'
+    );
+  }
+  const main$1 = '';
+  const paginas = {
+    processo_selecionar: paginaProcesso,
+    processo_precatorio_rpv: paginaContas,
+    processo_depositos_judiciais: paginaDepositos,
+  };
+  const isAcaoReconhecida = isAnyOf(...Object.keys(paginas).map(k => isLiteral(k)));
+  function main() {
+    const params = new URL(document.location.href).searchParams;
+    return validateAll([obterAcao(params), obterNumProc(params)]).chain(([acao, numproc]) =>
+      paginas[acao](numproc)
+    );
+  }
+  function obterAcao(params) {
+    const acao = params.get('acao');
+    if (isNull(acao)) return Left(new Error('P\xE1gina desconhecida'));
+    if (!isAcaoReconhecida(acao)) return Left(new Error(`A\xE7\xE3o desconhecida: "${acao}".`));
+    return Right(acao);
+  }
+  function obterNumProc(params) {
+    const numproc = params.get('num_processo');
+    if (isNull(numproc)) return Left(new Error('N\xFAmero do processo n\xE3o encontrado.'));
+    if (!isNumproc(numproc))
+      return Left(new Error(`N\xFAmero de processo inv\xE1lido: "${numproc}".`));
+    return Right(numproc);
+  }
+  main().mapLeft(errors => {
+    console.group('<atualizar-saldo>');
+    for (const error of errors) {
+      console.error(error);
+    }
+    console.groupEnd();
+  });
+})(preact);
