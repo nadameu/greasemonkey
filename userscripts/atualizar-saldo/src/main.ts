@@ -2,12 +2,14 @@ import { Either, Left, Right, validateAll } from '@nadameu/either';
 import * as p from '@nadameu/predicates';
 import { isNumproc, NumProc } from './NumProc';
 import { paginaContas } from './paginaContas';
+import { paginaDepositos } from './paginaDepositos';
 import { paginaProcesso } from './paginaProcesso';
 import './main.scss';
 
 const paginas = {
   processo_selecionar: paginaProcesso,
   processo_precatorio_rpv: paginaContas,
+  processo_depositos_judiciais: paginaDepositos,
 };
 
 const isAcaoReconhecida = p.isAnyOf(
