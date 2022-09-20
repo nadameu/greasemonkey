@@ -2,7 +2,7 @@
 // @name         atualizar-saldos
 // @name:pt-BR   Atualizar saldos
 // @namespace    http://nadameu.com.br
-// @version      2.0.0
+// @version      2.1.0
 // @author       nadameu
 // @description  Atualiza o saldo de contas judiciais
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
@@ -20,13 +20,13 @@
 // @require      https://unpkg.com/preact@10.11.0/dist/preact.min.js
 // ==/UserScript==
 
-// use vite-plugin-monkey@2.4.1 at 2022-09-19T22:09:52.890Z
+// use vite-plugin-monkey@2.4.1 at 2022-09-20T14:08:03.592Z
 
 (({ css: s = '' }) => {
   const a = document.createElement('style');
   (a.innerText = s), (a.dataset.source = 'vite-plugin-monkey'), document.head.appendChild(a);
 })({
-  css: '.infra-styles .gm-atualizar-saldo__contas span,.infra-styles .gm-atualizar-saldo__processo span{font-size:1.3em;line-height:2em;color:#220845}.infra-styles .gm-atualizar-saldo__contas span.zerado,.infra-styles .gm-atualizar-saldo__processo span.zerado{color:#655c70}.infra-styles .gm-atualizar-saldo__contas span.erro,.infra-styles .gm-atualizar-saldo__processo span.erro{color:#bd0f0f}.infra-styles .gm-atualizar-saldo__contas span.saldo,.infra-styles .gm-atualizar-saldo__processo span.saldo{color:#391070}.infra-styles .gm-atualizar-saldo__contas button,.infra-styles .gm-atualizar-saldo__processo button{--regular-bg: hsl(266, 25%, 40%);--highlighted-bg: hsl(266, 40%, 45%);--faded-bg: hsl(266, 10%, 40%);border:none;border-radius:4px;padding:4px 12px;font-size:1.3em;color:#fff;box-shadow:0 2px 4px #00000080;background:var(--regular-bg)}.infra-styles .gm-atualizar-saldo__contas button.zerado,.infra-styles .gm-atualizar-saldo__processo button.zerado{background:var(--faded-bg)}.infra-styles .gm-atualizar-saldo__contas button:hover,.infra-styles .gm-atualizar-saldo__contas button:focus,.infra-styles .gm-atualizar-saldo__processo button:hover,.infra-styles .gm-atualizar-saldo__processo button:focus{background:var(--highlighted-bg)}.infra-styles .gm-atualizar-saldo__contas button:active,.infra-styles .gm-atualizar-saldo__processo button:active{box-shadow:none;translate:0 2px}.infra-styles .gm-atualizar-saldo__processo{margin:0 2px 8px;border-left:4px solid hsl(266deg,75%,25%);padding:0 4px}.infra-styles .gm-atualizar-saldo__contas{border-left:4px solid hsl(266deg,75%,25%);padding:0 4px}',
+  css: '.infra-styles .gm-atualizar-saldo__contas,.infra-styles .gm-atualizar-saldo__processo{--button-bg: hsl(266deg, 25%, 40%);--fg-color: hsl(266deg, 80%, 15%);--border-color: hsl(266deg, 10%, 40%)}.infra-styles .gm-atualizar-saldo__contas span,.infra-styles .gm-atualizar-saldo__processo span{font-size:1.3em;line-height:2em;color:var(--fg-color)}.infra-styles .gm-atualizar-saldo__contas span.zerado,.infra-styles .gm-atualizar-saldo__processo span.zerado{--fg-color: hsl(266, 10%, 40%)}.infra-styles .gm-atualizar-saldo__contas span.erro,.infra-styles .gm-atualizar-saldo__processo span.erro{--fg-color: hsl(0, 85%, 40%)}.infra-styles .gm-atualizar-saldo__contas span.saldo,.infra-styles .gm-atualizar-saldo__processo span.saldo{--fg-color: hsl(266, 75%, 25%)}.infra-styles .gm-atualizar-saldo__contas button,.infra-styles .gm-atualizar-saldo__processo button{border:none;border-radius:4px;padding:4px 12px;font-size:1.3em;color:#fff;box-shadow:0 2px 4px #00000080;background:var(--button-bg)}.infra-styles .gm-atualizar-saldo__contas button.zerado,.infra-styles .gm-atualizar-saldo__processo button.zerado{--button-bg: hsl(266deg, 5%, 50%)}.infra-styles .gm-atualizar-saldo__contas button:hover,.infra-styles .gm-atualizar-saldo__contas button:focus,.infra-styles .gm-atualizar-saldo__processo button:hover,.infra-styles .gm-atualizar-saldo__processo button:focus{--button-bg: hsl(266deg, 40%, 45%)}.infra-styles .gm-atualizar-saldo__contas button:active,.infra-styles .gm-atualizar-saldo__processo button:active{box-shadow:none;translate:0 2px}.infra-styles .gm-atualizar-saldo__processo{margin:0 2px 8px;border-left:4px solid var(--border-color);padding:0 4px}.infra-styles .gm-atualizar-saldo__contas{border-left:4px solid var(--border-color);padding:0 4px}',
 });
 
 (function (preact2) {
