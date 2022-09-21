@@ -2,7 +2,7 @@
 // @name         atualizar-saldos
 // @name:pt-BR   Atualizar saldos
 // @namespace    http://nadameu.com.br
-// @version      2.2.0
+// @version      2.2.1
 // @author       nadameu
 // @description  Atualiza o saldo de contas judiciais
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
@@ -20,7 +20,7 @@
 // @require      https://unpkg.com/preact@10.11.0/dist/preact.min.js
 // ==/UserScript==
 
-// use vite-plugin-monkey@2.4.1 at 2022-09-21T20:30:52.787Z
+// use vite-plugin-monkey@2.4.1 at 2022-09-21T20:51:40.291Z
 
 (({ css: s = '' }) => {
   const a = document.createElement('style');
@@ -704,7 +704,7 @@
           });
         },
         Erro: erro => {
-          sub.unsubscribe();
+          window.setTimeout(() => sub.unsubscribe(), 0);
           return o('span', {
             class: 'erro',
             children: erro.message,
@@ -736,8 +736,8 @@
     }
   }
   function obterInfoContaLinha(row) {
-    if (row.cells.length !== 11) return Left(null);
-    const textoSaldo = row.cells[7].textContent ?? '';
+    if (row.cells.length !== 11 && row.cells.length !== 13) return Left(null);
+    const textoSaldo = row.cells[row.cells.length - 4].textContent ?? '';
     const match2 = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
     if (!match2 || match2.length < 2) return Left(null);
     const [, numeros] = match2;

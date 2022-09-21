@@ -81,7 +81,7 @@ export function paginaDepositos(numproc: NumProc): Either<Error[], void> {
         );
       },
       Erro: erro => {
-        sub.unsubscribe();
+        window.setTimeout(() => sub.unsubscribe(), 0);
         return <span class="erro">{erro.message}</span>;
       },
     });
@@ -113,8 +113,8 @@ interface InfoConta {
 }
 
 function obterInfoContaLinha(row: HTMLTableRowElement): Either<null, InfoConta> {
-  if (row.cells.length !== 11) return Left(null);
-  const textoSaldo = row.cells[7]!.textContent ?? '';
+  if (row.cells.length !== 11 && row.cells.length !== 13) return Left(null);
+  const textoSaldo = row.cells[row.cells.length - 4]!.textContent ?? '';
   const match = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
   if (!match || match.length < 2) return Left(null);
   const [, numeros] = match as [string, string];
