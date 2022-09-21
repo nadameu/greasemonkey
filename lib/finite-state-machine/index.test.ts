@@ -14,6 +14,9 @@ beforeEach(() => {
     { status: 'PENDING' },
     {
       PENDING: {
+        ERROR({ error }) {
+          return { status: 'REJECTED', error };
+        },
         LOADED({ value }) {
           return { status: 'RESOLVED', value };
         },
@@ -33,6 +36,11 @@ test('Initial state', () => {
 test('Transition', () => {
   fsm.dispatch({ type: 'LOADED', value: 42 });
   expect(fsm.getState()).toEqual({ status: 'RESOLVED', value: 42 });
+});
+
+test('Regular error', () => {
+  fsm.dispatch({ type: 'ERROR', error: new Error('Hello') });
+  expect(fsm.getState()).toEqual({ status: 'REJECTED', error: new Error('Hello') });
 });
 
 test('Transition error', () => {
