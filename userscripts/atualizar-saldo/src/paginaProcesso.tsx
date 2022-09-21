@@ -1,7 +1,7 @@
 import { createStore } from '@nadameu/create-store';
 import { Either, validateAll } from '@nadameu/either';
-import { expectUnreachable } from '@nadameu/expect-unreachable';
 import { createTaggedUnion, match, Static } from '@nadameu/match';
+import { Natural } from '@nadameu/predicates';
 import { render } from 'preact';
 import { createMsgService, Mensagem } from './Mensagem';
 import { NumProc } from './NumProc';
@@ -199,53 +199,21 @@ function modificarPaginaProcesso({
       AguardaVerificacaoInicial: () => <output>Verificando contas com saldo...</output>,
       AguardaAtualizacao: () => <output>Aguardando atualização das contas...</output>,
       Ocioso: ({ depositos, rpv }) => {
-        const qDep = depositos.quantidade;
-        const qRPV = rpv.quantidade;
+        const qDep = depositos.quantidade as 0 | Natural | undefined;
+        const qRPV = rpv.quantidade as 0 | Natural | undefined;
 
         const classe = qDep === 0 && qRPV === 0 ? 'zerado' : 'saldo';
 
-        type Q = '0' | '+' | '?' extends infer R extends string
-          ? '0' | '+' | '?' extends infer D extends string
-            ? `R${R}D${D}`
-            : never
-          : never;
-        const mensagem = ((resultado: Q): string => {
-          switch (resultado) {
-            case 'R0D0':
-              return 'Sem saldo em conta(s).';
-
-            case 'R?D0':
-            case 'R+D0': {
-              const contasRPV =
-                qRPV === undefined ? 'conta(s)' : qRPV === 1 ? '1 conta' : `${qRPV} contas`;
-              return `Há ${contasRPV} de requisição de pagamento com saldo.`;
-            }
-
-            case 'R0D?':
-            case 'R0D+': {
-              const contasDep =
-                qDep === undefined ? 'conta(s)' : qDep === 1 ? '1 conta' : `${qDep} contas`;
-              return `Há ${contasDep} de depósito judicial com saldo.`;
-            }
-
-            case 'R+D+':
-              const rs = (qRPV ?? 0) > 1 ? 's' : '';
-              const ds = (qDep ?? 0) > 1 ? 's' : '';
-              return `Há ${qRPV} conta${rs} de requisição de pagamento e ${qDep} conta${ds} de depósito judicial com saldo.`;
-
-            case 'R+D?':
-            case 'R?D+':
-            case 'R?D?':
-              return 'Há conta(s) de requisição de pagamento e de depósito judicial com saldo.';
-
-            default:
-              return expectUnreachable(resultado);
-          }
-        })(
-          `R${qRPV === undefined ? '?' : qRPV === 0 ? '0' : '+'}D${
-            qDep === undefined ? '?' : qDep === 0 ? '0' : '+'
-          }`
-        );
+        function textoContas(qtd: Natural | undefined) {
+          if (qtd === undefined) return 'conta(s)';
+          if (qtd === 1) return `1 conta`;
+          return `${qtd} contas`;
+        }
+        const msgR = qRPV === 0 ? null : `${textoContas(qRPV)} de requisição de pagamento`;
+        const msgD = qDep === 0 ? null : `${textoContas(qDep)} de depósito judicial`;
+        const msgs = [msgR, msgD].filter((x): x is string => x !== null);
+        const mensagem =
+          msgs.length === 0 ? 'Sem saldo em conta(s).' : `Há ${msgs.join(' e ')} com saldo.`;
         return <MensagemComBotao {...{ classe, mensagem, rpv: qRPV ?? -1, dep: qDep ?? -1 }} />;
       },
       Erro: () => {

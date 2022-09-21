@@ -2,7 +2,7 @@
 // @name         atualizar-saldos
 // @name:pt-BR   Atualizar saldos
 // @namespace    http://nadameu.com.br
-// @version      2.1.0
+// @version      2.2.0
 // @author       nadameu
 // @description  Atualiza o saldo de contas judiciais
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
@@ -20,7 +20,7 @@
 // @require      https://unpkg.com/preact@10.11.0/dist/preact.min.js
 // ==/UserScript==
 
-// use vite-plugin-monkey@2.4.1 at 2022-09-20T14:08:03.592Z
+// use vite-plugin-monkey@2.4.1 at 2022-09-21T20:30:52.787Z
 
 (({ css: s = '' }) => {
   const a = document.createElement('style');
@@ -749,9 +749,6 @@
       atualizacao,
     });
   }
-  function expectUnreachable(value) {
-    throw new Error('Unexpected.');
-  }
   function obter(selector, msg) {
     const elt = document.querySelector(selector);
     if (isNull(elt)) return Left(new Error(msg));
@@ -979,38 +976,16 @@
           const qDep = depositos.quantidade;
           const qRPV = rpv.quantidade;
           const classe = qDep === 0 && qRPV === 0 ? 'zerado' : 'saldo';
-          const mensagem = (resultado => {
-            switch (resultado) {
-              case 'R0D0':
-                return 'Sem saldo em conta(s).';
-              case 'R?D0':
-              case 'R+D0': {
-                const contasRPV =
-                  qRPV === void 0 ? 'conta(s)' : qRPV === 1 ? '1 conta' : `${qRPV} contas`;
-                return `H\xE1 ${contasRPV} de requisi\xE7\xE3o de pagamento com saldo.`;
-              }
-              case 'R0D?':
-              case 'R0D+': {
-                const contasDep =
-                  qDep === void 0 ? 'conta(s)' : qDep === 1 ? '1 conta' : `${qDep} contas`;
-                return `H\xE1 ${contasDep} de dep\xF3sito judicial com saldo.`;
-              }
-              case 'R+D+':
-                const rs = (qRPV ?? 0) > 1 ? 's' : '';
-                const ds = (qDep ?? 0) > 1 ? 's' : '';
-                return `H\xE1 ${qRPV} conta${rs} de requisi\xE7\xE3o de pagamento e ${qDep} conta${ds} de dep\xF3sito judicial com saldo.`;
-              case 'R+D?':
-              case 'R?D+':
-              case 'R?D?':
-                return 'H\xE1 conta(s) de requisi\xE7\xE3o de pagamento e de dep\xF3sito judicial com saldo.';
-              default:
-                return expectUnreachable();
-            }
-          })(
-            `R${qRPV === void 0 ? '?' : qRPV === 0 ? '0' : '+'}D${
-              qDep === void 0 ? '?' : qDep === 0 ? '0' : '+'
-            }`
-          );
+          function textoContas(qtd) {
+            if (qtd === void 0) return 'conta(s)';
+            if (qtd === 1) return `1 conta`;
+            return `${qtd} contas`;
+          }
+          const msgR = qRPV === 0 ? null : `${textoContas(qRPV)} de requisi\xE7\xE3o de pagamento`;
+          const msgD = qDep === 0 ? null : `${textoContas(qDep)} de dep\xF3sito judicial`;
+          const msgs = [msgR, msgD].filter(x => x !== null);
+          const mensagem =
+            msgs.length === 0 ? 'Sem saldo em conta(s).' : `H\xE1 ${msgs.join(' e ')} com saldo.`;
           return o(MensagemComBotao, {
             classe,
             mensagem,
