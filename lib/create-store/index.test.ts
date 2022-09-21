@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, Mock, MockedFunction, test, vitest } from 'vitest';
-import { createStore, Store } from '.';
+import { afterEach, beforeEach, describe, expect, Mock, test, vitest } from 'vitest';
+import { createStore, Store, Subscription } from '.';
 
-function createVerify<T>(fn: Mock<[T], void>) {
+function createCallChecker<T>(fn: Mock<[T], void>) {
   return (called: T[]) => {
     expect(fn).toHaveBeenCalledTimes(called.length);
     called.forEach((c, i) => {
@@ -16,7 +16,8 @@ describe('create', () => {
 
   let store: Store<State, PromiseSettledResult<number>>;
   let fn: Mock<[State], void>;
-  let verify: (called: State[]) => void;
+  let wasCalledWith: (called: State[]) => void;
+  let sub: Subscription;
   beforeEach(() => {
     store = createStore<State, Action>(
       () => ({ status: 'pending' }),
@@ -27,33 +28,32 @@ describe('create', () => {
     );
     if (!fn) {
       fn = vitest.fn();
-      verify = createVerify(fn);
+      wasCalledWith = createCallChecker(fn);
     }
+    sub = store.subscribe(fn);
+  });
+  afterEach(() => {
+    sub.unsubscribe();
     vitest.resetAllMocks();
   });
 
   test('resolve once', () => {
-    const sub = store.subscribe(fn);
     store.dispatch({ status: 'fulfilled', value: 42 });
 
-    verify([{ status: 'pending' }, { status: 'fulfilled', value: 42 }]);
-
-    sub.unsubscribe();
+    wasCalledWith([{ status: 'pending' }, { status: 'fulfilled', value: 42 }]);
   });
 
   test('reject once', () => {
-    const sub = store.subscribe(fn);
     store.dispatch({ status: 'rejected', reason: 'error' });
 
-    verify([{ status: 'pending' }, { status: 'rejected', reason: 'error' }]);
+    wasCalledWith([{ status: 'pending' }, { status: 'rejected', reason: 'error' }]);
   });
 
   test('reject then resolve', () => {
-    const sub = store.subscribe(fn);
     store.dispatch({ status: 'rejected', reason: 'error' });
     store.dispatch({ status: 'fulfilled', value: 42 });
 
-    verify([
+    wasCalledWith([
       { status: 'pending' },
       { status: 'rejected', reason: 'error' },
       { status: 'rejected', reason: 'error' },
@@ -61,11 +61,10 @@ describe('create', () => {
   });
 
   test('resolve then reject', () => {
-    const sub = store.subscribe(fn);
     store.dispatch({ status: 'fulfilled', value: 42 });
     store.dispatch({ status: 'rejected', reason: 'error' });
 
-    verify([
+    wasCalledWith([
       { status: 'pending' },
       { status: 'fulfilled', value: 42 },
       { status: 'fulfilled', value: 42 },
@@ -85,7 +84,7 @@ test('unsubscribe', () => {
     }
   );
   const fn = vitest.fn<[State], void>();
-  const verify = createVerify(fn);
+  const wasCalledWith = createCallChecker(fn);
   const sub = store.subscribe(fn);
   store.dispatch('inc');
   store.dispatch('inc');
@@ -94,5 +93,5 @@ test('unsubscribe', () => {
   sub.unsubscribe();
   store.dispatch('dec');
   store.dispatch('inc');
-  verify([0, 1, 2, 3, 2]);
+  wasCalledWith([0, 1, 2, 3, 2]);
 });
