@@ -3,7 +3,7 @@ import { createTaggedUnion, match, matchOr, Static } from '.';
 
 test('create', () => {
   const MaybeNumber = createTaggedUnion({
-    Just: (x: number) => x,
+    Just: (x: number) => ({ value: x }),
     Nothing: null,
   });
 
@@ -18,8 +18,8 @@ test('create', () => {
 test('match (method)', async () => {
   const PromiseNumber = createTaggedUnion({
     Pending: null,
-    Resolved: (value: number) => value,
-    Rejected: (reason: any) => reason,
+    Resolved: (value: number) => ({ value }),
+    Rejected: (reason: any) => ({ reason }),
   });
 
   const matchers = {
@@ -28,7 +28,7 @@ test('match (method)', async () => {
   };
   const otherwise = () => Promise.reject(PromiseNumber.Pending);
 
-  const resolvedPromise = PromiseNumber.Resolved(42).matchOr(matchers, otherwise);
+  const resolvedPromise = PromiseNumber.match(PromiseNumber.Resolved(42), matchers, otherwise);
   await expect(resolvedPromise).resolves.toEqual(42);
 
   const rejectedPromise = PromiseNumber.Rejected('error').matchOr(matchers, otherwise);
@@ -72,26 +72,87 @@ test('no matcher', () => {
   );
 });
 
-test.skip('typescript', () => {
+test.skip('typescript (methods)', () => {
   const MaybeString = createTaggedUnion({ Nothing: null, Just: (x: string) => x });
   type MaybeString = Static<typeof MaybeString>;
-  const maybe = MaybeString.Nothing as MaybeString;
+  const just = MaybeString.Just('hi');
+  const nothing = MaybeString.Nothing;
+  const maybe = nothing as MaybeString;
 
   // @ts-expect-error
   maybe.match({});
-
   // @ts-expect-error
   maybe.match({ Just: x => x });
-
   // @ts-expect-error
   maybe.match({ Nothing: () => 'no value' });
 
-  maybe.match({ Just: x => x.length, Nothing: () => 4 });
+  const x0 = just.match({ Just: x => x.length });
+  const y0: number = x0;
+  const x1 = nothing.match({ Nothing: () => 1 });
+  const y1: number = x1;
+  const x2 = maybe.match({ Just: x => x.length, Nothing: () => 4 });
+  const y2: number = x2;
 
-  maybe.matchOr({}, tagged =>
-    match(tagged, {
-      Just: x => x,
-      Nothing: () => 'no value',
+  const x3 = maybe.matchOr({ Just: x => x.length }, tagged =>
+    tagged.match({
+      Nothing: () => 8,
     })
   );
+  const y3: number = x3;
+});
+
+test.skip('typescript (functions)', () => {
+  interface JustString {
+    tag: 'Just';
+    data: string;
+  }
+  interface Nothing {
+    tag: 'Nothing';
+  }
+  type MaybeString = JustString | Nothing;
+  const just = { tag: 'Just', data: 'hi' } as JustString;
+  const nothing = { tag: 'Nothing' } as Nothing;
+  const maybe = nothing as MaybeString;
+
+  // @ts-expect-error
+  match(maybe, {});
+  // @ts-expect-error
+  match(maybe, { Just: x => x });
+  // @ts-expect-error
+  match(maybe, { Nothing: () => 'no value' });
+
+  const x0 = match(just, { Just: x => x.length });
+  const y0: number = x0;
+  const x1 = match(nothing, { Nothing: () => 1 });
+  const y1: number = x1;
+  const x2 = match(maybe, { Just: x => x.length, Nothing: () => 4 });
+  const y2: number = x2;
+
+  const x3 = matchOr(maybe, { Just: x => x.length }, tagged =>
+    match(tagged, {
+      Nothing: () => 8,
+    })
+  );
+  const y3: number = x3;
+});
+
+test.skip('TypeScript - correct usage', () => {
+  const StringOrEmpty = createTaggedUnion({ Str: (value: string) => ({ value }), Empty: null });
+});
+
+test.skip('TypeScript - result must be object', () => {
+  // @ts-expect-error
+  const Err = createTaggedUnion({ Str: (value: string) => value });
+});
+
+test.skip('TypeScript - match not allowed', () => {
+  // @ts-expect-error
+  const Err = createTaggedUnion({ match: null });
+});
+
+test.skip('TypeScript - tag in result not allowed', () => {
+  // @ts-expect-error
+  const Err1 = createTaggedUnion({ Str: (x?: string) => ({ tag: x }) });
+  // @ts-expect-error
+  const Err2 = createTaggedUnion({ Str: (x?: string) => ({ variant: x }) }, 'variant');
 });

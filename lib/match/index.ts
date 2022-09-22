@@ -1,85 +1,87 @@
-type CreatorFn<Args extends any[] = any[], Result = unknown> = (...args: Args) => Result;
-type Definitions<D> = { [K in keyof D]: CreatorFn | null };
-
-function matchNotFound(variant: Tagged<keyof any>) {
-  throw new Error(`Not matched: "${String(variant.tag)}".`);
-}
-
-interface Tagged<Tag extends keyof any> {
-  tag: Tag;
-}
-interface TaggedWith<Tag extends keyof any, Data> extends Tagged<Tag> {
-  data: Data;
-}
-class Matching<Tag extends keyof any> implements Tagged<Tag> {
-  constructor(public tag: Tag) {}
-  match<U>(matchers: { [K in Tag]: () => U }): U;
-  match(matchers: Matchers<this>) {
-    return _match(this as AnyTagged as TaggedWith<Tag, unknown>, matchers);
-  }
-
-  matchOr<U>(matchers: {}, otherwise: (tagged: Matching<Tag>) => U): U {
-    return _match(this as AnyTagged as TaggedWith<Tag, unknown>, matchers, otherwise);
-  }
-}
-
-class MatchingWith<Tag extends keyof any, Data>
-  extends Matching<Tag>
-  implements TaggedWith<Tag, Data>
-{
-  constructor(tag: Tag, public data: Data) {
-    super(tag);
-  }
-  match<U>(matchers: { [K in Tag]: (data: Data) => U }): U;
-  match(matchers: Matchers<this>) {
-    return _match(this, matchers);
-  }
-
-  matchOr<U>(matchers: {}, otherwise: (tagged: MatchingWith<Tag, Data>) => U): U {
-    return _match(this, matchers, otherwise);
-  }
-}
-type AnyTagged = Tagged<keyof any> | TaggedWith<keyof any, unknown>;
-type PartialMatchers<T extends AnyTagged, P extends T['tag'], U> = {
-  [K in P]: T extends TaggedWith<K, infer Data>
-    ? (data: Data) => U
-    : T extends Tagged<K>
-    ? () => U
+type CreatorFn<
+  Tag extends keyof any,
+  Args extends any[] = any[],
+  R extends Record<keyof any, unknown> = Record<keyof any, unknown>
+> = (...args: Args) => Result<Tag, R>;
+type Definitions<Tag extends keyof any, D> = {
+  [K in keyof D]: K extends 'match' ? never : CreatorFn<Tag> | null;
+};
+type Result<
+  Tag extends keyof any,
+  R extends Record<keyof any, unknown> = Record<keyof any, unknown>
+> = R & {
+  [T in Tag]?: never;
+};
+type CVal<Name extends keyof any = keyof any> = [Name];
+type CFn<
+  Name extends keyof any = keyof any,
+  Args extends any[] = any[],
+  Data extends [keyof any, unknown] = [keyof any, unknown]
+> = [Name, Args, Data];
+type Def<
+  Name extends keyof any = keyof any,
+  Data extends [keyof any, unknown] = [keyof any, unknown]
+> = CFn<Name, any[], Data>;
+type Join<T> = (T extends never ? never : (_: T) => void) extends (_: infer U) => void
+  ? Simplify<U>
+  : never;
+type Tagged<
+  TagName extends keyof any,
+  Tag extends keyof any,
+  Extra extends [keyof any, unknown]
+> = {
+  [K in TagName]: Tag;
+} & { [K in Extra[0]]: Extra extends [K, infer R] ? R : never };
+type Simplify<T> = { result: { [K in keyof T]: T[K] } }['result'];
+type Constructors<TagName extends keyof any, D extends CFn | CVal> = {
+  [Tag in 'match' | D[0]]: Tag extends 'match'
+    ? Match<TagName, D>
+    : D extends CFn<Tag, infer A, infer R>
+    ? (...args: A) => Tagged<TagName, Tag, R>
+    : D extends CVal<Tag>
+    ? Tagged<TagName, Tag, never>
     : never;
 };
-type Matchers<T extends AnyTagged> = {
-  [K in T['tag']]: T extends TaggedWith<K, infer Data>
-    ? (data: Data) => unknown
-    : T extends Tagged<K>
-    ? () => unknown
-    : never;
-};
+type FromDef<TagName extends keyof any, D extends CFn | CVal> = D extends CFn<
+  infer K,
+  any[],
+  infer R
+>
+  ? Tagged<TagName, K, R>
+  : D extends CVal<infer K>
+  ? Tagged<TagName, K, never>
+  : never;
+type Match<TagName extends keyof any, D extends Def | CVal> = {
+  match<
+    T extends Tagged<TagName, keyof any, any>,
+    M extends {
+      [K in T[TagName]]: (tagged: T extends Tagged<TagName, K, any> ? T : never) => unknown;
+    }
+  >(
+    tagged: T,
+    matchers: M
+  ): M[T[TagName]] extends (...args: any[]) => infer U ? U : never;
 
-function _match(
-  obj: TaggedWith<keyof any, unknown>,
-  matchers: Record<keyof any, Function>,
-  otherwise: Function = matchNotFound
-) {
-  if (!obj.tag) throw new Error('Object does not have a valid "tag" property.');
-  return obj.tag in matchers ? matchers[obj.tag]!(obj.data) : otherwise(obj);
-}
+  match<T extends Tagged<TagName, keyof any, any>, P extends T[TagName], U>(
+    tagged: T,
+    matchers: {
+      [K in P]: (tagged: T extends Tagged<TagName, K, any> ? T : never) => unknown;
+    },
+    otherwise: (tagged: T extends Tagged<TagName, P, any> ? never : T) => U
+  ): U;
+}['match'];
 
-export function match<T extends AnyTagged, M extends Matchers<T>>(
-  obj: T,
-  matchers: M
-): M[keyof M] extends (...args: any[]) => infer U ? U : never {
-  return _match(obj as TaggedWith<keyof any, unknown>, matchers);
-}
-
-export function matchOr<T extends AnyTagged, P extends T['tag'], U>(
-  obj: T,
-  matchers: PartialMatchers<T, P, U>,
-  otherwise: (tagged: Extract<T, { tag: Exclude<T['tag'], P> }>) => U
-): U {
-  return _match(obj as TaggedWith<keyof any, unknown>, matchers, otherwise);
-}
-
-export function createTaggedUnion<D extends Definitions<D>>(definitions: D) {
+export function createTaggedUnion<D extends Definitions<Tag, D>, Tag extends keyof any = 'tag'>(
+  definitions: D,
+  tagName: Tag = 'tag' as Tag
+): Constructors<
+  Tag,
+  {
+    [K in keyof D]: D[K] extends CreatorFn<Tag, infer A, infer R>
+      ? CFn<K, A, { [K in keyof R]: [K, R[K]] }[keyof R]>
+      : CVal<K>;
+  }[keyof D]
+> {
   const ctors: Partial<Record<keyof D, unknown>> = {};
   for (const [tag, f] of Object.entries(definitions) as [keyof D, CreatorFn | null][]) {
     if (f === null) {
@@ -89,13 +91,11 @@ export function createTaggedUnion<D extends Definitions<D>>(definitions: D) {
     }
   }
 
-  return ctors as {
-    [K in keyof D]: D[K] extends CreatorFn<infer A, infer D>
-      ? (...args: A) => MatchingWith<K, D>
-      : Matching<K>;
-  };
+  return ctors;
 }
 
 export type Static<C extends Record<keyof C, unknown>> = {
-  [K in keyof C]: C[K] extends CreatorFn<any[], infer R> ? R : C[K];
-}[keyof C];
+  result: {
+    [K in keyof C]: C[K] extends CreatorFn<any[], infer R> ? R : C[K];
+  }[keyof C];
+}['result'];
