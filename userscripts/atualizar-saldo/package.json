@@ -1,6 +1,6 @@
 {
   "name": "atualizar-saldos",
-  "version": "2.2.1",
+  "version": "2.3.1",
   "private": true,
   "description": "Atualiza o saldo de contas judiciais",
   "author": "nadameu",
@@ -18,7 +18,7 @@
     "@nadameu/expect-unreachable": "workspace:^1.0.0",
     "@nadameu/finite-state-machine": "workspace:^1.0.0",
     "@nadameu/handler": "workspace:^1.0.0",
-    "@nadameu/match": "workspace:^2.0.0",
+    "@nadameu/match": "workspace:^3.0.0",
     "@nadameu/opaque": "workspace:^1.0.0",
     "@nadameu/predicates": "workspace:^1.1.1",
     "@nadameu/resolvable": "workspace:^1.0.0",

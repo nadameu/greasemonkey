@@ -1,6 +1,6 @@
 import { createStore } from '@nadameu/create-store';
 import { Either, validateAll } from '@nadameu/either';
-import { createTaggedUnion, match, Static } from '@nadameu/match';
+import { createTaggedUnion, Static } from '@nadameu/match';
 import { Natural } from '@nadameu/predicates';
 import { render } from 'preact';
 import { createMsgService, Mensagem } from './Mensagem';
@@ -36,8 +36,8 @@ function modificarPaginaProcesso({
 
   const Estado = createTaggedUnion({
     AguardaVerificacaoInicial: null,
-    AguardaAtualizacao: (dados: TipoContas) => dados,
-    Ocioso: (dados: TipoContas) => dados,
+    AguardaAtualizacao: ({ rpv, depositos }: TipoContas) => ({ rpv, depositos }),
+    Ocioso: ({ rpv, depositos }: TipoContas) => ({ rpv, depositos }),
     Erro: null,
   });
   type Estado = Static<typeof Estado>;
@@ -45,9 +45,9 @@ function modificarPaginaProcesso({
   const Acao = createTaggedUnion({
     Erro: null,
     PaginaContasAberta: null,
-    VerificacaoTerminada: (info: TipoContas) => info,
-    AtualizacaoRPV: (info: InfoTipo) => info,
-    AtualizacaoDepositos: (info: InfoTipo) => info,
+    VerificacaoTerminada: ({ rpv, depositos }: TipoContas) => ({ rpv, depositos }),
+    AtualizacaoRPV: ({ quantidade, atualiza }: InfoTipo) => ({ quantidade, atualiza }),
+    AtualizacaoDepositos: ({ quantidade, atualiza }: InfoTipo) => ({ quantidade, atualiza }),
     Clique: (alvo: 'BOTAO_RPV' | 'LINK_RPV' | 'BOTAO_DEP' | 'LINK_DEP') => ({ alvo }),
   });
   type Acao = Static<typeof Acao>;
@@ -83,7 +83,7 @@ function modificarPaginaProcesso({
       }, INTERVALO);
 
       bc.subscribe(msg => {
-        match(msg, {
+        Mensagem.match(msg, {
           InformaContas: ({ numproc: msgNumproc, qtdComSaldo, permiteAtualizar }) => {
             if (msgNumproc !== numproc) return;
             store.dispatch(
@@ -105,23 +105,25 @@ function modificarPaginaProcesso({
       return Estado.AguardaVerificacaoInicial;
     },
     (estado, acao) =>
-      acao.match({
-        AtualizacaoDepositos: dados =>
-          estado.match({
-            AguardaAtualizacao: ({ rpv }) => Estado.AguardaAtualizacao({ rpv, depositos: dados }),
+      Acao.match(acao, {
+        AtualizacaoDepositos: ({ quantidade, atualiza }) =>
+          Estado.match(estado, {
+            AguardaAtualizacao: ({ rpv }) =>
+              Estado.AguardaAtualizacao({ rpv, depositos: { quantidade, atualiza } }),
             AguardaVerificacaoInicial: () => Estado.Erro,
             Erro: () => estado,
-            Ocioso: ({ rpv }) => Estado.Ocioso({ rpv, depositos: dados }),
+            Ocioso: ({ rpv }) => Estado.Ocioso({ rpv, depositos: { quantidade, atualiza } }),
           }),
-        AtualizacaoRPV: dados =>
-          estado.match({
-            AguardaAtualizacao: ({ depositos }) => Estado.Ocioso({ rpv: dados, depositos }),
+        AtualizacaoRPV: ({ quantidade, atualiza }) =>
+          Estado.match(estado, {
+            AguardaAtualizacao: ({ depositos }) =>
+              Estado.Ocioso({ rpv: { quantidade, atualiza }, depositos }),
             AguardaVerificacaoInicial: () => Estado.Erro,
             Erro: () => estado,
-            Ocioso: ({ depositos }) => Estado.Ocioso({ rpv: dados, depositos }),
+            Ocioso: ({ depositos }) => Estado.Ocioso({ rpv: { quantidade, atualiza }, depositos }),
           }),
         Clique: ({ alvo }) =>
-          estado.match({
+          Estado.match(estado, {
             AguardaVerificacaoInicial: () => estado,
             AguardaAtualizacao: () => estado,
             Ocioso: dados => {
@@ -138,12 +140,12 @@ function modificarPaginaProcesso({
             Erro: () => estado,
           }),
         Erro: () =>
-          estado.matchOr({ Erro: () => estado }, () => {
+          Estado.match(estado, { Erro: () => estado }, () => {
             bc.destroy();
             return Estado.Erro;
           }),
         PaginaContasAberta: () =>
-          estado.match({
+          Estado.match(estado, {
             AguardaVerificacaoInicial: () => Estado.Erro,
             AguardaAtualizacao: () => {
               bc.publish(Mensagem.RespostaAtualizar(numproc, true));
@@ -152,9 +154,9 @@ function modificarPaginaProcesso({
             Ocioso: () => estado,
             Erro: () => estado,
           }),
-        VerificacaoTerminada: dados => {
-          const ocioso = Estado.Ocioso(dados);
-          return estado.match({
+        VerificacaoTerminada: ({ rpv, depositos }) => {
+          const ocioso = Estado.Ocioso({ rpv, depositos });
+          return Estado.match(estado, {
             AguardaVerificacaoInicial: () => ocioso,
             AguardaAtualizacao: () => ocioso,
             Ocioso: () => ocioso,
@@ -195,7 +197,7 @@ function modificarPaginaProcesso({
   }
 
   function App({ estado }: { estado: Estado }) {
-    return match(estado, {
+    return Estado.match(estado, {
       AguardaVerificacaoInicial: () => <output>Verificando contas com saldo...</output>,
       AguardaAtualizacao: () => <output>Aguardando atualização das contas...</output>,
       Ocioso: ({ depositos, rpv }) => {

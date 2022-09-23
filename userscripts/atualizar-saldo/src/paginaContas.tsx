@@ -1,7 +1,7 @@
 import { createStore } from '@nadameu/create-store';
 import { Either, Left, Right, traverse } from '@nadameu/either';
 import { Handler } from '@nadameu/handler';
-import { createTaggedUnion, match, Static } from '@nadameu/match';
+import { createTaggedUnion, Static } from '@nadameu/match';
 import * as p from '@nadameu/predicates';
 import { render } from 'preact';
 import { createMsgService, Mensagem } from './Mensagem';
@@ -19,16 +19,16 @@ declare function atualizarSaldo(
 ): void;
 
 const Estado = createTaggedUnion({
-  Ocioso: (infoContas: InfoConta[]) => infoContas,
+  Ocioso: (infoContas: InfoConta[]) => ({ infoContas }),
   Atualizando: (infoContas: InfoConta[], conta: number) => ({ infoContas, conta }),
-  Erro: (erro: Error) => erro,
+  Erro: (erro: Error) => ({ erro }),
 });
 type Estado = Static<typeof Estado>;
 
 const Acao = createTaggedUnion({
   Atualizar: null,
-  SaldoAtualizado: (saldo: number) => saldo,
-  ErroComunicacao: (mensagem?: string) => mensagem,
+  SaldoAtualizado: (saldo: number) => ({ saldo }),
+  ErroComunicacao: (mensagem?: string) => ({ mensagem }),
 });
 type Acao = Static<typeof Acao>;
 
@@ -50,7 +50,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
       });
       if (estado.tag !== 'Erro') {
         bc.subscribe(msg =>
-          match(msg, {
+          Mensagem.match(msg, {
             InformaContas: () => {},
             InformaSaldoDeposito: () => {},
             PerguntaAtualizar: () => {},
@@ -67,11 +67,11 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
       return estado;
     },
     (estado, acao) =>
-      acao.match({
+      Acao.match(acao, {
         Atualizar: () =>
-          estado.match({
+          Estado.match(estado, {
             Erro: () => estado,
-            Ocioso: infoContas => {
+            Ocioso: ({ infoContas }) => {
               ouvirXHR(x => store.dispatch(x));
               const primeiraConta = findIndex(infoContas, x => x.atualizacao !== null);
               if (primeiraConta < 0) {
@@ -91,8 +91,8 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
             Atualizando: () =>
               Estado.Erro(new Error('Tentativa de atualização durante outra atualização.')),
           }),
-        SaldoAtualizado: saldo =>
-          estado.match({
+        SaldoAtualizado: ({ saldo }) =>
+          Estado.match(estado, {
             Erro: () => estado,
             Ocioso: () => estado,
             Atualizando: ({ conta, infoContas }) => {
@@ -111,8 +111,8 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
               return Estado.Atualizando(infoNova, proxima);
             },
           }),
-        ErroComunicacao: (mensagem = 'Ocorreu um erro na atualização dos saldos.') =>
-          estado.matchOr({ Erro: () => estado }, () => {
+        ErroComunicacao: ({ mensagem = 'Ocorreu um erro na atualização dos saldos.' }) =>
+          Estado.match(estado, { Erro: () => estado }, () => {
             bc.destroy();
             return Estado.Erro(new Error(mensagem));
           }),
@@ -123,9 +123,9 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
   return Right(undefined as void);
 
   function App({ estado }: { estado: Estado }) {
-    return estado.match({
+    return Estado.match(estado, {
       Atualizando: ({ conta }) => <span>Atualizando conta {conta + 1}...</span>,
-      Ocioso: infoContas => {
+      Ocioso: ({ infoContas }) => {
         const contasComSaldo = infoContas.filter(x => x.saldo > 0).length;
         const contasAtualizaveis = infoContas
           .map(x => x.atualizacao)
@@ -148,7 +148,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
           </>
         );
       },
-      Erro: erro => {
+      Erro: ({ erro }) => {
         sub.unsubscribe();
         return <span class="erro">{erro.message}</span>;
       },

@@ -9,8 +9,8 @@ declare function consultarSaldo(idProcessoDepositoJudicialConta: string, idConta
 declare function consultarSaldoTodos(): void;
 
 const Estado = createTaggedUnion({
-  Ocioso: (infoContas: InfoConta[]) => infoContas,
-  Erro: (erro: Error) => erro,
+  Ocioso: (infoContas: InfoConta[]) => ({ infoContas }),
+  Erro: (erro: Error) => ({ erro }),
 });
 type Estado = Static<typeof Estado>;
 
@@ -42,9 +42,9 @@ export function paginaDepositos(numproc: NumProc): Either<Error[], void> {
         },
       }),
     (estado, acao) =>
-      acao.match({
+      Acao.match(acao, {
         Atualizar: () =>
-          estado.match({
+          Estado.match(estado, {
             Erro: () => estado,
             Ocioso: () => {
               consultarSaldoTodos();
@@ -58,8 +58,8 @@ export function paginaDepositos(numproc: NumProc): Either<Error[], void> {
   return Right(undefined as void);
 
   function App({ estado }: { estado: Estado }) {
-    return estado.match({
-      Ocioso: infoContas => {
+    return Estado.match(estado, {
+      Ocioso: ({ infoContas }) => {
         const contasComSaldo = infoContas.filter(x => x.saldo > 0).length;
         const contasAtualizaveis = infoContas.filter(x => x.atualizacao).length;
         const classe = contasComSaldo === 0 ? 'zerado' : 'saldo';
@@ -80,7 +80,7 @@ export function paginaDepositos(numproc: NumProc): Either<Error[], void> {
           </>
         );
       },
-      Erro: erro => {
+      Erro: ({ erro }) => {
         window.setTimeout(() => sub.unsubscribe(), 0);
         return <span class="erro">{erro.message}</span>;
       },
