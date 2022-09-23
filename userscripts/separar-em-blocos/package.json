@@ -1,0 +1,28 @@
+{
+  "name": "separar-em-blocos",
+  "description": "Separar processos em blocos",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "author": "nadameu",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@nadameu/create-broadcast-service": "workspace:^1.0.0",
+    "@nadameu/expect-unreachable": "workspace:^1.0.0",
+    "@nadameu/handler": "workspace:^1.0.0",
+    "@nadameu/opaque": "workspace:^1.0.0",
+    "@nadameu/predicates": "workspace:^1.1.1",
+    "preact": "10.11.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.19.0",
+    "@preact/preset-vite": "^2.4.0",
+    "typescript": "^4.8.3",
+    "vite": "^3.1.3",
+    "vite-plugin-monkey": "^2.5.0"
+  }
+}
