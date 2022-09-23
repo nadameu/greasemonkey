@@ -3,7 +3,7 @@ import { Handler } from '@nadameu/handler';
 export interface Subscription {
   unsubscribe(): void;
 }
-interface BroadcastService<Msg> {
+export interface BroadcastService<Msg> {
   destroy(): void;
   publish(message: Msg): void;
   subscribe(listener: Handler<Msg>): Subscription;
