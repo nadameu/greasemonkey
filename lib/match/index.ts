@@ -35,7 +35,7 @@ type Tagged<
 type Simplify<T> = { result: { [K in keyof T]: T[K] } }['result'];
 type Constructors<TagName extends keyof any, D extends CFn | CVal> = {
   [Tag in 'match' | D[0]]: Tag extends 'match'
-    ? Match<TagName, D>
+    ? MatchBy<TagName>
     : D extends CFn<Tag, infer A, infer R>
     ? (...args: A) => Tagged<TagName, Tag, R>
     : D extends CVal<Tag>
@@ -51,23 +51,13 @@ type FromDef<TagName extends keyof any, D extends CFn | CVal> = D extends CFn<
   : D extends CVal<infer K>
   ? Tagged<TagName, K, never>
   : never;
-type Match<TagName extends keyof any, D extends Def | CVal> = {
-  match<
-    T extends Tagged<TagName, keyof any, any>,
-    M extends {
-      [K in T[TagName]]: (tagged: T extends Tagged<TagName, K, any> ? T : never) => unknown;
-    }
-  >(
-    tagged: T,
-    matchers: M
-  ): M[T[TagName]] extends (...args: any[]) => infer U ? U : never;
-
+type MatchBy<TagName extends keyof any> = {
   match<T extends Tagged<TagName, keyof any, any>, P extends T[TagName], U>(
     tagged: T,
-    matchers: {
-      [K in P]: (tagged: T extends Tagged<TagName, K, any> ? T : never) => unknown;
-    },
-    otherwise: (tagged: T extends Tagged<TagName, P, any> ? never : T) => U
+    matchers: { [K in P]: (tagged: Extract<T, Tagged<TagName, K, any>>) => U },
+    ...otherwise: [Exclude<T, Tagged<TagName, P, any>>] extends [never]
+      ? []
+      : [otherwise: (tagged: Exclude<T, Tagged<TagName, P, any>>) => U]
   ): U;
 }['match'];
 
@@ -94,8 +84,10 @@ export function createTaggedUnion<D extends Definitions<Tag, D>, Tag extends key
   return ctors;
 }
 
+export const matchBy = <T extends keyof any>(tagName: T): MatchBy<T, any> => function () {};
+
 export type Static<C extends Record<keyof C, unknown>> = {
   result: {
-    [K in keyof C]: C[K] extends CreatorFn<any[], infer R> ? R : C[K];
+    [K in keyof C]: K extends 'match' ? never : C[K] extends (...args: any[]) => infer R ? R : C[K];
   }[keyof C];
 }['result'];
