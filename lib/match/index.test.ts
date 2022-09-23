@@ -1,5 +1,5 @@
-import { expect, test } from 'vitest';
-import { createTaggedUnion, match, matchOr, Static } from '.';
+import { describe, expect, test } from 'vitest';
+import { createTaggedUnion, matchBy, Static } from '.';
 
 test('create', () => {
   const MaybeNumber = createTaggedUnion({
@@ -9,48 +9,52 @@ test('create', () => {
 
   const just = MaybeNumber.Just(42);
   expect(just).toHaveProperty('tag', 'Just');
-  expect(just).toHaveProperty('data', 42);
+  expect(just).toHaveProperty('value', 42);
 
   const nothing = MaybeNumber.Nothing;
   expect(nothing).toHaveProperty('tag', 'Nothing');
 });
 
 test('match (method)', async () => {
-  const PromiseNumber = createTaggedUnion({
+  const MyType = createTaggedUnion({
     Pending: null,
     Resolved: (value: number) => ({ value }),
     Rejected: (reason: any) => ({ reason }),
   });
+  type MyType = Static<typeof MyType>;
+  const { Pending, Resolved, Rejected, match } = MyType;
 
   const matchers = {
-    Resolved: (value: number) => Promise.resolve(value),
-    Rejected: (reason: any) => Promise.reject(reason),
+    Resolved: ({ value }: { value: number }) => Promise.resolve(value),
+    Rejected: ({ reason }: { reason: any }) => Promise.reject(reason),
   };
-  const otherwise = () => Promise.reject(PromiseNumber.Pending);
+  const otherwise = () => Promise.reject(Pending);
 
-  const resolvedPromise = PromiseNumber.match(PromiseNumber.Resolved(42), matchers, otherwise);
+  const resolvedPromise = match(Resolved(42) as MyType, matchers, otherwise);
   await expect(resolvedPromise).resolves.toEqual(42);
 
-  const rejectedPromise = PromiseNumber.Rejected('error').matchOr(matchers, otherwise);
+  const rejectedPromise = match(Rejected('error') as MyType, matchers, otherwise);
   await expect(rejectedPromise).rejects.toEqual('error');
 
-  const pendingPromise = PromiseNumber.Pending.matchOr(matchers, otherwise);
-  await expect(pendingPromise).rejects.toStrictEqual(PromiseNumber.Pending);
+  const pendingPromise = match(Pending as MyType, matchers, otherwise);
+  await expect(pendingPromise).rejects.toStrictEqual(Pending);
 });
 
 test('match (standalone)', () => {
+  const match = matchBy('tag');
+
   const t0 = { tag: 'Tag0' as 'Tag0' };
   const t1 = { tag: 'Tag1' as 'Tag1', data: 42 };
   const t2 = { tag: 'Tag2' as 'Tag2', data: { x: 'abc', y: 123 } };
 
   type T = typeof t0 | typeof t1 | typeof t2;
 
-  const getResult = (t: T): number =>
-    matchOr(
+  const getResult = (t: T) =>
+    match(
       t,
       {
-        Tag1: x => x,
-        Tag2: ({ y }) => y,
+        Tag1: ({ data: x }) => x,
+        Tag2: ({ data: { y } }) => y,
       },
       u => u.tag.length
     );
@@ -60,75 +64,88 @@ test('match (standalone)', () => {
   expect(getResult(t2)).toEqual(123);
 });
 
-test('no tag', () => {
-  expect(() => match({} as { tag: 'A' }, { A: () => 3 })).toThrow(
-    'Object does not have a valid "tag" property.'
-  );
+describe('no discriminant', () => {
+  test('tag', () => {
+    const match = matchBy('tag');
+    expect(() => match({} as { tag: 'A' }, { A: () => 3 })).toThrow(
+      'Object does not have a valid "tag" property.'
+    );
+  });
+
+  test('variant', () => {
+    const match = matchBy('variant');
+    expect(() => match({} as { variant: 'A' }, { A: () => 3 })).toThrow(
+      'Object does not have a valid "variant" property.'
+    );
+  });
 });
 
 test('no matcher', () => {
-  expect(() => match({ tag: 'Abc' as 'Abc' }, {} as { Abc: () => number })).toThrow(
+  const match = matchBy('type');
+  expect(() => match({ type: 'Abc' as 'Abc' }, {} as { Abc: () => number })).toThrow(
     'Not matched: "Abc".'
   );
 });
 
-test.skip('typescript (methods)', () => {
-  const MaybeString = createTaggedUnion({ Nothing: null, Just: (x: string) => x });
+test.skip('typescript (constructors)', () => {
+  const MaybeString = createTaggedUnion({ Nothing: null, Just: (x: string) => ({ value: x }) });
   type MaybeString = Static<typeof MaybeString>;
   const just = MaybeString.Just('hi');
   const nothing = MaybeString.Nothing;
   const maybe = nothing as MaybeString;
 
   // @ts-expect-error
-  maybe.match({});
+  MaybeString.match(maybe, {});
   // @ts-expect-error
-  maybe.match({ Just: x => x });
+  MaybeString.match(maybe, { Just: ({ value: x }) => x });
   // @ts-expect-error
-  maybe.match({ Nothing: () => 'no value' });
+  MaybeString.match(maybe, { Nothing: () => 'no value' });
 
-  const x0 = just.match({ Just: x => x.length });
+  const x0 = MaybeString.match(just, { Just: ({ value: x }) => x.length });
   const y0: number = x0;
-  const x1 = nothing.match({ Nothing: () => 1 });
+  const x1 = MaybeString.match(nothing, { Nothing: () => 1 });
   const y1: number = x1;
-  const x2 = maybe.match({ Just: x => x.length, Nothing: () => 4 });
+  const x2 = MaybeString.match(maybe, { Just: ({ value: x }) => x.length, Nothing: () => 4 });
   const y2: number = x2;
 
-  const x3 = maybe.matchOr({ Just: x => x.length }, tagged =>
-    tagged.match({
+  const x3 = MaybeString.match(maybe, { Just: ({ value: x }) => x.length }, tagged =>
+    MaybeString.match(tagged, {
       Nothing: () => 8,
     })
   );
   const y3: number = x3;
 });
 
-test.skip('typescript (functions)', () => {
+test.skip('typescript (manual creation)', () => {
   interface JustString {
-    tag: 'Just';
-    data: string;
+    type: 'Just';
+    value: string;
   }
   interface Nothing {
-    tag: 'Nothing';
+    type: 'Nothing';
   }
   type MaybeString = JustString | Nothing;
-  const just = { tag: 'Just', data: 'hi' } as JustString;
-  const nothing = { tag: 'Nothing' } as Nothing;
+  const just = { type: 'Just', value: 'hi' } as JustString;
+  const nothing = { type: 'Nothing' } as Nothing;
   const maybe = nothing as MaybeString;
+
+  const match = matchBy('type');
 
   // @ts-expect-error
   match(maybe, {});
   // @ts-expect-error
-  match(maybe, { Just: x => x });
+  match(maybe, { Just: ({ value: x }) => x });
   // @ts-expect-error
   match(maybe, { Nothing: () => 'no value' });
 
-  const x0 = match(just, { Just: x => x.length });
+  const x0 = match(just, { Just: ({ value: x }) => x.length });
   const y0: number = x0;
   const x1 = match(nothing, { Nothing: () => 1 });
   const y1: number = x1;
-  const x2 = match(maybe, { Just: x => x.length, Nothing: () => 4 });
+  const x2 = match(maybe, { Just: ({ value: x }) => x.length, Nothing: () => 4 });
   const y2: number = x2;
 
-  const x3 = matchOr(maybe, { Just: x => x.length }, tagged =>
+  const x3 = match(maybe, { Just: ({ value: x }) => x.length }, tagged =>
     match(tagged, {
       Nothing: () => 8,
     })

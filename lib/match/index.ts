@@ -51,15 +51,46 @@ type FromDef<TagName extends keyof any, D extends CFn | CVal> = D extends CFn<
   : D extends CVal<infer K>
   ? Tagged<TagName, K, never>
   : never;
+type Tagged__<TagName extends keyof any> = Tagged_<TagName, keyof any>;
+type Tagged_<TagName extends keyof any, Tag extends keyof any> = Tagged<TagName, Tag, never>;
+type Matchers<
+  TagName extends keyof any,
+  T extends Tagged__<TagName>,
+  Tags extends T[TagName],
+  U
+> = {
+  [Tag in Tags]: (tagged: Extract<T, Tagged_<TagName, Tag>>) => U;
+};
+type Matchers_<
+  TagName extends keyof any,
+  T extends Tagged__<TagName>,
+  Tags extends T[TagName]
+> = Matchers<TagName, T, Tags, unknown>;
+type Matchers__<TagName extends keyof any, T extends Tagged__<TagName>> = Matchers_<
+  TagName,
+  T,
+  T[TagName]
+>;
+type Matchers___<TagName extends keyof any> = Matchers__<TagName, Tagged__<TagName>>;
 type MatchBy<TagName extends keyof any> = {
-  match<T extends Tagged<TagName, keyof any, any>, P extends T[TagName], U>(
+  match<T extends Tagged__<TagName>, M extends Matchers__<TagName, T>>(
     tagged: T,
-    matchers: { [K in P]: (tagged: Extract<T, Tagged<TagName, K, any>>) => U },
-    ...otherwise: [Exclude<T, Tagged<TagName, P, any>>] extends [never]
-      ? []
-      : [otherwise: (tagged: Exclude<T, Tagged<TagName, P, any>>) => U]
+    matchers: M
+  ): M extends Matchers<TagName, T, T[TagName], infer U> ? U : never;
+  match<T extends Tagged__<TagName>, P extends T[TagName], U>(
+    tagged: T,
+    matchers: { [K in P]: (tagged: Extract<T, Tagged_<TagName, K>>) => U },
+    otherwise: (tagged: Exclude<T, Tagged_<TagName, P>>) => U
   ): U;
 }['match'];
+
+type GetResult<All extends keyof any, P extends All, U> = [
+  Exclude<All, P>
+] extends infer Remaining extends [any]
+  ? Remaining extends [never]
+    ? U
+    : { error: Remaining[0] }
+  : never;
 
 export function createTaggedUnion<D extends Definitions<Tag, D>, Tag extends keyof any = 'tag'>(
   definitions: D,
@@ -72,22 +103,38 @@ export function createTaggedUnion<D extends Definitions<Tag, D>, Tag extends key
       : CVal<K>;
   }[keyof D]
 > {
-  const ctors: Partial<Record<keyof D, unknown>> = {};
-  for (const [tag, f] of Object.entries(definitions) as [keyof D, CreatorFn | null][]) {
+  const ctors: Partial<Record<keyof D, object | Function>> = {};
+  for (const [tag, f] of Object.entries(definitions) as [keyof D, CreatorFn<Tag> | null][]) {
     if (f === null) {
-      ctors[tag] = new Matching(tag);
+      ctors[tag] = { [tagName]: tag };
     } else {
-      ctors[tag] = (...args: any[]) => new MatchingWith(tag, f(...args));
+      ctors[tag] = (...args: any[]) => {
+        const obj: any = f(...args);
+        obj[tagName] = tag;
+        return obj;
+      };
     }
   }
-
-  return ctors;
+  (ctors as any).match = matchBy(tagName);
+  return ctors as any;
 }
 
-export const matchBy = <T extends keyof any>(tagName: T): MatchBy<T, any> => function () {};
+export function matchBy<T extends keyof any>(tagName: T): MatchBy<T> {
+  return (obj: any, matchers: any, otherwise?: Function) => {
+    const tag = obj[tagName];
+    if (!tag) throw new Error(`Object does not have a valid "${String(tagName)}" property.`);
+    const fn = matchers[tag] ?? otherwise ?? matchNotFound;
+    return fn(obj);
+  };
+  function matchNotFound(obj: any) {
+    throw new Error(`Not matched: "${obj[tagName]}".`);
+  }
+}
 
 export type Static<C extends Record<keyof C, unknown>> = {
   result: {
-    [K in keyof C]: K extends 'match' ? never : C[K] extends (...args: any[]) => infer R ? R : C[K];
+    [K in keyof C]: K extends 'match'
+      ? never
+      : Simplify<C[K] extends (...args: any[]) => infer R ? R : C[K]>;
   }[keyof C];
 }['result'];
