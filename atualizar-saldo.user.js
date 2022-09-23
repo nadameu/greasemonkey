@@ -2,7 +2,7 @@
 // @name         atualizar-saldos
 // @name:pt-BR   Atualizar saldos
 // @namespace    http://nadameu.com.br
-// @version      2.2.1
+// @version      2.3.1
 // @author       nadameu
 // @description  Atualiza o saldo de contas judiciais
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
@@ -20,7 +20,7 @@
 // @require      https://unpkg.com/preact@10.11.0/dist/preact.min.js
 // ==/UserScript==
 
-// use vite-plugin-monkey@2.4.1 at 2022-09-21T20:51:40.291Z
+// use vite-plugin-monkey@2.4.1 at 2022-09-23T18:52:27.319Z
 
 (({ css: s = '' }) => {
   const a = document.createElement('style');
@@ -199,49 +199,39 @@
       }
     }
   }
-  function matchNotFound(variant) {
-    throw new Error(`Not matched: "${String(variant.tag)}".`);
-  }
-  class Matching {
-    constructor(tag) {
-      this.tag = tag;
-    }
-    match(matchers) {
-      return _match(this, matchers);
-    }
-    matchOr(matchers, otherwise) {
-      return _match(this, matchers, otherwise);
-    }
-  }
-  class MatchingWith extends Matching {
-    constructor(tag, data) {
-      super(tag);
-      this.data = data;
-    }
-    match(matchers) {
-      return _match(this, matchers);
-    }
-    matchOr(matchers, otherwise) {
-      return _match(this, matchers, otherwise);
-    }
-  }
-  function _match(obj, matchers, otherwise = matchNotFound) {
-    if (!obj.tag) throw new Error('Object does not have a valid "tag" property.');
-    return obj.tag in matchers ? matchers[obj.tag](obj.data) : otherwise(obj);
-  }
-  function match(obj, matchers) {
-    return _match(obj, matchers);
-  }
-  function createTaggedUnion(definitions) {
+  function createTaggedUnion(definitions, tagName = 'tag') {
     const ctors = {};
-    for (const [tag, f] of Object.entries(definitions)) {
+    for (const tag of Object.getOwnPropertyNames(definitions).concat(
+      Object.getOwnPropertySymbols(definitions)
+    )) {
+      if (tag === 'match') throw new Error('Invalid tag: "match".');
+      const f = definitions[tag];
       if (f === null) {
-        ctors[tag] = new Matching(tag);
+        ctors[tag] = {
+          [tagName]: tag,
+        };
       } else {
-        ctors[tag] = (...args) => new MatchingWith(tag, f(...args));
+        ctors[tag] = (...args) => {
+          const obj = f(...args);
+          obj[tagName] = tag;
+          return obj;
+        };
       }
     }
+    ctors.match = matchBy(tagName);
     return ctors;
+  }
+  function matchBy(tagName) {
+    return (obj, matchers, otherwise) => {
+      const tag = obj[tagName];
+      if (tag === void 0)
+        throw new Error(`Object does not have a valid "${String(tagName)}" property.`);
+      const fn = matchers[tag] ?? otherwise ?? matchNotFound;
+      return fn(obj);
+    };
+    function matchNotFound(obj) {
+      throw new Error(`Not matched: "${obj[tagName]}".`);
+    }
   }
   function createBroadcastService(id, validate) {
     const listeners = /* @__PURE__ */ new Set();
@@ -272,48 +262,43 @@
       };
     }
   }
-  const Mensagem = /* @__PURE__ */ createTaggedUnion({
-    InformaContas: (numproc, qtdComSaldo, permiteAtualizar) => ({
-      numproc,
-      qtdComSaldo,
-      permiteAtualizar,
-    }),
-    InformaSaldoDeposito: (numproc, qtdComSaldo) => ({
-      numproc,
-      qtdComSaldo,
-    }),
-    PerguntaAtualizar: numproc => ({
-      numproc,
-    }),
-    RespostaAtualizar: (numproc, atualizar) => ({
-      numproc,
-      atualizar,
-    }),
-  });
-  const isMensagem = /* @__PURE__ */ isTaggedUnion('tag', {
-    InformaContas: {
-      data: hasShape({
-        numproc: isNumproc,
-        qtdComSaldo: isNumber,
-        permiteAtualizar: isBoolean,
+  const Mensagem = /* @__PURE__ */ createTaggedUnion(
+    {
+      InformaContas: (numproc, qtdComSaldo, permiteAtualizar) => ({
+        numproc,
+        qtdComSaldo,
+        permiteAtualizar,
       }),
+      InformaSaldoDeposito: (numproc, qtdComSaldo) => ({
+        numproc,
+        qtdComSaldo,
+      }),
+      PerguntaAtualizar: numproc => ({
+        numproc,
+      }),
+      RespostaAtualizar: (numproc, atualizar) => ({
+        numproc,
+        atualizar,
+      }),
+    },
+    'tipo'
+  );
+  const isMensagem = /* @__PURE__ */ isTaggedUnion('tipo', {
+    InformaContas: {
+      numproc: isNumproc,
+      qtdComSaldo: isNumber,
+      permiteAtualizar: isBoolean,
     },
     InformaSaldoDeposito: {
-      data: hasShape({
-        numproc: isNumproc,
-        qtdComSaldo: isNumber,
-      }),
+      numproc: isNumproc,
+      qtdComSaldo: isNumber,
     },
     PerguntaAtualizar: {
-      data: hasShape({
-        numproc: isNumproc,
-      }),
+      numproc: isNumproc,
     },
     RespostaAtualizar: {
-      data: hasShape({
-        numproc: isNumproc,
-        atualizar: isBoolean,
-      }),
+      numproc: isNumproc,
+      atualizar: isBoolean,
     },
   });
   function createMsgService() {
@@ -347,17 +332,25 @@
     return preact2.options.vnode && preact2.options.vnode(a), a;
   }
   const Estado$1 = createTaggedUnion({
-    Ocioso: infoContas => infoContas,
+    Ocioso: infoContas => ({
+      infoContas,
+    }),
     Atualizando: (infoContas, conta) => ({
       infoContas,
       conta,
     }),
-    Erro: erro => erro,
+    Erro: erro => ({
+      erro,
+    }),
   });
   const Acao$1 = createTaggedUnion({
     Atualizar: null,
-    SaldoAtualizado: saldo => saldo,
-    ErroComunicacao: mensagem => mensagem,
+    SaldoAtualizado: saldo => ({
+      saldo,
+    }),
+    ErroComunicacao: mensagem => ({
+      mensagem,
+    }),
   });
   function paginaContas(numproc) {
     const barra = document.getElementById('divInfraBarraLocalizacao');
@@ -376,7 +369,7 @@
         });
         if (estado.tag !== 'Erro') {
           bc.subscribe(msg =>
-            match(msg, {
+            Mensagem.match(msg, {
               InformaContas: () => {},
               InformaSaldoDeposito: () => {},
               PerguntaAtualizar: () => {},
@@ -393,11 +386,11 @@
         return estado;
       },
       (estado, acao) =>
-        acao.match({
+        Acao$1.match(acao, {
           Atualizar: () =>
-            estado.match({
+            Estado$1.match(estado, {
               Erro: () => estado,
-              Ocioso: infoContas => {
+              Ocioso: ({ infoContas }) => {
                 ouvirXHR(x => store.dispatch(x));
                 const primeiraConta = findIndex(infoContas, x => x.atualizacao !== null);
                 if (primeiraConta < 0) {
@@ -418,8 +411,8 @@
                   new Error('Tentativa de atualiza\xE7\xE3o durante outra atualiza\xE7\xE3o.')
                 ),
             }),
-          SaldoAtualizado: saldo =>
-            estado.match({
+          SaldoAtualizado: ({ saldo }) =>
+            Estado$1.match(estado, {
               Erro: () => estado,
               Ocioso: () => estado,
               Atualizando: ({ conta, infoContas }) => {
@@ -443,8 +436,9 @@
                 return Estado$1.Atualizando(infoNova, proxima);
               },
             }),
-          ErroComunicacao: (mensagem = 'Ocorreu um erro na atualiza\xE7\xE3o dos saldos.') =>
-            estado.matchOr(
+          ErroComunicacao: ({ mensagem = 'Ocorreu um erro na atualiza\xE7\xE3o dos saldos.' }) =>
+            Estado$1.match(
+              estado,
               {
                 Erro: () => estado,
               },
@@ -458,12 +452,12 @@
     const sub = store.subscribe(update);
     return Right(void 0);
     function App({ estado }) {
-      return estado.match({
+      return Estado$1.match(estado, {
         Atualizando: ({ conta }) =>
           o('span', {
             children: ['Atualizando conta ', conta + 1, '...'],
           }),
-        Ocioso: infoContas => {
+        Ocioso: ({ infoContas }) => {
           const contasComSaldo = infoContas.filter(x => x.saldo > 0).length;
           const contasAtualizaveis = infoContas.map(x => x.atualizacao).filter(x => x !== null);
           const classe = contasComSaldo === 0 ? 'zerado' : 'saldo';
@@ -491,7 +485,7 @@
             ],
           });
         },
-        Erro: erro => {
+        Erro: ({ erro }) => {
           sub.unsubscribe();
           return o('span', {
             class: 'erro',
@@ -577,17 +571,17 @@
       return Left(null);
     }
     const textoSaldo = celulaSaldo.textContent ?? '';
-    const match2 = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
-    if (!match2 || match2.length < 2) return Left(null);
-    const [, numeros] = match2;
+    const match = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
+    if (!match || match.length < 2) return Left(null);
+    const [, numeros] = match;
     const saldo = Number(numeros.replace(/\./g, '').replace(',', '.'));
     const link = row.cells[row.cells.length - 1].querySelector(
       'a[href^="javascript:atualizarSaldo("]'
     );
     let atualizacao = null;
     if (link) {
-      const match3 = link.href.match(jsLinkRE);
-      if (!match3 || match3.length < 9) return Left(null);
+      const match2 = link.href.match(jsLinkRE);
+      if (!match2 || match2.length < 9) return Left(null);
       const [
         _2,
         numProcessoOriginario,
@@ -598,7 +592,7 @@
         strBanco,
         idRequisicaoBeneficiarioPagamento,
         strQtdMovimentos,
-      ] = match3;
+      ] = match2;
       const [conta, numBanco, qtdMovimentos] = [
         Number(strConta),
         Number(strBanco),
@@ -632,8 +626,12 @@
     return -1;
   }
   const Estado = createTaggedUnion({
-    Ocioso: infoContas => infoContas,
-    Erro: erro => erro,
+    Ocioso: infoContas => ({
+      infoContas,
+    }),
+    Erro: erro => ({
+      erro,
+    }),
   });
   const Acao = createTaggedUnion({
     Atualizar: null,
@@ -660,9 +658,9 @@
           },
         }),
       (estado, acao) =>
-        acao.match({
+        Acao.match(acao, {
           Atualizar: () =>
-            estado.match({
+            Estado.match(estado, {
               Erro: () => estado,
               Ocioso: () => {
                 consultarSaldoTodos();
@@ -674,8 +672,8 @@
     const sub = store.subscribe(update);
     return Right(void 0);
     function App({ estado }) {
-      return estado.match({
-        Ocioso: infoContas => {
+      return Estado.match(estado, {
+        Ocioso: ({ infoContas }) => {
           const contasComSaldo = infoContas.filter(x => x.saldo > 0).length;
           const contasAtualizaveis = infoContas.filter(x => x.atualizacao).length;
           const classe = contasComSaldo === 0 ? 'zerado' : 'saldo';
@@ -703,7 +701,7 @@
             ],
           });
         },
-        Erro: erro => {
+        Erro: ({ erro }) => {
           window.setTimeout(() => sub.unsubscribe(), 0);
           return o('span', {
             class: 'erro',
@@ -738,9 +736,9 @@
   function obterInfoContaLinha(row) {
     if (row.cells.length !== 11 && row.cells.length !== 13) return Left(null);
     const textoSaldo = row.cells[row.cells.length - 4].textContent ?? '';
-    const match2 = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
-    if (!match2 || match2.length < 2) return Left(null);
-    const [, numeros] = match2;
+    const match = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
+    if (!match || match.length < 2) return Left(null);
+    const [, numeros] = match;
     const saldo = Number(numeros.replace(/\./g, '').replace(',', '.'));
     const link = row.cells[row.cells.length - 1].querySelector('a[onclick^="consultarSaldo("]');
     const atualizacao = link !== null;
@@ -768,16 +766,31 @@
   function modificarPaginaProcesso({ informacoesAdicionais, linkRPV, linkDepositos, numproc }) {
     const Estado2 = createTaggedUnion({
       AguardaVerificacaoInicial: null,
-      AguardaAtualizacao: dados => dados,
-      Ocioso: dados => dados,
+      AguardaAtualizacao: ({ rpv, depositos }) => ({
+        rpv,
+        depositos,
+      }),
+      Ocioso: ({ rpv, depositos }) => ({
+        rpv,
+        depositos,
+      }),
       Erro: null,
     });
     const Acao2 = createTaggedUnion({
       Erro: null,
       PaginaContasAberta: null,
-      VerificacaoTerminada: info => info,
-      AtualizacaoRPV: info => info,
-      AtualizacaoDepositos: info => info,
+      VerificacaoTerminada: ({ rpv, depositos }) => ({
+        rpv,
+        depositos,
+      }),
+      AtualizacaoRPV: ({ quantidade, atualiza }) => ({
+        quantidade,
+        atualiza,
+      }),
+      AtualizacaoDepositos: ({ quantidade, atualiza }) => ({
+        quantidade,
+        atualiza,
+      }),
       Clique: alvo => ({
         alvo,
       }),
@@ -820,7 +833,7 @@
           }
         }, INTERVALO);
         bc.subscribe(msg => {
-          match(msg, {
+          Mensagem.match(msg, {
             InformaContas: ({ numproc: msgNumproc, qtdComSaldo, permiteAtualizar }) => {
               if (msgNumproc !== numproc) return;
               store.dispatch(
@@ -849,39 +862,51 @@
         return Estado2.AguardaVerificacaoInicial;
       },
       (estado, acao) =>
-        acao.match({
-          AtualizacaoDepositos: dados =>
-            estado.match({
+        Acao2.match(acao, {
+          AtualizacaoDepositos: ({ quantidade, atualiza }) =>
+            Estado2.match(estado, {
               AguardaAtualizacao: ({ rpv }) =>
                 Estado2.AguardaAtualizacao({
                   rpv,
-                  depositos: dados,
+                  depositos: {
+                    quantidade,
+                    atualiza,
+                  },
                 }),
               AguardaVerificacaoInicial: () => Estado2.Erro,
               Erro: () => estado,
               Ocioso: ({ rpv }) =>
                 Estado2.Ocioso({
                   rpv,
-                  depositos: dados,
+                  depositos: {
+                    quantidade,
+                    atualiza,
+                  },
                 }),
             }),
-          AtualizacaoRPV: dados =>
-            estado.match({
+          AtualizacaoRPV: ({ quantidade, atualiza }) =>
+            Estado2.match(estado, {
               AguardaAtualizacao: ({ depositos }) =>
                 Estado2.Ocioso({
-                  rpv: dados,
+                  rpv: {
+                    quantidade,
+                    atualiza,
+                  },
                   depositos,
                 }),
               AguardaVerificacaoInicial: () => Estado2.Erro,
               Erro: () => estado,
               Ocioso: ({ depositos }) =>
                 Estado2.Ocioso({
-                  rpv: dados,
+                  rpv: {
+                    quantidade,
+                    atualiza,
+                  },
                   depositos,
                 }),
             }),
           Clique: ({ alvo }) =>
-            estado.match({
+            Estado2.match(estado, {
               AguardaVerificacaoInicial: () => estado,
               AguardaAtualizacao: () => estado,
               Ocioso: dados => {
@@ -898,7 +923,8 @@
               Erro: () => estado,
             }),
           Erro: () =>
-            estado.matchOr(
+            Estado2.match(
+              estado,
               {
                 Erro: () => estado,
               },
@@ -908,7 +934,7 @@
               }
             ),
           PaginaContasAberta: () =>
-            estado.match({
+            Estado2.match(estado, {
               AguardaVerificacaoInicial: () => Estado2.Erro,
               AguardaAtualizacao: () => {
                 bc.publish(Mensagem.RespostaAtualizar(numproc, true));
@@ -917,9 +943,12 @@
               Ocioso: () => estado,
               Erro: () => estado,
             }),
-          VerificacaoTerminada: dados => {
-            const ocioso = Estado2.Ocioso(dados);
-            return estado.match({
+          VerificacaoTerminada: ({ rpv, depositos }) => {
+            const ocioso = Estado2.Ocioso({
+              rpv,
+              depositos,
+            });
+            return Estado2.match(estado, {
               AguardaVerificacaoInicial: () => ocioso,
               AguardaAtualizacao: () => ocioso,
               Ocioso: () => ocioso,
@@ -963,7 +992,7 @@
       evt.preventDefault();
     }
     function App({ estado }) {
-      return match(estado, {
+      return Estado2.match(estado, {
         AguardaVerificacaoInicial: () =>
           o('output', {
             children: 'Verificando contas com saldo...',
