@@ -20,9 +20,15 @@ export default defineConfig({
         description: 'Permite a separação de processos em blocos para movimentação separada',
       },
       build: {
-        externalGlobals: {
-          preact: cdn.jsdelivr('preact', 'dist/preact.min.js'),
-        },
+        externalGlobals: [
+          [
+            'preact',
+            cdn
+              .unpkg('preact', 'dist/preact.min.js')
+              .concat(cdn.unpkg('preactHooks', 'hooks/dist/hooks.umd.js').at(-1)),
+          ],
+          ['preact/hooks', 'preactHooks'],
+        ],
       },
     }),
   ],

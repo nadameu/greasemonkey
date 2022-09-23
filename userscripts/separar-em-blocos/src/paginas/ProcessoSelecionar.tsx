@@ -5,11 +5,11 @@ import { assert, isNonEmptyString, isNotNull, NonNegativeInteger } from '@nadame
 import { h, JSX, render } from 'preact';
 import { useCallback, useLayoutEffect, useMemo, useReducer } from 'preact/hooks';
 import * as Database from '../database';
-import * as FT from '../lib/fromThunk';
+import * as FT from '../fromThunk';
 import { BroadcastMessage, isBroadcastMessage } from '../types/Action';
 import { Bloco, BlocoProcesso } from '../types/Bloco';
 import { NumProc } from '../types/NumProc';
-import css from './ProcessoSelecionar.css';
+import css from './ProcessoSelecionar.css?inline';
 
 type Dependencias = {
   DB: Pick<typeof Database, 'createBloco' | 'getBloco' | 'getBlocos' | 'updateBloco'>;

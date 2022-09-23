@@ -1,4 +1,7 @@
-import { createRef, Fragment, h, render } from 'preact';
+import { BroadcastService, createBroadcastService } from '@nadameu/create-broadcast-service';
+import { expectUnreachable } from '@nadameu/expect-unreachable';
+import * as p from '@nadameu/predicates';
+import { createRef, h, render } from 'preact';
 import {
   useCallback,
   useEffect,
@@ -7,11 +10,8 @@ import {
   useReducer,
   useState,
 } from 'preact/hooks';
-import { BroadcastService, createBroadcastService } from '@nadameu/create-broadcast-service';
 import * as Database from '../database';
-import { expectUnreachable } from '@nadameu/expect-unreachable';
-import * as FT from '../lib/fromThunk';
-import * as p from '@nadameu/predicates';
+import * as FT from '../fromThunk';
 import { BroadcastMessage, isBroadcastMessage } from '../types/Action';
 import { Bloco } from '../types/Bloco';
 import { isNumProc, NumProc } from '../types/NumProc';

@@ -8,10 +8,10 @@ export interface Dispatch<Model, Extra> {
 
 export function createFromAsyncThunk<Model, Extra>(
   onLoading: Action<Model, Extra>,
-  onError: (error: unknown) => Action<Model, Extra>,
+  onError: (error: unknown) => Action<Model, Extra>
 ) {
   return (
-      asyncThunk: (state: Model, extra: Extra) => Promise<Action<Model, Extra>>,
+      asyncThunk: (state: Model, extra: Extra) => Promise<Action<Model, Extra>>
     ): Action<Model, Extra> =>
     (state, dispatch, extra) => {
       const asyncAction = asyncThunk(state, extra);
