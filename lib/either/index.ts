@@ -70,11 +70,12 @@ export function sequence<a, b>(eithers: Iterable<Either<a, b>>): Either<a, b[]> 
 
 export function traverse<a, b, c>(
   collection: Iterable<a>,
-  transform: (_: a) => Either<b, c>
+  transform: (x: a, i: number) => Either<b, c>
 ): Either<b, c[]> {
   const results: c[] = [];
+  let i = 0;
   for (const value of collection) {
-    const either = transform(value);
+    const either = transform(value, i++);
     if (either.isLeft) return either as Left<b>;
     results.push(either.rightValue);
   }
@@ -93,12 +94,13 @@ export function validateAll<a, b>(eithers: Iterable<Either<a, b>>): Either<a[], 
 
 export function validateMap<a, b, c>(
   collection: Iterable<a>,
-  transform: (_: a) => Either<b, c>
+  transform: (x: a, i: number) => Either<b, c>
 ): Either<b[], c[]> {
   const errors: b[] = [];
   const results: c[] = [];
+  let i = 0;
   for (const value of collection) {
-    const either = transform(value);
+    const either = transform(value, i++);
     if (either.isLeft) errors.push(either.leftValue);
     else results.push(either.rightValue);
   }
