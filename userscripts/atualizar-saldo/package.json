@@ -23,12 +23,5 @@
     "@nadameu/predicates": "workspace:^1.1.1",
     "@nadameu/resolvable": "workspace:^1.0.0",
     "preact": "10.11.0"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.19.0",
-    "@preact/preset-vite": "^2.4.0",
-    "sass": "^1.54.9",
-    "vite": "^3.1.0",
-    "vite-plugin-monkey": "^2.4.1"
   }
 }
