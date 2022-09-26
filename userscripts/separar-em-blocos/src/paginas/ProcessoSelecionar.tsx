@@ -1,8 +1,9 @@
 import { BroadcastService, createBroadcastService } from '@nadameu/create-broadcast-service';
+import { Either, Left, Right } from '@nadameu/either';
 import { expectUnreachable } from '@nadameu/expect-unreachable';
 import { Handler } from '@nadameu/handler';
-import { assert, isNonEmptyString, isNotNull, NonNegativeInteger } from '@nadameu/predicates';
-import { h, JSX, render } from 'preact';
+import * as p from '@nadameu/predicates';
+import { JSX, render } from 'preact';
 import { useCallback, useLayoutEffect, useMemo, useReducer } from 'preact/hooks';
 import * as Database from '../database';
 import * as FT from '../fromThunk';
@@ -54,7 +55,7 @@ const actions = {
       if (blocos.some(x => x.nome === nome))
         return actions.erroCapturado(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
       const bloco: Bloco = {
-        id: (Math.max(-1, ...blocos.map(x => x.id)) + 1) as NonNegativeInteger,
+        id: (Math.max(-1, ...blocos.map(x => x.id)) + 1) as p.NonNegativeInteger,
         nome,
         processos: [],
       };
@@ -118,14 +119,15 @@ const actions = {
 
 const fromThunk = /* #__PURE__ */ FT.createFromAsyncThunk(actions.carregando(), actions.erro);
 
-export function ProcessoSelecionar(numproc: NumProc) {
+export function ProcessoSelecionar(numproc: NumProc): Either<Error, void> {
   const mainMenu = document.getElementById('main-menu');
-  assert(isNotNull(mainMenu));
+  if (p.isNull(mainMenu)) return Left(new Error('Menu não encontrado'));
   const style = document.head.appendChild(document.createElement('style'));
   style.textContent = css;
   const div = mainMenu.insertAdjacentElement('beforebegin', document.createElement('div'))!;
   div.id = 'gm-blocos';
   render(<Main numproc={numproc} />, div);
+  return Right(undefined);
 }
 
 function Main(props: { numproc: NumProc }) {
@@ -215,7 +217,7 @@ function Blocos(props: {
   disabled: boolean;
   erro?: string;
 }) {
-  let aviso: h.JSX.Element | null = null;
+  let aviso: JSX.Element | null = null;
   if (props.erro) {
     aviso = <div class="error">{props.erro}</div>;
   }
@@ -243,7 +245,7 @@ function Blocos(props: {
     evt.preventDefault();
     const nome = prompt('Nome do novo bloco:');
     if (nome === null) return;
-    if (isNonEmptyString(nome)) {
+    if (p.isNonEmptyString(nome)) {
       props.dispatch(actions.criarBloco(nome));
     }
   }

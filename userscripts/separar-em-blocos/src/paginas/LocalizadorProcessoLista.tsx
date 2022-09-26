@@ -1,7 +1,8 @@
 import { BroadcastService, createBroadcastService } from '@nadameu/create-broadcast-service';
+import { Either, Left, Right, traverse } from '@nadameu/either';
 import { expectUnreachable } from '@nadameu/expect-unreachable';
 import * as p from '@nadameu/predicates';
-import { createRef, h, render } from 'preact';
+import { createRef, render } from 'preact';
 import {
   useCallback,
   useEffect,
@@ -151,26 +152,33 @@ const actions = {
     }),
 };
 
-export function LocalizadorProcessoLista() {
+export function LocalizadorProcessoLista(): Either<Error, void> {
   const tabela = document.querySelector<HTMLTableElement>('table#tabelaLocalizadores');
   const linhas = Array.from(tabela?.rows ?? { length: 0 });
-  if (linhas.length <= 1) return;
-  const mapa: MapaProcessos = new Map(
-    linhas.slice(1).map((linha, i) => {
-      const endereco = linha.cells[1]?.querySelector<HTMLAnchorElement>('a[href]')?.href;
-      p.assert(p.isNotNullish(endereco), `Link do processo não encontrado: linha ${i}.`);
-      const numproc = new URL(endereco).searchParams.get('num_processo');
-      p.assert(isNumProc(numproc), `Número de processo desconhecido: ${JSON.stringify(numproc)}.`);
-      const checkbox = linha.cells[0]?.querySelector<HTMLInputElement>('input[type=checkbox]');
-      p.assert(p.isNotNullish(checkbox), `Caixa de seleção não encontrada: linha ${i}.`);
-      return [numproc, { linha, checkbox }];
-    })
-  );
+  if (linhas.length <= 1) return Right(undefined);
+
+  const eitherMapa = traverse(linhas.slice(1), (linha, i) => {
+    const endereco = linha.cells[1]?.querySelector<HTMLAnchorElement>('a[href]')?.href;
+    if (p.isNullish(endereco))
+      return Left(new Error(`Link do processo não encontrado: linha ${i}.`));
+    const numproc = new URL(endereco).searchParams.get('num_processo');
+    if (p.isNullish(numproc))
+      return Left(new Error(`Número do processo não encontrado: linha ${i}.`));
+    if (!isNumProc(numproc))
+      return Left(new Error(`Número de processo desconhecido: ${JSON.stringify(numproc)}.`));
+    const checkbox = linha.cells[0]?.querySelector<HTMLInputElement>('input[type=checkbox]');
+    if (p.isNullish(checkbox))
+      return Left(new Error(`Caixa de seleção não encontrada: linha ${i}.`));
+    return Right([numproc, { linha, checkbox }] as const);
+  });
+  if (eitherMapa.isLeft) return eitherMapa as Left<Error>;
+  const mapa: MapaProcessos = new Map(eitherMapa.rightValue);
 
   const barra = document.getElementById('divInfraBarraLocalizacao');
-  p.assert(p.isNotNull(barra), 'Não foi possível inserir os blocos na página.');
+  if (p.isNullish(barra)) return Left(new Error('Não foi possível inserir os blocos na página.'));
   const div = barra.insertAdjacentElement('afterend', document.createElement('div'))!;
   render(<Main mapa={mapa} />, div);
+  return Right(undefined);
 }
 
 function Main(props: { mapa: MapaProcessos }) {
@@ -240,7 +248,7 @@ function Blocos(props: { state: Extract<Model, { status: 'loaded' }>; dispatch: 
     [nome]
   );
 
-  let aviso: h.JSX.Element | null = null;
+  let aviso: JSX.Element | null = null;
   if (props.state.aviso) {
     aviso = (
       <>
@@ -278,11 +286,11 @@ function BlocoPaginaLista(props: InfoBloco & { dispatch: Dispatch }) {
     }
   }, [editing]);
 
-  let displayNome: h.JSX.Element | string = props.nome;
+  let displayNome: JSX.Element | string = props.nome;
 
-  let botaoRenomear: h.JSX.Element | null = <button onClick={onRenomearClicked}>Renomear</button>;
+  let botaoRenomear: JSX.Element | null = <button onClick={onRenomearClicked}>Renomear</button>;
 
-  let removerAusentes: h.JSX.Element | null = (
+  let removerAusentes: JSX.Element | null = (
     <button onClick={() => props.dispatch(actions.removerProcessosAusentes(props.id))}>
       Remover processos ausentes
     </button>
@@ -305,7 +313,7 @@ function BlocoPaginaLista(props: InfoBloco & { dispatch: Dispatch }) {
     </li>
   );
 
-  function createAbbr(nestaPagina: number, total: number): h.JSX.Element | string {
+  function createAbbr(nestaPagina: number, total: number): JSX.Element | string {
     if (total === 0) return '0 processo';
     if (nestaPagina === total) return `${total} processo${total > 1 ? 's' : ''}`;
     const textoTotal = `${total} processo${total > 1 ? 's' : ''} no bloco`;
@@ -314,7 +322,7 @@ function BlocoPaginaLista(props: InfoBloco & { dispatch: Dispatch }) {
     return <abbr title={`${textoTotal}, ${textoPagina}.`}>{textoResumido}</abbr>;
   }
 
-  function onKeyUp(evt: h.JSX.TargetedEvent<HTMLInputElement, KeyboardEvent>) {
+  function onKeyUp(evt: JSX.TargetedEvent<HTMLInputElement, KeyboardEvent>) {
     console.log('Key', evt.key);
     if (evt.key === 'Enter') {
       const nome = evt.currentTarget.value;
