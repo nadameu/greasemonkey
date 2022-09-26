@@ -15,6 +15,102 @@
 
 (function (preact2, hooks) {
   'use strict';
+  class _Either {
+    catch(f) {
+      return this.match({
+        Left: f,
+        Right: () => this,
+      });
+    }
+    chain(f) {
+      return this.match({
+        Left: () => this,
+        Right: f,
+      });
+    }
+    mapLeft(f) {
+      return this.match({
+        Left: x => Left(f(x)),
+        Right: () => this,
+      });
+    }
+    map(f) {
+      return this.match({
+        Left: () => this,
+        Right: x => Right(f(x)),
+      });
+    }
+  }
+  class _Left extends _Either {
+    constructor(leftValue) {
+      super();
+      this.leftValue = leftValue;
+    }
+    isLeft = true;
+    isRight = false;
+    match({ Left: Left2 }) {
+      return Left2(this.leftValue);
+    }
+  }
+  function Left(leftValue) {
+    return new _Left(leftValue);
+  }
+  class _Right extends _Either {
+    constructor(rightValue) {
+      super();
+      this.rightValue = rightValue;
+    }
+    isLeft = false;
+    isRight = true;
+    match({ Right: Right2 }) {
+      return Right2(this.rightValue);
+    }
+  }
+  function Right(rightValue) {
+    return new _Right(rightValue);
+  }
+  function traverse(collection, transform) {
+    const results = [];
+    let i = 0;
+    for (const value of collection) {
+      const either = transform(value, i++);
+      if (either.isLeft) return either;
+      results.push(either.rightValue);
+    }
+    return Right(results);
+  }
+  function createBroadcastService(id, validate) {
+    const listeners = /* @__PURE__ */ new Set();
+    const bc = new BroadcastChannel(id);
+    bc.addEventListener('message', onMessage);
+    return {
+      destroy,
+      publish,
+      subscribe,
+    };
+    function onMessage(evt) {
+      if (validate(evt.data)) for (const listener of listeners) listener(evt.data);
+    }
+    function destroy() {
+      bc.removeEventListener('message', onMessage);
+      listeners.clear();
+      bc.close();
+    }
+    function publish(message) {
+      bc.postMessage(message);
+    }
+    function subscribe(listener) {
+      listeners.add(listener);
+      return {
+        unsubscribe() {
+          listeners.delete(listener);
+        },
+      };
+    }
+  }
+  function expectUnreachable(value) {
+    throw new Error('Unexpected.');
+  }
   class AssertionError extends Error {
     name = 'AssertionError';
     constructor(message) {
@@ -51,7 +147,6 @@
     return value => predicates.some(p => p(value));
   }
   const isNullish = /* @__PURE__ */ isAnyOf(isNull, isUndefined);
-  const isNotNullish = /* @__PURE__ */ negate(isNullish);
   function isArray(predicate) {
     return refine(
       value => Array.isArray(value),
@@ -86,38 +181,6 @@
         )
       )
     );
-  }
-  function createBroadcastService(id, validate) {
-    const listeners = /* @__PURE__ */ new Set();
-    const bc = new BroadcastChannel(id);
-    bc.addEventListener('message', onMessage);
-    return {
-      destroy,
-      publish,
-      subscribe,
-    };
-    function onMessage(evt) {
-      if (validate(evt.data)) for (const listener of listeners) listener(evt.data);
-    }
-    function destroy() {
-      bc.removeEventListener('message', onMessage);
-      listeners.clear();
-      bc.close();
-    }
-    function publish(message) {
-      bc.postMessage(message);
-    }
-    function subscribe(listener) {
-      listeners.add(listener);
-      return {
-        unsubscribe() {
-          listeners.delete(listener);
-        },
-      };
-    }
-  }
-  function expectUnreachable(value) {
-    throw new Error('Unexpected.');
   }
   const numprocRE = /^5\d{8}20\d{2}404(?:00|7(?:0|1|2)|99)\d{2}$/;
   const isNumProc = /* @__PURE__ */ refine(isString, x => numprocRE.test(x));
@@ -213,7 +276,7 @@
       compareUsing(x => x.toLowerCase()),
       compareDefault,
       nome => {
-        throw new Error(`H\xE1 dois blocos com o mesmo nome: ${JSON.stringify(nome)}.`);
+        throw new Error(`Há dois blocos com o mesmo nome: ${JSON.stringify(nome)}.`);
       }
     )
   );
@@ -348,9 +411,7 @@
       fromThunk$1(async (state, { DB }) => {
         const blocos = await DB.getBlocos();
         if (blocos.some(x => x.nome === nome))
-          return actions$1.erroCapturado(
-            `J\xE1 existe um bloco com o nome ${JSON.stringify(nome)}.`
-          );
+          return actions$1.erroCapturado(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
         const bloco = {
           id: Math.max(-1, ...blocos.map(x => x.id)) + 1,
           nome,
@@ -400,7 +461,7 @@
     removerProcessosAusentes: id =>
       fromThunk$1(async (_2, { DB, mapa }) => {
         const bloco = await DB.getBloco(id);
-        if (!bloco) throw new Error(`Bloco n\xE3o encontrado: ${id}.`);
+        if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
         const processos = bloco.processos.filter(x => mapa.has(x));
         return actions$1.blocosModificados(
           await DB.updateBloco({
@@ -413,12 +474,10 @@
       fromThunk$1(async ({}, { DB }) => {
         const blocos = await DB.getBlocos();
         const bloco = blocos.find(x => x.id === id);
-        if (!bloco) throw new Error(`Bloco n\xE3o encontrado: ${id}.`);
+        if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
         const others = blocos.filter(x => x.id !== id);
         if (others.some(x => x.nome === nome))
-          return actions$1.erroCapturado(
-            `J\xE1 existe um bloco com o nome ${JSON.stringify(nome)}.`
-          );
+          return actions$1.erroCapturado(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
         return actions$1.blocosModificados(
           await DB.updateBloco({
             ...bloco,
@@ -429,7 +488,7 @@
     selecionarProcessos: id =>
       fromThunk$1(async ({}, { DB, mapa }) => {
         const bloco = await DB.getBloco(id);
-        if (!bloco) throw new Error(`Bloco n\xE3o encontrado: ${id}.`);
+        if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
         for (const [numproc, { checkbox }] of mapa) {
           if (bloco.processos.includes(numproc)) {
             if (!checkbox.checked) checkbox.click();
@@ -447,29 +506,31 @@
         length: 0,
       }
     );
-    if (linhas.length <= 1) return;
-    const mapa = new Map(
-      linhas.slice(1).map((linha, i) => {
-        const endereco = linha.cells[1]?.querySelector('a[href]')?.href;
-        assert(isNotNullish(endereco), `Link do processo n\xE3o encontrado: linha ${i}.`);
-        const numproc = new URL(endereco).searchParams.get('num_processo');
-        assert(
-          isNumProc(numproc),
-          `N\xFAmero de processo desconhecido: ${JSON.stringify(numproc)}.`
-        );
-        const checkbox = linha.cells[0]?.querySelector('input[type=checkbox]');
-        assert(isNotNullish(checkbox), `Caixa de sele\xE7\xE3o n\xE3o encontrada: linha ${i}.`);
-        return [
-          numproc,
-          {
-            linha,
-            checkbox,
-          },
-        ];
-      })
-    );
+    if (linhas.length <= 1) return Right(void 0);
+    const eitherMapa = traverse(linhas.slice(1), (linha, i) => {
+      const endereco = linha.cells[1]?.querySelector('a[href]')?.href;
+      if (isNullish(endereco))
+        return Left(new Error(`Link do processo não encontrado: linha ${i}.`));
+      const numproc = new URL(endereco).searchParams.get('num_processo');
+      if (isNullish(numproc))
+        return Left(new Error(`Número do processo não encontrado: linha ${i}.`));
+      if (!isNumProc(numproc))
+        return Left(new Error(`Número de processo desconhecido: ${JSON.stringify(numproc)}.`));
+      const checkbox = linha.cells[0]?.querySelector('input[type=checkbox]');
+      if (isNullish(checkbox))
+        return Left(new Error(`Caixa de seleção não encontrada: linha ${i}.`));
+      return Right([
+        numproc,
+        {
+          linha,
+          checkbox,
+        },
+      ]);
+    });
+    if (eitherMapa.isLeft) return eitherMapa;
+    const mapa = new Map(eitherMapa.rightValue);
     const barra = document.getElementById('divInfraBarraLocalizacao');
-    assert(isNotNull(barra), 'N\xE3o foi poss\xEDvel inserir os blocos na p\xE1gina.');
+    if (isNullish(barra)) return Left(new Error('Não foi possível inserir os blocos na página.'));
     const div = barra.insertAdjacentElement('afterend', document.createElement('div'));
     preact2.render(
       o(Main$1, {
@@ -477,6 +538,7 @@
       }),
       div
     );
+    return Right(void 0);
   }
   function Main$1(props) {
     const extra = hooks.useMemo(() => {
@@ -552,7 +614,7 @@
       e => {
         e.preventDefault();
         if (isNonEmptyString(nome)) props.dispatch(actions$1.criarBloco(nome));
-        else props.dispatch(actions$1.erroCapturado('Nome do bloco n\xE3o pode estar em branco.'));
+        else props.dispatch(actions$1.erroCapturado('Nome do bloco não pode estar em branco.'));
         setNome('');
       },
       [nome]
@@ -661,7 +723,7 @@
       if (total === 0) return '0 processo';
       if (nestaPagina === total) return `${total} processo${total > 1 ? 's' : ''}`;
       const textoTotal = `${total} processo${total > 1 ? 's' : ''} no bloco`;
-      const textoPagina = `${nestaPagina === 0 ? 'nenhum' : nestaPagina} nesta p\xE1gina`;
+      const textoPagina = `${nestaPagina === 0 ? 'nenhum' : nestaPagina} nesta página`;
       const textoResumido = `${nestaPagina}/${total} processo${total > 1 ? 's' : ''}`;
       return o('abbr', {
         title: `${textoTotal}, ${textoPagina}.`,
@@ -676,7 +738,7 @@
         if (isNonEmptyString(nome)) {
           props.dispatch(actions$1.renomearBloco(props.id, nome));
         } else {
-          props.dispatch(actions$1.erroCapturado('Nome do bloco n\xE3o pode estar em branco.'));
+          props.dispatch(actions$1.erroCapturado('Nome do bloco não pode estar em branco.'));
         }
       } else if (evt.key === 'Escape') {
         setEditing(() => false);
@@ -690,7 +752,7 @@
       const len = props.total;
       if (len > 0)
         confirmed = window.confirm(
-          `Este bloco possui ${len} processo${len > 1 ? 's' : ''}. Deseja exclu\xED-lo?`
+          `Este bloco possui ${len} processo${len > 1 ? 's' : ''}. Deseja excluí-lo?`
         );
       if (confirmed) props.dispatch(actions$1.excluirBloco(props.id));
     }
@@ -699,7 +761,7 @@
     }
   }
   const css =
-    ".menu-dark #gm-blocos,\r\n.menu-light #gm-blocos {\r\n  --accent: #41285e;\r\n  --bg: #494251;\r\n  --disabled: #5d5863;\r\n  --disabled-text: #ccc;\r\n  --shadow: #262c31;\r\n  --muted-accent: #453557;\r\n  --text: #fff;\r\n}\r\n#gm-blocos {\r\n  margin: 2px 3px 4px;\r\n  padding: 4px;\r\n  border-radius: 4px;\r\n  background: var(--bg);\r\n  color: var(--text);\r\n  box-shadow: 0 3px 3px var(--shadow);\r\n}\r\n#gm-blocos h4 {\r\n  margin: 3px 0;\r\n  font-size: 1.25rem;\r\n  font-weight: 300;\r\n}\r\n#gm-blocos ul {\r\n  list-style-type: none;\r\n  margin: 3px 0 7px;\r\n  padding: 0;\r\n}\r\n#gm-blocos li {\r\n  position: relative;\r\n  display: grid;\r\n  grid-template-columns: auto 1fr auto;\r\n  grid-gap: 5px;\r\n  align-items: center;\r\n  margin: 4px 0;\r\n  padding: 5px;\r\n  border-radius: 2px;\r\n}\r\n#gm-blocos li::before {\r\n  content: '';\r\n  position: absolute;\r\n  top: 2px;\r\n  width: 100%;\r\n  height: 100%;\r\n  border-bottom: 1px solid #888;\r\n  pointer-events: none;\r\n}\r\n#gm-blocos li:last-of-type::before {\r\n  content: none;\r\n}\r\n#gm-blocos li:hover {\r\n  background: var(--accent);\r\n}\r\n#gm-blocos label {\r\n  margin: 0;\r\n  font-size: 0.92rem;\r\n}\r\n#gm-blocos .placeholder span {\r\n  height: 1.38rem;\r\n  animation: pulse 1s ease-in-out infinite alternate;\r\n  border-radius: 4px;\r\n}\r\n#gm-blocos .placeholder span:first-of-type,\r\n#gm-blocos .placeholder span:last-of-type {\r\n  width: 1.38rem;\r\n}\r\n@keyframes pulse {\r\n  from {\r\n    background-color: var(--disabled);\r\n  }\r\n  to {\r\n    background-color: var(--bg);\r\n  }\r\n}\r\n#gm-blocos button {\r\n  display: block;\r\n  margin: 0 auto 7px;\r\n  padding: 2px 20px;\r\n  font-size: 0.86rem;\r\n  border: none;\r\n  border-radius: 3px;\r\n  box-shadow: 0 2px 4px var(--shadow);\r\n  background: var(--muted-accent);\r\n  color: var(--text);\r\n}\r\n#gm-blocos button:hover {\r\n  transition: background-color 0.1s ease-in;\r\n  background: var(--accent);\r\n}\r\n#gm-blocos button:disabled {\r\n  background: var(--disabled);\r\n  color: var(--disabled-text);\r\n  box-shadow: none;\r\n}\r\n#gm-blocos .error {\r\n  margin: 10px 5%;\r\n  padding: 4px 5%;\r\n  border-radius: 4px;\r\n  font-weight: 500;\r\n  background: white;\r\n  color: red;\r\n}\r\n";
+    ".menu-dark #gm-blocos,\n.menu-light #gm-blocos {\n  --accent: #41285e;\n  --bg: #494251;\n  --disabled: #5d5863;\n  --disabled-text: #ccc;\n  --shadow: #262c31;\n  --muted-accent: #453557;\n  --text: #fff;\n}\n#gm-blocos {\n  margin: 2px 3px 4px;\n  padding: 4px;\n  border-radius: 4px;\n  background: var(--bg);\n  color: var(--text);\n  box-shadow: 0 3px 3px var(--shadow);\n}\n#gm-blocos h4 {\n  margin: 3px 0;\n  font-size: 1.25rem;\n  font-weight: 300;\n}\n#gm-blocos ul {\n  list-style-type: none;\n  margin: 3px 0 7px;\n  padding: 0;\n}\n#gm-blocos li {\n  position: relative;\n  display: grid;\n  grid-template-columns: auto 1fr auto;\n  grid-gap: 5px;\n  align-items: center;\n  margin: 4px 0;\n  padding: 5px;\n  border-radius: 2px;\n}\n#gm-blocos li::before {\n  content: '';\n  position: absolute;\n  top: 2px;\n  width: 100%;\n  height: 100%;\n  border-bottom: 1px solid #888;\n  pointer-events: none;\n}\n#gm-blocos li:last-of-type::before {\n  content: none;\n}\n#gm-blocos li:hover {\n  background: var(--accent);\n}\n#gm-blocos label {\n  margin: 0;\n  font-size: 0.92rem;\n}\n#gm-blocos .placeholder span {\n  height: 1.38rem;\n  animation: pulse 1s ease-in-out infinite alternate;\n  border-radius: 4px;\n}\n#gm-blocos .placeholder span:first-of-type,\n#gm-blocos .placeholder span:last-of-type {\n  width: 1.38rem;\n}\n@keyframes pulse {\n  from {\n    background-color: var(--disabled);\n  }\n  to {\n    background-color: var(--bg);\n  }\n}\n#gm-blocos button {\n  display: block;\n  margin: 0 auto 7px;\n  padding: 2px 20px;\n  font-size: 0.86rem;\n  border: none;\n  border-radius: 3px;\n  box-shadow: 0 2px 4px var(--shadow);\n  background: var(--muted-accent);\n  color: var(--text);\n}\n#gm-blocos button:hover {\n  transition: background-color 0.1s ease-in;\n  background: var(--accent);\n}\n#gm-blocos button:disabled {\n  background: var(--disabled);\n  color: var(--disabled-text);\n  box-shadow: none;\n}\n#gm-blocos .error {\n  margin: 10px 5%;\n  padding: 4px 5%;\n  border-radius: 4px;\n  font-weight: 500;\n  background: white;\n  color: red;\n}\n";
   const actions = {
     blocosModificados:
       (blocos, { fecharJanela = false } = {}) =>
@@ -737,7 +799,7 @@
       fromThunk(async ({}, { DB }) => {
         const blocos = await DB.getBlocos();
         if (blocos.some(x => x.nome === nome))
-          return actions.erroCapturado(`J\xE1 existe um bloco com o nome ${JSON.stringify(nome)}.`);
+          return actions.erroCapturado(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
         const bloco = {
           id: Math.max(-1, ...blocos.map(x => x.id)) + 1,
           nome,
@@ -793,7 +855,7 @@
     modificarProcessos: (id, fn, { fecharJanela = false } = {}) =>
       fromThunk(async (_2, { DB, numproc }) => {
         const bloco = await DB.getBloco(id);
-        if (!bloco) throw new Error(`Bloco n\xE3o encontrado: ${id}.`);
+        if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
         const processos = new Set(bloco.processos);
         fn(processos, numproc);
         const blocos = await DB.updateBloco({
@@ -815,7 +877,7 @@
   const fromThunk = /* @__PURE__ */ createFromAsyncThunk(actions.carregando(), actions.erro);
   function ProcessoSelecionar(numproc) {
     const mainMenu = document.getElementById('main-menu');
-    assert(isNotNull(mainMenu));
+    if (isNull(mainMenu)) return Left(new Error('Menu não encontrado'));
     const style = document.head.appendChild(document.createElement('style'));
     style.textContent = css;
     const div = mainMenu.insertAdjacentElement('beforebegin', document.createElement('div'));
@@ -826,6 +888,7 @@
       }),
       div
     );
+    return Right(void 0);
   }
   function Main(props) {
     const extra = hooks.useMemo(() => {
@@ -1001,24 +1064,36 @@
       ],
     });
   }
-  async function main() {
+  function main() {
     const url = new URL(document.location.href);
     const params = url.searchParams;
     const acao = params.get('acao');
+    if (!acao) return Left(new Error('Página desconhecida.'));
     switch (acao) {
       case 'localizador_processos_lista':
         return LocalizadorProcessoLista();
       case 'processo_selecionar': {
         const numproc = params.get('num_processo');
-        assert(
-          isNumProc(numproc),
-          `N\xE3o foi poss\xEDvel analisar o n\xFAmero do proceso: ${JSON.stringify(numproc)}.`
-        );
+        if (!numproc) return Left(new Error('Número do processo não encontrado.'));
+        if (!isNumProc(numproc))
+          return Left(
+            new Error(`Não foi possível analisar o número do proceso: ${JSON.stringify(numproc)}.`)
+          );
         return ProcessoSelecionar(numproc);
       }
+      case 'relatorio_geral_consultar':
+        return Right(void 0);
+      default:
+        return Left(new Error(`Ação desconhecida: "${acao}".`));
     }
   }
   main().catch(e => {
-    console.error(e);
+    if (e instanceof AggregateError) {
+      console.error(e);
+      console.debug('Erros:', e.errors);
+    } else {
+      console.error(e);
+    }
+    return Right(void 0);
   });
 })(preact, preactHooks);
