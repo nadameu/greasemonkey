@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@nadameu/create-broadcast-service": "workspace:^1.0.0",
+    "@nadameu/create-broadcast-service": "workspace:^1.1.0",
     "@nadameu/expect-unreachable": "workspace:^1.0.0",
     "@nadameu/handler": "workspace:^1.0.0",
     "@nadameu/opaque": "workspace:^1.0.0",
@@ -19,7 +19,7 @@
     "preact": "10.11.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.19.0",
+    "@babel/core": "^7.19.1",
     "@preact/preset-vite": "^2.4.0",
     "typescript": "^4.8.3",
     "vite": "^3.1.3",
