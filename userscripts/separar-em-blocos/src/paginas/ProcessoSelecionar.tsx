@@ -10,7 +10,7 @@ import * as FT from '../fromThunk';
 import { BroadcastMessage, isBroadcastMessage } from '../types/Action';
 import { Bloco, BlocoProcesso } from '../types/Bloco';
 import { NumProc } from '../types/NumProc';
-import css from './ProcessoSelecionar.css?inline';
+import css from './ProcessoSelecionar.scss?inline';
 
 type Dependencias = {
   DB: Pick<typeof Database, 'createBloco' | 'getBloco' | 'getBlocos' | 'updateBloco'>;
