@@ -355,7 +355,7 @@
   function paginaContas(numproc) {
     const barra = document.getElementById('divInfraBarraLocalizacao');
     if (!barra) {
-      return Left([new Error('Barra de localiza\xE7\xE3o n\xE3o encontrada.')]);
+      return Left([new Error('Barra de localização não encontrada.')]);
     }
     const div = document.createElement('div');
     div.className = 'gm-atualizar-saldo__contas';
@@ -407,9 +407,7 @@
                 return Estado$1.Atualizando(infoContas, primeiraConta);
               },
               Atualizando: () =>
-                Estado$1.Erro(
-                  new Error('Tentativa de atualiza\xE7\xE3o durante outra atualiza\xE7\xE3o.')
-                ),
+                Estado$1.Erro(new Error('Tentativa de atualização durante outra atualização.')),
             }),
           SaldoAtualizado: ({ saldo }) =>
             Estado$1.match(estado, {
@@ -436,7 +434,7 @@
                 return Estado$1.Atualizando(infoNova, proxima);
               },
             }),
-          ErroComunicacao: ({ mensagem = 'Ocorreu um erro na atualiza\xE7\xE3o dos saldos.' }) =>
+          ErroComunicacao: ({ mensagem = 'Ocorreu um erro na atualização dos saldos.' }) =>
             Estado$1.match(
               estado,
               {
@@ -465,8 +463,8 @@
             contasComSaldo === 0
               ? 'Sem saldo em conta(s).'
               : contasComSaldo === 1
-              ? 'H\xE1 1 conta com saldo.'
-              : `H\xE1 ${contasComSaldo} contas com saldo.`;
+              ? 'Há 1 conta com saldo.'
+              : `Há ${contasComSaldo} contas com saldo.`;
           const botao =
             contasAtualizaveis.length === 0
               ? null
@@ -639,7 +637,7 @@
   function paginaDepositos(numproc) {
     const barra = document.getElementById('divInfraBarraLocalizacao');
     if (!barra) {
-      return Left([new Error('Barra de localiza\xE7\xE3o n\xE3o encontrada.')]);
+      return Left([new Error('Barra de localização não encontrada.')]);
     }
     const div = document.createElement('div');
     div.className = 'gm-atualizar-saldo__contas';
@@ -681,8 +679,8 @@
             contasComSaldo === 0
               ? 'Sem saldo em conta(s).'
               : contasComSaldo === 1
-              ? 'H\xE1 1 conta com saldo.'
-              : `H\xE1 ${contasComSaldo} contas com saldo.`;
+              ? 'Há 1 conta com saldo.'
+              : `Há ${contasComSaldo} contas com saldo.`;
           const botao =
             contasAtualizaveis === 0
               ? null
@@ -724,7 +722,7 @@
     }
     function obterContas() {
       const tabela = document.querySelector('table#tblSaldoConta');
-      if (!tabela) return Left(new Error('Tabela de contas n\xE3o encontrada'));
+      if (!tabela) return Left(new Error('Tabela de contas não encontrada'));
       return traverse(
         Array.from(tabela.querySelectorAll('tr[id^="tblSaldoContaROW"]')).filter(
           x => !/Saldos$/.test(x.id)
@@ -819,12 +817,12 @@
                 atualiza: false,
               },
             };
-            if (linkRPV.textContent === 'H\xE1 conta com saldo')
+            if (linkRPV.textContent === 'Há conta com saldo')
               info.rpv = {
                 quantidade: void 0,
                 atualiza: true,
               };
-            if (linkDepositos.textContent === 'H\xE1 conta com saldo')
+            if (linkDepositos.textContent === 'Há conta com saldo')
               info.depositos = {
                 quantidade: void 0,
                 atualiza: false,
@@ -999,7 +997,7 @@
           }),
         AguardaAtualizacao: () =>
           o('output', {
-            children: 'Aguardando atualiza\xE7\xE3o das contas...',
+            children: 'Aguardando atualização das contas...',
           }),
         Ocioso: ({ depositos, rpv }) => {
           const qDep = depositos.quantidade;
@@ -1010,11 +1008,11 @@
             if (qtd === 1) return `1 conta`;
             return `${qtd} contas`;
           }
-          const msgR = qRPV === 0 ? null : `${textoContas(qRPV)} de requisi\xE7\xE3o de pagamento`;
-          const msgD = qDep === 0 ? null : `${textoContas(qDep)} de dep\xF3sito judicial`;
+          const msgR = qRPV === 0 ? null : `${textoContas(qRPV)} de requisição de pagamento`;
+          const msgD = qDep === 0 ? null : `${textoContas(qDep)} de depósito judicial`;
           const msgs = [msgR, msgD].filter(x => x !== null);
           const mensagem =
-            msgs.length === 0 ? 'Sem saldo em conta(s).' : `H\xE1 ${msgs.join(' e ')} com saldo.`;
+            msgs.length === 0 ? 'Sem saldo em conta(s).' : `Há ${msgs.join(' e ')} com saldo.`;
           return o(MensagemComBotao, {
             classe,
             mensagem,
@@ -1028,7 +1026,7 @@
           linkDepositos.removeEventListener('click', onClick);
           return o(MensagemComBotao, {
             classe: 'erro',
-            mensagem: 'Ocorreu um erro com a atualiza\xE7\xE3o de saldos.',
+            mensagem: 'Ocorreu um erro com a atualização de saldos.',
             rpv: 0,
             dep: 0,
           });
@@ -1048,7 +1046,7 @@
             'data-botao': 'RPV',
             onClick,
             'class': rpv === 0 ? 'zerado' : 'saldo',
-            'children': 'RPVs/precat\xF3rios',
+            'children': 'RPVs/precatórios',
           }),
           ' ',
           o('button', {
@@ -1056,26 +1054,20 @@
             'data-botao': 'DEP',
             onClick,
             'class': dep === 0 ? 'zerado' : 'saldo',
-            'children': 'Dep\xF3sitos judiciais',
+            'children': 'Depósitos judiciais',
           }),
         ],
       });
     }
   }
   function obterLinkRPV() {
-    return obter(
-      'a#labelPrecatorios',
-      'Link para requisi\xE7\xF5es de pagamento n\xE3o encontrado.'
-    );
+    return obter('a#labelPrecatorios', 'Link para requisições de pagamento não encontrado.');
   }
   function obterLinkDepositos() {
-    return obter('a#labelDepositoJudicial', 'Link para dep\xF3sitos judiciais n\xE3o encontrado.');
+    return obter('a#labelDepositoJudicial', 'Link para depósitos judiciais não encontrado.');
   }
   function obterInformacoesAdicionais() {
-    return obter(
-      '#fldInformacoesAdicionais',
-      'Tabela de informa\xE7\xF5es adicionais n\xE3o encontrada.'
-    );
+    return obter('#fldInformacoesAdicionais', 'Tabela de informações adicionais não encontrada.');
   }
   const main$1 = '';
   const paginas = {
@@ -1092,15 +1084,14 @@
   }
   function obterAcao(params) {
     const acao = params.get('acao');
-    if (isNull(acao)) return Left(new Error('P\xE1gina desconhecida'));
-    if (!isAcaoReconhecida(acao)) return Left(new Error(`A\xE7\xE3o desconhecida: "${acao}".`));
+    if (isNull(acao)) return Left(new Error('Página desconhecida'));
+    if (!isAcaoReconhecida(acao)) return Left(new Error(`Ação desconhecida: "${acao}".`));
     return Right(acao);
   }
   function obterNumProc(params) {
     const numproc = params.get('num_processo');
-    if (isNull(numproc)) return Left(new Error('N\xFAmero do processo n\xE3o encontrado.'));
-    if (!isNumproc(numproc))
-      return Left(new Error(`N\xFAmero de processo inv\xE1lido: "${numproc}".`));
+    if (isNull(numproc)) return Left(new Error('Número do processo não encontrado.'));
+    if (!isNumproc(numproc)) return Left(new Error(`Número de processo inválido: "${numproc}".`));
     return Right(numproc);
   }
   main().mapLeft(errors => {

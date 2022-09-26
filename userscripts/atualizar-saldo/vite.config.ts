@@ -20,6 +20,7 @@ export default defineConfig({
     emptyOutDir: false,
     target: 'firefox91',
   },
+  esbuild: { charset: 'utf8' },
   plugins: [
     preact(),
     monkey({
