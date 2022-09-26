@@ -20,14 +20,12 @@
 // @require      https://unpkg.com/preact@10.11.0/dist/preact.min.js
 // ==/UserScript==
 
-// use vite-plugin-monkey@2.4.1 at 2022-09-23T18:52:27.319Z
-
-(({ css: s = '' }) => {
+(s => {
   const a = document.createElement('style');
-  (a.innerText = s), (a.dataset.source = 'vite-plugin-monkey'), document.head.appendChild(a);
-})({
-  css: '.infra-styles .gm-atualizar-saldo__contas,.infra-styles .gm-atualizar-saldo__processo{--button-bg: hsl(266deg, 25%, 40%);--fg-color: hsl(266deg, 80%, 15%);--border-color: hsl(266deg, 10%, 40%)}.infra-styles .gm-atualizar-saldo__contas span,.infra-styles .gm-atualizar-saldo__processo span{font-size:1.3em;line-height:2em;color:var(--fg-color)}.infra-styles .gm-atualizar-saldo__contas span.zerado,.infra-styles .gm-atualizar-saldo__processo span.zerado{--fg-color: hsl(266, 10%, 40%)}.infra-styles .gm-atualizar-saldo__contas span.erro,.infra-styles .gm-atualizar-saldo__processo span.erro{--fg-color: hsl(0, 85%, 40%)}.infra-styles .gm-atualizar-saldo__contas span.saldo,.infra-styles .gm-atualizar-saldo__processo span.saldo{--fg-color: hsl(266, 75%, 25%)}.infra-styles .gm-atualizar-saldo__contas button,.infra-styles .gm-atualizar-saldo__processo button{border:none;border-radius:4px;padding:4px 12px;font-size:1.3em;color:#fff;box-shadow:0 2px 4px #00000080;background:var(--button-bg)}.infra-styles .gm-atualizar-saldo__contas button.zerado,.infra-styles .gm-atualizar-saldo__processo button.zerado{--button-bg: hsl(266deg, 5%, 50%)}.infra-styles .gm-atualizar-saldo__contas button:hover,.infra-styles .gm-atualizar-saldo__contas button:focus,.infra-styles .gm-atualizar-saldo__processo button:hover,.infra-styles .gm-atualizar-saldo__processo button:focus{--button-bg: hsl(266deg, 40%, 45%)}.infra-styles .gm-atualizar-saldo__contas button:active,.infra-styles .gm-atualizar-saldo__processo button:active{box-shadow:none;translate:0 2px}.infra-styles .gm-atualizar-saldo__processo{margin:0 2px 8px;border-left:4px solid var(--border-color);padding:0 4px}.infra-styles .gm-atualizar-saldo__contas{border-left:4px solid var(--border-color);padding:0 4px}',
-});
+  (a.dataset.source = 'vite-plugin-monkey'), (a.innerText = s), document.head.appendChild(a);
+})(
+  '.infra-styles .gm-atualizar-saldo__contas,.infra-styles .gm-atualizar-saldo__processo{--button-bg: hsl(266deg, 25%, 40%);--fg-color: hsl(266deg, 80%, 15%);--border-color: hsl(266deg, 10%, 40%)}.infra-styles .gm-atualizar-saldo__contas span,.infra-styles .gm-atualizar-saldo__processo span{font-size:1.3em;line-height:2em;color:var(--fg-color)}.infra-styles .gm-atualizar-saldo__contas span.zerado,.infra-styles .gm-atualizar-saldo__processo span.zerado{--fg-color: hsl(266, 10%, 40%)}.infra-styles .gm-atualizar-saldo__contas span.erro,.infra-styles .gm-atualizar-saldo__processo span.erro{--fg-color: hsl(0, 85%, 40%)}.infra-styles .gm-atualizar-saldo__contas span.saldo,.infra-styles .gm-atualizar-saldo__processo span.saldo{--fg-color: hsl(266, 75%, 25%)}.infra-styles .gm-atualizar-saldo__contas button,.infra-styles .gm-atualizar-saldo__processo button{border:none;border-radius:4px;padding:4px 12px;font-size:1.3em;color:#fff;box-shadow:0 2px 4px #00000080;background:var(--button-bg)}.infra-styles .gm-atualizar-saldo__contas button.zerado,.infra-styles .gm-atualizar-saldo__processo button.zerado{--button-bg: hsl(266deg, 5%, 50%)}.infra-styles .gm-atualizar-saldo__contas button:hover,.infra-styles .gm-atualizar-saldo__contas button:focus,.infra-styles .gm-atualizar-saldo__processo button:hover,.infra-styles .gm-atualizar-saldo__processo button:focus{--button-bg: hsl(266deg, 40%, 45%)}.infra-styles .gm-atualizar-saldo__contas button:active,.infra-styles .gm-atualizar-saldo__processo button:active{box-shadow:none;translate:0 2px}.infra-styles .gm-atualizar-saldo__processo{margin:0 2px 8px;border-left:4px solid var(--border-color);padding:0 4px}.infra-styles .gm-atualizar-saldo__contas{border-left:4px solid var(--border-color);padding:0 4px}'
+);
 
 (function (preact2) {
   'use strict';
@@ -61,9 +59,9 @@
     constructor(leftValue) {
       super();
       this.leftValue = leftValue;
-      this.isLeft = true;
-      this.isRight = false;
     }
+    isLeft = true;
+    isRight = false;
     match({ Left: Left2 }) {
       return Left2(this.leftValue);
     }
@@ -75,9 +73,9 @@
     constructor(rightValue) {
       super();
       this.rightValue = rightValue;
-      this.isLeft = false;
-      this.isRight = true;
     }
+    isLeft = false;
+    isRight = true;
     match({ Right: Right2 }) {
       return Right2(this.rightValue);
     }
@@ -87,8 +85,9 @@
   }
   function traverse(collection, transform) {
     const results = [];
+    let i = 0;
     for (const value of collection) {
-      const either = transform(value);
+      const either = transform(value, i++);
       if (either.isLeft) return either;
       results.push(either.rightValue);
     }
@@ -100,8 +99,9 @@
   function validateMap(collection, transform) {
     const errors = [];
     const results = [];
+    let i = 0;
     for (const value of collection) {
-      const either = transform(value);
+      const either = transform(value, i++);
       if (either.isLeft) errors.push(either.leftValue);
       else results.push(either.rightValue);
     }
@@ -109,9 +109,9 @@
     return Right(results);
   }
   class AssertionError extends Error {
+    name = 'AssertionError';
     constructor(message) {
       super(message);
-      this.name = 'AssertionError';
     }
   }
   function assert(condition, message) {
