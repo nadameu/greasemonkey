@@ -1,0 +1,41 @@
+@import './cores.scss';
+.infra-styles {
+  #gm-blocos {
+    margin: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    width: max-content;
+    background: var(--bg);
+    color: var(--text);
+    box-shadow: 0 3px 3px var(--shadow);
+
+    h4 {
+      margin: 3px 0;
+      font-size: 1.25rem;
+      font-weight: 300;
+    }
+
+    input[type='image'] {
+      border: none;
+    }
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    li {
+      display: grid;
+      grid-template: auto / 24px 1fr 0.3fr repeat(3, 24px);
+      grid-gap: 4px;
+      align-items: center;
+      label {
+        font-size: 0.92rem;
+      }
+      small {
+        font-size: 0.75rem;
+      }
+    }
+  }
+}

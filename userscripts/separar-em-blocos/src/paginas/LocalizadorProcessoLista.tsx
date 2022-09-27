@@ -16,6 +16,8 @@ import * as FT from '../fromThunk';
 import { BroadcastMessage, isBroadcastMessage } from '../types/Action';
 import { Bloco } from '../types/Bloco';
 import { isNumProc, NumProc } from '../types/NumProc';
+import css from './LocalizadorProcessoLista.scss';
+import iconeRenomear from './renomear.svg';
 
 type MapaProcessos = Map<
   NumProc,
@@ -176,7 +178,10 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
 
   const barra = document.getElementById('divInfraBarraLocalizacao');
   if (p.isNullish(barra)) return Left(new Error('Não foi possível inserir os blocos na página.'));
+
+  document.head.appendChild(document.createElement('head')).textContent = css;
   const div = barra.insertAdjacentElement('afterend', document.createElement('div'))!;
+  div.id = 'gm-blocos';
   render(<Main mapa={mapa} />, div);
   return Right(undefined);
 }
@@ -260,7 +265,7 @@ function Blocos(props: { state: Extract<Model, { status: 'loaded' }>; dispatch: 
 
   return (
     <>
-      <h1>Blocos</h1>
+      <h4>Blocos</h4>
       <ul>
         {props.state.blocos.map(bloco => (
           <BlocoPaginaLista key={bloco.id} {...bloco} dispatch={props.dispatch} />
@@ -288,33 +293,64 @@ function BlocoPaginaLista(props: InfoBloco & { dispatch: Dispatch }) {
 
   let displayNome: JSX.Element | string = props.nome;
 
-  let botaoRenomear: JSX.Element | null = <button onClick={onRenomearClicked}>Renomear</button>;
+  let botaoRenomear: JSX.Element | null = (
+    <img
+      class="infraButton"
+      src="imagens/minuta_editar.gif"
+      onMouseOver={() => infraTooltipMostrar('Renomear')}
+      onMouseOut={() => infraTooltipOcultar()}
+      onClick={onRenomearClicked}
+      aria-label="Renomear"
+      width="16"
+      height="16"
+    />
+  );
 
   let removerAusentes: JSX.Element | null = (
-    <button onClick={() => props.dispatch(actions.removerProcessosAusentes(props.id))}>
-      Remover processos ausentes
-    </button>
+    <img
+      class="infraButton"
+      src="imagens/minuta_transferir.png"
+      onMouseOver={() => infraTooltipMostrar('Remover processos ausentes')}
+      onMouseOut={() => infraTooltipOcultar()}
+      onClick={() => props.dispatch(actions.removerProcessosAusentes(props.id))}
+      aria-label="Remover processos ausentes"
+      width="16"
+      height="16"
+    />
   );
 
   if (editing) {
     displayNome = <input ref={input} onKeyUp={onKeyUp} value={props.nome} />;
     botaoRenomear = null;
   } else if (props.nestaPagina > 0) {
-    displayNome = <button onClick={onSelecionarProcessosClicked}>{props.nome}</button>;
+    // displayNome = <button onClick={onSelecionarProcessosClicked}>{props.nome}</button>;
   }
   if (props.total <= props.nestaPagina) {
     removerAusentes = null;
   }
 
+  const htmlId = `gmChkBloco${props.id}`;
   return (
     <li>
-      {displayNome} ({createAbbr(props.nestaPagina, props.total)}) {botaoRenomear}{' '}
-      <button onClick={onExcluirClicked}>Excluir</button> {removerAusentes}
+      <input type="checkbox" id={htmlId} />
+      <label for={htmlId}>{displayNome}</label>
+      <small>({createAbbr(props.nestaPagina, props.total)})</small>
+      {botaoRenomear}{' '}
+      <img
+        class="infraButton"
+        src="imagens/minuta_excluir.gif"
+        onMouseOver={() => infraTooltipMostrar('Excluir')}
+        onMouseOut={() => infraTooltipOcultar()}
+        onClick={onExcluirClicked}
+        aria-label="Excluir"
+        width="16"
+        height="16"
+      />{' '}
+      {removerAusentes}
     </li>
   );
 
   function createAbbr(nestaPagina: number, total: number): JSX.Element | string {
-    if (total === 0) return '0 processo';
     if (nestaPagina === total) return `${total} processo${total > 1 ? 's' : ''}`;
     const textoTotal = `${total} processo${total > 1 ? 's' : ''} no bloco`;
     const textoPagina = `${nestaPagina === 0 ? 'nenhum' : nestaPagina} nesta página`;
