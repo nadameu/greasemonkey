@@ -14,7 +14,7 @@ import checkboxUndefined from '../imagens/checkbox_undefined.svg';
 import { BroadcastMessage, isBroadcastMessage } from '../types/Action';
 import { Bloco } from '../types/Bloco';
 import { isNumProc, NumProc } from '../types/NumProc';
-import css from './LocalizadorProcessoLista.scss';
+import css from './LocalizadorProcessoLista.scss?inline';
 
 type MapaProcessos = Map<
   NumProc,
@@ -50,9 +50,6 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   }).map(entriess => new Map(entriess.flat(1)));
   if (eitherMapa.isLeft) return eitherMapa as Left<Error>;
   const mapa = eitherMapa.rightValue;
-  const mapaReverso = new Map(
-    Array.from(mapa.entries(), ([numproc, { checkbox }]) => [checkbox, numproc])
-  );
 
   const barra = document.getElementById('divInfraBarraLocalizacao');
   if (p.isNullish(barra)) return Left(new Error('Não foi possível inserir os blocos na página.'));
@@ -105,6 +102,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
       update(store.getState());
     });
   }
+  document.appendChild(document.createElement('style')).textContent = css;
   store.subscribe(update);
   store.dispatch(Action.obterBlocos);
   return Right(undefined);
