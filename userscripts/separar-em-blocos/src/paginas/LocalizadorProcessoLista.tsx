@@ -1,12 +1,16 @@
-import { BroadcastService, createBroadcastService } from '@nadameu/create-broadcast-service';
+import { createBroadcastService } from '@nadameu/create-broadcast-service';
 import { createStore, Store } from '@nadameu/create-store';
 import { Either, Left, Right, traverse } from '@nadameu/either';
 import { Handler } from '@nadameu/handler';
 import { createTaggedUnion, matchBy, Static } from '@nadameu/match';
 import * as p from '@nadameu/predicates';
-import { createRef, render } from 'preact';
+import { createRef, JSX, render } from 'preact';
 import { useCallback, useEffect, useState } from 'preact/hooks';
 import * as Database from '../database';
+import checkboxChecked from '../imagens/checkbox_checked.svg';
+import checkboxDisabled from '../imagens/checkbox_disabled.svg';
+import checkboxEmpty from '../imagens/checkbox_empty.svg';
+import checkboxUndefined from '../imagens/checkbox_undefined.svg';
 import { BroadcastMessage, isBroadcastMessage } from '../types/Action';
 import { Bloco } from '../types/Bloco';
 import { isNumProc, NumProc } from '../types/NumProc';
@@ -25,52 +29,12 @@ interface InfoBloco extends Bloco {
   total: number;
 }
 
-const Model = createTaggedUnion(
-  {
-    init: null,
-    loaded: (blocos: InfoBloco[], aviso?: string) => ({ blocos, aviso }),
-    error: (error: unknown) => ({ error }),
-  },
-  'status'
-);
-
-type Model = Static<typeof Model>;
-
-type Dependencias = {
-  DB: Pick<
-    typeof Database,
-    'createBloco' | 'deleteBloco' | 'deleteBlocos' | 'getBloco' | 'getBlocos' | 'updateBloco'
-  >;
-  bc: BroadcastService<BroadcastMessage>;
-  mapa: MapaProcessos;
-};
-
-const Action = createTaggedUnion(
-  {
-    blocosModificados: (blocos: Bloco[]) => ({ blocos }),
-    blocosObtidos: (blocos: Bloco[]) => ({ blocos }),
-    criarBloco: (nome: Bloco['nome']) => ({ nome }),
-    erroCapturado: (aviso: string) => ({ aviso }),
-    erroDesconhecido: (erro: unknown) => ({ erro }),
-    excluirBD: null,
-    excluirBloco: (id: Bloco['id']) => ({ id }),
-    mensagemRecebida: (msg: BroadcastMessage) => ({ msg }),
-    obterBlocos: null,
-    noop: null,
-    removerProcessosAusentes: (id: Bloco['id']) => ({ id }),
-    renomearBloco: (id: Bloco['id'], nome: Bloco['nome']) => ({ id, nome }),
-    selecionarProcessos: (id: Bloco['id']) => ({ id }),
-  },
-  'type'
-);
-type Action = Static<typeof Action>;
-
 export function LocalizadorProcessoLista(): Either<Error, void> {
   const tabela = document.querySelector<HTMLTableElement>('table#tabelaLocalizadores');
-  const linhas = Array.from(tabela?.rows ?? { length: 0 });
-  if (linhas.length <= 1) return Right(undefined);
+  const linhas = tabela?.rows ?? [];
 
-  const eitherMapa = traverse(linhas.slice(1), (linha, i) => {
+  const eitherMapa: Either<Error, MapaProcessos> = traverse(linhas, (linha, i) => {
+    if (i === 0) return Right([]);
     const endereco = linha.cells[1]?.querySelector<HTMLAnchorElement>('a[href]')?.href;
     if (p.isNullish(endereco))
       return Left(new Error(`Link do processo não encontrado: linha ${i}.`));
@@ -82,10 +46,13 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     const checkbox = linha.cells[0]?.querySelector<HTMLInputElement>('input[type=checkbox]');
     if (p.isNullish(checkbox))
       return Left(new Error(`Caixa de seleção não encontrada: linha ${i}.`));
-    return Right([numproc, { linha, checkbox }] as const);
-  });
+    return Right([[numproc, { linha, checkbox }] as const]);
+  }).map(entriess => new Map(entriess.flat(1)));
   if (eitherMapa.isLeft) return eitherMapa as Left<Error>;
-  const mapa: MapaProcessos = new Map(eitherMapa.rightValue);
+  const mapa = eitherMapa.rightValue;
+  const mapaReverso = new Map(
+    Array.from(mapa.entries(), ([numproc, { checkbox }]) => [checkbox, numproc])
+  );
 
   const barra = document.getElementById('divInfraBarraLocalizacao');
   if (p.isNullish(barra)) return Left(new Error('Não foi possível inserir os blocos na página.'));
@@ -93,293 +60,487 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   document.head.appendChild(document.createElement('head')).textContent = css;
   const div = barra.insertAdjacentElement('afterend', document.createElement('div'))!;
   div.id = 'gm-blocos';
-  const asyncAction = (state: Model, f: () => Promise<Action>): Model => {
+
+  const Model = createTaggedUnion(
+    {
+      init: null,
+      loaded: (blocos: InfoBloco[], aviso?: string) => ({ blocos, aviso }),
+      error: (error: unknown) => ({ error }),
+    },
+    'status'
+  );
+  type Model = Static<typeof Model>;
+
+  type CheckboxState = 'checked' | 'unchecked' | 'partial' | 'disabled';
+
+  const Action = createTaggedUnion(
+    {
+      blocosModificados: (blocos: Bloco[]) => ({ blocos }),
+      blocosObtidos: (blocos: Bloco[]) => ({ blocos }),
+      checkBoxClicado: (id: Bloco['id'] | null, estadoAnterior: CheckboxState) => ({
+        id,
+        estadoAnterior,
+      }),
+      criarBloco: (nome: Bloco['nome']) => ({ nome }),
+      erroCapturado: (aviso: string) => ({ aviso }),
+      erroDesconhecido: (erro: unknown) => ({ erro }),
+      excluirBD: null,
+      excluirBloco: (id: Bloco['id']) => ({ id }),
+      mensagemRecebida: (msg: BroadcastMessage) => ({ msg }),
+      obterBlocos: null,
+      noop: null,
+      removerProcessosAusentes: (id: Bloco['id']) => ({ id }),
+      renomearBloco: (id: Bloco['id'], nome: Bloco['nome']) => ({ id, nome }),
+      selecionarProcessos: (id: Bloco['id']) => ({ id }),
+    },
+    'type'
+  );
+  type Action = Static<typeof Action>;
+
+  const bc = createBroadcastService('gm-blocos', isBroadcastMessage);
+  const store: Store<Model, Action> = createStore<Model, Action>(() => Model.init, reducer);
+  bc.subscribe(msg => store.dispatch(Action.mensagemRecebida(msg)));
+  if (tabela) {
+    tabela.addEventListener('click', () => {
+      update(store.getState());
+    });
+  }
+  store.subscribe(update);
+  store.dispatch(Action.obterBlocos);
+  return Right(undefined);
+
+  function update(state: Model) {
+    return render(<Main state={state} />, div);
+  }
+
+  function asyncAction(state: Model, f: () => Promise<Action>): Model {
     f()
       .catch(err => Action.erroDesconhecido(err))
       .then(store.dispatch);
     return state;
-  };
-  const bc = createBroadcastService('gm-blocos', isBroadcastMessage);
-  const store: Store<Model, Action> = createStore<Model, Action>(
-    () => Model.init,
-    (state, action) =>
-      Action.match(action, {
-        blocosModificados: ({ blocos }) =>
-          asyncAction(state, async () => {
-            bc.publish({ type: 'Blocos', blocos });
-            return Action.blocosObtidos(blocos);
-          }),
-        blocosObtidos: ({ blocos }) =>
-          Model.match(
-            state,
-            {
-              error: state => state,
-            },
-            (): Model => {
-              const info = blocos.map(
-                (bloco): InfoBloco => ({
-                  ...bloco,
-                  nestaPagina: bloco.processos.filter(numproc => mapa.has(numproc)).length,
-                  total: bloco.processos.length,
-                })
-              );
-              return Model.loaded(info);
-            }
-          ),
-        criarBloco: ({ nome }) =>
-          asyncAction(state, async () => {
-            const blocos = await Database.getBlocos();
-            if (blocos.some(x => x.nome === nome))
-              return Action.erroCapturado(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
-            const bloco: Bloco = {
-              id: (Math.max(-1, ...blocos.map(x => x.id)) + 1) as p.NonNegativeInteger,
-              nome,
-              processos: [],
-            };
-            return Action.blocosModificados(await Database.createBloco(bloco));
-          }),
-        erroCapturado: ({ aviso }) =>
-          Model.match(state, {
-            init: () => Model.error(aviso),
+  }
+
+  function reducer(state: Model, action: Action): Model {
+    return Action.match(action, {
+      blocosModificados: ({ blocos }) =>
+        asyncAction(state, async () => {
+          bc.publish({ type: 'Blocos', blocos });
+          return Action.blocosObtidos(blocos);
+        }),
+      blocosObtidos: ({ blocos }) =>
+        Model.match(
+          state,
+          {
             error: state => state,
-            loaded: state => ({ ...state, aviso }),
-          }),
-        erroDesconhecido: ({ erro }) =>
-          Model.match(state, { error: state => state }, () => Model.error(erro)),
-        excluirBD: () =>
-          asyncAction(state, async () => {
-            await Database.deleteBlocos();
-            return Action.obterBlocos;
-          }),
-        excluirBloco: ({ id }) =>
-          asyncAction(state, async () => Action.blocosModificados(await Database.deleteBloco(id))),
-        mensagemRecebida: ({ msg }) =>
-          asyncAction(state, async () => {
-            return matchBy('type')(msg, {
-              Blocos: ({ blocos }) => Action.blocosObtidos(blocos),
-              NoOp: () => Action.noop,
-            });
-          }),
-        obterBlocos: () =>
-          asyncAction(state, async () => Action.blocosModificados(await Database.getBlocos())),
-        noop: () => state,
-        removerProcessosAusentes: ({ id }) =>
-          asyncAction(state, async () => {
-            const bloco = await Database.getBloco(id);
-            if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
-            const processos = bloco.processos.filter(x => mapa.has(x));
-            return Action.blocosModificados(await Database.updateBloco({ ...bloco, processos }));
-          }),
-        renomearBloco: ({ id, nome }) =>
-          asyncAction(state, async () => {
-            const blocos = await Database.getBlocos();
-            const bloco = blocos.find(x => x.id === id);
-            if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
-            const others = blocos.filter(x => x.id !== id);
-            if (others.some(x => x.nome === nome))
-              return Action.erroCapturado(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
-            return Action.blocosModificados(await Database.updateBloco({ ...bloco, nome }));
-          }),
-        selecionarProcessos: ({ id }) =>
-          asyncAction(state, async () => {
-            const bloco = await Database.getBloco(id);
-            if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
-            for (const [numproc, { checkbox }] of mapa) {
-              if (bloco.processos.includes(numproc)) {
-                if (!checkbox.checked) checkbox.click();
-              } else {
-                if (checkbox.checked) checkbox.click();
-              }
+          },
+          (): Model => {
+            const info = blocos.map(
+              (bloco): InfoBloco => ({
+                ...bloco,
+                nestaPagina: bloco.processos.filter(numproc => mapa.has(numproc)).length,
+                total: bloco.processos.length,
+              })
+            );
+            return Model.loaded(info);
+          }
+        ),
+      checkBoxClicado: ({ id, estadoAnterior }) =>
+        Model.match(
+          state,
+          {
+            loaded: (state): Model => {
+              if (estadoAnterior === 'disabled') return state;
+              const processos = (() => {
+                if (id === null) {
+                  const processosComBloco = new Set(
+                    Array.from(state.blocos.flatMap(({ processos }) => processos))
+                  );
+                  return Array.from(mapa)
+                    .filter(([x]) => !processosComBloco.has(x))
+                    .map(x => x[1]);
+                } else {
+                  return state.blocos
+                    .filter(x => x.id === id)
+                    .flatMap(x => x.processos)
+                    .map(x => mapa.get(x))
+                    .filter(p.isDefined);
+                }
+              })();
+              const check = estadoAnterior === 'unchecked';
+              processos.forEach(({ checkbox }) => {
+                if (checkbox.checked !== check) {
+                  checkbox.click();
+                }
+              });
+              return state;
+            },
+          },
+          state => state
+        ),
+      criarBloco: ({ nome }) =>
+        asyncAction(state, async () => {
+          const blocos = await Database.getBlocos();
+          if (blocos.some(x => x.nome === nome))
+            return Action.erroCapturado(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
+          const bloco: Bloco = {
+            id: (Math.max(-1, ...blocos.map(x => x.id)) + 1) as p.NonNegativeInteger,
+            nome,
+            processos: [],
+          };
+          return Action.blocosModificados(await Database.createBloco(bloco));
+        }),
+      erroCapturado: ({ aviso }) =>
+        Model.match(state, {
+          init: () => Model.error(aviso),
+          error: state => state,
+          loaded: state => ({ ...state, aviso }),
+        }),
+      erroDesconhecido: ({ erro }) =>
+        Model.match(state, { error: state => state }, () => Model.error(erro)),
+      excluirBD: () =>
+        asyncAction(state, async () => {
+          await Database.deleteBlocos();
+          return Action.obterBlocos;
+        }),
+      excluirBloco: ({ id }) =>
+        asyncAction(state, async () => Action.blocosModificados(await Database.deleteBloco(id))),
+      mensagemRecebida: ({ msg }) =>
+        asyncAction(state, async () => {
+          return matchBy('type')(msg, {
+            Blocos: ({ blocos }) => Action.blocosObtidos(blocos),
+            NoOp: () => Action.noop,
+          });
+        }),
+      obterBlocos: () =>
+        asyncAction(state, async () => Action.blocosModificados(await Database.getBlocos())),
+      noop: () => state,
+      removerProcessosAusentes: ({ id }) =>
+        asyncAction(state, async () => {
+          const bloco = await Database.getBloco(id);
+          if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
+          const processos = bloco.processos.filter(x => mapa.has(x));
+          return Action.blocosModificados(await Database.updateBloco({ ...bloco, processos }));
+        }),
+      renomearBloco: ({ id, nome }) =>
+        asyncAction(state, async () => {
+          const blocos = await Database.getBlocos();
+          const bloco = blocos.find(x => x.id === id);
+          if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
+          const others = blocos.filter(x => x.id !== id);
+          if (others.some(x => x.nome === nome))
+            return Action.erroCapturado(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
+          return Action.blocosModificados(await Database.updateBloco({ ...bloco, nome }));
+        }),
+      selecionarProcessos: ({ id }) =>
+        asyncAction(state, async () => {
+          const bloco = await Database.getBloco(id);
+          if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
+          for (const [numproc, { checkbox }] of mapa) {
+            if (bloco.processos.includes(numproc)) {
+              if (!checkbox.checked) checkbox.click();
+            } else {
+              if (checkbox.checked) checkbox.click();
             }
-            return Action.noop;
-          }),
-      })
-  );
-  bc.subscribe(msg => store.dispatch(Action.mensagemRecebida(msg)));
-  store.subscribe(state => {
-    render(<Main state={state} />, div);
-  });
-  store.dispatch(Action.obterBlocos);
-  return Right(undefined);
+          }
+          return Action.noop;
+        }),
+    });
+  }
 
   function Main({ state }: { state: Model }) {
     return Model.match(state, {
-      error: state => <ShowError reason={state.error} dispatch={store.dispatch} />,
-      loaded: state => <Blocos state={state} dispatch={store.dispatch} />,
+      error: state => <ShowError reason={state.error} />,
+      loaded: state => <Blocos state={state} />,
       init: () => <Loading />,
     });
   }
-}
 
-function Loading() {
-  return <>Carregando...</>;
-}
+  function Loading() {
+    return <>Carregando...</>;
+  }
 
-function ShowError({ dispatch, reason }: { reason: unknown; dispatch: Handler<Action> }) {
-  const message =
-    reason instanceof Error
-      ? reason.message
-        ? `Ocorreu um erro: ${reason.message}`
-        : 'Ocorreu um erro desconhecido.'
-      : `Ocorreu um erro: ${String(reason)}`;
+  function ShowError({ reason }: { reason: unknown }) {
+    const message = messageFromReason(reason);
 
-  return (
-    <>
-      <span style="color:red; font-weight: bold;">{message}</span>
-      <br />
-      <br />
-      <button onClick={() => dispatch(Action.obterBlocos)}>Tentar carregar dados salvos</button>
-      <button onClick={() => dispatch(Action.excluirBD)}>Apagar os dados locais</button>
-    </>
-  );
-}
-
-function Blocos(props: { state: Extract<Model, { status: 'loaded' }>; dispatch: Handler<Action> }) {
-  const [nome, setNome] = useState('');
-
-  const onSubmit = useCallback(
-    (e: Event) => {
-      e.preventDefault();
-      if (p.isNonEmptyString(nome)) props.dispatch(Action.criarBloco(nome));
-      else props.dispatch(Action.erroCapturado('Nome do bloco não pode estar em branco.'));
-      setNome('');
-    },
-    [nome]
-  );
-
-  let aviso: JSX.Element | null = null;
-  if (props.state.aviso) {
-    aviso = (
+    return (
       <>
-        <span style="color:red">{props.state.aviso}</span>
-        <button onClick={() => props.dispatch(Action.obterBlocos)}>Recarregar dados</button>
+        <span style="color:red; font-weight: bold;">{message}</span>
+        <br />
+        <br />
+        <button onClick={() => store.dispatch(Action.obterBlocos)}>
+          Tentar carregar dados salvos
+        </button>
+        <button onClick={() => store.dispatch(Action.excluirBD)}>Apagar os dados locais</button>
       </>
     );
   }
 
-  return (
-    <>
-      <h4>Blocos</h4>
-      <ul>
-        {props.state.blocos.map(bloco => (
-          <BlocoPaginaLista key={bloco.id} {...bloco} dispatch={props.dispatch} />
-        ))}
-      </ul>
-      <form onSubmit={onSubmit}>
-        <input value={nome} onInput={evt => setNome(evt.currentTarget.value)} />{' '}
-        <button>Criar</button>
-      </form>
-      <br />
-      {aviso}
-    </>
-  );
-}
-
-function BlocoPaginaLista(props: InfoBloco & { dispatch: Handler<Action> }) {
-  const [editing, setEditing] = useState(false);
-  const input = createRef<HTMLInputElement>();
-  useEffect(() => {
-    if (editing && input.current) {
-      input.current.select();
-      input.current.focus();
+  function messageFromReason(reason: unknown) {
+    if (reason instanceof Error) {
+      if (reason.message) {
+        return `Ocorreu um erro: ${reason.message}`;
+      }
+      return 'Ocorreu um erro desconhecido.';
     }
-  }, [editing]);
-
-  let displayNome: JSX.Element | string = props.nome;
-
-  let botaoRenomear: JSX.Element | null = (
-    <img
-      class="infraButton"
-      src="imagens/minuta_editar.gif"
-      onMouseOver={() => infraTooltipMostrar('Renomear')}
-      onMouseOut={() => infraTooltipOcultar()}
-      onClick={onRenomearClicked}
-      aria-label="Renomear"
-      width="16"
-      height="16"
-    />
-  );
-
-  let removerAusentes: JSX.Element | null = (
-    <img
-      class="infraButton"
-      src="imagens/minuta_transferir.png"
-      onMouseOver={() => infraTooltipMostrar('Remover processos ausentes')}
-      onMouseOut={() => infraTooltipOcultar()}
-      onClick={() => props.dispatch(Action.removerProcessosAusentes(props.id))}
-      aria-label="Remover processos ausentes"
-      width="16"
-      height="16"
-    />
-  );
-
-  if (editing) {
-    displayNome = <input ref={input} onKeyUp={onKeyUp} value={props.nome} />;
-    botaoRenomear = null;
-  } else if (props.nestaPagina > 0) {
-    // displayNome = <button onClick={onSelecionarProcessosClicked}>{props.nome}</button>;
-  }
-  if (props.total <= props.nestaPagina) {
-    removerAusentes = null;
+    return `Ocorreu um erro: ${String(reason)}`;
   }
 
-  const htmlId = `gmChkBloco${props.id}`;
-  return (
-    <li>
-      <input type="checkbox" id={htmlId} />
-      <label for={htmlId}>{displayNome}</label>
-      <small>({createAbbr(props.nestaPagina, props.total)})</small>
-      {botaoRenomear}{' '}
+  function Blocos({ state }: { state: Extract<Model, { status: 'loaded' }> }) {
+    const [nome, setNome] = useState('');
+
+    const onSubmit = useCallback(
+      (e: Event) => {
+        e.preventDefault();
+        if (p.isNonEmptyString(nome)) store.dispatch(Action.criarBloco(nome));
+        else store.dispatch(Action.erroCapturado('Nome do bloco não pode estar em branco.'));
+        setNome('');
+      },
+      [nome]
+    );
+
+    let aviso: JSX.Element | null = state.aviso ? <Aviso>{state.aviso}</Aviso> : null;
+
+    const processosComBloco = new Set(state.blocos.flatMap(({ processos }) => processos));
+    const processosSemBloco = new Map(
+      Array.from(mapa).filter(([numproc]) => !processosComBloco.has(numproc))
+    );
+    const chkState = ((): CheckboxState => {
+      let status: CheckboxState | undefined;
+      for (const { checkbox } of processosSemBloco.values()) {
+        if (checkbox.checked) {
+          if (status === undefined) {
+            status = 'checked';
+          } else if (status === 'unchecked') {
+            return 'partial';
+          }
+        } else {
+          if (status === undefined) {
+            status = 'unchecked';
+          } else if (status === 'checked') {
+            return 'partial';
+          }
+        }
+      }
+      return status ?? 'disabled';
+    })();
+
+    return (
+      <>
+        <h4>Blocos</h4>
+        <table>
+          <tbody>
+            {state.blocos.map(bloco => (
+              <BlocoPaginaLista key={bloco.id} {...bloco} />
+            ))}
+          </tbody>
+          {processosSemBloco.size > 0 && (
+            <tfoot>
+              <tr>
+                <td>
+                  {
+                    <img
+                      src={matchBy('chkState')(
+                        { chkState },
+                        {
+                          checked: () => checkboxChecked,
+                          disabled: () => checkboxDisabled,
+                          partial: () => checkboxUndefined,
+                          unchecked: () => checkboxEmpty,
+                        }
+                      )}
+                      onClick={() => store.dispatch(Action.checkBoxClicado(null, chkState))}
+                    />
+                  }
+                </td>
+                <td>
+                  <label onClick={() => store.dispatch(Action.checkBoxClicado(null, chkState))}>
+                    &lt;processos sem bloco&gt;
+                  </label>
+                </td>
+                <td>
+                  <small>
+                    (
+                    {((s: number): string => `${s} processo${s > 1 ? 's' : ''}`)(
+                      processosSemBloco.size
+                    )}
+                    )
+                  </small>
+                </td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+        <form onSubmit={onSubmit}>
+          <input value={nome} onInput={evt => setNome(evt.currentTarget.value)} />{' '}
+          <button>Criar</button>
+        </form>
+        <br />
+        {aviso}
+      </>
+    );
+  }
+
+  function Aviso(props: JSX.ElementChildrenAttribute) {
+    return (
+      <>
+        <span style="color:red">{props.children}</span>
+        <button onClick={() => store.dispatch(Action.obterBlocos)}>Recarregar dados</button>
+      </>
+    );
+  }
+
+  function BlocoPaginaLista(props: InfoBloco) {
+    const [editing, setEditing] = useState(false);
+    const input = createRef<HTMLInputElement>();
+    useEffect(() => {
+      if (editing && input.current) {
+        input.current.select();
+        input.current.focus();
+      }
+    }, [editing, input]);
+
+    let displayNome: JSX.Element | string = props.nome;
+
+    let botaoRenomear: JSX.Element | null = (
+      <BotaoAcao src="imagens/minuta_editar.gif" label="Renomear" onClick={onRenomearClicked} />
+    );
+    let removerAusentes: JSX.Element | null = (
+      <BotaoAcao
+        src="imagens/minuta_transferir.png"
+        label="Remover processos ausentes"
+        onClick={() => store.dispatch(Action.removerProcessosAusentes(props.id))}
+      />
+    );
+
+    if (editing) {
+      displayNome = <input ref={input} onKeyUp={onKeyUp} value={props.nome} />;
+      botaoRenomear = null;
+    }
+    if (props.total <= props.nestaPagina) {
+      removerAusentes = null;
+    }
+
+    const chkState = ((): CheckboxState => {
+      let status: CheckboxState = 'disabled';
+      for (const numproc of props.processos) {
+        if (!mapa.has(numproc)) continue;
+        const { checkbox } = mapa.get(numproc)!;
+        if (checkbox.checked) {
+          if (status === 'disabled') {
+            status = 'checked';
+          } else if (status === 'unchecked') {
+            return 'partial';
+          }
+        } else {
+          if (status === 'disabled') {
+            status = 'unchecked';
+          } else if (status === 'checked') {
+            return 'partial';
+          }
+        }
+      }
+      return status;
+    })();
+    return (
+      <tr>
+        <td>
+          <img
+            src={matchBy('chkState')(
+              { chkState },
+              {
+                partial: () => checkboxUndefined,
+                unchecked: () => checkboxEmpty,
+                checked: () => checkboxChecked,
+                disabled: () => checkboxDisabled,
+              }
+            )}
+            onClick={() => store.dispatch(Action.checkBoxClicado(props.id, chkState))}
+          />
+        </td>
+        <td>
+          <label onClick={() => store.dispatch(Action.checkBoxClicado(props.id, chkState))}>
+            {displayNome}
+          </label>
+        </td>
+        <td>
+          <small>({createAbbr(props.nestaPagina, props.total)})</small>
+        </td>
+        <td>{botaoRenomear}</td>
+        <td>
+          <img
+            class="infraButton"
+            src="imagens/minuta_excluir.gif"
+            onMouseOver={() => infraTooltipMostrar('Excluir')}
+            onMouseOut={() => infraTooltipOcultar()}
+            onClick={onExcluirClicked}
+            aria-label="Excluir"
+            width="16"
+            height="16"
+          />
+        </td>
+        <td>{removerAusentes}</td>
+      </tr>
+    );
+
+    function createAbbr(nestaPagina: number, total: number): JSX.Element | string {
+      if (nestaPagina === total) return `${total} processo${total > 1 ? 's' : ''}`;
+      const textoTotal = `${total} processo${total > 1 ? 's' : ''} no bloco`;
+      const textoPagina = `${nestaPagina === 0 ? 'nenhum' : nestaPagina} nesta página`;
+      const textoResumido = `${nestaPagina}/${total} processo${total > 1 ? 's' : ''}`;
+      return <abbr title={`${textoTotal}, ${textoPagina}.`}>{textoResumido}</abbr>;
+    }
+
+    function onKeyUp(evt: JSX.TargetedEvent<HTMLInputElement, KeyboardEvent>) {
+      console.log('Key', evt.key);
+      if (evt.key === 'Enter') {
+        const nome = evt.currentTarget.value;
+        setEditing(false);
+        if (p.isNonEmptyString(nome)) {
+          store.dispatch(Action.renomearBloco(props.id, nome));
+        } else {
+          store.dispatch(Action.erroCapturado('Nome do bloco não pode estar em branco.'));
+        }
+      } else if (evt.key === 'Escape') {
+        setEditing(() => false);
+      }
+    }
+
+    function onRenomearClicked() {
+      setEditing(true);
+    }
+    function onExcluirClicked() {
+      let confirmed = true;
+      const len = props.total;
+      if (len > 0)
+        confirmed = window.confirm(
+          `Este bloco possui ${len} processo${len > 1 ? 's' : ''}. Deseja excluí-lo?`
+        );
+      if (confirmed) store.dispatch(Action.excluirBloco(props.id));
+    }
+    function onSelecionarProcessosClicked() {
+      store.dispatch(Action.selecionarProcessos(props.id));
+    }
+  }
+  function BotaoAcao({
+    onClick,
+    label,
+    src,
+  }: {
+    onClick: Handler<Event>;
+    label: string;
+    src: string;
+  }) {
+    return (
       <img
         class="infraButton"
-        src="imagens/minuta_excluir.gif"
-        onMouseOver={() => infraTooltipMostrar('Excluir')}
+        src={src}
+        onMouseOver={() => infraTooltipMostrar(label)}
         onMouseOut={() => infraTooltipOcultar()}
-        onClick={onExcluirClicked}
-        aria-label="Excluir"
+        onClick={onClick}
+        aria-label={label}
         width="16"
         height="16"
-      />{' '}
-      {removerAusentes}
-    </li>
-  );
-
-  function createAbbr(nestaPagina: number, total: number): JSX.Element | string {
-    if (nestaPagina === total) return `${total} processo${total > 1 ? 's' : ''}`;
-    const textoTotal = `${total} processo${total > 1 ? 's' : ''} no bloco`;
-    const textoPagina = `${nestaPagina === 0 ? 'nenhum' : nestaPagina} nesta página`;
-    const textoResumido = `${nestaPagina}/${total} processo${total > 1 ? 's' : ''}`;
-    return <abbr title={`${textoTotal}, ${textoPagina}.`}>{textoResumido}</abbr>;
-  }
-
-  function onKeyUp(evt: JSX.TargetedEvent<HTMLInputElement, KeyboardEvent>) {
-    console.log('Key', evt.key);
-    if (evt.key === 'Enter') {
-      const nome = evt.currentTarget.value;
-      setEditing(false);
-      if (p.isNonEmptyString(nome)) {
-        props.dispatch(Action.renomearBloco(props.id, nome));
-      } else {
-        props.dispatch(Action.erroCapturado('Nome do bloco não pode estar em branco.'));
-      }
-    } else if (evt.key === 'Escape') {
-      setEditing(() => false);
-    }
-  }
-
-  function onRenomearClicked() {
-    setEditing(true);
-  }
-  function onExcluirClicked() {
-    let confirmed = true;
-    const len = props.total;
-    if (len > 0)
-      confirmed = window.confirm(
-        `Este bloco possui ${len} processo${len > 1 ? 's' : ''}. Deseja excluí-lo?`
-      );
-    if (confirmed) props.dispatch(Action.excluirBloco(props.id));
-  }
-  function onSelecionarProcessosClicked() {
-    props.dispatch(Action.selecionarProcessos(props.id));
+      />
+    );
   }
 }

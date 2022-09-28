@@ -1,0 +1,11 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="16"
+  height="16"
+  version="1.2"
+  viewBox="-10 -10 170 170"
+>
+  <rect width="160" height="160" fill="#7e738c" rx="20" />
+  <path fill="#fff" d="M20 20h120v120H20z" />
+  <path stroke="#999" stroke-width="20" d="M40 80h80" />
+</svg>
