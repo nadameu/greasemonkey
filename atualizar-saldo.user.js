@@ -2,7 +2,7 @@
 // @name         atualizar-saldos
 // @name:pt-BR   Atualizar saldos
 // @namespace    http://nadameu.com.br
-// @version      2.3.1
+// @version      3.0.0
 // @author       nadameu
 // @description  Atualiza o saldo de contas judiciais
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
@@ -392,7 +392,7 @@
               Erro: () => estado,
               Ocioso: ({ infoContas }) => {
                 ouvirXHR(x => store.dispatch(x));
-                const primeiraConta = findIndex(infoContas, x => x.atualizacao !== null);
+                const primeiraConta = encontrarContaAtualizavel(infoContas);
                 if (primeiraConta < 0) {
                   bc.publish(
                     Mensagem.InformaContas(
@@ -423,7 +423,7 @@
                     },
                   ])
                   .concat(infoContas.slice(conta + 1));
-                const proxima = findIndex(infoNova, x => x.atualizacao !== null, conta + 1);
+                const proxima = encontrarContaAtualizavel(infoNova, conta + 1);
                 if (proxima < 0) {
                   const qtdComSaldo = infoNova.map(x => x.saldo).filter(x => x > 0).length;
                   const permiteAtualizar = infoNova.some(x => x.atualizacao !== null);
@@ -507,9 +507,18 @@
     function obterContas() {
       const tabela = document.querySelector('#divInfraAreaDadosDinamica > table');
       if (!tabela) return Right([]);
-      return traverse(tabela.querySelectorAll('tr[id^="tdConta"]'), obterInfoContaLinha$1).mapLeft(
-        e => new Error('Erro ao obter dados das contas.')
-      );
+      return traverse(tabela.querySelectorAll('tr[id^="tdConta"]'), obterInfoContaLinha$1)
+        .mapLeft(e => new Error('Erro ao obter dados das contas.'))
+        .map(infos =>
+          infos.map(info => {
+            if (info.saldo > 0) return info;
+            else
+              return {
+                saldo: 0,
+                atualizacao: null,
+              };
+          })
+        );
     }
     function ouvirXHR(handler) {
       $.ajaxSetup({
@@ -616,10 +625,10 @@
       atualizacao,
     });
   }
-  function findIndex(xs, pred, startAt = 0) {
+  function encontrarContaAtualizavel(xs, startAt = 0) {
     const len = xs.length;
     for (let i = startAt; i < len; i++) {
-      if (pred(xs[i])) return i;
+      if (xs[i].atualizacao !== null) return i;
     }
     return -1;
   }
