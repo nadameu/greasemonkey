@@ -51,8 +51,11 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   if (eitherMapa.isLeft) return eitherMapa as Left<Error>;
   const mapa = eitherMapa.rightValue;
 
-  const acoes = document.getElementById('fldAcoes');
-  if (p.isNullish(acoes)) return Left(new Error('Não foi possível inserir os blocos na página.'));
+  let acoes = document.getElementById('fldAcoes');
+  if (p.isNullish(acoes)) {
+    acoes = document.getElementById('divInfraAreaTabela');
+    if (p.isNullish(acoes)) return Left(new Error('Não foi possível inserir os blocos na página.'));
+  }
 
   const div = acoes.insertAdjacentElement('beforebegin', document.createElement('div'))!;
   div.id = 'gm-blocos';
