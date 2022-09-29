@@ -54,7 +54,6 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   const barra = document.getElementById('divInfraBarraLocalizacao');
   if (p.isNullish(barra)) return Left(new Error('Não foi possível inserir os blocos na página.'));
 
-  document.head.appendChild(document.createElement('head')).textContent = css;
   const div = barra.insertAdjacentElement('afterend', document.createElement('div'))!;
   div.id = 'gm-blocos';
 
@@ -101,7 +100,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
       update(store.getState());
     });
   }
-  document.appendChild(document.createElement('style')).textContent = css;
+  document.head.appendChild(document.createElement('style')).textContent = css;
   store.subscribe(update);
   store.dispatch(Action.obterBlocos);
   return Right(undefined);

@@ -14,8 +14,7 @@ import css from './ProcessoSelecionar.scss?inline';
 export function ProcessoSelecionar(numproc: NumProc): Either<Error, void> {
   const mainMenu = document.getElementById('main-menu');
   if (p.isNull(mainMenu)) return Left(new Error('Menu não encontrado'));
-  const style = document.head.appendChild(document.createElement('style'));
-  style.textContent = css;
+  document.head.appendChild(document.createElement('style')).textContent = css;
   const div = mainMenu.insertAdjacentElement('beforebegin', document.createElement('div'))!;
   div.id = 'gm-blocos';
 
