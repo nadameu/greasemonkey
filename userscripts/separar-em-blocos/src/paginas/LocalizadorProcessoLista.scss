@@ -39,5 +39,40 @@
     tfoot td {
       padding-top: 13px;
     }
+
+    input.rename {
+      font-size: 1em;
+    }
+
+    .gm-erro,
+    .gm-aviso {
+      padding: 0.1em 0.5ex;
+      font-size: 0.9rem;
+      background: hsl(0, 10%, 95%);
+      color: hsl(0, 100%, 40%);
+      margin: 2px auto 6px;
+      width: fit-content;
+    }
+
+    button {
+      display: block;
+      margin: 0 auto 7px;
+      padding: 2px 20px;
+      font-size: 0.86rem;
+      border: none;
+      border-radius: 3px;
+      box-shadow: 0 2px 4px var(--shadow);
+      background: var(--muted-accent);
+      color: var(--text);
+      &:hover {
+        transition: background-color 0.1s ease-in;
+        background: var(--accent);
+      }
+      &:disabled {
+        background: var(--disabled);
+        color: var(--disabled-text);
+        box-shadow: none;
+      }
+    }
   }
 }

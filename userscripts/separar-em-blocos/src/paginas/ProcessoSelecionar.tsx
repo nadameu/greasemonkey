@@ -267,7 +267,14 @@ export function ProcessoSelecionar(numproc: NumProc): Either<Error, void> {
             <input
               type="image"
               src="infra_css/imagens/transportar.gif"
-              onClick={() => store.dispatch(Action.inserirEFechar(props.id))}
+              onMouseOver={() =>
+                infraTooltipMostrar('Inserir processo no bloco e fechar a janela.')
+              }
+              onMouseOut={() => infraTooltipOcultar()}
+              onClick={() => {
+                infraTooltipOcultar();
+                store.dispatch(Action.inserirEFechar(props.id));
+              }}
               disabled={props.disabled}
             />
           </>
