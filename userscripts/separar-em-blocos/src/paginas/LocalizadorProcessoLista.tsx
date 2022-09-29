@@ -88,7 +88,6 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
       noop: null,
       removerProcessosAusentes: (id: Bloco['id']) => ({ id }),
       renomearBloco: (id: Bloco['id'], nome: Bloco['nome']) => ({ id, nome }),
-      selecionarProcessos: (id: Bloco['id']) => ({ id }),
     },
     'type'
   );
@@ -228,19 +227,6 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
           if (others.some(x => x.nome === nome))
             return Action.erroCapturado(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
           return Action.blocosModificados(await Database.updateBloco({ ...bloco, nome }));
-        }),
-      selecionarProcessos: ({ id }) =>
-        asyncAction(state, async () => {
-          const bloco = await Database.getBloco(id);
-          if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
-          for (const [numproc, { checkbox }] of mapa) {
-            if (bloco.processos.includes(numproc)) {
-              if (!checkbox.checked) checkbox.click();
-            } else {
-              if (checkbox.checked) checkbox.click();
-            }
-          }
-          return Action.noop;
         }),
     });
   }
@@ -514,9 +500,6 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
           `Este bloco possui ${len} processo${len > 1 ? 's' : ''}. Deseja excluí-lo?`
         );
       if (confirmed) store.dispatch(Action.excluirBloco(props.id));
-    }
-    function onSelecionarProcessosClicked() {
-      store.dispatch(Action.selecionarProcessos(props.id));
     }
   }
   function BotaoAcao({
