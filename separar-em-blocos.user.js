@@ -2,7 +2,7 @@
 // @name         separar-em-blocos
 // @name:pt-BR   Separar em blocos
 // @namespace    http://nadameu.com.br
-// @version      1.0.0
+// @version      2.0.0
 // @author       nadameu
 // @description  Permite a separação de processos em blocos para movimentação separada
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -108,8 +108,65 @@
       };
     }
   }
-  function expectUnreachable(value) {
-    throw new Error('Unexpected.');
+  function createStore(getInitialState, reducer) {
+    const listeners = /* @__PURE__ */ new Set();
+    let state = getInitialState();
+    return {
+      dispatch,
+      getState,
+      subscribe,
+    };
+    function dispatch(action) {
+      state = reducer(state, action);
+      for (const l of listeners) l(state);
+    }
+    function getState() {
+      return state;
+    }
+    function subscribe(listener) {
+      listeners.add(listener);
+      listener(state);
+      return {
+        unsubscribe,
+      };
+      function unsubscribe() {
+        listeners.delete(listener);
+      }
+    }
+  }
+  function createTaggedUnion(definitions, tagName = 'tag') {
+    const ctors = {};
+    for (const tag of Object.getOwnPropertyNames(definitions).concat(
+      Object.getOwnPropertySymbols(definitions)
+    )) {
+      if (tag === 'match') throw new Error('Invalid tag: "match".');
+      const f = definitions[tag];
+      if (f === null) {
+        ctors[tag] = {
+          [tagName]: tag,
+        };
+      } else {
+        ctors[tag] = (...args) => {
+          const obj = f(...args);
+          obj[tagName] = tag;
+          return obj;
+        };
+      }
+    }
+    ctors.match = matchBy(tagName);
+    return ctors;
+  }
+  function matchBy(tagName) {
+    return (obj, matchers, otherwise) => {
+      const tag = obj[tagName];
+      if (tag === void 0)
+        throw new Error(`Object does not have a valid "${String(tagName)}" property.`);
+      const fn = matchers[tag] ?? otherwise ?? matchNotFound;
+      return fn(obj);
+    };
+    function matchNotFound(obj) {
+      throw new Error(`Not matched: "${obj[tagName]}".`);
+    }
   }
   class AssertionError extends Error {
     name = 'AssertionError';
@@ -135,6 +192,7 @@
     return value => !predicate(value);
   }
   const isNotNull = /* @__PURE__ */ negate(isNull);
+  const isDefined = /* @__PURE__ */ negate(isUndefined);
   function refine(...predicates) {
     return value => predicates.every(p => p(value));
   }
@@ -321,35 +379,22 @@
       return validarBlocos(blocos);
     };
   }
-  const Database = /* @__PURE__ */ Object.freeze(
-    /* @__PURE__ */ Object.defineProperty(
-      {
-        __proto__: null,
-        open,
-        deleteBlocos,
-        getBlocos,
-        getBloco,
-        createBloco,
-        deleteBloco,
-        updateBloco,
-      },
-      Symbol.toStringTag,
-      { value: 'Module' }
-    )
-  );
-  function createFromAsyncThunk(onLoading, onError) {
-    return asyncThunk => (state, dispatch, extra) => {
-      const asyncAction = asyncThunk(state, extra);
-      asyncAction.catch(onError).then(dispatch);
-      return onLoading(state, dispatch, extra);
-    };
-  }
+  const checkboxChecked =
+    'data:image/svg+xml;base64,PHN2ZwogIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICB3aWR0aD0iMTYiCiAgaGVpZ2h0PSIxNiIKICB2ZXJzaW9uPSIxLjIiCiAgdmlld0JveD0iLTEwIC0xMCAxNzAgMTcwIgo+CiAgPHJlY3Qgd2lkdGg9IjE2MCIgaGVpZ2h0PSIxNjAiIGZpbGw9IiM3ZTczOGMiIHJ4PSIyMCIgLz4KICA8cGF0aCBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMjAiIGQ9Im0zNSA4MCAzMCAzMCA2MC02MCIgLz4KPC9zdmc+Cg==';
+  const checkboxDisabled =
+    'data:image/svg+xml;base64,PHN2ZwogIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICB3aWR0aD0iMTYiCiAgaGVpZ2h0PSIxNiIKICB2ZXJzaW9uPSIxLjIiCiAgdmlld0JveD0iLTEwIC0xMCAxNzAgMTcwIgo+CiAgPHJlY3Qgd2lkdGg9IjE2MCIgaGVpZ2h0PSIxNjAiIGZpbGw9IiM3ZTczOGMiIHJ4PSIyMCIgLz4KICA8cGF0aCBmaWxsPSJoc2woMjY2ZGVnLCAxMCUsIDc1JSkiIGQ9Ik0yMCAyMGgxMjB2MTIwSDIweiIgLz4KPC9zdmc+Cg==';
+  const checkboxEmpty =
+    'data:image/svg+xml;base64,PHN2ZwogIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICB3aWR0aD0iMTYiCiAgaGVpZ2h0PSIxNiIKICB2ZXJzaW9uPSIxLjIiCiAgdmlld0JveD0iLTEwIC0xMCAxNzAgMTcwIgo+CiAgPHJlY3Qgd2lkdGg9IjE2MCIgaGVpZ2h0PSIxNjAiIGZpbGw9IiM3ZTczOGMiIHJ4PSIyMCIgLz4KICA8cGF0aCBmaWxsPSIjZmZmIiBkPSJNMjAgMjBoMTIwdjEyMEgyMHoiIC8+Cjwvc3ZnPgo=';
+  const checkboxUndefined =
+    'data:image/svg+xml;base64,PHN2ZwogIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICB3aWR0aD0iMTYiCiAgaGVpZ2h0PSIxNiIKICB2ZXJzaW9uPSIxLjIiCiAgdmlld0JveD0iLTEwIC0xMCAxNzAgMTcwIgo+CiAgPHJlY3Qgd2lkdGg9IjE2MCIgaGVpZ2h0PSIxNjAiIGZpbGw9IiM3ZTczOGMiIHJ4PSIyMCIgLz4KICA8cGF0aCBmaWxsPSIjZmZmIiBkPSJNMjAgMjBoMTIwdjEyMEgyMHoiIC8+CiAgPHBhdGggc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIwIiBkPSJNNDAgODBoODAiIC8+Cjwvc3ZnPgo=';
   const isBroadcastMessage = /* @__PURE__ */ isTaggedUnion('type', {
     Blocos: {
       blocos: isArray(isBloco),
     },
     NoOp: {},
   });
+  const css$1 =
+    '#gm-blocos {\n  --accent: hsl(266deg, 40%, 25%);\n  --bg: hsl(266deg, 10%, 30%);\n  --disabled: hsl(266deg, 5%, 37.5%);\n  --disabled-text: hsl(266deg, 0%, 80%);\n  --shadow: hsl(266deg, 12.5%, 17.5%);\n  --muted-accent: hsl(266deg, 25%, 25%);\n  --text: hsl(266deg, 0%, 100%);\n}\n\n.infra-styles #gm-blocos {\n  margin: 4px;\n  padding: 4px 8px;\n  border-radius: 4px;\n  width: max-content;\n  background: var(--bg);\n  color: var(--text);\n  box-shadow: 0 3px 3px var(--shadow);\n}\n\n.infra-styles #gm-blocos h4 {\n  margin: 3px 0;\n  font-size: 1.25rem;\n  font-weight: 300;\n}\n\n.infra-styles #gm-blocos input[type=image] {\n  border: none;\n}\n\n.infra-styles #gm-blocos table {\n  margin: 0;\n  margin-bottom: 16px;\n}\n\n.infra-styles #gm-blocos td {\n  margin: 0;\n  padding: 3px 0.5ch;\n  vertical-align: center;\n}\n\n.infra-styles #gm-blocos td label {\n  font-size: 0.92rem;\n}\n\n.infra-styles #gm-blocos td small {\n  font-size: 0.75rem;\n}\n\n.infra-styles #gm-blocos tfoot td {\n  padding-top: 13px;\n}\n\n.infra-styles #gm-blocos input.rename {\n  font-size: 1em;\n}\n\n.infra-styles #gm-blocos .gm-erro,\n.infra-styles #gm-blocos .gm-aviso {\n  padding: 0.1em 0.5ex;\n  font-size: 0.9rem;\n  background: hsl(0deg, 10%, 95%);\n  color: hsl(0deg, 100%, 40%);\n  margin: 2px auto 6px;\n  width: fit-content;\n}\n\n.infra-styles #gm-blocos button {\n  display: block;\n  margin: 0 auto 7px;\n  padding: 2px 20px;\n  font-size: 0.86rem;\n  border: none;\n  border-radius: 3px;\n  box-shadow: 0 2px 4px var(--shadow);\n  background: var(--muted-accent);\n  color: var(--text);\n}\n\n.infra-styles #gm-blocos button:hover {\n  transition: background-color 0.1s ease-in;\n  background: var(--accent);\n}\n\n.infra-styles #gm-blocos button:disabled {\n  background: var(--disabled);\n  color: var(--disabled-text);\n  box-shadow: none;\n}';
   var _ = 0;
   function o(o2, e, n, t, f) {
     var l,
@@ -377,137 +422,11 @@
       for (s in l) void 0 === u[s] && (u[s] = l[s]);
     return preact2.options.vnode && preact2.options.vnode(a), a;
   }
-  const fromThunk$1 = createFromAsyncThunk(
-    state => state,
-    error => () => ({
-      status: 'error',
-      error,
-    })
-  );
-  const actions$1 = {
-    blocosModificados: blocos => (state, dispatch, extra) => {
-      const { bc } = extra;
-      bc.publish({
-        type: 'Blocos',
-        blocos,
-      });
-      return actions$1.blocosObtidos(blocos)(state, dispatch, extra);
-    },
-    blocosObtidos:
-      blocos =>
-      (state, _2, { mapa }) => {
-        const info = blocos.map(bloco => ({
-          ...bloco,
-          nestaPagina: bloco.processos.filter(numproc => mapa.has(numproc)).length,
-          total: bloco.processos.length,
-        }));
-        if (state.status === 'error') return state;
-        return {
-          status: 'loaded',
-          blocos: info,
-        };
-      },
-    criarBloco: nome =>
-      fromThunk$1(async (state, { DB }) => {
-        const blocos = await DB.getBlocos();
-        if (blocos.some(x => x.nome === nome))
-          return actions$1.erroCapturado(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
-        const bloco = {
-          id: Math.max(-1, ...blocos.map(x => x.id)) + 1,
-          nome,
-          processos: [],
-        };
-        return actions$1.blocosModificados(await DB.createBloco(bloco));
-      }),
-    erroCapturado: aviso => state => {
-      switch (state.status) {
-        case 'init':
-          return {
-            status: 'error',
-            error: aviso,
-          };
-        case 'error':
-          return state;
-        case 'loaded':
-          return {
-            ...state,
-            aviso,
-          };
-      }
-      return expectUnreachable();
-    },
-    excluirBD: () =>
-      fromThunk$1(async ({}, { DB }) => {
-        await DB.deleteBlocos();
-        return actions$1.obterBlocos();
-      }),
-    excluirBloco: bloco =>
-      fromThunk$1(async ({}, { DB }) => {
-        return actions$1.blocosModificados(await DB.deleteBloco(bloco));
-      }),
-    mensagemRecebida: msg => {
-      switch (msg.type) {
-        case 'Blocos':
-          return actions$1.blocosObtidos(msg.blocos);
-        case 'NoOp':
-          return actions$1.noop();
-        default:
-          return expectUnreachable();
-      }
-    },
-    obterBlocos: () =>
-      fromThunk$1(async ({}, { DB }) => actions$1.blocosModificados(await DB.getBlocos())),
-    noop: () => state => state,
-    removerProcessosAusentes: id =>
-      fromThunk$1(async (_2, { DB, mapa }) => {
-        const bloco = await DB.getBloco(id);
-        if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
-        const processos = bloco.processos.filter(x => mapa.has(x));
-        return actions$1.blocosModificados(
-          await DB.updateBloco({
-            ...bloco,
-            processos,
-          })
-        );
-      }),
-    renomearBloco: (id, nome) =>
-      fromThunk$1(async ({}, { DB }) => {
-        const blocos = await DB.getBlocos();
-        const bloco = blocos.find(x => x.id === id);
-        if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
-        const others = blocos.filter(x => x.id !== id);
-        if (others.some(x => x.nome === nome))
-          return actions$1.erroCapturado(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
-        return actions$1.blocosModificados(
-          await DB.updateBloco({
-            ...bloco,
-            nome,
-          })
-        );
-      }),
-    selecionarProcessos: id =>
-      fromThunk$1(async ({}, { DB, mapa }) => {
-        const bloco = await DB.getBloco(id);
-        if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
-        for (const [numproc, { checkbox }] of mapa) {
-          if (bloco.processos.includes(numproc)) {
-            if (!checkbox.checked) checkbox.click();
-          } else {
-            if (checkbox.checked) checkbox.click();
-          }
-        }
-        return actions$1.noop();
-      }),
-  };
   function LocalizadorProcessoLista() {
     const tabela = document.querySelector('table#tabelaLocalizadores');
-    const linhas = Array.from(
-      tabela?.rows ?? {
-        length: 0,
-      }
-    );
-    if (linhas.length <= 1) return Right(void 0);
-    const eitherMapa = traverse(linhas.slice(1), (linha, i) => {
+    const linhas = tabela?.rows ?? [];
+    const eitherMapa = traverse(linhas, (linha, i) => {
+      if (i === 0) return Right([]);
       const endereco = linha.cells[1]?.querySelector('a[href]')?.href;
       if (isNullish(endereco))
         return Left(new Error(`Link do processo não encontrado: linha ${i}.`));
@@ -520,549 +439,1017 @@
       if (isNullish(checkbox))
         return Left(new Error(`Caixa de seleção não encontrada: linha ${i}.`));
       return Right([
-        numproc,
-        {
-          linha,
-          checkbox,
-        },
+        [
+          numproc,
+          {
+            linha,
+            checkbox,
+          },
+        ],
       ]);
-    });
+    }).map(entriess => new Map(entriess.flat(1)));
     if (eitherMapa.isLeft) return eitherMapa;
-    const mapa = new Map(eitherMapa.rightValue);
-    const barra = document.getElementById('divInfraBarraLocalizacao');
-    if (isNullish(barra)) return Left(new Error('Não foi possível inserir os blocos na página.'));
-    const div = barra.insertAdjacentElement('afterend', document.createElement('div'));
-    preact2.render(
-      o(Main$1, {
-        mapa,
-      }),
-      div
-    );
-    return Right(void 0);
-  }
-  function Main$1(props) {
-    const extra = hooks.useMemo(() => {
-      const DB = Database,
-        bc = createBroadcastService('gm-blocos', isBroadcastMessage),
-        { mapa } = props;
-      return {
-        DB,
-        bc,
-        mapa,
-      };
-    }, []);
-    const [state, dispatch] = hooks.useReducer(
-      (state2, action) => action(state2, dispatch, extra),
+    const mapa = eitherMapa.rightValue;
+    const acoes = document.getElementById('fldAcoes');
+    if (isNullish(acoes)) return Left(new Error('Não foi possível inserir os blocos na página.'));
+    const div = acoes.insertAdjacentElement('beforebegin', document.createElement('div'));
+    div.id = 'gm-blocos';
+    const Model = createTaggedUnion(
       {
-        status: 'init',
-      }
-    );
-    hooks.useLayoutEffect(() => {
-      extra.bc.subscribe(msg => dispatch(actions$1.mensagemRecebida(msg)));
-      dispatch(actions$1.obterBlocos());
-    }, []);
-    switch (state.status) {
-      case 'error':
-        return o(ShowError$1, {
-          reason: state.error,
-          dispatch,
-        });
-      case 'loaded':
-        return o(Blocos$1, {
-          state,
-          dispatch,
-        });
-      case 'init':
-        return o(Loading, {});
-    }
-    return expectUnreachable();
-  }
-  function Loading() {
-    return o(preact2.Fragment, {
-      children: 'Carregando...',
-    });
-  }
-  function ShowError$1({ dispatch, reason }) {
-    const message =
-      reason instanceof Error
-        ? reason.message
-          ? `Ocorreu um erro: ${reason.message}`
-          : 'Ocorreu um erro desconhecido.'
-        : `Ocorreu um erro: ${String(reason)}`;
-    return o(preact2.Fragment, {
-      children: [
-        o('span', {
-          style: 'color:red; font-weight: bold;',
-          children: message,
+        init: null,
+        loaded: (blocos, aviso) => ({
+          blocos,
+          aviso,
         }),
-        o('br', {}),
-        o('br', {}),
-        o('button', {
-          onClick: () => dispatch(actions$1.obterBlocos()),
-          children: 'Tentar carregar dados salvos',
+        error: error => ({
+          error,
         }),
-        o('button', {
-          onClick: () => dispatch(actions$1.excluirBD()),
-          children: 'Apagar os dados locais',
-        }),
-      ],
-    });
-  }
-  function Blocos$1(props) {
-    const [nome, setNome] = hooks.useState('');
-    const onSubmit = hooks.useCallback(
-      e => {
-        e.preventDefault();
-        if (isNonEmptyString(nome)) props.dispatch(actions$1.criarBloco(nome));
-        else props.dispatch(actions$1.erroCapturado('Nome do bloco não pode estar em branco.'));
-        setNome('');
       },
-      [nome]
+      'status'
     );
-    let aviso = null;
-    if (props.state.aviso) {
-      aviso = o(preact2.Fragment, {
+    const Action = createTaggedUnion(
+      {
+        blocosModificados: blocos => ({
+          blocos,
+        }),
+        blocosObtidos: blocos => ({
+          blocos,
+        }),
+        checkboxClicado: (id, estadoAnterior) => ({
+          id,
+          estadoAnterior,
+        }),
+        criarBloco: nome => ({
+          nome,
+        }),
+        erroCapturado: aviso => ({
+          aviso,
+        }),
+        erroDesconhecido: erro => ({
+          erro,
+        }),
+        excluirBD: null,
+        excluirBloco: id => ({
+          id,
+        }),
+        mensagemRecebida: msg => ({
+          msg,
+        }),
+        obterBlocos: null,
+        noop: null,
+        removerProcessosAusentes: id => ({
+          id,
+        }),
+        renomearBloco: (id, nome) => ({
+          id,
+          nome,
+        }),
+        reset: null,
+      },
+      'type'
+    );
+    const bc = createBroadcastService('gm-blocos', isBroadcastMessage);
+    const store = Object.assign(
+      {},
+      createStore(() => Model.init, reducer)
+    );
+    store.dispatch = handleAliasAction()(store.dispatch);
+    store.dispatch = handleAsyncAction(store)(store.dispatch);
+    bc.subscribe(msg => store.dispatch(Action.mensagemRecebida(msg)));
+    if (tabela) {
+      tabela.addEventListener('click', () => {
+        update(store.getState());
+      });
+    }
+    document.head.appendChild(document.createElement('style')).textContent = css$1;
+    store.subscribe(update);
+    store.dispatch(Action.obterBlocos);
+    return Right(void 0);
+    function update(state) {
+      return preact2.render(
+        o(Main, {
+          state,
+        }),
+        div
+      );
+    }
+    function reducer(state, action) {
+      return Action.match(
+        action,
+        {
+          blocosObtidos: ({ blocos }) =>
+            Model.match(
+              state,
+              {
+                error: state2 => state2,
+              },
+              () => {
+                const info = blocos.map(bloco => ({
+                  ...bloco,
+                  nestaPagina: bloco.processos.filter(numproc => mapa.has(numproc)).length,
+                  total: bloco.processos.length,
+                }));
+                return Model.loaded(info);
+              }
+            ),
+          checkboxClicado: ({ id, estadoAnterior }) =>
+            Model.match(
+              state,
+              {
+                loaded: state2 => {
+                  if (estadoAnterior === 'disabled') return state2;
+                  const processos = (() => {
+                    if (id === -1) {
+                      const processosComBloco = new Set(
+                        Array.from(
+                          state2.blocos.flatMap(({ processos: processos2 }) =>
+                            processos2.filter(p2 => mapa.has(p2))
+                          )
+                        )
+                      );
+                      return Array.from(mapa)
+                        .filter(([x]) => !processosComBloco.has(x))
+                        .map(x => x[1]);
+                    } else if (id === -2) {
+                      return Array.from(mapa.values());
+                    } else {
+                      return state2.blocos
+                        .filter(x => x.id === id)
+                        .flatMap(x => x.processos)
+                        .map(x => mapa.get(x))
+                        .filter(isDefined);
+                    }
+                  })();
+                  const check = estadoAnterior === 'unchecked';
+                  processos.forEach(({ checkbox }) => {
+                    if (checkbox.checked !== check) {
+                      checkbox.click();
+                    }
+                  });
+                  return state2;
+                },
+              },
+              state2 => state2
+            ),
+          erroCapturado: ({ aviso }) =>
+            Model.match(state, {
+              init: () => Model.error(aviso),
+              error: state2 => state2,
+              loaded: state2 => ({
+                ...state2,
+                aviso,
+              }),
+            }),
+          erroDesconhecido: ({ erro }) =>
+            Model.match(
+              state,
+              {
+                error: state2 => state2,
+              },
+              () => Model.error(erro)
+            ),
+          noop: () => state,
+          reset: () => Model.init,
+        },
+        other => other
+      );
+    }
+    function handleAsyncAction(store2) {
+      return next => {
+        return action => {
+          const promise = Action.match(
+            action,
+            {
+              criarBloco: async ({ nome }) => {
+                const blocos = await getBlocos();
+                if (blocos.some(x => x.nome === nome))
+                  return Action.erroCapturado(
+                    `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
+                  );
+                const bloco = {
+                  id: Math.max(-1, ...blocos.map(x => x.id)) + 1,
+                  nome,
+                  processos: [],
+                };
+                return Action.blocosModificados(await createBloco(bloco));
+              },
+              excluirBD: async () => {
+                await deleteBlocos();
+                return Action.obterBlocos;
+              },
+              excluirBloco: async ({ id }) => Action.blocosModificados(await deleteBloco(id)),
+              obterBlocos: async () => Action.blocosModificados(await getBlocos()),
+              removerProcessosAusentes: async ({ id }) => {
+                const bloco = await getBloco(id);
+                if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
+                const processos = bloco.processos.filter(x => mapa.has(x));
+                return Action.blocosModificados(
+                  await updateBloco({
+                    ...bloco,
+                    processos,
+                  })
+                );
+              },
+              renomearBloco: async ({ id, nome }) => {
+                const blocos = await getBlocos();
+                const bloco = blocos.find(x => x.id === id);
+                if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
+                const others = blocos.filter(x => x.id !== id);
+                if (others.some(x => x.nome === nome))
+                  return Action.erroCapturado(
+                    `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
+                  );
+                return Action.blocosModificados(
+                  await updateBloco({
+                    ...bloco,
+                    nome,
+                  })
+                );
+              },
+            },
+            a => a
+          );
+          if (!('then' in promise)) return next(promise);
+          promise.catch(Action.erroDesconhecido).then(store2.dispatch);
+          if (action.type === 'obterBlocos') return next(Action.reset);
+        };
+      };
+    }
+    function handleAliasAction(store2) {
+      return next => {
+        return action => {
+          const replaced = Action.match(
+            action,
+            {
+              blocosModificados: ({ blocos }) => {
+                bc.publish({
+                  type: 'Blocos',
+                  blocos,
+                });
+                return Action.blocosObtidos(blocos);
+              },
+              mensagemRecebida: ({ msg }) =>
+                matchBy('type')(msg, {
+                  Blocos: ({ blocos }) => Action.blocosObtidos(blocos),
+                  NoOp: () => Action.noop,
+                }),
+            },
+            s => s
+          );
+          return next(replaced);
+        };
+      };
+    }
+    function Main({ state }) {
+      return Model.match(state, {
+        error: state2 =>
+          o(ShowError, {
+            reason: state2.error,
+          }),
+        loaded: state2 =>
+          o(Blocos, {
+            state: state2,
+          }),
+        init: () => o(Loading, {}),
+      });
+    }
+    function Loading() {
+      return o(preact2.Fragment, {
+        children: 'Carregando...',
+      });
+    }
+    function ShowError({ reason }) {
+      const message = messageFromReason(reason);
+      return o(preact2.Fragment, {
         children: [
-          o('span', {
-            style: 'color:red',
-            children: props.state.aviso,
+          o('div', {
+            class: 'gm-erro',
+            children: message,
           }),
           o('button', {
-            onClick: () => props.dispatch(actions$1.obterBlocos()),
-            children: 'Recarregar dados',
+            onClick: () => store.dispatch(Action.obterBlocos),
+            children: 'Tentar carregar dados salvos',
+          }),
+          ' ',
+          o('button', {
+            onClick: () => store.dispatch(Action.excluirBD),
+            children: 'Apagar os dados locais',
           }),
         ],
       });
     }
-    return o(preact2.Fragment, {
-      children: [
-        o('h1', {
-          children: 'Blocos',
-        }),
-        o('ul', {
-          children: props.state.blocos.map(bloco =>
-            o(
-              BlocoPaginaLista,
-              {
-                ...bloco,
-                dispatch: props.dispatch,
-              },
-              bloco.id
-            )
-          ),
-        }),
-        o('form', {
-          onSubmit,
-          children: [
-            o('input', {
-              value: nome,
-              onInput: evt => setNome(evt.currentTarget.value),
-            }),
-            ' ',
-            o('button', {
-              children: 'Criar',
-            }),
-          ],
-        }),
-        o('br', {}),
-        aviso,
-      ],
-    });
-  }
-  function BlocoPaginaLista(props) {
-    const [editing, setEditing] = hooks.useState(false);
-    const input = preact2.createRef();
-    hooks.useEffect(() => {
-      if (editing && input.current) {
-        input.current.select();
-        input.current.focus();
-      }
-    }, [editing]);
-    let displayNome = props.nome;
-    let botaoRenomear = o('button', {
-      onClick: onRenomearClicked,
-      children: 'Renomear',
-    });
-    let removerAusentes = o('button', {
-      onClick: () => props.dispatch(actions$1.removerProcessosAusentes(props.id)),
-      children: 'Remover processos ausentes',
-    });
-    if (editing) {
-      displayNome = o('input', {
-        ref: input,
-        onKeyUp,
-        value: props.nome,
-      });
-      botaoRenomear = null;
-    } else if (props.nestaPagina > 0) {
-      displayNome = o('button', {
-        onClick: onSelecionarProcessosClicked,
-        children: props.nome,
-      });
-    }
-    if (props.total <= props.nestaPagina) {
-      removerAusentes = null;
-    }
-    return o('li', {
-      children: [
-        displayNome,
-        ' (',
-        createAbbr(props.nestaPagina, props.total),
-        ') ',
-        botaoRenomear,
-        ' ',
-        o('button', {
-          onClick: onExcluirClicked,
-          children: 'Excluir',
-        }),
-        ' ',
-        removerAusentes,
-      ],
-    });
-    function createAbbr(nestaPagina, total) {
-      if (total === 0) return '0 processo';
-      if (nestaPagina === total) return `${total} processo${total > 1 ? 's' : ''}`;
-      const textoTotal = `${total} processo${total > 1 ? 's' : ''} no bloco`;
-      const textoPagina = `${nestaPagina === 0 ? 'nenhum' : nestaPagina} nesta página`;
-      const textoResumido = `${nestaPagina}/${total} processo${total > 1 ? 's' : ''}`;
-      return o('abbr', {
-        title: `${textoTotal}, ${textoPagina}.`,
-        children: textoResumido,
-      });
-    }
-    function onKeyUp(evt) {
-      console.log('Key', evt.key);
-      if (evt.key === 'Enter') {
-        const nome = evt.currentTarget.value;
-        setEditing(false);
-        if (isNonEmptyString(nome)) {
-          props.dispatch(actions$1.renomearBloco(props.id, nome));
-        } else {
-          props.dispatch(actions$1.erroCapturado('Nome do bloco não pode estar em branco.'));
+    function messageFromReason(reason) {
+      if (reason instanceof Error) {
+        if (reason.message) {
+          return `Ocorreu um erro: ${reason.message}`;
         }
-      } else if (evt.key === 'Escape') {
-        setEditing(() => false);
+        return 'Ocorreu um erro desconhecido.';
       }
+      return `Ocorreu um erro: ${String(reason)}`;
     }
-    function onRenomearClicked() {
-      setEditing(true);
-    }
-    function onExcluirClicked() {
-      let confirmed = true;
-      const len = props.total;
-      if (len > 0)
-        confirmed = window.confirm(
-          `Este bloco possui ${len} processo${len > 1 ? 's' : ''}. Deseja excluí-lo?`
-        );
-      if (confirmed) props.dispatch(actions$1.excluirBloco(props.id));
-    }
-    function onSelecionarProcessosClicked() {
-      props.dispatch(actions$1.selecionarProcessos(props.id));
-    }
-  }
-  const css =
-    '.menu-dark #gm-blocos,\n.menu-light #gm-blocos {\n  --accent: #41285e;\n  --bg: #494251;\n  --disabled: #5d5863;\n  --disabled-text: #ccc;\n  --shadow: #262c31;\n  --muted-accent: #453557;\n  --text: #fff;\n}\n\n#gm-blocos {\n  margin: 2px 3px 4px;\n  padding: 4px;\n  border-radius: 4px;\n  background: var(--bg);\n  color: var(--text);\n  box-shadow: 0 3px 3px var(--shadow);\n}\n#gm-blocos h4 {\n  margin: 3px 0;\n  font-size: 1.25rem;\n  font-weight: 300;\n}\n#gm-blocos ul {\n  list-style-type: none;\n  margin: 3px 0 7px;\n  padding: 0;\n}\n#gm-blocos li {\n  position: relative;\n  display: grid;\n  grid-template-columns: auto 1fr auto;\n  grid-gap: 5px;\n  align-items: center;\n  margin: 4px 0;\n  padding: 5px;\n  border-radius: 2px;\n}\n#gm-blocos li::before {\n  content: "";\n  position: absolute;\n  top: 2px;\n  width: 100%;\n  height: 100%;\n  border-bottom: 1px solid #888;\n  pointer-events: none;\n}\n#gm-blocos li:last-of-type::before {\n  content: none;\n}\n#gm-blocos li:hover {\n  background: var(--accent);\n}\n#gm-blocos label {\n  margin: 0;\n  font-size: 0.92rem;\n}\n#gm-blocos .placeholder span {\n  height: 1.38rem;\n  animation: pulse 1s ease-in-out infinite alternate;\n  border-radius: 4px;\n}\n#gm-blocos .placeholder span:first-of-type, #gm-blocos .placeholder span:last-of-type {\n  width: 1.38rem;\n}\n@keyframes pulse {\n  from {\n    background-color: var(--disabled);\n  }\n  to {\n    background-color: var(--bg);\n  }\n}\n#gm-blocos button {\n  display: block;\n  margin: 0 auto 7px;\n  padding: 2px 20px;\n  font-size: 0.86rem;\n  border: none;\n  border-radius: 3px;\n  box-shadow: 0 2px 4px var(--shadow);\n  background: var(--muted-accent);\n  color: var(--text);\n}\n#gm-blocos button:hover {\n  transition: background-color 0.1s ease-in;\n  background: var(--accent);\n}\n#gm-blocos button:disabled {\n  background: var(--disabled);\n  color: var(--disabled-text);\n  box-shadow: none;\n}\n#gm-blocos .error {\n  margin: 10px 5%;\n  padding: 4px 5%;\n  border-radius: 4px;\n  font-weight: 500;\n  background: white;\n  color: red;\n}';
-  const actions = {
-    blocosModificados:
-      (blocos, { fecharJanela = false } = {}) =>
-      (state, dispatch, extra) => {
-        const { bc } = extra;
-        bc.publish({
-          type: 'Blocos',
-          blocos,
-        });
-        if (fecharJanela) window.close();
-        return actions.blocosObtidos(blocos)(state, dispatch, extra);
-      },
-    blocosObtidos: blocos => () => ({
-      status: 'Success',
-      blocos,
-      inactive: false,
-    }),
-    carregando: () => state => {
-      switch (state.status) {
-        case 'Loading':
-        case 'Error':
-          return {
-            status: 'Loading',
-          };
-        case 'Success':
-          return {
-            ...state,
-            inactive: true,
-            erro: void 0,
-          };
-      }
-      return expectUnreachable();
-    },
-    criarBloco: nome =>
-      fromThunk(async ({}, { DB }) => {
-        const blocos = await DB.getBlocos();
-        if (blocos.some(x => x.nome === nome))
-          return actions.erroCapturado(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
-        const bloco = {
-          id: Math.max(-1, ...blocos.map(x => x.id)) + 1,
-          nome,
-          processos: [],
-        };
-        return actions.blocosModificados(await DB.createBloco(bloco));
-      }),
-    erro: reason => () => ({
-      status: 'Error',
-      reason,
-    }),
-    erroCapturado: reason => state => {
-      switch (state.status) {
-        case 'Loading':
-          return {
-            status: 'Error',
-            reason,
-          };
-        case 'Error':
-          return state;
-        case 'Success':
-          return {
-            ...state,
-            inactive: false,
-            erro: reason,
-          };
-      }
-      return expectUnreachable();
-    },
-    inserir: (id, { fecharJanela = false } = {}) =>
-      actions.modificarProcessos(
-        id,
-        (processos, numproc) => {
-          processos.add(numproc);
+    function Blocos({ state }) {
+      const [nome, setNome] = hooks.useState('');
+      const onSubmit = hooks.useCallback(
+        e => {
+          e.preventDefault();
+          if (isNonEmptyString(nome)) store.dispatch(Action.criarBloco(nome));
+          else store.dispatch(Action.erroCapturado('Nome do bloco não pode estar em branco.'));
+          setNome('');
         },
-        {
-          fecharJanela,
+        [nome]
+      );
+      let aviso = state.aviso
+        ? o(Aviso, {
+            children: state.aviso,
+          })
+        : null;
+      const processosComBlocoNestaPagina = new Set(
+        state.blocos.flatMap(({ processos }) => processos.filter(p2 => mapa.has(p2)))
+      );
+      const processosSemBloco = new Map(
+        Array.from(mapa).filter(([numproc]) => !processosComBlocoNestaPagina.has(numproc))
+      );
+      const semBloco = (() => {
+        let status;
+        for (const { checkbox } of processosSemBloco.values()) {
+          if (checkbox.checked) {
+            if (status === void 0) {
+              status = 'checked';
+            } else if (status === 'unchecked') {
+              return 'partial';
+            }
+          } else {
+            if (status === void 0) {
+              status = 'unchecked';
+            } else if (status === 'checked') {
+              return 'partial';
+            }
+          }
         }
-      ),
-    inserirEFechar: id =>
-      actions.inserir(id, {
-        fecharJanela: true,
-      }),
-    mensagemRecebida: msg => {
-      switch (msg.type) {
-        case 'Blocos':
-          return actions.blocosObtidos(msg.blocos);
-        case 'NoOp':
-          return actions.noop();
-      }
-      expectUnreachable();
-    },
-    modificarProcessos: (id, fn, { fecharJanela = false } = {}) =>
-      fromThunk(async (_2, { DB, numproc }) => {
-        const bloco = await DB.getBloco(id);
-        if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
-        const processos = new Set(bloco.processos);
-        fn(processos, numproc);
-        const blocos = await DB.updateBloco({
-          ...bloco,
-          processos: [...processos],
-        });
-        return actions.blocosModificados(blocos, {
-          fecharJanela,
-        });
-      }),
-    noop: () => state => state,
-    obterBlocos: () =>
-      fromThunk(async ({}, { DB }) => actions.blocosModificados(await DB.getBlocos())),
-    remover: id =>
-      actions.modificarProcessos(id, (processos, numproc) => {
-        processos.delete(numproc);
-      }),
-  };
-  const fromThunk = /* @__PURE__ */ createFromAsyncThunk(actions.carregando(), actions.erro);
-  function ProcessoSelecionar(numproc) {
-    const mainMenu = document.getElementById('main-menu');
-    if (isNull(mainMenu)) return Left(new Error('Menu não encontrado'));
-    const style = document.head.appendChild(document.createElement('style'));
-    style.textContent = css;
-    const div = mainMenu.insertAdjacentElement('beforebegin', document.createElement('div'));
-    div.id = 'gm-blocos';
-    preact2.render(
-      o(Main, {
-        numproc,
-      }),
-      div
-    );
-    return Right(void 0);
-  }
-  function Main(props) {
-    const extra = hooks.useMemo(() => {
-      const DB = Database,
-        bc = createBroadcastService('gm-blocos', isBroadcastMessage),
-        { numproc } = props;
-      return {
-        DB,
-        bc,
-        numproc,
-      };
-    }, []);
-    const [state, dispatch] = hooks.useReducer(
-      (state2, action) => action(state2, dispatch, extra),
-      {
-        status: 'Loading',
-      }
-    );
-    hooks.useLayoutEffect(() => {
-      extra.bc.subscribe(msg => dispatch(actions.mensagemRecebida(msg)));
-      dispatch(actions.obterBlocos());
-    }, []);
-    switch (state.status) {
-      case 'Loading':
-        return o(Placeholder, {});
-      case 'Error':
-        return o(ShowError, {
-          dispatch,
-          reason: state.reason,
-        });
-      case 'Success':
-        return o(Blocos, {
-          blocos: state.blocos.map(({ processos, ...rest }) => ({
-            ...rest,
-            inserido: processos.includes(props.numproc),
-          })),
-          dispatch,
-          disabled: state.inactive,
-          erro: state.erro,
-        });
-    }
-    return expectUnreachable();
-  }
-  function ShowError({ dispatch, reason }) {
-    const message =
-      typeof reason === 'object' && reason !== null && reason instanceof Error
-        ? reason.message
-          ? `Ocorreu um erro: ${reason.message}`
-          : 'Ocorreu um erro desconhecido.'
-        : `Ocorreu um erro: ${String(reason)}`;
-    return o(preact2.Fragment, {
-      children: [
-        o('h4', {
-          children: 'Blocos',
-        }),
-        o('div', {
-          class: 'error',
-          children: message,
-        }),
-        o('button', {
-          type: 'button',
-          onClick: () => dispatch(actions.obterBlocos()),
-          children: 'Recarregar',
-        }),
-      ],
-    });
-  }
-  function Placeholder() {
-    const li = o('li', {
-      class: 'placeholder',
-      children: [o('span', {}), o('span', {}), o('span', {})],
-    });
-    return o(preact2.Fragment, {
-      children: [
-        o('h4', {
-          children: 'Blocos',
-        }),
-        o('ul', {
-          children: [li, li, li],
-        }),
-        o('button', {
-          type: 'button',
-          id: 'gm-novo-bloco',
-          disabled: true,
-          children: 'Novo',
-        }),
-      ],
-    });
-  }
-  function Blocos(props) {
-    let aviso = null;
-    if (props.erro) {
-      aviso = o('div', {
-        class: 'error',
-        children: props.erro,
+        return status ?? 'disabled';
+      })();
+      const todosPagina = (() => {
+        let status;
+        for (const { checkbox } of mapa.values()) {
+          if (checkbox.checked) {
+            if (status === void 0) {
+              status = 'checked';
+            } else if (status === 'unchecked') {
+              return 'partial';
+            }
+          } else {
+            if (status === void 0) {
+              status = 'unchecked';
+            } else if (status === 'checked') {
+              return 'partial';
+            }
+          }
+        }
+        return status ?? 'disabled';
+      })();
+      return o(preact2.Fragment, {
+        children: [
+          o('h4', {
+            children: 'Blocos',
+          }),
+          o('table', {
+            children: [
+              o('tbody', {
+                children: state.blocos.map(bloco =>
+                  o(
+                    BlocoPaginaLista,
+                    {
+                      ...bloco,
+                    },
+                    bloco.id
+                  )
+                ),
+              }),
+              o('tfoot', {
+                children: [
+                  processosSemBloco.size > 0 &&
+                    processosComBlocoNestaPagina.size > 0 &&
+                    o('tr', {
+                      children: [
+                        o('td', {
+                          children: o('img', {
+                            src: matchBy('semBloco')(
+                              {
+                                semBloco,
+                              },
+                              {
+                                checked: () => checkboxChecked,
+                                disabled: () => checkboxDisabled,
+                                partial: () => checkboxUndefined,
+                                unchecked: () => checkboxEmpty,
+                              }
+                            ),
+                            onClick: () => store.dispatch(Action.checkboxClicado(-1, semBloco)),
+                          }),
+                        }),
+                        o('td', {
+                          children: o('label', {
+                            onClick: () => store.dispatch(Action.checkboxClicado(-1, semBloco)),
+                            children: '(processos sem bloco)',
+                          }),
+                        }),
+                        o('td', {
+                          children: o('small', {
+                            children: [
+                              '(',
+                              (s => `${s} processo${s > 1 ? 's' : ''}`)(processosSemBloco.size),
+                              ')',
+                            ],
+                          }),
+                        }),
+                      ],
+                    }),
+                  o('tr', {
+                    children: [
+                      o('td', {
+                        children: o('img', {
+                          src: matchBy('todosPagina')(
+                            {
+                              todosPagina,
+                            },
+                            {
+                              checked: () => checkboxChecked,
+                              disabled: () => checkboxDisabled,
+                              partial: () => checkboxUndefined,
+                              unchecked: () => checkboxEmpty,
+                            }
+                          ),
+                          style: {
+                            cursor: matchBy('todosPagina')(
+                              {
+                                todosPagina,
+                              },
+                              {
+                                disabled: () => 'not-allowed',
+                              },
+                              () => 'auto'
+                            ),
+                          },
+                          onClick: () => store.dispatch(Action.checkboxClicado(-2, todosPagina)),
+                        }),
+                      }),
+                      o('td', {
+                        children: o('label', {
+                          onClick: () => store.dispatch(Action.checkboxClicado(-2, todosPagina)),
+                          children: '(todos os processos desta página)',
+                        }),
+                      }),
+                      o('td', {
+                        children: o('small', {
+                          children: [
+                            '(',
+                            (s => `${s} processo${s > 1 ? 's' : ''}`)(mapa.size),
+                            ')',
+                          ],
+                        }),
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+          o('form', {
+            onSubmit,
+            children: o('button', {
+              type: 'button',
+              onClick: onNovoClicked,
+              children: 'Criar bloco',
+            }),
+          }),
+          o('br', {}),
+          aviso,
+        ],
       });
     }
-    return o(preact2.Fragment, {
-      children: [
-        o('h4', {
-          children: 'Blocos',
-        }),
-        o('ul', {
-          children: props.blocos.map(info =>
-            o(
-              BlocoPaginaProcesso,
-              {
-                ...info,
-                dispatch: props.dispatch,
-                disabled: props.disabled,
-              },
-              info.id
-            )
-          ),
-        }),
-        o('button', {
-          type: 'button',
-          id: 'gm-novo-bloco',
-          onClick: onNovoClicked,
-          disabled: props.disabled,
-          children: 'Novo',
-        }),
-        aviso,
-      ],
-    });
     function onNovoClicked(evt) {
       evt.preventDefault();
       const nome = prompt('Nome do novo bloco:');
       if (nome === null) return;
       if (isNonEmptyString(nome)) {
-        props.dispatch(actions.criarBloco(nome));
+        store.dispatch(Action.criarBloco(nome));
+      } else {
+        store.dispatch(Action.erroCapturado('Nome do bloco não pode estar em branco.'));
       }
     }
-  }
-  function BlocoPaginaProcesso(props) {
-    const onChange = hooks.useCallback(
-      evt => {
-        if (evt.currentTarget.checked) {
-          props.dispatch(actions.inserir(props.id));
-        } else {
-          props.dispatch(actions.remover(props.id));
+    function Aviso(props) {
+      return o(preact2.Fragment, {
+        children: [
+          o('div', {
+            class: 'gm-aviso',
+            children: props.children,
+          }),
+          o('button', {
+            type: 'button',
+            onClick: () => store.dispatch(Action.obterBlocos),
+            children: 'Recarregar dados',
+          }),
+        ],
+      });
+    }
+    function BlocoPaginaLista(props) {
+      const [editing, setEditing] = hooks.useState(false);
+      const input = preact2.createRef();
+      hooks.useEffect(() => {
+        if (editing && input.current) {
+          input.current.select();
+          input.current.focus();
         }
-      },
-      [props.dispatch]
-    );
-    return o('li', {
-      children: [
-        o('input', {
-          id: `gm-bloco-${props.id}`,
-          type: 'checkbox',
-          checked: props.inserido,
-          onChange,
-          disabled: props.disabled,
-        }),
-        ' ',
-        o('label', {
-          for: `gm-bloco-${props.id}`,
-          children: props.nome,
-        }),
-        props.inserido
-          ? o('span', {})
-          : o(preact2.Fragment, {
-              children: [
-                ' ',
-                o('input', {
-                  type: 'image',
-                  src: 'infra_css/imagens/transportar.gif',
-                  onClick: () => props.dispatch(actions.inserirEFechar(props.id)),
-                  disabled: props.disabled,
-                }),
-              ],
+      }, [editing, input]);
+      let displayNome = props.nome;
+      let botaoRenomear = o(BotaoAcao, {
+        src: 'imagens/minuta_editar.gif',
+        label: 'Renomear',
+        onClick: onRenomearClicked,
+      });
+      let removerAusentes = o(BotaoAcao, {
+        src: 'imagens/minuta_transferir.png',
+        label: 'Remover processos ausentes',
+        onClick: () => store.dispatch(Action.removerProcessosAusentes(props.id)),
+      });
+      if (editing) {
+        displayNome = o(preact2.Fragment, {
+          children: [
+            o('input', {
+              class: 'rename',
+              ref: input,
+              onKeyUp,
+              value: props.nome,
             }),
-      ],
-    });
+            o('br', {}),
+            o('small', {
+              children: '(Enter para confirmar, Esc para cancelar)',
+            }),
+          ],
+        });
+        botaoRenomear = null;
+      }
+      if (props.total <= props.nestaPagina) {
+        removerAusentes = null;
+      }
+      const chkState = (() => {
+        let status = 'disabled';
+        for (const numproc of props.processos) {
+          if (!mapa.has(numproc)) continue;
+          const { checkbox } = mapa.get(numproc);
+          if (checkbox.checked) {
+            if (status === 'disabled') {
+              status = 'checked';
+            } else if (status === 'unchecked') {
+              return 'partial';
+            }
+          } else {
+            if (status === 'disabled') {
+              status = 'unchecked';
+            } else if (status === 'checked') {
+              return 'partial';
+            }
+          }
+        }
+        return status;
+      })();
+      return o('tr', {
+        children: [
+          o('td', {
+            children: o('img', {
+              src: matchBy('chkState')(
+                {
+                  chkState,
+                },
+                {
+                  partial: () => checkboxUndefined,
+                  unchecked: () => checkboxEmpty,
+                  checked: () => checkboxChecked,
+                  disabled: () => checkboxDisabled,
+                }
+              ),
+              style: {
+                cursor: matchBy('chkState')(
+                  {
+                    chkState,
+                  },
+                  {
+                    disabled: () => 'not-allowed',
+                  },
+                  () => 'auto'
+                ),
+              },
+              onClick: () => store.dispatch(Action.checkboxClicado(props.id, chkState)),
+            }),
+          }),
+          o('td', {
+            children: o('label', {
+              onClick: () => store.dispatch(Action.checkboxClicado(props.id, chkState)),
+              children: displayNome,
+            }),
+          }),
+          o('td', {
+            children: o('small', {
+              children: ['(', createAbbr(props.nestaPagina, props.total), ')'],
+            }),
+          }),
+          o('td', {
+            children: botaoRenomear,
+          }),
+          o('td', {
+            children: o(BotaoAcao, {
+              src: 'imagens/minuta_excluir.gif',
+              label: 'Excluir',
+              onClick: onExcluirClicked,
+            }),
+          }),
+          o('td', {
+            children: removerAusentes,
+          }),
+        ],
+      });
+      function createAbbr(nestaPagina, total) {
+        if (nestaPagina === total) return `${total} processo${total > 1 ? 's' : ''}`;
+        const textoTotal = `${total} processo${total > 1 ? 's' : ''} no bloco`;
+        const textoPagina = `${nestaPagina === 0 ? 'nenhum' : nestaPagina} nesta página`;
+        const textoResumido = `${nestaPagina}/${total} processo${total > 1 ? 's' : ''}`;
+        return o('abbr', {
+          title: `${textoTotal}, ${textoPagina}.`,
+          children: textoResumido,
+        });
+      }
+      function onKeyUp(evt) {
+        if (evt.key === 'Enter') {
+          const nome = evt.currentTarget.value;
+          setEditing(false);
+          if (isNonEmptyString(nome)) {
+            store.dispatch(Action.renomearBloco(props.id, nome));
+          } else {
+            store.dispatch(Action.erroCapturado('Nome do bloco não pode estar em branco.'));
+          }
+        } else if (evt.key === 'Escape') {
+          setEditing(() => false);
+        }
+      }
+      function onRenomearClicked() {
+        setEditing(true);
+      }
+      function onExcluirClicked() {
+        let confirmed = true;
+        const len = props.total;
+        if (len > 0)
+          confirmed = window.confirm(
+            `Este bloco possui ${len} processo${len > 1 ? 's' : ''}. Deseja excluí-lo?`
+          );
+        if (confirmed) store.dispatch(Action.excluirBloco(props.id));
+      }
+    }
+    function BotaoAcao({ onClick, label, src }) {
+      return o('img', {
+        'class': 'infraButton',
+        src,
+        'onMouseOver': () => infraTooltipMostrar(label),
+        'onMouseOut': () => infraTooltipOcultar(),
+        'onClick': evt => {
+          infraTooltipOcultar();
+          onClick(evt);
+        },
+        'aria-label': label,
+        'width': '16',
+        'height': '16',
+      });
+    }
+  }
+  const css =
+    '#gm-blocos {\n  --accent: hsl(266deg, 40%, 25%);\n  --bg: hsl(266deg, 10%, 30%);\n  --disabled: hsl(266deg, 5%, 37.5%);\n  --disabled-text: hsl(266deg, 0%, 80%);\n  --shadow: hsl(266deg, 12.5%, 17.5%);\n  --muted-accent: hsl(266deg, 25%, 25%);\n  --text: hsl(266deg, 0%, 100%);\n}\n\n/*\n.menu-dark,\n.menu-light {\n  #gm-blocos {\n    --accent: hsl(268, 40%, 26%);\n    --bg: #494251;\n    --disabled: #5d5863;\n    --disabled-text: #ccc;\n    --shadow: #262c31;\n    --muted-accent: #453557;\n    --text: #fff;\n  }\n}\n*/\n\n#gm-blocos {\n  margin: 2px 3px 4px;\n  padding: 4px;\n  border-radius: 4px;\n  background: var(--bg);\n  color: var(--text);\n  box-shadow: 0 3px 3px var(--shadow);\n}\n\n#gm-blocos h4 {\n  margin: 3px 0;\n  font-size: 1.25rem;\n  font-weight: 300;\n}\n\n#gm-blocos ul {\n  list-style-type: none;\n  margin: 3px 0 7px;\n  padding: 0;\n}\n\n#gm-blocos li {\n  position: relative;\n  display: grid;\n  grid-template-columns: auto 1fr auto;\n  grid-gap: 5px;\n  align-items: center;\n  margin: 4px 0;\n  padding: 5px;\n  border-radius: 2px;\n}\n\n#gm-blocos li::before {\n  content: "";\n  position: absolute;\n  top: 2px;\n  width: 100%;\n  height: 100%;\n  border-bottom: 1px solid #888;\n  pointer-events: none;\n}\n\n#gm-blocos li:last-of-type::before {\n  content: none;\n}\n\n#gm-blocos li:hover {\n  background: var(--accent);\n}\n\n#gm-blocos label {\n  margin: 0;\n  font-size: 0.92rem;\n}\n\n#gm-blocos .placeholder span {\n  height: 1.38rem;\n  animation: pulse 1s ease-in-out infinite alternate;\n  border-radius: 4px;\n}\n\n#gm-blocos .placeholder span:first-of-type, #gm-blocos .placeholder span:last-of-type {\n  width: 1.38rem;\n}\n\n@keyframes pulse {\n  from {\n    background-color: var(--disabled);\n  }\n  to {\n    background-color: var(--bg);\n  }\n}\n\n#gm-blocos button {\n  display: block;\n  margin: 0 auto 7px;\n  padding: 2px 20px;\n  font-size: 0.86rem;\n  border: none;\n  border-radius: 3px;\n  box-shadow: 0 2px 4px var(--shadow);\n  background: var(--muted-accent);\n  color: var(--text);\n}\n\n#gm-blocos button:hover {\n  transition: background-color 0.1s ease-in;\n  background: var(--accent);\n}\n\n#gm-blocos button:disabled {\n  background: var(--disabled);\n  color: var(--disabled-text);\n  box-shadow: none;\n}\n\n#gm-blocos .error {\n  margin: 10px 5%;\n  padding: 4px 5%;\n  border-radius: 4px;\n  font-weight: 500;\n  background: white;\n  color: red;\n}';
+  function ProcessoSelecionar(numproc) {
+    const mainMenu = document.getElementById('main-menu');
+    if (isNull(mainMenu)) return Left(new Error('Menu não encontrado'));
+    document.head.appendChild(document.createElement('style')).textContent = css;
+    const div = mainMenu.insertAdjacentElement('beforebegin', document.createElement('div'));
+    div.id = 'gm-blocos';
+    const Model = createTaggedUnion(
+      {
+        Loading: null,
+        Success: (blocos, inactive, erro) => ({
+          blocos,
+          inactive,
+          erro,
+        }),
+        Error: reason => ({
+          reason,
+        }),
+      },
+      'status'
+    );
+    const Action = createTaggedUnion(
+      {
+        blocosModificados: (blocos, { fecharJanela = false } = {}) => ({
+          blocos,
+          fecharJanela,
+        }),
+        blocosObtidos: blocos => ({
+          blocos,
+        }),
+        carregando: null,
+        criarBloco: nome => ({
+          nome,
+        }),
+        erro: reason => ({
+          reason,
+        }),
+        erroCapturado: reason => ({
+          reason,
+        }),
+        inserir: (id, { fecharJanela = false } = {}) => ({
+          id,
+          fecharJanela,
+        }),
+        inserirEFechar: id => ({
+          id,
+        }),
+        mensagemRecebida: msg => ({
+          msg,
+        }),
+        modificarProcessos: (id, fn, { fecharJanela = false } = {}) => ({
+          id,
+          fn,
+          fecharJanela,
+        }),
+        noop: null,
+        obterBlocos: null,
+        remover: id => ({
+          id,
+        }),
+      },
+      'type'
+    );
+    const store = createStore(() => Model.Loading, reducer);
+    const bc = createBroadcastService('gm-blocos', isBroadcastMessage);
+    bc.subscribe(msg => store.dispatch(Action.mensagemRecebida(msg)));
+    store.subscribe(update);
+    store.dispatch(Action.obterBlocos);
+    return Right(void 0);
+    function asyncAction(state, f) {
+      f()
+        .catch(err => Action.erro(err))
+        .then(store.dispatch);
+      return reducer(state, Action.carregando);
+    }
+    function reducer(state, action) {
+      return Action.match(action, {
+        blocosModificados: ({ blocos, fecharJanela }) =>
+          asyncAction(state, async () => {
+            bc.publish({
+              type: 'Blocos',
+              blocos,
+            });
+            if (fecharJanela) window.close();
+            return Action.blocosObtidos(blocos);
+          }),
+        blocosObtidos: ({ blocos }) => Model.Success(blocos, false),
+        carregando: () =>
+          Model.match(
+            state,
+            {
+              Success: state2 => Model.Success(state2.blocos, true, void 0),
+            },
+            () => Model.Loading
+          ),
+        criarBloco: ({ nome }) =>
+          asyncAction(state, async () => {
+            const blocos = await getBlocos();
+            if (blocos.some(x => x.nome === nome))
+              return Action.erroCapturado(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
+            const bloco = {
+              id: Math.max(-1, ...blocos.map(x => x.id)) + 1,
+              nome,
+              processos: [],
+            };
+            return Action.blocosModificados(await createBloco(bloco));
+          }),
+        erro: ({ reason }) => Model.Error(reason),
+        erroCapturado: ({ reason }) =>
+          Model.match(state, {
+            Loading: () => Model.Error(reason),
+            Error: s => s,
+            Success: ({ blocos }) => Model.Success(blocos, false, reason),
+          }),
+        inserir: ({ id, fecharJanela }) =>
+          reducer(
+            state,
+            Action.modificarProcessos(
+              id,
+              (processos, numproc2) => {
+                processos.add(numproc2);
+              },
+              {
+                fecharJanela,
+              }
+            )
+          ),
+        inserirEFechar: ({ id }) =>
+          reducer(
+            state,
+            Action.inserir(id, {
+              fecharJanela: true,
+            })
+          ),
+        mensagemRecebida: ({ msg }) =>
+          matchBy('type')(msg, {
+            Blocos: ({ blocos }) => reducer(state, Action.blocosObtidos(blocos)),
+            NoOp: () => state,
+          }),
+        modificarProcessos: ({ id, fn, fecharJanela }) =>
+          asyncAction(state, async () => {
+            const bloco = await getBloco(id);
+            if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
+            const processos = new Set(bloco.processos);
+            fn(processos, numproc);
+            const blocos = await updateBloco({
+              ...bloco,
+              processos: [...processos],
+            });
+            return Action.blocosModificados(blocos, {
+              fecharJanela,
+            });
+          }),
+        noop: () => state,
+        obterBlocos: () =>
+          asyncAction(state, async () => Action.blocosModificados(await getBlocos())),
+        remover: ({ id }) =>
+          reducer(
+            state,
+            Action.modificarProcessos(id, (processos, numproc2) => {
+              processos.delete(numproc2);
+            })
+          ),
+      });
+    }
+    function update(state) {
+      preact2.render(
+        o(Main, {
+          state,
+        }),
+        div
+      );
+    }
+    function Main({ state }) {
+      return Model.match(state, {
+        Error: ({ reason }) =>
+          o(ShowError, {
+            reason,
+          }),
+        Loading: () => o(Placeholder, {}),
+        Success: ({ blocos, inactive, erro }) =>
+          o(Blocos, {
+            blocos: blocos.map(({ processos, ...rest }) => ({
+              ...rest,
+              inserido: processos.includes(numproc),
+            })),
+            disabled: inactive,
+            erro,
+          }),
+      });
+    }
+    function ShowError({ reason }) {
+      const message = messageFromReason(reason);
+      return o(preact2.Fragment, {
+        children: [
+          o('h4', {
+            children: 'Blocos',
+          }),
+          o('div', {
+            class: 'error',
+            children: message,
+          }),
+          o('button', {
+            type: 'button',
+            onClick: () => store.dispatch(Action.obterBlocos),
+            children: 'Recarregar',
+          }),
+        ],
+      });
+    }
+    function messageFromReason(reason) {
+      if (reason instanceof Error) {
+        if (reason.message) {
+          return `Ocorreu um erro: ${reason.message}`;
+        }
+        return 'Ocorreu um erro desconhecido.';
+      }
+      return `Ocorreu um erro: ${String(reason)}`;
+    }
+    function Placeholder() {
+      const li = o('li', {
+        class: 'placeholder',
+        children: [o('span', {}), o('span', {}), o('span', {})],
+      });
+      return o(preact2.Fragment, {
+        children: [
+          o('h4', {
+            children: 'Blocos',
+          }),
+          o('ul', {
+            children: [li, li, li],
+          }),
+          o('button', {
+            type: 'button',
+            id: 'gm-novo-bloco',
+            disabled: true,
+            children: 'Novo',
+          }),
+        ],
+      });
+    }
+    function Blocos(props) {
+      let aviso = null;
+      if (props.erro) {
+        aviso = o('div', {
+          class: 'error',
+          children: props.erro,
+        });
+      }
+      return o(preact2.Fragment, {
+        children: [
+          o('h4', {
+            children: 'Blocos',
+          }),
+          o('ul', {
+            children: props.blocos.map(info =>
+              o(
+                BlocoPaginaProcesso,
+                {
+                  ...info,
+                  disabled: props.disabled,
+                },
+                info.id
+              )
+            ),
+          }),
+          o('button', {
+            type: 'button',
+            id: 'gm-novo-bloco',
+            onClick: onNovoClicked,
+            disabled: props.disabled,
+            children: 'Novo',
+          }),
+          aviso,
+        ],
+      });
+      function onNovoClicked(evt) {
+        evt.preventDefault();
+        const nome = prompt('Nome do novo bloco:');
+        if (nome === null) return;
+        if (isNonEmptyString(nome)) {
+          store.dispatch(Action.criarBloco(nome));
+        }
+      }
+    }
+    function BlocoPaginaProcesso(props) {
+      const onChange = evt => {
+        if (evt.currentTarget.checked) {
+          store.dispatch(Action.inserir(props.id));
+        } else {
+          store.dispatch(Action.remover(props.id));
+        }
+      };
+      return o('li', {
+        children: [
+          o('input', {
+            id: `gm-bloco-${props.id}`,
+            type: 'checkbox',
+            checked: props.inserido,
+            onChange,
+            disabled: props.disabled,
+          }),
+          ' ',
+          o('label', {
+            for: `gm-bloco-${props.id}`,
+            children: props.nome,
+          }),
+          props.inserido
+            ? o('span', {})
+            : o(preact2.Fragment, {
+                children: [
+                  ' ',
+                  o('input', {
+                    type: 'image',
+                    src: 'infra_css/imagens/transportar.gif',
+                    onMouseOver: () =>
+                      infraTooltipMostrar('Inserir processo no bloco e fechar a janela.'),
+                    onMouseOut: () => infraTooltipOcultar(),
+                    onClick: () => {
+                      infraTooltipOcultar();
+                      store.dispatch(Action.inserirEFechar(props.id));
+                    },
+                    disabled: props.disabled,
+                  }),
+                ],
+              }),
+        ],
+      });
+    }
   }
   function main() {
     const url = new URL(document.location.href);
