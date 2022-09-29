@@ -523,43 +523,45 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
                 </td>
               </tr>
             )}
-            <tr>
-              <td>
-                {
-                  <img
-                    src={matchBy('todosPagina')(
-                      { todosPagina },
-                      {
-                        checked: () => checkboxChecked,
-                        disabled: () => checkboxDisabled,
-                        partial: () => checkboxUndefined,
-                        unchecked: () => checkboxEmpty,
-                      }
-                    )}
-                    style={{
-                      cursor: matchBy('todosPagina')(
+            {mapa.size > 0 && (
+              <tr>
+                <td>
+                  {
+                    <img
+                      src={matchBy('todosPagina')(
                         { todosPagina },
                         {
-                          disabled: () => 'not-allowed',
-                        },
-                        () => 'auto'
-                      ),
-                    }}
-                    onClick={() => store.dispatch(Action.checkboxClicado(-2, todosPagina))}
-                  />
-                }
-              </td>
-              <td>
-                <label onClick={() => store.dispatch(Action.checkboxClicado(-2, todosPagina))}>
-                  (todos os processos desta página)
-                </label>
-              </td>
-              <td>
-                <small>
-                  ({((s: number): string => `${s} processo${s > 1 ? 's' : ''}`)(mapa.size)})
-                </small>
-              </td>
-            </tr>
+                          checked: () => checkboxChecked,
+                          disabled: () => checkboxDisabled,
+                          partial: () => checkboxUndefined,
+                          unchecked: () => checkboxEmpty,
+                        }
+                      )}
+                      style={{
+                        cursor: matchBy('todosPagina')(
+                          { todosPagina },
+                          {
+                            disabled: () => 'not-allowed',
+                          },
+                          () => 'auto'
+                        ),
+                      }}
+                      onClick={() => store.dispatch(Action.checkboxClicado(-2, todosPagina))}
+                    />
+                  }
+                </td>
+                <td>
+                  <label onClick={() => store.dispatch(Action.checkboxClicado(-2, todosPagina))}>
+                    (todos os processos desta página)
+                  </label>
+                </td>
+                <td>
+                  <small>
+                    ({((s: number): string => `${s} processo${s > 1 ? 's' : ''}`)(mapa.size)})
+                  </small>
+                </td>
+              </tr>
+            )}
           </tfoot>
         </table>
         <form onSubmit={onSubmit}>
