@@ -60,6 +60,13 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   const div = acoes.insertAdjacentElement('beforebegin', document.createElement('div'))!;
   div.id = 'gm-blocos';
 
+  document.body.insertAdjacentHTML(
+    'beforeend',
+    /*html*/ `<dialog id="gm-blocos-dialog"><form method="dialog"><div><output></output></div><button>Fechar</button></form></dialog>`
+  );
+  const dialog = document.getElementById('gm-blocos-dialog') as HTMLDialogElement;
+  const dialogOutput = dialog.querySelector('output')!;
+
   const Model: {
     init: InitModel;
     loaded(blocos: InfoBloco[], aviso?: string): LoadedModel;
@@ -684,7 +691,20 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
           </label>
         </td>
         <td>
-          <small>({createAbbr(props.nestaPagina, props.total)})</small>
+          <small
+            onClick={() => {
+              const text = document.createTextNode(props.nome);
+              dialogOutput.innerHTML = '';
+              dialogOutput.append(
+                'Processos do bloco ' + props.nome + ':',
+                document.createElement('br'),
+                ...props.processos.flatMap(num => [num, document.createElement('br')])
+              );
+              dialog.showModal();
+            }}
+          >
+            ({createAbbr(props.nestaPagina, props.total)})
+          </small>
         </td>
         <td>{botaoRenomear}</td>
         <td>
