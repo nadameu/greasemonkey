@@ -73,7 +73,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
             Erro: () => estado,
             Ocioso: ({ infoContas }) => {
               ouvirXHR(x => store.dispatch(x));
-              const primeiraConta = findIndex(infoContas, x => x.atualizacao !== null);
+              const primeiraConta = encontrarContaAtualizavel(infoContas);
               if (primeiraConta < 0) {
                 // Existem contas, mas não podem ser atualizadas. Ex.: Banco do Brasil
                 bc.publish(
@@ -100,7 +100,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
                 .slice(0, conta)
                 .concat([{ saldo, atualizacao: null }])
                 .concat(infoContas.slice(conta + 1));
-              const proxima = findIndex(infoNova, x => x.atualizacao !== null, conta + 1);
+              const proxima = encontrarContaAtualizavel(infoNova, conta + 1);
               if (proxima < 0) {
                 const qtdComSaldo = infoNova.map(x => x.saldo).filter(x => x > 0).length;
                 const permiteAtualizar = infoNova.some(x => x.atualizacao !== null);
@@ -169,7 +169,14 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
     return traverse(
       tabela.querySelectorAll<HTMLTableRowElement>('tr[id^="tdConta"]'),
       obterInfoContaLinha
-    ).mapLeft(e => new Error('Erro ao obter dados das contas.'));
+    )
+      .mapLeft(e => new Error('Erro ao obter dados das contas.'))
+      .map(infos =>
+        infos.map(info => {
+          if (info.saldo > 0) return info;
+          else return { saldo: 0, atualizacao: null };
+        })
+      );
   }
 
   function ouvirXHR(handler: Handler<Acao>) {
@@ -272,10 +279,10 @@ function obterInfoContaLinha(row: HTMLTableRowElement): Either<null, InfoConta> 
   return Right({ saldo, atualizacao });
 }
 
-function findIndex<T>(xs: ArrayLike<T>, pred: (_: T) => boolean, startAt = 0) {
+function encontrarContaAtualizavel(xs: ArrayLike<InfoConta>, startAt = 0) {
   const len = xs.length;
   for (let i = startAt; i < len; i++) {
-    if (pred(xs[i]!)) return i;
+    if (xs[i]!.atualizacao !== null) return i;
   }
   return -1;
 }
