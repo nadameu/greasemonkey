@@ -7,10 +7,6 @@ import * as p from '@nadameu/predicates';
 import { createRef, JSX, render } from 'preact';
 import { useCallback, useEffect, useState } from 'preact/hooks';
 import * as Database from '../database';
-import checkboxChecked from '../imagens/checkbox_checked.svg';
-import checkboxDisabled from '../imagens/checkbox_disabled.svg';
-import checkboxEmpty from '../imagens/checkbox_empty.svg';
-import checkboxUndefined from '../imagens/checkbox_undefined.svg';
 import { BroadcastMessage, isBroadcastMessage } from '../types/Action';
 import { Bloco } from '../types/Bloco';
 import { isNumProc, NumProc } from '../types/NumProc';
@@ -50,6 +46,15 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   }).map(entriess => new Map(entriess.flat(1)));
   if (eitherMapa.isLeft) return eitherMapa as Left<Error>;
   const mapa = eitherMapa.rightValue;
+  const processosMarcados = new Set<NumProc>();
+  const processosNaoMarcados = new Set<NumProc>();
+  for (const [numproc, { checkbox }] of mapa) {
+    if (checkbox.checked) {
+      processosMarcados.add(numproc);
+    } else {
+      processosNaoMarcados.add(numproc);
+    }
+  }
 
   let acoes = document.getElementById('fldAcoes');
   if (p.isNullish(acoes)) {
@@ -111,14 +116,14 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     error: unknown;
   }
 
-  type CheckboxState = 'checked' | 'unchecked' | 'partial' | 'disabled';
+  type CheckboxState = 'checked' | 'unchecked' | 'disabled';
 
   const Action = createTaggedUnion(
     {
       blocosModificados: (blocos: Bloco[]): Omit<BlocosModificadosAction, 'type'> => ({ blocos }),
       blocosObtidos: (blocos: Bloco[]): Omit<BlocosObtidosAction, 'type'> => ({ blocos }),
       checkboxClicado: (
-        id: Bloco['id'] | -1 | -2,
+        id: Bloco['id'] | -1,
         estadoAnterior: CheckboxState
       ): Omit<CheckboxClicadoAction, 'type'> => ({
         id,
@@ -168,7 +173,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   }
   interface CheckboxClicadoAction {
     type: 'checkboxClicado';
-    id: Bloco['id'] | -1 | -2;
+    id: Bloco['id'] | -1;
     estadoAnterior: CheckboxState;
   }
   interface CriarBlocoAction {
@@ -223,7 +228,16 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   store.dispatch = handleAsyncAction(store)(store.dispatch);
   bc.subscribe(msg => store.dispatch(Action.mensagemRecebida(msg)));
   if (tabela) {
-    tabela.addEventListener('click', () => {
+    tabela.addEventListener('click', evt => {
+      processosMarcados.clear();
+      processosNaoMarcados.clear();
+      for (const [numproc, { checkbox }] of mapa) {
+        if (checkbox.checked) {
+          processosMarcados.add(numproc);
+        } else {
+          processosNaoMarcados.add(numproc);
+        }
+      }
       update(store.getState());
     });
   }
@@ -270,25 +284,25 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
                         state.blocos.flatMap(({ processos }) => processos.filter(p => mapa.has(p)))
                       )
                     );
-                    return Array.from(mapa)
-                      .filter(([x]) => !processosComBloco.has(x))
-                      .map(x => x[1]);
-                  } else if (id === -2) {
-                    return Array.from(mapa.values());
+                    return new Set(
+                      Array.from(mapa)
+                        .filter(([x]) => !processosComBloco.has(x))
+                        .map(([numproc]) => numproc)
+                    );
                   } else {
-                    return state.blocos
-                      .filter(x => x.id === id)
-                      .flatMap(x => x.processos)
-                      .map(x => mapa.get(x))
-                      .filter(p.isDefined);
+                    return new Set(
+                      state.blocos
+                        .filter(x => x.id === id)
+                        .flatMap(x => x.processos.filter(x => mapa.has(x)))
+                    );
                   }
                 })();
-                const check = estadoAnterior === 'unchecked';
-                processos.forEach(({ checkbox }) => {
-                  if (checkbox.checked !== check) {
+                for (const [numproc, { checkbox }] of mapa) {
+                  const checked = processos.has(numproc);
+                  if (checkbox.checked !== checked) {
                     checkbox.click();
                   }
-                });
+                }
                 return state;
               },
             },
@@ -447,43 +461,14 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
       Array.from(mapa).filter(([numproc]) => !processosComBlocoNestaPagina.has(numproc))
     );
     const semBloco = ((): CheckboxState => {
-      let status: CheckboxState | undefined;
-      for (const { checkbox } of processosSemBloco.values()) {
-        if (checkbox.checked) {
-          if (status === undefined) {
-            status = 'checked';
-          } else if (status === 'unchecked') {
-            return 'partial';
-          }
-        } else {
-          if (status === undefined) {
-            status = 'unchecked';
-          } else if (status === 'checked') {
-            return 'partial';
-          }
-        }
+      if (processosSemBloco.size === 0) return 'disabled';
+      for (const numproc of processosMarcados) {
+        if (!processosSemBloco.has(numproc)) return 'unchecked';
       }
-      return status ?? 'disabled';
-    })();
-
-    const todosPagina = ((): CheckboxState => {
-      let status: CheckboxState | undefined;
-      for (const { checkbox } of mapa.values()) {
-        if (checkbox.checked) {
-          if (status === undefined) {
-            status = 'checked';
-          } else if (status === 'unchecked') {
-            return 'partial';
-          }
-        } else {
-          if (status === undefined) {
-            status = 'unchecked';
-          } else if (status === 'checked') {
-            return 'partial';
-          }
-        }
+      for (const numproc of processosNaoMarcados) {
+        if (processosSemBloco.has(numproc)) return 'unchecked';
       }
-      return status ?? 'disabled';
+      return 'checked';
     })();
 
     return (
@@ -496,20 +481,13 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
             ))}
           </tbody>
           <tfoot>
-            {processosSemBloco.size > 0 && processosComBlocoNestaPagina.size > 0 && (
+            {semBloco !== 'disabled' && (
               <tr>
                 <td>
                   {
-                    <img
-                      src={matchBy('semBloco')(
-                        { semBloco },
-                        {
-                          checked: () => checkboxChecked,
-                          disabled: () => checkboxDisabled,
-                          partial: () => checkboxUndefined,
-                          unchecked: () => checkboxEmpty,
-                        }
-                      )}
+                    <input
+                      type="radio"
+                      checked={semBloco === 'checked'}
                       onClick={() => store.dispatch(Action.checkboxClicado(-1, semBloco))}
                     />
                   }
@@ -526,45 +504,6 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
                       processosSemBloco.size
                     )}
                     )
-                  </small>
-                </td>
-              </tr>
-            )}
-            {mapa.size > 0 && (
-              <tr>
-                <td>
-                  {
-                    <img
-                      src={matchBy('todosPagina')(
-                        { todosPagina },
-                        {
-                          checked: () => checkboxChecked,
-                          disabled: () => checkboxDisabled,
-                          partial: () => checkboxUndefined,
-                          unchecked: () => checkboxEmpty,
-                        }
-                      )}
-                      style={{
-                        cursor: matchBy('todosPagina')(
-                          { todosPagina },
-                          {
-                            disabled: () => 'not-allowed',
-                          },
-                          () => 'auto'
-                        ),
-                      }}
-                      onClick={() => store.dispatch(Action.checkboxClicado(-2, todosPagina))}
-                    />
-                  }
-                </td>
-                <td>
-                  <label onClick={() => store.dispatch(Action.checkboxClicado(-2, todosPagina))}>
-                    (todos os processos desta página)
-                  </label>
-                </td>
-                <td>
-                  <small>
-                    ({((s: number): string => `${s} processo${s > 1 ? 's' : ''}`)(mapa.size)})
                   </small>
                 </td>
               </tr>
@@ -642,46 +581,24 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     }
 
     const chkState = ((): CheckboxState => {
-      let status: CheckboxState = 'disabled';
-      for (const numproc of props.processos) {
-        if (!mapa.has(numproc)) continue;
-        const { checkbox } = mapa.get(numproc)!;
-        if (checkbox.checked) {
-          if (status === 'disabled') {
-            status = 'checked';
-          } else if (status === 'unchecked') {
-            return 'partial';
-          }
-        } else {
-          if (status === 'disabled') {
-            status = 'unchecked';
-          } else if (status === 'checked') {
-            return 'partial';
-          }
-        }
+      const meusProcessosNestaPagina = new Set(props.processos.filter(n => mapa.has(n)));
+      if (meusProcessosNestaPagina.size === 0) return 'disabled';
+      for (const numproc of processosMarcados) {
+        if (!meusProcessosNestaPagina.has(numproc)) return 'unchecked';
       }
-      return status;
+      for (const numproc of processosNaoMarcados) {
+        if (meusProcessosNestaPagina.has(numproc)) return 'unchecked';
+      }
+      return 'checked';
     })();
     return (
       <tr>
         <td>
-          <img
-            src={matchBy('chkState')(
-              { chkState },
-              {
-                partial: () => checkboxUndefined,
-                unchecked: () => checkboxEmpty,
-                checked: () => checkboxChecked,
-                disabled: () => checkboxDisabled,
-              }
-            )}
-            style={{
-              cursor: matchBy('chkState')(
-                { chkState },
-                { disabled: () => 'not-allowed' },
-                () => 'auto'
-              ),
-            }}
+          <input
+            type="radio"
+            checked={chkState === 'checked'}
+            disabled={chkState === 'disabled'}
+            style={{ cursor: chkState === 'disabled' ? 'not-allowed' : 'auto' }}
             onClick={() => store.dispatch(Action.checkboxClicado(props.id, chkState))}
           />
         </td>
