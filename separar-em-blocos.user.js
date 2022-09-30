@@ -2,7 +2,7 @@
 // @name         separar-em-blocos
 // @name:pt-BR   Separar em blocos
 // @namespace    http://nadameu.com.br
-// @version      2.0.0
+// @version      3.0.0
 // @author       nadameu
 // @description  Permite a separação de processos em blocos para movimentação separada
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -192,7 +192,6 @@
     return value => !predicate(value);
   }
   const isNotNull = /* @__PURE__ */ negate(isNull);
-  const isDefined = /* @__PURE__ */ negate(isUndefined);
   function refine(...predicates) {
     return value => predicates.every(p => p(value));
   }
@@ -379,14 +378,6 @@
       return validarBlocos(blocos);
     };
   }
-  const checkboxChecked =
-    'data:image/svg+xml;base64,PHN2ZwogIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICB3aWR0aD0iMTYiCiAgaGVpZ2h0PSIxNiIKICB2ZXJzaW9uPSIxLjIiCiAgdmlld0JveD0iLTEwIC0xMCAxNzAgMTcwIgo+CiAgPHJlY3Qgd2lkdGg9IjE2MCIgaGVpZ2h0PSIxNjAiIGZpbGw9IiM3ZTczOGMiIHJ4PSIyMCIgLz4KICA8cGF0aCBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMjAiIGQ9Im0zNSA4MCAzMCAzMCA2MC02MCIgLz4KPC9zdmc+Cg==';
-  const checkboxDisabled =
-    'data:image/svg+xml;base64,PHN2ZwogIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICB3aWR0aD0iMTYiCiAgaGVpZ2h0PSIxNiIKICB2ZXJzaW9uPSIxLjIiCiAgdmlld0JveD0iLTEwIC0xMCAxNzAgMTcwIgo+CiAgPHJlY3Qgd2lkdGg9IjE2MCIgaGVpZ2h0PSIxNjAiIGZpbGw9IiM3ZTczOGMiIHJ4PSIyMCIgLz4KICA8cGF0aCBmaWxsPSJoc2woMjY2ZGVnLCAxMCUsIDc1JSkiIGQ9Ik0yMCAyMGgxMjB2MTIwSDIweiIgLz4KPC9zdmc+Cg==';
-  const checkboxEmpty =
-    'data:image/svg+xml;base64,PHN2ZwogIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICB3aWR0aD0iMTYiCiAgaGVpZ2h0PSIxNiIKICB2ZXJzaW9uPSIxLjIiCiAgdmlld0JveD0iLTEwIC0xMCAxNzAgMTcwIgo+CiAgPHJlY3Qgd2lkdGg9IjE2MCIgaGVpZ2h0PSIxNjAiIGZpbGw9IiM3ZTczOGMiIHJ4PSIyMCIgLz4KICA8cGF0aCBmaWxsPSIjZmZmIiBkPSJNMjAgMjBoMTIwdjEyMEgyMHoiIC8+Cjwvc3ZnPgo=';
-  const checkboxUndefined =
-    'data:image/svg+xml;base64,PHN2ZwogIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICB3aWR0aD0iMTYiCiAgaGVpZ2h0PSIxNiIKICB2ZXJzaW9uPSIxLjIiCiAgdmlld0JveD0iLTEwIC0xMCAxNzAgMTcwIgo+CiAgPHJlY3Qgd2lkdGg9IjE2MCIgaGVpZ2h0PSIxNjAiIGZpbGw9IiM3ZTczOGMiIHJ4PSIyMCIgLz4KICA8cGF0aCBmaWxsPSIjZmZmIiBkPSJNMjAgMjBoMTIwdjEyMEgyMHoiIC8+CiAgPHBhdGggc3Ryb2tlPSIjOTk5IiBzdHJva2Utd2lkdGg9IjIwIiBkPSJNNDAgODBoODAiIC8+Cjwvc3ZnPgo=';
   const isBroadcastMessage = /* @__PURE__ */ isTaggedUnion('type', {
     Blocos: {
       blocos: isArray(isBloco),
@@ -394,7 +385,7 @@
     NoOp: {},
   });
   const css$1 =
-    '#gm-blocos {\n  --accent: hsl(266deg, 40%, 25%);\n  --bg: hsl(266deg, 10%, 30%);\n  --disabled: hsl(266deg, 5%, 37.5%);\n  --disabled-text: hsl(266deg, 0%, 80%);\n  --shadow: hsl(266deg, 12.5%, 17.5%);\n  --muted-accent: hsl(266deg, 25%, 25%);\n  --text: hsl(266deg, 0%, 100%);\n}\n\n.infra-styles #gm-blocos {\n  margin: 4px;\n  padding: 4px 8px;\n  border-radius: 4px;\n  width: max-content;\n  background: var(--bg);\n  color: var(--text);\n  box-shadow: 0 3px 3px var(--shadow);\n}\n\n.infra-styles #gm-blocos h4 {\n  margin: 3px 0;\n  font-size: 1.25rem;\n  font-weight: 300;\n}\n\n.infra-styles #gm-blocos input[type=image] {\n  border: none;\n}\n\n.infra-styles #gm-blocos table {\n  margin: 0;\n  margin-bottom: 16px;\n}\n\n.infra-styles #gm-blocos td {\n  margin: 0;\n  padding: 3px 0.5ch;\n  vertical-align: center;\n}\n\n.infra-styles #gm-blocos td label {\n  font-size: 0.92rem;\n}\n\n.infra-styles #gm-blocos td small {\n  font-size: 0.75rem;\n}\n\n.infra-styles #gm-blocos tfoot td {\n  padding-top: 13px;\n}\n\n.infra-styles #gm-blocos input.rename {\n  font-size: 1em;\n}\n\n.infra-styles #gm-blocos .gm-erro,\n.infra-styles #gm-blocos .gm-aviso {\n  padding: 0.1em 0.5ex;\n  font-size: 0.9rem;\n  background: hsl(0deg, 10%, 95%);\n  color: hsl(0deg, 100%, 40%);\n  margin: 2px auto 6px;\n  width: fit-content;\n}\n\n.infra-styles #gm-blocos button {\n  display: block;\n  margin: 0 auto 7px;\n  padding: 2px 20px;\n  font-size: 0.86rem;\n  border: none;\n  border-radius: 3px;\n  box-shadow: 0 2px 4px var(--shadow);\n  background: var(--muted-accent);\n  color: var(--text);\n}\n\n.infra-styles #gm-blocos button:hover {\n  transition: background-color 0.1s ease-in;\n  background: var(--accent);\n}\n\n.infra-styles #gm-blocos button:disabled {\n  background: var(--disabled);\n  color: var(--disabled-text);\n  box-shadow: none;\n}';
+    '#gm-blocos,\n.gm-blocos__dialog {\n  --accent: hsl(266, 40%, 25%);\n  --bg: hsl(266, 10%, 30%);\n  --border: hsl(266, 15%, 60%);\n  --disabled: hsl(266, 5%, 37.5%);\n  --disabled-text: hsl(266, 0%, 80%);\n  --shadow: hsl(266, 12.5%, 17.5%);\n  --muted-accent: hsl(266, 25%, 25%);\n  --text: hsl(266, 0%, 100%);\n}\n\n.infra-styles #gm-blocos {\n  margin: 4px;\n  padding: 4px 8px;\n  border-radius: 4px;\n  width: max-content;\n  background: var(--bg);\n  color: var(--text);\n  box-shadow: 0 3px 3px var(--shadow);\n}\n\n.infra-styles #gm-blocos h4 {\n  margin: 3px 0;\n  font-size: 1.25rem;\n  font-weight: 300;\n}\n\n.infra-styles #gm-blocos input[type=image] {\n  border: none;\n}\n\n.infra-styles #gm-blocos table {\n  margin: 0;\n  margin-bottom: 16px;\n  border-collapse: collapse;\n}\n\n.infra-styles #gm-blocos td {\n  margin: 0;\n  padding: 3px 0.5ch;\n  vertical-align: middle;\n}\n\n.infra-styles #gm-blocos td label {\n  font-size: 0.92rem;\n}\n\n.infra-styles #gm-blocos td small {\n  font-size: 0.75rem;\n}\n\n.infra-styles #gm-blocos tr {\n  border: 1px solid var(--disabled);\n  border-width: 1px 0;\n}\n\n.infra-styles #gm-blocos tfoot td {\n  padding-top: 1em;\n  padding-bottom: 1em;\n}\n\n.infra-styles #gm-blocos input.rename {\n  font-size: 1em;\n}\n\n.infra-styles #gm-blocos .gm-erro,\n.infra-styles #gm-blocos .gm-aviso {\n  padding: 0.1em 0.5ex;\n  font-size: 0.9rem;\n  background: hsl(0deg, 10%, 95%);\n  color: hsl(0deg, 100%, 40%);\n  margin: 2px auto 6px;\n  width: fit-content;\n}\n\n.infra-styles #gm-blocos button,\n.gm-blocos__dialog button {\n  display: block;\n  margin: 0 auto 7px;\n  padding: 2px 20px;\n  font-size: 0.86rem;\n  border: none;\n  border-radius: 3px;\n  box-shadow: 0 2px 4px var(--shadow);\n  background: var(--muted-accent);\n  color: var(--text);\n}\n\n.infra-styles #gm-blocos button:hover,\n.gm-blocos__dialog button:hover {\n  transition: background-color 0.1s ease-in;\n  background: var(--accent);\n}\n\n.infra-styles #gm-blocos button:disabled,\n.gm-blocos__dialog button:disabled {\n  background: var(--disabled);\n  color: var(--disabled-text);\n  box-shadow: none;\n}\n\n.gm-blocos__dialog {\n  background: var(--bg);\n  color: var(--text);\n  font-family: var(--font-family-sans-serif);\n  font-size: 1rem;\n  min-width: 25vw;\n  border: 3px ridge var(--border);\n  box-shadow: 0 4px 8px 4px hsla(266deg, 25%, 5%, 0.5);\n  border-radius: 12px;\n}\n\n.gm-blocos__dialog::backdrop {\n  background: hsla(266deg, 25%, 5%, 0.75);\n}\n\n.gm-blocos__dialog form {\n  display: grid;\n  grid-template-rows: 1fr 10fr 1fr;\n  justify-items: center;\n  align-items: center;\n}\n\n.gm-blocos__dialog form div {\n  font-weight: 700;\n}\n\n.gm-blocos__processos {\n  border: 1px inset var(--border);\n  padding: 0.5em 0.5ch;\n}';
   var _ = 0;
   function o(o2, e, n, t, f) {
     var l,
@@ -450,10 +441,29 @@
     }).map(entriess => new Map(entriess.flat(1)));
     if (eitherMapa.isLeft) return eitherMapa;
     const mapa = eitherMapa.rightValue;
-    const acoes = document.getElementById('fldAcoes');
-    if (isNullish(acoes)) return Left(new Error('Não foi possível inserir os blocos na página.'));
+    const processosMarcados = /* @__PURE__ */ new Set();
+    const processosNaoMarcados = /* @__PURE__ */ new Set();
+    for (const [numproc, { checkbox }] of mapa) {
+      if (checkbox.checked) {
+        processosMarcados.add(numproc);
+      } else {
+        processosNaoMarcados.add(numproc);
+      }
+    }
+    let acoes = document.getElementById('fldAcoes');
+    if (isNullish(acoes)) {
+      acoes = document.getElementById('divInfraAreaTabela');
+      if (isNullish(acoes)) return Left(new Error('Não foi possível inserir os blocos na página.'));
+    }
     const div = acoes.insertAdjacentElement('beforebegin', document.createElement('div'));
     div.id = 'gm-blocos';
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `<dialog class="gm-blocos__dialog"><form method="dialog"><div>Processos do bloco "<output class="gm-blocos__nome"></output>":</div><output class="gm-blocos__processos"></output><button>Fechar</button></form></dialog>`
+    );
+    const dialog = document.querySelector('.gm-blocos__dialog');
+    const dialogNomeBloco = dialog.querySelector('.gm-blocos__nome');
+    const dialogProcessos = dialog.querySelector('.gm-blocos__processos');
     const Model = createTaggedUnion(
       {
         init: null,
@@ -517,7 +527,16 @@
     store.dispatch = handleAsyncAction(store)(store.dispatch);
     bc.subscribe(msg => store.dispatch(Action.mensagemRecebida(msg)));
     if (tabela) {
-      tabela.addEventListener('click', () => {
+      tabela.addEventListener('click', evt => {
+        processosMarcados.clear();
+        processosNaoMarcados.clear();
+        for (const [numproc, { checkbox }] of mapa) {
+          if (checkbox.checked) {
+            processosMarcados.add(numproc);
+          } else {
+            processosNaoMarcados.add(numproc);
+          }
+        }
         update(store.getState());
       });
     }
@@ -567,25 +586,25 @@
                           )
                         )
                       );
-                      return Array.from(mapa)
-                        .filter(([x]) => !processosComBloco.has(x))
-                        .map(x => x[1]);
-                    } else if (id === -2) {
-                      return Array.from(mapa.values());
+                      return new Set(
+                        Array.from(mapa)
+                          .filter(([x]) => !processosComBloco.has(x))
+                          .map(([numproc]) => numproc)
+                      );
                     } else {
-                      return state2.blocos
-                        .filter(x => x.id === id)
-                        .flatMap(x => x.processos)
-                        .map(x => mapa.get(x))
-                        .filter(isDefined);
+                      return new Set(
+                        state2.blocos
+                          .filter(x => x.id === id)
+                          .flatMap(x => x.processos.filter(x2 => mapa.has(x2)))
+                      );
                     }
                   })();
-                  const check = estadoAnterior === 'unchecked';
-                  processos.forEach(({ checkbox }) => {
-                    if (checkbox.checked !== check) {
+                  for (const [numproc, { checkbox }] of mapa) {
+                    const checked = processos.has(numproc);
+                    if (checkbox.checked !== checked) {
                       checkbox.click();
                     }
-                  });
+                  }
                   return state2;
                 },
               },
@@ -770,42 +789,14 @@
         Array.from(mapa).filter(([numproc]) => !processosComBlocoNestaPagina.has(numproc))
       );
       const semBloco = (() => {
-        let status;
-        for (const { checkbox } of processosSemBloco.values()) {
-          if (checkbox.checked) {
-            if (status === void 0) {
-              status = 'checked';
-            } else if (status === 'unchecked') {
-              return 'partial';
-            }
-          } else {
-            if (status === void 0) {
-              status = 'unchecked';
-            } else if (status === 'checked') {
-              return 'partial';
-            }
-          }
+        if (processosSemBloco.size === 0) return 'disabled';
+        for (const numproc of processosMarcados) {
+          if (!processosSemBloco.has(numproc)) return 'unchecked';
         }
-        return status ?? 'disabled';
-      })();
-      const todosPagina = (() => {
-        let status;
-        for (const { checkbox } of mapa.values()) {
-          if (checkbox.checked) {
-            if (status === void 0) {
-              status = 'checked';
-            } else if (status === 'unchecked') {
-              return 'partial';
-            }
-          } else {
-            if (status === void 0) {
-              status = 'unchecked';
-            } else if (status === 'checked') {
-              return 'partial';
-            }
-          }
+        for (const numproc of processosNaoMarcados) {
+          if (processosSemBloco.has(numproc)) return 'unchecked';
         }
-        return status ?? 'disabled';
+        return 'checked';
       })();
       return o(preact2.Fragment, {
         children: [
@@ -826,91 +817,34 @@
                 ),
               }),
               o('tfoot', {
-                children: [
-                  processosSemBloco.size > 0 &&
-                    processosComBlocoNestaPagina.size > 0 &&
-                    o('tr', {
-                      children: [
-                        o('td', {
-                          children: o('img', {
-                            src: matchBy('semBloco')(
-                              {
-                                semBloco,
-                              },
-                              {
-                                checked: () => checkboxChecked,
-                                disabled: () => checkboxDisabled,
-                                partial: () => checkboxUndefined,
-                                unchecked: () => checkboxEmpty,
-                              }
-                            ),
-                            onClick: () => store.dispatch(Action.checkboxClicado(-1, semBloco)),
-                          }),
-                        }),
-                        o('td', {
-                          children: o('label', {
-                            onClick: () => store.dispatch(Action.checkboxClicado(-1, semBloco)),
-                            children: '(processos sem bloco)',
-                          }),
-                        }),
-                        o('td', {
-                          children: o('small', {
-                            children: [
-                              '(',
-                              (s => `${s} processo${s > 1 ? 's' : ''}`)(processosSemBloco.size),
-                              ')',
-                            ],
-                          }),
-                        }),
-                      ],
-                    }),
+                children:
+                  semBloco !== 'disabled' &&
                   o('tr', {
                     children: [
                       o('td', {
-                        children: o('img', {
-                          src: matchBy('todosPagina')(
-                            {
-                              todosPagina,
-                            },
-                            {
-                              checked: () => checkboxChecked,
-                              disabled: () => checkboxDisabled,
-                              partial: () => checkboxUndefined,
-                              unchecked: () => checkboxEmpty,
-                            }
-                          ),
-                          style: {
-                            cursor: matchBy('todosPagina')(
-                              {
-                                todosPagina,
-                              },
-                              {
-                                disabled: () => 'not-allowed',
-                              },
-                              () => 'auto'
-                            ),
-                          },
-                          onClick: () => store.dispatch(Action.checkboxClicado(-2, todosPagina)),
+                        children: o('input', {
+                          type: 'radio',
+                          checked: semBloco === 'checked',
+                          onClick: () => store.dispatch(Action.checkboxClicado(-1, semBloco)),
                         }),
                       }),
                       o('td', {
                         children: o('label', {
-                          onClick: () => store.dispatch(Action.checkboxClicado(-2, todosPagina)),
-                          children: '(todos os processos desta página)',
+                          onClick: () => store.dispatch(Action.checkboxClicado(-1, semBloco)),
+                          children: '(processos sem bloco)',
                         }),
                       }),
                       o('td', {
                         children: o('small', {
                           children: [
                             '(',
-                            (s => `${s} processo${s > 1 ? 's' : ''}`)(mapa.size),
+                            (s => `${s} processo${s > 1 ? 's' : ''}`)(processosSemBloco.size),
                             ')',
                           ],
                         }),
                       }),
                     ],
                   }),
-                ],
               }),
             ],
           }),
@@ -978,7 +912,7 @@
             o('input', {
               class: 'rename',
               ref: input,
-              onKeyUp,
+              onKeyPress,
               value: props.nome,
             }),
             o('br', {}),
@@ -993,51 +927,25 @@
         removerAusentes = null;
       }
       const chkState = (() => {
-        let status = 'disabled';
-        for (const numproc of props.processos) {
-          if (!mapa.has(numproc)) continue;
-          const { checkbox } = mapa.get(numproc);
-          if (checkbox.checked) {
-            if (status === 'disabled') {
-              status = 'checked';
-            } else if (status === 'unchecked') {
-              return 'partial';
-            }
-          } else {
-            if (status === 'disabled') {
-              status = 'unchecked';
-            } else if (status === 'checked') {
-              return 'partial';
-            }
-          }
+        const meusProcessosNestaPagina = new Set(props.processos.filter(n => mapa.has(n)));
+        if (meusProcessosNestaPagina.size === 0) return 'disabled';
+        for (const numproc of processosMarcados) {
+          if (!meusProcessosNestaPagina.has(numproc)) return 'unchecked';
         }
-        return status;
+        for (const numproc of processosNaoMarcados) {
+          if (meusProcessosNestaPagina.has(numproc)) return 'unchecked';
+        }
+        return 'checked';
       })();
       return o('tr', {
         children: [
           o('td', {
-            children: o('img', {
-              src: matchBy('chkState')(
-                {
-                  chkState,
-                },
-                {
-                  partial: () => checkboxUndefined,
-                  unchecked: () => checkboxEmpty,
-                  checked: () => checkboxChecked,
-                  disabled: () => checkboxDisabled,
-                }
-              ),
+            children: o('input', {
+              type: 'radio',
+              checked: chkState === 'checked',
+              disabled: chkState === 'disabled',
               style: {
-                cursor: matchBy('chkState')(
-                  {
-                    chkState,
-                  },
-                  {
-                    disabled: () => 'not-allowed',
-                  },
-                  () => 'auto'
-                ),
+                cursor: chkState === 'disabled' ? 'not-allowed' : 'auto',
               },
               onClick: () => store.dispatch(Action.checkboxClicado(props.id, chkState)),
             }),
@@ -1050,6 +958,12 @@
           }),
           o('td', {
             children: o('small', {
+              onClick: () => {
+                dialogNomeBloco.textContent = props.nome;
+                dialogProcessos.innerHTML = props.processos.join('<br>');
+                dialog.showModal();
+                window.getSelection()?.getRangeAt(0)?.selectNodeContents(dialogProcessos);
+              },
               children: ['(', createAbbr(props.nestaPagina, props.total), ')'],
             }),
           }),
@@ -1078,8 +992,9 @@
           children: textoResumido,
         });
       }
-      function onKeyUp(evt) {
+      function onKeyPress(evt) {
         if (evt.key === 'Enter') {
+          evt.preventDefault();
           const nome = evt.currentTarget.value;
           setEditing(false);
           if (isNonEmptyString(nome)) {
@@ -1121,7 +1036,7 @@
     }
   }
   const css =
-    '#gm-blocos {\n  --accent: hsl(266deg, 40%, 25%);\n  --bg: hsl(266deg, 10%, 30%);\n  --disabled: hsl(266deg, 5%, 37.5%);\n  --disabled-text: hsl(266deg, 0%, 80%);\n  --shadow: hsl(266deg, 12.5%, 17.5%);\n  --muted-accent: hsl(266deg, 25%, 25%);\n  --text: hsl(266deg, 0%, 100%);\n}\n\n/*\n.menu-dark,\n.menu-light {\n  #gm-blocos {\n    --accent: hsl(268, 40%, 26%);\n    --bg: #494251;\n    --disabled: #5d5863;\n    --disabled-text: #ccc;\n    --shadow: #262c31;\n    --muted-accent: #453557;\n    --text: #fff;\n  }\n}\n*/\n\n#gm-blocos {\n  margin: 2px 3px 4px;\n  padding: 4px;\n  border-radius: 4px;\n  background: var(--bg);\n  color: var(--text);\n  box-shadow: 0 3px 3px var(--shadow);\n}\n\n#gm-blocos h4 {\n  margin: 3px 0;\n  font-size: 1.25rem;\n  font-weight: 300;\n}\n\n#gm-blocos ul {\n  list-style-type: none;\n  margin: 3px 0 7px;\n  padding: 0;\n}\n\n#gm-blocos li {\n  position: relative;\n  display: grid;\n  grid-template-columns: auto 1fr auto;\n  grid-gap: 5px;\n  align-items: center;\n  margin: 4px 0;\n  padding: 5px;\n  border-radius: 2px;\n}\n\n#gm-blocos li::before {\n  content: "";\n  position: absolute;\n  top: 2px;\n  width: 100%;\n  height: 100%;\n  border-bottom: 1px solid #888;\n  pointer-events: none;\n}\n\n#gm-blocos li:last-of-type::before {\n  content: none;\n}\n\n#gm-blocos li:hover {\n  background: var(--accent);\n}\n\n#gm-blocos label {\n  margin: 0;\n  font-size: 0.92rem;\n}\n\n#gm-blocos .placeholder span {\n  height: 1.38rem;\n  animation: pulse 1s ease-in-out infinite alternate;\n  border-radius: 4px;\n}\n\n#gm-blocos .placeholder span:first-of-type, #gm-blocos .placeholder span:last-of-type {\n  width: 1.38rem;\n}\n\n@keyframes pulse {\n  from {\n    background-color: var(--disabled);\n  }\n  to {\n    background-color: var(--bg);\n  }\n}\n\n#gm-blocos button {\n  display: block;\n  margin: 0 auto 7px;\n  padding: 2px 20px;\n  font-size: 0.86rem;\n  border: none;\n  border-radius: 3px;\n  box-shadow: 0 2px 4px var(--shadow);\n  background: var(--muted-accent);\n  color: var(--text);\n}\n\n#gm-blocos button:hover {\n  transition: background-color 0.1s ease-in;\n  background: var(--accent);\n}\n\n#gm-blocos button:disabled {\n  background: var(--disabled);\n  color: var(--disabled-text);\n  box-shadow: none;\n}\n\n#gm-blocos .error {\n  margin: 10px 5%;\n  padding: 4px 5%;\n  border-radius: 4px;\n  font-weight: 500;\n  background: white;\n  color: red;\n}';
+    '#gm-blocos,\n.gm-blocos__dialog {\n  --accent: hsl(266, 40%, 25%);\n  --bg: hsl(266, 10%, 30%);\n  --border: hsl(266, 15%, 60%);\n  --disabled: hsl(266, 5%, 37.5%);\n  --disabled-text: hsl(266, 0%, 80%);\n  --shadow: hsl(266, 12.5%, 17.5%);\n  --muted-accent: hsl(266, 25%, 25%);\n  --text: hsl(266, 0%, 100%);\n}\n\n/*\n.menu-dark,\n.menu-light {\n  #gm-blocos {\n    --accent: hsl(268, 40%, 26%);\n    --bg: #494251;\n    --disabled: #5d5863;\n    --disabled-text: #ccc;\n    --shadow: #262c31;\n    --muted-accent: #453557;\n    --text: #fff;\n  }\n}\n*/\n\n#gm-blocos {\n  margin: 2px 3px 4px;\n  padding: 4px;\n  border-radius: 4px;\n  background: var(--bg);\n  color: var(--text);\n  box-shadow: 0 3px 3px var(--shadow);\n}\n\n#gm-blocos h4 {\n  margin: 3px 0;\n  font-size: 1.25rem;\n  font-weight: 300;\n}\n\n#gm-blocos ul {\n  list-style-type: none;\n  margin: 3px 0 7px;\n  padding: 0;\n}\n\n#gm-blocos li {\n  position: relative;\n  display: grid;\n  grid-template-columns: auto 1fr auto;\n  grid-gap: 5px;\n  align-items: center;\n  margin: 4px 0;\n  padding: 5px;\n  border-radius: 2px;\n}\n\n#gm-blocos li::before {\n  content: "";\n  position: absolute;\n  top: 2px;\n  width: 100%;\n  height: 100%;\n  border-bottom: 1px solid #888;\n  pointer-events: none;\n}\n\n#gm-blocos li:last-of-type::before {\n  content: none;\n}\n\n#gm-blocos li:hover {\n  background: var(--accent);\n}\n\n#gm-blocos label {\n  margin: 0;\n  font-size: 0.92rem;\n}\n\n#gm-blocos .placeholder span {\n  height: 1.38rem;\n  animation: pulse 1s ease-in-out infinite alternate;\n  border-radius: 4px;\n}\n\n#gm-blocos .placeholder span:first-of-type, #gm-blocos .placeholder span:last-of-type {\n  width: 1.38rem;\n}\n\n@keyframes pulse {\n  from {\n    background-color: var(--disabled);\n  }\n  to {\n    background-color: var(--bg);\n  }\n}\n\n#gm-blocos button {\n  display: block;\n  margin: 0 auto 7px;\n  padding: 2px 20px;\n  font-size: 0.86rem;\n  border: none;\n  border-radius: 3px;\n  box-shadow: 0 2px 4px var(--shadow);\n  background: var(--muted-accent);\n  color: var(--text);\n}\n\n#gm-blocos button:hover {\n  transition: background-color 0.1s ease-in;\n  background: var(--accent);\n}\n\n#gm-blocos button:disabled {\n  background: var(--disabled);\n  color: var(--disabled-text);\n  box-shadow: none;\n}\n\n#gm-blocos .error {\n  margin: 10px 5%;\n  padding: 4px 5%;\n  border-radius: 4px;\n  font-weight: 500;\n  background: white;\n  color: red;\n}';
   function ProcessoSelecionar(numproc) {
     const mainMenu = document.getElementById('main-menu');
     if (isNull(mainMenu)) return Left(new Error('Menu não encontrado'));
