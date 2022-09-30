@@ -67,10 +67,11 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
 
   document.body.insertAdjacentHTML(
     'beforeend',
-    /*html*/ `<dialog id="gm-blocos-dialog"><form method="dialog"><div><output></output></div><button>Fechar</button></form></dialog>`
+    /*html*/ `<dialog class="gm-blocos__dialog"><form method="dialog"><div>Processos do bloco "<output class="gm-blocos__nome"></output>":</div><output class="gm-blocos__processos"></output><button>Fechar</button></form></dialog>`
   );
-  const dialog = document.getElementById('gm-blocos-dialog') as HTMLDialogElement;
-  const dialogOutput = dialog.querySelector('output')!;
+  const dialog = document.querySelector('.gm-blocos__dialog') as HTMLDialogElement;
+  const dialogNomeBloco = dialog.querySelector('.gm-blocos__nome') as HTMLOutputElement;
+  const dialogProcessos = dialog.querySelector('.gm-blocos__processos') as HTMLOutputElement;
 
   const Model: {
     init: InitModel;
@@ -610,14 +611,10 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
         <td>
           <small
             onClick={() => {
-              const text = document.createTextNode(props.nome);
-              dialogOutput.innerHTML = '';
-              dialogOutput.append(
-                'Processos do bloco ' + props.nome + ':',
-                document.createElement('br'),
-                ...props.processos.flatMap(num => [num, document.createElement('br')])
-              );
+              dialogNomeBloco.textContent = props.nome;
+              dialogProcessos.innerHTML = props.processos.join('<br>');
               dialog.showModal();
+              window.getSelection()?.getRangeAt(0)?.selectNodeContents(dialogProcessos);
             }}
           >
             ({createAbbr(props.nestaPagina, props.total)})

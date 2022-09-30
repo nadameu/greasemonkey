@@ -1,6 +1,8 @@
-#gm-blocos {
+#gm-blocos,
+.gm-blocos__dialog {
   --accent: hsl(266, 40%, 25%);
   --bg: hsl(266, 10%, 30%);
+  --border: hsl(266, 15%, 60%);
   --disabled: hsl(266, 5%, 37.5%);
   --disabled-text: hsl(266, 0%, 80%);
   --shadow: hsl(266, 12.5%, 17.5%);
