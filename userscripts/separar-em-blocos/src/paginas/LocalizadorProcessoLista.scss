@@ -22,12 +22,13 @@
     table {
       margin: 0;
       margin-bottom: 16px;
+      border-collapse: collapse;
     }
 
     td {
       margin: 0;
       padding: 3px 0.5ch;
-      vertical-align: center;
+      vertical-align: middle;
       label {
         font-size: 0.92rem;
       }
@@ -36,8 +37,14 @@
       }
     }
 
+    tr {
+      border: 1px solid var(--disabled);
+      border-width: 1px 0;
+    }
+
     tfoot td {
-      padding-top: 13px;
+      padding-top: 1em;
+      padding-bottom: 1em;
     }
 
     input.rename {
