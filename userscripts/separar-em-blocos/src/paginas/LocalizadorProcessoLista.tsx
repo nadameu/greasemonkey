@@ -630,7 +630,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     if (editing) {
       displayNome = (
         <>
-          <input class="rename" ref={input} onKeyUp={onKeyUp} value={props.nome} />
+          <input class="rename" ref={input} onKeyPress={onKeyPress} value={props.nome} />
           <br />
           <small>(Enter para confirmar, Esc para cancelar)</small>
         </>
@@ -722,8 +722,9 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
       return <abbr title={`${textoTotal}, ${textoPagina}.`}>{textoResumido}</abbr>;
     }
 
-    function onKeyUp(evt: JSX.TargetedEvent<HTMLInputElement, KeyboardEvent>) {
+    function onKeyPress(evt: JSX.TargetedEvent<HTMLInputElement, KeyboardEvent>) {
       if (evt.key === 'Enter') {
+        evt.preventDefault();
         const nome = evt.currentTarget.value;
         setEditing(false);
         if (p.isNonEmptyString(nome)) {
