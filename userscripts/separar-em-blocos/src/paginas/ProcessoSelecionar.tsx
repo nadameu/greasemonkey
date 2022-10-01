@@ -4,10 +4,9 @@ import { Either, Left, Right } from '@nadameu/either';
 import { createTaggedUnion, matchBy, Static } from '@nadameu/match';
 import * as p from '@nadameu/predicates';
 import { JSX, render } from 'preact';
-import { useCallback } from 'preact/hooks';
 import * as DB from '../database';
-import { BroadcastMessage, isBroadcastMessage } from '../types/Action';
 import { Bloco, BlocoProcesso } from '../types/Bloco';
+import { BroadcastMessage, isBroadcastMessage } from '../types/BroadcastMessage';
 import { NumProc } from '../types/NumProc';
 import css from './ProcessoSelecionar.scss?inline';
 

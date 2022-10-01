@@ -7,8 +7,8 @@ import * as p from '@nadameu/predicates';
 import { createRef, JSX, render } from 'preact';
 import { useCallback, useEffect, useState } from 'preact/hooks';
 import * as Database from '../database';
-import { BroadcastMessage, isBroadcastMessage } from '../types/Action';
 import { Bloco } from '../types/Bloco';
+import { BroadcastMessage, isBroadcastMessage } from '../types/BroadcastMessage';
 import { isNumProc, NumProc } from '../types/NumProc';
 import css from './LocalizadorProcessoLista.scss?inline';
 

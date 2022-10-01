@@ -4,8 +4,7 @@ import { ProcessoSelecionar } from './paginas/ProcessoSelecionar';
 import { isNumProc } from './types/NumProc';
 
 export function main(): Either<Error, void> {
-  const url = new URL(document.location.href);
-  const params = url.searchParams;
+  const params = new URL(document.location.href).searchParams;
   const acao = params.get('acao');
   if (!acao) return Left(new Error('Página desconhecida.'));
   switch (acao) {
