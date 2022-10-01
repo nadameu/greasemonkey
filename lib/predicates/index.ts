@@ -121,7 +121,7 @@ export function isAnyOf<T extends Predicate<any>[]>(
 export const isNullish = /* @__PURE__ */ isAnyOf(isNull, isUndefined);
 export const isNotNullish = /* @__PURE__ */ negate(isNullish);
 
-export function isArray<T>(predicate: Predicate<T>): Predicate<T[]> {
+export function isArray<T = unknown>(predicate = isUnknown as Predicate<T>): Predicate<T[]> {
   return refine(
     (value): value is unknown[] => Array.isArray(value),
     (xs): xs is T[] => xs.every(predicate)
@@ -134,24 +134,15 @@ export function hasKeys<K extends string>(...keys: K[]): Predicate<Record<K, unk
   );
 }
 
-export function hasShape<T extends Record<string, Predicate<any>>>(
+export function hasShape<T extends Record<string, Predicate<any> | OptionalPropertyPredicate<any>>>(
   predicates: T
 ): Predicate<Shape<T>> {
-  type result = [optional: boolean, key: keyof T];
-  const keys = Object.entries(predicates).map(
-    ([key, predicate]: [keyof T, Predicate<any>]): result => [
-      (predicate as { optional?: boolean }).optional === true,
-      key,
-    ]
-  );
-  const optional = keys.filter(([optional]) => optional).map(([, key]) => key);
-  const required = keys.filter(([optional]) => !optional).map(([, key]) => key);
-  return refine(
-    hasKeys(...(required as string[])),
-    (obj: Record<string, unknown>): obj is any =>
-      required.every(key => predicates[key]!(obj[key as string])) &&
-      optional.every(key => (key in obj ? predicates[key]!(obj[key as string]) : true))
-  );
+  return refine(isObject, ((obj: { [K in string & keyof T]?: unknown }) =>
+    (
+      Object.entries(predicates) as [string & keyof T, Predicate<any> & { optional?: boolean }][]
+    ).every(([key, predicate]) =>
+      key in obj ? predicate(obj[key]) : predicate.optional === true
+    )) as Refinement<object, Shape<T>>);
 }
 
 type Shape<T> = Simplify<
@@ -185,7 +176,7 @@ export function isTaggedUnion<
   return isAnyOf(
     ...Object.entries(union).map(
       ([tag, extraProperties]: [string, Record<string, Predicate<any>>]) =>
-        refine(hasShape({ [tagName]: isLiteral(tag) }), hasShape(extraProperties))
+        hasShape({ [tagName]: isLiteral(tag), ...extraProperties })
     )
   ) as TaggedUnion<T, P>;
 }
