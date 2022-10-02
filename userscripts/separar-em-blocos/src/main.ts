@@ -1,4 +1,5 @@
 import { Either, Left, Right } from '@nadameu/either';
+import './estilos.scss';
 import { LocalizadorProcessoLista } from './paginas/LocalizadorProcessoLista';
 import { ProcessoSelecionar } from './paginas/ProcessoSelecionar';
 import { isNumProc } from './types/NumProc';

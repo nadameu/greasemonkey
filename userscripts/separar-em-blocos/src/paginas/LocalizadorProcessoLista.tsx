@@ -10,7 +10,6 @@ import * as Database from '../database';
 import { Bloco } from '../types/Bloco';
 import { BroadcastMessage, isBroadcastMessage } from '../types/BroadcastMessage';
 import { isNumProc, NumProc } from '../types/NumProc';
-import css from './LocalizadorProcessoLista.scss?inline';
 
 type MapaProcessos = Map<
   NumProc,
@@ -63,7 +62,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   }
 
   const div = acoes.insertAdjacentElement('beforebegin', document.createElement('div'))!;
-  div.id = 'gm-blocos';
+  div.className = 'gm-blocos__lista';
 
   document.body.insertAdjacentHTML(
     'beforeend',
@@ -242,7 +241,6 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
       update(store.getState());
     });
   }
-  document.head.appendChild(document.createElement('style')).textContent = css;
   store.subscribe(update);
   store.dispatch(Action.obterBlocos);
   return Right(undefined);
