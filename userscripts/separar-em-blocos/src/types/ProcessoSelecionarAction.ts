@@ -25,12 +25,6 @@ interface MensagemRecebidaAction {
   type: 'mensagemRecebida';
   msg: BroadcastMessage;
 }
-interface ModificarProcessosAction {
-  type: 'modificarProcessos';
-  id: Bloco['id'];
-  fn: (processos: Set<NumProc>, numproc: NumProc) => void;
-  fecharJanela: boolean;
-}
 export interface ObterBlocosAction {
   type: 'obterBlocos';
 }
@@ -44,7 +38,6 @@ export type Action =
   | ErroAction
   | InserirAction
   | MensagemRecebidaAction
-  | ModificarProcessosAction
   | ObterBlocosAction
   | RemoverAction;
 export const Action = /* #__PURE__ */ createTaggedUnion(
@@ -57,11 +50,6 @@ export const Action = /* #__PURE__ */ createTaggedUnion(
     erro: (reason: unknown) => ({ reason }),
     inserir: (id: Bloco['id'], { fecharJanela = false } = {}) => ({ id, fecharJanela }),
     mensagemRecebida: (msg: BroadcastMessage) => ({ msg }),
-    modificarProcessos: (
-      id: Bloco['id'],
-      fn: (processos: Set<NumProc>, numproc: NumProc) => void,
-      { fecharJanela = false } = {}
-    ) => ({ id, fn, fecharJanela }),
     obterBlocos: null,
     remover: (id: Bloco['id']) => ({ id }),
   },

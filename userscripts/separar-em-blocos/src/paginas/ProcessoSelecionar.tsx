@@ -37,6 +37,28 @@ function createReducer({
     return [State.Loading(blocos), eventualAction()];
   }
 
+  function modificarProcessos(
+    state: State,
+    {
+      id,
+      fn,
+      fecharJanela,
+    }: {
+      id: Bloco['id'];
+      fn: (processos: Set<NumProc>, numproc: NumProc) => void;
+      fecharJanela: boolean;
+    }
+  ): [State, Promise<Action>] {
+    return asyncAction(state, async () => {
+      const bloco = await DB.getBloco(id);
+      if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
+      const processos = new Set(bloco.processos);
+      fn(processos, numproc);
+      const blocos = await DB.updateBloco({ ...bloco, processos: [...processos] });
+      return Action.blocosModificados(blocos, { fecharJanela });
+    });
+  }
+
   function reducer(state: State, action: Action): State | readonly [State, Promise<Action>] {
     return Action.match(action, {
       blocosModificados: ({ blocos, fecharJanela }) => {
@@ -58,39 +80,24 @@ function createReducer({
         }),
       erro: ({ reason }) => State.Error(reason),
       inserir: ({ id, fecharJanela }) =>
-        reducer(
-          state,
-          Action.modificarProcessos(
-            id,
-            (processos, numproc) => {
-              processos.add(numproc);
-            },
-            { fecharJanela }
-          )
-        ),
-      mensagemRecebida: ({ msg }) =>
-        matchBy('type')(msg, {
-          Blocos: ({ blocos }) => State.Success(blocos),
-          NoOp: () => state,
+        modificarProcessos(state, {
+          id,
+          fn: (processos, numproc) => {
+            processos.add(numproc);
+          },
+          fecharJanela,
         }),
-      modificarProcessos: ({ id, fn, fecharJanela }) =>
-        asyncAction(state, async () => {
-          const bloco = await DB.getBloco(id);
-          if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
-          const processos = new Set(bloco.processos);
-          fn(processos, numproc);
-          const blocos = await DB.updateBloco({ ...bloco, processos: [...processos] });
-          return Action.blocosModificados(blocos, { fecharJanela });
-        }),
+      mensagemRecebida: ({ msg: { blocos } }) => State.Success(blocos),
       obterBlocos: () =>
         asyncAction(state, async () => Action.blocosModificados(await DB.getBlocos())),
       remover: ({ id }) =>
-        reducer(
-          state,
-          Action.modificarProcessos(id, (processos, numproc) => {
+        modificarProcessos(state, {
+          id,
+          fn: (processos, numproc) => {
             processos.delete(numproc);
-          })
-        ),
+          },
+          fecharJanela: false,
+        }),
     });
   }
 }

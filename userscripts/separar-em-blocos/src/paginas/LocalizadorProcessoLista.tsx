@@ -136,7 +136,6 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
       excluirBloco: (id: Bloco['id']): Omit<ExcluirBlocoAction, 'type'> => ({ id }),
       mensagemRecebida: (msg: BroadcastMessage): Omit<MensagemRecebidaAction, 'type'> => ({ msg }),
       obterBlocos: null,
-      noop: null,
       removerProcessosAusentes: (
         id: Bloco['id']
       ): Omit<RemoverProcessosAusentesAction, 'type'> => ({ id }),
@@ -160,7 +159,6 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     | CheckboxClicadoAction
     | ErroCapturadoAction
     | ErroDesconhecidoAction
-    | NoOpAction
     | ResetAction;
   type AliasAction = BlocosModificadosAction | MensagemRecebidaAction;
   interface BlocosModificadosAction {
@@ -201,9 +199,6 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   }
   interface ObterBlocosAction {
     type: 'obterBlocos';
-  }
-  interface NoOpAction {
-    type: 'noop';
   }
   interface RemoverProcessosAusentesAction {
     type: 'removerProcessosAusentes';
@@ -315,7 +310,6 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
           }),
         erroDesconhecido: ({ erro }) =>
           Model.match(state, { error: state => state }, () => Model.error(erro)),
-        noop: () => state,
         reset: () => Model.init,
       },
       other => other
@@ -389,11 +383,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
               bc.publish({ type: 'Blocos', blocos });
               return Action.blocosObtidos(blocos);
             },
-            mensagemRecebida: ({ msg }) =>
-              matchBy('type')(msg, {
-                Blocos: ({ blocos }) => Action.blocosObtidos(blocos),
-                NoOp: () => Action.noop,
-              }),
+            mensagemRecebida: ({ msg: { blocos } }) => Action.blocosObtidos(blocos),
           },
           s => s
         );
