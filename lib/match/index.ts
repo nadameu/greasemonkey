@@ -86,6 +86,13 @@ export function createTaggedUnion<D extends Definitions<Tag, D>, Tag extends Val
 
 export function matchBy<T extends ValidTagName>(tagName: T): MatchBy<T>['match'] {
   return (obj: any, matchers: any, otherwise?: Function) => {
+    if ((typeof obj !== 'object' && typeof obj !== 'function') || obj === null)
+      throw new Error(
+        `${Object.prototype.toString
+          .call(obj)
+          .slice('[object '.length, -1)
+          .toLowerCase()} is not a valid object.`
+      );
     const tag = obj[tagName];
     if (tag === undefined)
       throw new Error(`Object does not have a valid "${String(tagName)}" property.`);

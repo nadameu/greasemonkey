@@ -64,6 +64,33 @@ test('match (standalone)', () => {
   expect(getResult(t2)).toEqual(123);
 });
 
+test.each([
+  ['bigint', 123n],
+  ['boolean', true],
+  ['number', 123],
+  ['null', null],
+  ['string', 'string'],
+  ['symbol', Symbol()],
+  ['undefined', undefined],
+])('Not valid object - %s', (name, value) => {
+  try {
+    (value as any).tag = 'A';
+  } catch (e) {}
+  const match = matchBy('tag');
+  expect(() => match(value as unknown as { tag: 'A' }, { A: () => 3 })).toThrow(
+    `${name} is not a valid object.`
+  );
+});
+
+test.each([
+  ['regular function', function () {}],
+  ['arrow function', () => {}],
+])('Functions are valid objects - %s', (_, value) => {
+  (value as any).tag = 'A';
+  const match = matchBy('tag');
+  expect(match(value as unknown as { tag: 'A' }, { A: () => 3 })).toEqual(3);
+});
+
 describe('no discriminant', () => {
   test('tag', () => {
     const match = matchBy('tag');
