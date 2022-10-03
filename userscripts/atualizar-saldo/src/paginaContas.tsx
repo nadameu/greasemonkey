@@ -1,4 +1,4 @@
-import { createStore } from '@nadameu/create-store';
+import { createStore, Subscription } from '@nadameu/create-store';
 import { Either, Left, Right, traverse } from '@nadameu/either';
 import { Handler } from '@nadameu/handler';
 import { createTaggedUnion, Static } from '@nadameu/match';
@@ -41,6 +41,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
   div.className = 'gm-atualizar-saldo__contas';
   barra.insertAdjacentElement('afterend', div)!;
 
+  let sub: Subscription | null = null;
   const bc = createMsgService();
   const store = createStore<Estado, Acao>(
     () => {
@@ -119,7 +120,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
       })
   );
 
-  const sub = store.subscribe(update);
+  sub = store.subscribe(update);
   return Right(undefined as void);
 
   function App({ estado }: { estado: Estado }) {
@@ -149,7 +150,10 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
         );
       },
       Erro: ({ erro }) => {
-        sub.unsubscribe();
+        if (sub) {
+          sub.unsubscribe();
+          sub = null;
+        }
         return <span class="erro">{erro.message}</span>;
       },
     });
