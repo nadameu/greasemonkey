@@ -227,7 +227,7 @@ interface InfoConta {
 }
 
 const jsLinkRE =
-  /^javascript:atualizarSaldo\('(\d{20})','(\d{4})',(\d+),'(\d+)','(\d{20})',(\d{3}),'(\d+)',(\d+)\)$/;
+  /^javascript:atualizarSaldo\('(\d{20})','(\d+)',(\d+),'(\d+)','(\d{20})',(\d{3}),'(\d+)',(\d+)\)$/;
 
 function obterInfoContaLinha(row: HTMLTableRowElement): Either<null, InfoConta> {
   if (row.cells.length !== 15) return Left(null);
