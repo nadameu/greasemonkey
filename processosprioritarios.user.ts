@@ -1076,14 +1076,17 @@ class Localizador implements InfoLocalizador {
 		const form = await obterFormularioRelatorioGeral();
 		const url = form.action;
 		const method = form.method;
-		const data = new FormData();
-		data.set('paginacao', '100');
-		data.set('selPrazo', 'A');
-		data.set('selLocalizadorPrincipal', this.infoLink.id);
-		data.set('selLocalizadorPrincipalSelecionados', this.infoLink.id);
-		data.set('optchkcClasse', 'S');
-		data.set('hdnInfraPaginaAtual', pagina.toString());
-		data.set('selRpvPrecatorio', 'null');
+		const data = ((values, f = new FormData()) => (
+			Object.entries(values).forEach(([key, value]) => f.append(key, value)), f
+		))({
+			paginacao: '100',
+			selPrazo: 'A',
+			selLocalizadorPrincipal: this.infoLink.id,
+			selLocalizadorPrincipalSelecionados: this.infoLink.id,
+			optchkcClasse: 'S',
+			hdnInfraPaginaAtual: pagina.toString(),
+			selRpvPrecatorio: 'null',
+		});
 		const doc = await XHR(method, url, data);
 		const tabela = doc.getElementById('tabelaLocalizadores');
 		const quantidadeProcessosCarregados = parseInt(
@@ -1339,37 +1342,32 @@ const COMPETENCIA_JUIZADO_MIN = 9,
 	CLASSE_EF = 99,
 	CLASSE_CARTA_PRECATORIA = 60;
 
-const DOMINGO = 0,
-	SEGUNDA = 1,
-	SABADO = 6;
-
-function adiantarParaSabado(data: Date) {
-	let ajuste = 0;
-	switch (data.getDay()) {
-		case DOMINGO:
-			ajuste = -1;
-			break;
-
-		case SEGUNDA:
-			ajuste = -2;
-			break;
-	}
-	return new Date(data.getFullYear(), data.getMonth(), data.getDate() + ajuste);
+/**
+ * Retorna uma função que ajusta uma data com base no dia da semana.
+ * @param ajustes Para cada dia da semana (começando no domingo), quantos dias acrescentar ou diminuir para calcular a data resultante.
+ */
+function ajustarDiaDaSemana(
+	ajustes: readonly [
+		domingo: number,
+		segunda: number,
+		terca: number,
+		quarta: number,
+		quinta: number,
+		sexta: number,
+		sabado: number,
+	],
+) {
+	return (data: Date): Date => {
+		const diaDaSemana = data.getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6;
+		const resultado = new Date(data.getTime());
+		resultado.setDate(resultado.getDate() + ajustes[diaDaSemana]);
+		return resultado;
+	};
 }
 
-function prorrogarParaSegunda(data: Date) {
-	let ajuste = 0;
-	switch (data.getDay()) {
-		case SABADO:
-			ajuste = 2;
-			break;
+const adiantarParaSabado = ajustarDiaDaSemana([-1, -2, 0, 0, 0, 0, 0]);
 
-		case DOMINGO:
-			ajuste = 1;
-			break;
-	}
-	return new Date(data.getFullYear(), data.getMonth(), data.getDate() + ajuste);
-}
+const prorrogarParaSegunda = ajustarDiaDaSemana([1, 0, 0, 0, 0, 0, 2]);
 
 const JANEIRO = 0,
 	MAIO = 4,
@@ -1396,11 +1394,8 @@ function calcularProximo(
 const calcularRecessoData = calcularProximo(-1, calcularRecesso);
 
 const calcularInspecao = memoize((ano: number) => {
-	// Menor data possível para a terceira segunda-feira do mês
-	const quinzeMaio = new Date(ano, MAIO, 15);
-
-	const diasAteSegundaFeira = (SEGUNDA - quinzeMaio.getDay() + 7) % 7;
-	const inicio = new Date(ano, MAIO, 15 + diasAteSegundaFeira);
+	// Terceira segunda-feira de maio
+	const inicio = ajustarDiaDaSemana([15, 14, 20, 19, 18, 17, 16])(new Date(ano, MAIO, 1));
 	const retorno = new Date(ano, MAIO, inicio.getDate() + 7);
 	return { inicio, retorno };
 });
