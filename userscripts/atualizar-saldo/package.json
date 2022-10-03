@@ -1,6 +1,6 @@
 {
   "name": "atualizar-saldos",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "private": true,
   "description": "Atualiza o saldo de contas judiciais",
   "author": "nadameu",
@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc && vite build",
     "dev": "vite",
+    "format": "prettier --write ../../atualizar-saldo.user.js",
     "preview": "vite preview"
   },
   "dependencies": {

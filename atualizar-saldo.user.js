@@ -2,7 +2,7 @@
 // @name         atualizar-saldos
 // @name:pt-BR   Atualizar saldos
 // @namespace    http://nadameu.com.br
-// @version      3.0.0
+// @version      3.0.1
 // @author       nadameu
 // @description  Atualiza o saldo de contas judiciais
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
@@ -143,32 +143,20 @@
   function isAnyOf(...predicates) {
     return value => predicates.some(p => p(value));
   }
-  function hasKeys(...keys) {
-    return refine(isObject, obj => keys.every(key => key in obj));
-  }
   function hasShape(predicates) {
-    const keys = Object.entries(predicates).map(([key, predicate]) => [
-      predicate.optional === true,
-      key,
-    ]);
-    const optional = keys.filter(([optional2]) => optional2).map(([, key]) => key);
-    const required = keys.filter(([optional2]) => !optional2).map(([, key]) => key);
-    return refine(
-      hasKeys(...required),
-      obj =>
-        required.every(key => predicates[key](obj[key])) &&
-        optional.every(key => (key in obj ? predicates[key](obj[key]) : true))
+    return refine(isObject, obj =>
+      Object.entries(predicates).every(([key, predicate]) =>
+        key in obj ? predicate(obj[key]) : predicate.optional === true
+      )
     );
   }
   function isTaggedUnion(tagName, union) {
     return isAnyOf(
       ...Object.entries(union).map(([tag, extraProperties]) =>
-        refine(
-          hasShape({
-            [tagName]: isLiteral(tag),
-          }),
-          hasShape(extraProperties)
-        )
+        hasShape({
+          [tagName]: isLiteral(tag),
+          ...extraProperties,
+        })
       )
     );
   }
@@ -223,6 +211,13 @@
   }
   function matchBy(tagName) {
     return (obj, matchers, otherwise) => {
+      if ((typeof obj !== 'object' && typeof obj !== 'function') || obj === null)
+        throw new Error(
+          `${Object.prototype.toString
+            .call(obj)
+            .slice('[object '.length, -1)
+            .toLowerCase()} is not a valid object.`
+        );
       const tag = obj[tagName];
       if (tag === void 0)
         throw new Error(`Object does not have a valid "${String(tagName)}" property.`);
@@ -360,6 +355,7 @@
     const div = document.createElement('div');
     div.className = 'gm-atualizar-saldo__contas';
     barra.insertAdjacentElement('afterend', div);
+    let sub = null;
     const bc = createMsgService();
     const store = createStore(
       () => {
@@ -447,7 +443,7 @@
             ),
         })
     );
-    const sub = store.subscribe(update);
+    sub = store.subscribe(update);
     return Right(void 0);
     function App({ estado }) {
       return Estado$1.match(estado, {
@@ -484,7 +480,10 @@
           });
         },
         Erro: ({ erro }) => {
-          sub.unsubscribe();
+          if (sub) {
+            sub.unsubscribe();
+            sub = null;
+          }
           return o('span', {
             class: 'erro',
             children: erro.message,
@@ -565,7 +564,7 @@
     }
   }
   const jsLinkRE =
-    /^javascript:atualizarSaldo\('(\d{20})','(\d{4})',(\d+),'(\d+)','(\d{20})',(\d{3}),'(\d+)',(\d+)\)$/;
+    /^javascript:atualizarSaldo\('(\d{20})','(\d+)',(\d+),'(\d+)','(\d{20})',(\d{3}),'(\d+)',(\d+)\)$/;
   function obterInfoContaLinha$1(row) {
     if (row.cells.length !== 15) return Left(null);
     const celulaSaldo = row.querySelector('td[id^="saldoRemanescente"]');
