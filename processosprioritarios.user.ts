@@ -357,9 +357,9 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 						`<a href="${processo.link}">${processo.numprocFormatado}</a>`,
 						`<abbr title="${textoData}">${processo[processo.campoDataConsiderada]
 							.toLocaleString()
-							.substr(0, 10)}</abbr> + ${esperado.toString().replace(/\.5$/, '&half;')}${
+							.slice(0, 10)}</abbr> + ${esperado.toString().replace(/\.5$/, '&half;')}${
 							esperado >= 2 ? ' dias' : ' dia'
-						} = ${processo.termoPrazoCorregedoria.toLocaleString().substr(0, 10)}`,
+						} = ${processo.termoPrazoCorregedoria.toLocaleString().slice(0, 10)}`,
 					].join(' | '),
 					`<span class="gmDetalheClasse"> | ${processo.classe.toUpperCase()}</span>`,
 					localizadoresExtra.length > 0
@@ -1027,8 +1027,8 @@ class Localizador implements InfoLocalizador {
 	}
 
 	obterPagina(pagina: 0): Promise<void>;
-	obterPagina(pagina: number, doc: HTMLDocument): Promise<void>;
-	async obterPagina(pagina: number, doc?: HTMLDocument) {
+	obterPagina(pagina: number, doc: Document): Promise<void>;
+	async obterPagina(pagina: number, doc?: Document) {
 		try {
 			let url: string, data: FormData;
 			if (!this.infoLink)
