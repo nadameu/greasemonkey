@@ -2,7 +2,7 @@
 // @name         atualizar-saldos
 // @name:pt-BR   Atualizar saldos
 // @namespace    http://nadameu.com.br
-// @version      3.0.1
+// @version      4.0.0
 // @author       nadameu
 // @description  Atualiza o saldo de contas judiciais
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
@@ -969,31 +969,22 @@
         div = document.createElement('div');
         div.className = 'gm-atualizar-saldo__processo';
         informacoesAdicionais.insertAdjacentElement('beforebegin', div);
-        linkRPV.addEventListener('click', onClick);
-        linkDepositos.addEventListener('click', onClick);
       }
       preact2.render(
         o(App, {
           estado,
-          onClick,
         }),
         div
       );
     });
     function onClick(evt) {
-      if (evt.target === linkRPV) {
-        store.dispatch(Acao2.Clique('LINK_RPV'));
-      } else if (evt.target === linkDepositos) {
-        store.dispatch(Acao2.Clique('LINK_DEP'));
+      const tipoBotao = evt.target?.dataset.botao;
+      if (tipoBotao === 'RPV') {
+        store.dispatch(Acao2.Clique('BOTAO_RPV'));
+      } else if (tipoBotao === 'DEP') {
+        store.dispatch(Acao2.Clique('BOTAO_DEP'));
       } else {
-        const tipoBotao = evt.target?.dataset.botao;
-        if (tipoBotao === 'RPV') {
-          store.dispatch(Acao2.Clique('BOTAO_RPV'));
-        } else if (tipoBotao === 'DEP') {
-          store.dispatch(Acao2.Clique('BOTAO_DEP'));
-        } else {
-          return;
-        }
+        return;
       }
       evt.preventDefault();
     }
@@ -1030,8 +1021,6 @@
         },
         Erro: () => {
           sub.unsubscribe();
-          linkRPV.removeEventListener('click', onClick);
-          linkDepositos.removeEventListener('click', onClick);
           return o(MensagemComBotao, {
             classe: 'erro',
             mensagem: 'Ocorreu um erro com a atualização de saldos.',

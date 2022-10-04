@@ -1,6 +1,6 @@
 {
   "name": "atualizar-saldos",
-  "version": "3.0.1",
+  "version": "4.0.0",
   "private": true,
   "description": "Atualiza o saldo de contas judiciais",
   "author": "nadameu",
