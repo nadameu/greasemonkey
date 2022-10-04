@@ -2,7 +2,7 @@ import { createBroadcastService } from '@nadameu/create-broadcast-service';
 import { createStore, Store } from '@nadameu/create-store';
 import { Either, Left, Right, traverse } from '@nadameu/either';
 import { Handler } from '@nadameu/handler';
-import { createTaggedUnion, matchBy } from '@nadameu/match';
+import { createTaggedUnion } from '@nadameu/match';
 import * as p from '@nadameu/predicates';
 import { createRef, JSX, render } from 'preact';
 import { useCallback, useEffect, useState } from 'preact/hooks';
