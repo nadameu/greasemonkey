@@ -172,26 +172,18 @@ function modificarPaginaProcesso({
       div = document.createElement('div');
       div.className = 'gm-atualizar-saldo__processo';
       informacoesAdicionais.insertAdjacentElement('beforebegin', div);
-      linkRPV.addEventListener('click', onClick);
-      linkDepositos.addEventListener('click', onClick);
     }
-    render(<App {...{ estado, onClick }} />, div);
+    render(<App {...{ estado }} />, div);
   });
 
   function onClick(evt: Event) {
-    if (evt.target === linkRPV) {
-      store.dispatch(Acao.Clique('LINK_RPV'));
-    } else if (evt.target === linkDepositos) {
-      store.dispatch(Acao.Clique('LINK_DEP'));
+    const tipoBotao = (evt.target as HTMLElement | null)?.dataset.botao;
+    if (tipoBotao === 'RPV') {
+      store.dispatch(Acao.Clique('BOTAO_RPV'));
+    } else if (tipoBotao === 'DEP') {
+      store.dispatch(Acao.Clique('BOTAO_DEP'));
     } else {
-      const tipoBotao = (evt.target as HTMLElement | null)?.dataset.botao;
-      if (tipoBotao === 'RPV') {
-        store.dispatch(Acao.Clique('BOTAO_RPV'));
-      } else if (tipoBotao === 'DEP') {
-        store.dispatch(Acao.Clique('BOTAO_DEP'));
-      } else {
-        return;
-      }
+      return;
     }
     evt.preventDefault();
   }
@@ -220,8 +212,6 @@ function modificarPaginaProcesso({
       },
       Erro: () => {
         sub.unsubscribe();
-        linkRPV.removeEventListener('click', onClick);
-        linkDepositos.removeEventListener('click', onClick);
         return (
           <MensagemComBotao
             classe="erro"
