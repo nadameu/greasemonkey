@@ -21,16 +21,25 @@ export default defineConfig({
         description: 'Permite a separação de processos em blocos para movimentação separada',
       },
       build: {
-        externalGlobals: [
-          [
+        externalGlobals: {
+          'preact': [
             'preact',
-            cdn
-              .unpkg('preact', 'dist/preact.min.js')
-              .concat(cdn.unpkg('preactHooks', 'hooks/dist/hooks.umd.js').at(-1)),
+            version =>
+              `https://cdn.jsdelivr.net/combine/npm/preact@${version},npm/preact@${version}/hooks/dist/hooks.umd.js`,
           ],
-          ['preact/hooks', 'preactHooks'],
-        ],
+          'preact/hooks': ['preactHooks'],
+        },
       },
     }),
   ],
 });
+
+function mycdn(exportVarName = '', pathname = '') {
+  return [
+    exportVarName,
+    (version, name, _importName = '', resolveName = '') => {
+      pathname || (pathname = resolveName);
+      return `https://unpkg.com/${name}@${version}/${pathname}`;
+    },
+  ] as const;
+}

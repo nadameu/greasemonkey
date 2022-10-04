@@ -2,14 +2,13 @@
 // @name         separar-em-blocos
 // @name:pt-BR   Separar em blocos
 // @namespace    http://nadameu.com.br
-// @version      3.1.1
+// @version      3.1.2
 // @author       nadameu
 // @description  Permite a separação de processos em blocos para movimentação separada
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=localizador_processos_lista&*
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=relatorio_geral_consultar&*
-// @require      https://unpkg.com/preact@10.11.0/dist/preact.min.js
-// @require      https://unpkg.com/preact@10.11.0/hooks/dist/hooks.umd.js
+// @require      https://cdn.jsdelivr.net/combine/npm/preact@10.11.0,npm/preact@10.11.0/hooks/dist/hooks.umd.js
 // @grant        window.close
 // ==/UserScript==
 
