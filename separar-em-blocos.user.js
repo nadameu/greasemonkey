@@ -2,7 +2,7 @@
 // @name         separar-em-blocos
 // @name:pt-BR   Separar em blocos
 // @namespace    http://nadameu.com.br
-// @version      3.1.0
+// @version      3.1.1
 // @author       nadameu
 // @description  Permite a separação de processos em blocos para movimentação separada
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -1213,7 +1213,7 @@
         reason: state.reason,
         onRecarregarClick: () => dispatch(Action.obterBlocos),
       });
-    if (state.blocos.length === 0) return o(Placeholder, {});
+    if (state.status === 'Loading' && state.blocos.length === 0) return o(Placeholder, {});
     return o(Blocos, {
       state,
       numproc,

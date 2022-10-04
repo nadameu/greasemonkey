@@ -140,7 +140,7 @@ function Main({ numproc }: { numproc: NumProc }): JSX.Element {
     return (
       <ShowError reason={state.reason} onRecarregarClick={() => dispatch(Action.obterBlocos)} />
     );
-  if (state.blocos.length === 0) return <Placeholder />;
+  if (state.status === 'Loading' && state.blocos.length === 0) return <Placeholder />;
   return (
     <Blocos state={state} numproc={numproc} criarBloco={criarBloco} toggleBloco={toggleBloco} />
   );
