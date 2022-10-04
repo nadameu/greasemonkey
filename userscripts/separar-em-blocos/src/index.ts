@@ -1,6 +1,3 @@
-if (import.meta.env.DEV) {
-  await import('preact/debug');
-}
 import { Right } from '@nadameu/either';
 import { main } from './main';
 
