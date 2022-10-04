@@ -16,6 +16,7 @@ type MapaProcessos = Map<
   {
     linha: HTMLTableRowElement;
     checkbox: HTMLInputElement;
+    checked: boolean;
   }
 >;
 
@@ -26,6 +27,27 @@ interface InfoBloco extends Bloco {
 
 export function LocalizadorProcessoLista(): Either<Error, void> {
   const tabela = document.querySelector<HTMLTableElement>('table#tabelaLocalizadores');
+  const [desmarcarTodosProcessos, marcarTodosProcessos] = (() => {
+    const def = [() => {}, () => {}] as [
+      desmarcarTodosProcessos: () => void,
+      marcarTodosProcessos: () => void
+    ];
+    if (!tabela) return def;
+    const imgInfraCheck = document.getElementById('imgInfraCheck') as HTMLImageElement | null;
+    if (!imgInfraCheck) return def;
+    const lnkInfraCheck = document.getElementById('lnkInfraCheck') as HTMLAnchorElement | null;
+    if (!lnkInfraCheck) return def;
+
+    const desmarcarTodosProcessos = () => {
+      imgInfraCheck.title = imgInfraCheck.alt = 'Remover Seleção';
+      lnkInfraCheck.click();
+    };
+    const marcarTodosProcessos = () => {
+      lnkInfraCheck.click();
+    };
+    return [desmarcarTodosProcessos, marcarTodosProcessos];
+  })();
+
   const linhas = tabela?.rows ?? [];
 
   const eitherMapa: Either<Error, MapaProcessos> = traverse(linhas, (linha, i) => {
@@ -41,14 +63,14 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     const checkbox = linha.cells[0]?.querySelector<HTMLInputElement>('input[type=checkbox]');
     if (p.isNullish(checkbox))
       return Left(new Error(`Caixa de seleção não encontrada: linha ${i}.`));
-    return Right([[numproc, { linha, checkbox }] as const]);
+    return Right([[numproc, { linha, checkbox, checked: checkbox.checked }] as const]);
   }).map(entriess => new Map(entriess.flat(1)));
   if (eitherMapa.isLeft) return eitherMapa as Left<Error>;
   const mapa = eitherMapa.rightValue;
   const processosMarcados = new Set<NumProc>();
   const processosNaoMarcados = new Set<NumProc>();
-  for (const [numproc, { checkbox }] of mapa) {
-    if (checkbox.checked) {
+  for (const [numproc, { checked }] of mapa) {
+    if (checked) {
       processosMarcados.add(numproc);
     } else {
       processosNaoMarcados.add(numproc);
@@ -222,19 +244,29 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   store.dispatch = handleAliasAction(store)(store.dispatch);
   store.dispatch = handleAsyncAction(store)(store.dispatch);
   bc.subscribe(msg => store.dispatch(Action.mensagemRecebida(msg)));
-  if (tabela) {
-    tabela.addEventListener('click', evt => {
+  const onCliqueTabela = (() => {
+    function recalcular() {
       processosMarcados.clear();
       processosNaoMarcados.clear();
-      for (const [numproc, { checkbox }] of mapa) {
-        if (checkbox.checked) {
+      for (const [numproc, info] of mapa) {
+        if (info.checkbox.checked) {
+          info.checked = true;
           processosMarcados.add(numproc);
         } else {
+          info.checked = false;
           processosNaoMarcados.add(numproc);
         }
       }
       update(store.getState());
-    });
+    }
+    let timer: number;
+    return () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(recalcular, 100);
+    };
+  })();
+  if (tabela) {
+    tabela.addEventListener('click', onCliqueTabela);
   }
   store.subscribe(update);
   store.dispatch(Action.obterBlocos);
@@ -271,6 +303,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
             {
               loaded: (state): Model => {
                 if (estadoAnterior === 'disabled') return state;
+                desmarcarTodosProcessos();
                 const processos = (() => {
                   if (id === -1) {
                     const processosComBloco = new Set(
@@ -291,13 +324,16 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
                     );
                   }
                 })();
-                for (const [numproc, { checkbox }] of mapa) {
+                for (const [numproc, info] of mapa) {
                   const checked = processos.has(numproc);
-                  if (checkbox.checked !== checked) {
-                    checkbox.click();
-                  }
+                  info.checked = checked;
+                  info.checkbox.disabled = !checked;
                 }
-                return state;
+                marcarTodosProcessos();
+                for (const info of mapa.values()) {
+                  info.checkbox.disabled = false;
+                }
+                return { ...state };
               },
             },
             state => state
