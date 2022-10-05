@@ -1,4 +1,4 @@
-import { assert, isNotNull } from '@nadameu/predicates';
+import { Either, Left, Right } from '@nadameu/either';
 
 export function obterPorId(id: string) {
   return assegurarExistente(document.getElementById(id), `#${id}`);
@@ -12,7 +12,7 @@ export function obterPorTipoId<K extends keyof HTMLElementTagNameMap>(tagName: K
   return obterPorSeletor<HTMLElementTagNameMap[K]>(`${tagName}[id="${id}"]`);
 }
 
-function assegurarExistente<T>(obj: T | null, seletor: string) {
-  assert(isNotNull(obj), `Não encontrado: ${seletor}.`);
-  return obj;
+function assegurarExistente<T>(obj: T | null, seletor: string): Either<Error, T> {
+  if (!obj) return Left(new Error(`Não encontrado: ${seletor}.`));
+  return Right(obj);
 }

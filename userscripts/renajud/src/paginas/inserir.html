@@ -1,0 +1,41 @@
+<div id="gm-formulario">
+  <div id="gm-entrada">
+    <p>Cole aqui o resultado do botão “Copiar para colar no Excel”:</p>
+    <textarea cols="80" rows="10" autofocus></textarea>
+    <div id="gm-explicacao">
+      <h4>Onde encontro este botão?</h4>
+      <ul>
+        <li>
+          Nas configurações do <em>eproc</em>:
+          <ul>
+            <li>Habilite “Exibir botão &lsquo;Copiar para colar no Excel&rsquo;”;</li>
+            <li>Desabilite “Ocultar demais partes da capa do processo”;</li>
+          </ul>
+        </li>
+        <li>
+          Na tela do processo, próximo ao botão “Download completo”, haverá um botão “Copiar para
+          colar no Excel”.
+        </li>
+        <li>Após clicar, certifique-se de que a mensagem “Dados copiados” foi exibida.</li>
+      </ul>
+    </div>
+  </div>
+  <div id="gm-tabela" style="display: none">
+    <form style="margin: 0">
+      <h5>Selecione as partes para pesquisar veículos:</h5>
+      <table>
+        <thead>
+          <tr>
+            <th>Autor(es)</th>
+            <th>Réu(s)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div>
+        <button id="gm-pesquisar">Pesquisar</button>
+      </div>
+    </form>
+  </div>
+  <div id="gm-saida"></div>
+</div>

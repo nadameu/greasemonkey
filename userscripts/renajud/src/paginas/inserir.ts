@@ -5,11 +5,16 @@ import { GUI } from '../GUI';
 import { obterPorId, obterPorSeletor } from '../obter';
 import * as Pagina from '../Pagina';
 import { PreferenciasUsuario } from '../PreferenciasUsuario';
-import css from './inserir.scss';
+import css from './inserir.scss?inline';
+import html from './inserir.html?raw';
+import { Either, Left, Right } from '@nadameu/either';
 
-export function inserir() {
+export function inserir(): Either<Error, void> {
   document.head.appendChild(document.createElement('style')).textContent = css;
-  return;
+  const painel = obterPorId('panel-inserir-restricao');
+  if (painel.isLeft) return painel as Left<Error>;
+  painel.rightValue.insertAdjacentHTML('beforebegin', html);
+  return Right(undefined);
   GUI.addOnDadosInputListener(texto => {
     try {
       GUI.Logger.clear();

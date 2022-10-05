@@ -1,19 +1,20 @@
-import { inserir } from './paginas/inserir';
+import { Either, Left, Right } from '@nadameu/either';
 import * as RE from 'descriptive-regexp';
+import { inserir } from './paginas/inserir';
 
-export async function main() {
+export function main(): Either<Error, void> {
   const loc = window.location.href;
-  const acao = getAcao(loc);
-  if (!acao) throw new Error(`URL desconhecida: <${loc}>.`);
-  switch (acao) {
-    case 'insercao':
-      return inserir();
-    default:
-      throw new Error(`Ação desconhecida: ${acao}.`);
-  }
+  return getAcao(loc).chain(acao => {
+    switch (acao) {
+      case 'insercao':
+        return inserir();
+      default:
+        return Left(new Error(`Ação desconhecida: ${acao}.`));
+    }
+  });
 }
 
-function getAcao(url: string) {
+function getAcao(url: string): Either<Error, string> {
   const match = url.match(
     RE.concat(
       'https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-',
@@ -21,6 +22,6 @@ function getAcao(url: string) {
       '.jsf'
     )
   );
-  if (!match) return null;
-  return match[1]!;
+  if (!match) return Left(new Error(`URL desconhecida: <${url}>.`));
+  return Right(match[1]!);
 }
