@@ -2,7 +2,7 @@ import { inserir } from './paginas/inserir';
 import * as RE from 'descriptive-regexp';
 
 export async function main() {
-  const loc = location.href;
+  const loc = window.location.href;
   const acao = getAcao(loc);
   if (!acao) throw new Error(`URL desconhecida: <${loc}>.`);
   switch (acao) {

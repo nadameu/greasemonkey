@@ -4,23 +4,6 @@ import { obterPorId } from './obter';
 import * as Pagina from './Pagina';
 import { PreferenciasUsuario } from './PreferenciasUsuario';
 
-const style = document.createElement('style');
-style.innerHTML = /* css */ `
-  @media print { #gm-formulario, .noprint { display: none; } }
-  @media screen { #gm-impressao, .noscreen { display: none; } }
-  #gm-formulario { background: hsl(266, 50%, 95.1%); box-sizing: border-box; margin-top: 2%; margin-left: 2%; padding: 10px 3%; width: 90%; font-size: 14px; color: #333; }
-  #gm-entrada p { margin: 0 0 1em; color: inherit; font-size: 1em; }
-  #gm-explicacao { font-size: 0.94em; color: #444; }
-  #gm-explicacao h4 { font-size: 1.05em; font-weight: 600; }
-  #gm-explicacao ul { list-style: square inside; }
-  #gm-explicacao ul ul { list-style: disc inside; margin-left: 2ex; margin-top: 0.5em; }
-  #gm-explicacao li { margin: 0 0 0.5em; color: inherit; font-size: 1em; }
-  #gm-entrada textarea { font-family: monospace; }
-  #gm-saida { font-family: monospace; }
-  #gm-impressao table { page-break-inside: avoid; }
-`;
-document.getElementsByTagName('head')[0]!.appendChild(style);
-
 const painel = obterPorId('panel-inserir-restricao');
 painel.insertAdjacentHTML(
   'beforebegin',
@@ -44,12 +27,12 @@ painel.insertAdjacentHTML(
     </div>
   </div>
   <div id="gm-tabela" style="display: none;">
-    <form class="ui-datatable" style="margin: 0;">
+    <form style="margin: 0;">
       <h5>Selecione as partes para pesquisar veículos:</h5>
       <table><thead>
         <tr><th>Autor(es)</th><th>Réu(s)</th></tr>
       </thead><tbody></tbody></table>
-      <div class="line_buttons">
+      <div>
         <button id="gm-pesquisar">Pesquisar</button>
       </div>
     </form>
@@ -60,7 +43,7 @@ painel.insertAdjacentHTML(
 const alteracoesGreasemonkey = obterPorId('gm-formulario');
 
 document.body.insertAdjacentHTML('beforeend', /* html */ `<div id="gm-impressao"></div>`);
-const impressaoGreasemonkey = document.querySelector<HTMLDivElement>('#gm-impressao')!;
+const impressaoGreasemonkey = obterPorId('gm-impressao')!;
 
 const listeners: Array<(_: string) => void> = [];
 const dadosProcesso = alteracoesGreasemonkey.querySelector('textarea')!;

@@ -1,64 +1,46 @@
-import { assert, hasShape, isNotNullish, isString } from '@nadameu/predicates';
+import * as p from '@nadameu/predicates';
 import * as AjaxListener from '../AjaxListener';
 import { DadosPessoa } from '../DadosPessoa';
 import { GUI } from '../GUI';
 import { obterPorId, obterPorSeletor } from '../obter';
 import * as Pagina from '../Pagina';
 import { PreferenciasUsuario } from '../PreferenciasUsuario';
+import css from './inserir.scss';
 
 export function inserir() {
+  document.head.appendChild(document.createElement('style')).textContent = css;
+  return;
   GUI.addOnDadosInputListener(texto => {
-    GUI.Logger.clear();
-    GUI.Logger.write('Analisando dados...');
-    let filtered: {
-      autores: DadosPessoa[];
-      reus: DadosPessoa[];
-    };
     try {
+      GUI.Logger.clear();
+      GUI.Logger.write('Analisando dados...');
+
       const linhas = texto
         .split(/\n/g)
         .slice(8)
         .map(linha => linha.split(/\t/g));
-      assert(linhas.length >= 1);
-      assert(
+      p.assert(linhas.length >= 1);
+      p.assert(
         linhas.every((x): x is [string, string, string, string, string, string] => x.length === 6)
       );
 
-      filtered = linhas.reduce(
-        (
-          { autores, reus }: Record<'autores' | 'reus', DadosPessoa[]>,
-          [nomeAutor, docAutor, , nomeReu, docReu]
-        ) => {
-          const matchAutor = docAutor.match(/^="(\d+)"$/);
-          if (matchAutor) {
-            autores.push({ nome: nomeAutor, doc: matchAutor[1]! });
-          } else if (docAutor === '') {
-            if (nomeAutor) autores.push({ nome: nomeAutor, doc: null });
-          } else {
-            throw null;
-          }
+      const autores: DadosPessoa[] = [];
+      const reus: DadosPessoa[] = [];
+      for (const [nomeAutor, docAutor, , nomeReu, docReu] of linhas) {
+        const resultadoAutor = analisarLinhaExcel(nomeAutor, docAutor);
+        if (resultadoAutor) autores.push(resultadoAutor);
 
-          const matchReu = docReu.match(/^="(\d+)"$/);
-          if (matchReu) {
-            reus.push({ nome: nomeReu, doc: matchReu[1]! });
-          } else if (docReu === '') {
-            if (nomeReu) reus.push({ nome: nomeReu, doc: null });
-          } else {
-            throw null;
-          }
-
-          return { autores, reus };
-        },
-        { autores: [], reus: [] }
-      );
+        const resultadoReu = analisarLinhaExcel(nomeReu, docReu);
+        if (resultadoReu) reus.push(resultadoReu);
+      }
+      GUI.Logger.clear();
+      GUI.hideEntrada();
+      GUI.showTabela({ autores, reus });
     } catch (e) {
       GUI.hideEntrada();
       GUI.Logger.write(`Erro:\nFormato dos dados copiados não reconhecido.`);
       return;
     }
-    GUI.Logger.clear();
-    GUI.hideEntrada();
-    GUI.showTabela(filtered);
   });
   GUI.addOnPesquisarListener(documentos => {
     (async function () {
@@ -168,7 +150,7 @@ export function inserir() {
     const opcaoNova = Array.from(
       document.querySelectorAll<HTMLLIElement>(`[id="${idCampo}_panel"] li`)
     ).filter(li => li.dataset.label === texto)[0];
-    assert(isNotNullish(opcaoNova), `Não encontrada: opção "${texto}".`);
+    p.assert(p.isNotNullish(opcaoNova), `Não encontrada: opção "${texto}".`);
     menu.click();
     opcaoNova.click();
   }
@@ -206,9 +188,12 @@ export function inserir() {
   }
 
   const id = document.querySelector('[id="form-incluir-restricao"] div')?.id;
-  assert(isNotNullish(id), `Não encontrado: Id.`);
+  p.assert(p.isNotNullish(id), `Não encontrado: Id.`);
   AjaxListener.listen(id, ext => {
-    assert(hasShape({ currentStep: isString })(ext), 'Informação não encontrada: currentStep.');
+    p.assert(
+      p.hasShape({ currentStep: p.isString })(ext),
+      'Informação não encontrada: currentStep.'
+    );
     if (ext.currentStep === 'inclui-restricao') {
       GUI.hide();
       GUI.areaImpressao.limpar();
@@ -233,4 +218,16 @@ export function inserir() {
       // Não faz nada
     }
   });
+}
+
+function analisarLinhaExcel(nome: string, formulaDoc: string): DadosPessoa | null {
+  if (nome === '')
+    if (formulaDoc === '') return null;
+    else throw null;
+  else if (formulaDoc === '') return { nome };
+  else {
+    const match = formulaDoc.match(/^="(\d+)"$/);
+    if (!match) throw null;
+    return { nome, doc: match[1]! };
+  }
 }

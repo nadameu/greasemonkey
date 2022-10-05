@@ -9,10 +9,7 @@ export function obterPorSeletor<T extends HTMLElement>(seletor: string) {
 }
 
 export function obterPorTipoId<K extends keyof HTMLElementTagNameMap>(tagName: K, id: string) {
-  return assegurarExistente(
-    document.querySelector<HTMLElementTagNameMap[K]>(`${tagName}[id="${id}"]`),
-    `${tagName}#${id}.`
-  );
+  return obterPorSeletor<HTMLElementTagNameMap[K]>(`${tagName}[id="${id}"]`);
 }
 
 function assegurarExistente<T>(obj: T | null, seletor: string) {

@@ -1,26 +1,11 @@
-import {
-  hasShape,
-  isAnyOf,
-  isLiteral,
-  isNull,
-  isNumber,
-  isString,
-  Static,
-} from '@nadameu/predicates';
+import * as p from '@nadameu/predicates';
 import { createResolvable } from '@nadameu/resolvable';
 
-const isExtension = isAnyOf(
-  hasShape({ totalRecords: isNumber }),
-  hasShape({ currentStep: isString })
+const isExtension = p.isAnyOf(
+  p.hasShape({ totalRecords: p.isNumber }),
+  p.hasShape({ currentStep: p.isString })
 );
-type Extension = Static<typeof isExtension>;
-
-const isDetails = hasShape({
-  type: isLiteral('ajaxComplete'),
-  source: isString,
-  extension: isAnyOf(isExtension, isNull),
-});
-type Details = Static<typeof isDetails>;
+type Extension = p.Static<typeof isExtension>;
 
 type Handler = (_: Extension | null) => void;
 type Handlers = Map<string, Handler[]>;
@@ -49,78 +34,33 @@ function getResolves(source: string) {
   return sourceResolves;
 }
 
-function privilegedCode() {
-  jQuery.fx.off = true;
+jQuery.fx.off = true;
+$(window.document).ajaxComplete(ajaxCompleteHandler);
 
-  const origin = document.location.origin;
-
-  function sendObject(obj: Details) {
-    window.postMessage(JSON.stringify(obj), origin);
-  }
-
-  function hasKeyOfType<T, K extends string>(
-    obj: T,
-    key: K,
-    type: 'string'
-  ): obj is T & { [k in K]: string };
-  function hasKeyOfType<T, K extends string>(
-    obj: T,
-    key: K,
-    type: 'number'
-  ): obj is T & { [k in K]: number };
-  function hasKeyOfType<T, K extends string>(obj: T, key: K, type: string): boolean {
-    return key in obj && typeof (obj as T & { [k in K]: unknown })[key] === type;
-  }
-
-  $(window.document).ajaxComplete((evt, xhr, options) => {
-    if (!xhr.responseXML) return;
-    if (!hasKeyOfType(options, 'source', 'string')) return;
-    const extensionText = $('extension', xhr.responseXML).text();
-    let extension: Extension | null = null;
-    if (extensionText !== '') {
-      const parsed = JSON.parse(extensionText) as unknown;
-      if (
-        typeof parsed === 'object' &&
-        parsed !== null &&
-        hasKeyOfType(parsed, 'totalRecords', 'number')
-      ) {
-        extension = parsed;
-      } else return;
-    }
-    sendObject({
-      type: 'ajaxComplete',
-      source: options.source,
-      extension,
-    });
-  });
-}
-
-const script = document.createElement('script');
-script.innerHTML = '(' + privilegedCode.toString() + ')();';
-document.getElementsByTagName('head')[0]!.appendChild(script);
-
-const origin = document.location.origin;
-window.addEventListener(
-  'message',
-  function (evt) {
-    if (evt.origin !== origin) {
-      return;
-    }
+function ajaxCompleteHandler(
+  event: JQuery.TriggeredEvent<Document, undefined, Document, Document>,
+  xhr: JQuery.jqXHR,
+  ajaxOptions: JQuery.AjaxSettings
+): void | false {
+  const extension = (() => {
+    if (!xhr.responseXML) return null;
+    const extension = $('extension', xhr.responseXML).text();
     try {
-      const eventDetails = JSON.parse(evt.data);
-      if (eventDetails.type === 'ajaxComplete') {
-        getResolves(eventDetails.source).forEach(resolve => resolve(eventDetails.extension));
-        getCallbacks(eventDetails.source).forEach(callback => callback(eventDetails.extension));
-        console.debug('ajaxComplete()', eventDetails);
-      } else {
-        throw new Error('Tipo desconhecido: ' + eventDetails.type);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  },
-  false
-);
+      const value = JSON.parse(extension);
+      if (isExtension(value)) return value;
+    } catch (_) {}
+    return null;
+  })();
+  try {
+    p.assert(p.isNotNullish(xhr.responseXML));
+    console.dir(xhr.responseXML.documentElement.outerHTML);
+    p.assert(p.hasShape({ source: p.isString })(ajaxOptions));
+    getResolves(ajaxOptions.source).forEach(resolve => resolve(extension));
+    getCallbacks(ajaxOptions.source).forEach(callback => callback(extension));
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 export function listen(source: string, fn: Handler) {
   console.debug('AjaxListener.listen(source)', source, fn);

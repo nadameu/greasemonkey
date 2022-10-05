@@ -1,15 +1,4 @@
-import {
-  assert,
-  isLiteral,
-  isNotNull,
-  isNonEmptyString,
-  isNotNullish,
-  negate,
-  hasShape,
-  isNumber,
-  isAnyOf,
-  isNull,
-} from '@nadameu/predicates';
+import * as p from '@nadameu/predicates';
 import * as AjaxListener from './AjaxListener';
 import { obterPorId, obterPorTipoId } from './obter';
 
@@ -38,8 +27,8 @@ export function abrirDetalhesVeiculo(ord: number) {
     divDetalhes = obterPorId(idDivDetalhes);
   const abrirDetalhes = divDetalhes.previousElementSibling as HTMLElement | null,
     idAbrirDetalhes = abrirDetalhes?.id;
-  assert(
-    isNotNull(abrirDetalhes) && isNotNullish(idAbrirDetalhes),
+  p.assert(
+    p.isNotNull(abrirDetalhes) && p.isNotNullish(idAbrirDetalhes),
     'Não encontrado: abrir detalhes.'
   );
   const promise = AjaxListener.listenOnce(idAbrirDetalhes).then(function () {
@@ -57,14 +46,14 @@ export function abrirRestricoesVeiculo(ord: number) {
     const idDialogo = prefixo + ':dlg-detalhes-veiculo-restricoes',
       dialogo = obterPorId(idDialogo);
     const fieldsets = dialogo.getElementsByTagName('fieldset');
-    assert(fieldsets.length >= 3, 'Não encontrado: painel de restrições.');
+    p.assert(fieldsets.length >= 3, 'Não encontrado: painel de restrições.');
     const painelRestricoes = fieldsets[1]!;
     const listasRestricoes = painelRestricoes.getElementsByTagName('ul');
     let listaRestricoes: string[] = [];
     if (listasRestricoes.length > 0) {
       listaRestricoes = Array.from(listasRestricoes[0]!.childNodes)
         .map(li => li.textContent?.trim())
-        .filter(isNotNullish);
+        .filter(p.isNotNullish);
     }
     const painelRestricoesRenajud = fieldsets[2]!;
     return {
@@ -114,7 +103,7 @@ export function fecharDetalhesVeiculo(ord: number) {
   const idDivDetalhes = prefixo + ':detalhe-veiculo',
     divDetalhes = obterPorId(idDivDetalhes);
   const fecharDetalhes = divDetalhes.getElementsByTagName('button')[1];
-  assert(isNotNullish(fecharDetalhes), 'Não encontrado: fechar detalhes.');
+  p.assert(p.isNotNullish(fecharDetalhes), 'Não encontrado: fechar detalhes.');
   fecharDetalhes.click();
 }
 export function fecharRestricoesVeiculo(ord: number) {
@@ -123,7 +112,7 @@ export function fecharRestricoesVeiculo(ord: number) {
   const idDivDetalhesRestricoes = prefixo + ':dlg-detalhes-veiculo-restricoes',
     divDetalhesRestricoes = obterPorId(idDivDetalhesRestricoes);
   const fecharRestricoes = divDetalhesRestricoes.getElementsByTagName('button')[1];
-  assert(isNotNullish(fecharRestricoes), 'Não encontrado: fechar restrições.');
+  p.assert(p.isNotNullish(fecharRestricoes), 'Não encontrado: fechar restrições.');
   fecharRestricoes.click();
 }
 export function imprimir() {
@@ -159,8 +148,8 @@ export function limparPesquisa() {
     botaoPesquisar = obterPorId(idBotaoPesquisar);
   const botaoLimparPesquisa = botaoPesquisar.nextElementSibling as HTMLElement | null,
     idBotaoLimparPesquisa = botaoLimparPesquisa?.id;
-  assert(
-    isNotNull(botaoLimparPesquisa) && isNotNullish(idBotaoLimparPesquisa),
+  p.assert(
+    p.isNotNull(botaoLimparPesquisa) && p.isNotNullish(idBotaoLimparPesquisa),
     'Não encontrado: botão limpar pesquisa.'
   );
   const promise = AjaxListener.listenOnce(idBotaoLimparPesquisa);
@@ -170,14 +159,14 @@ export function limparPesquisa() {
 export function obterCelulaRestricaoVeiculo(ord: number) {
   console.debug('Pagina.obterCelulaRestricaoVeiculo(ord)', ord);
   const linha = obterLinhaVeiculo(ord);
-  assert(linha.cells.length > 8, 'Linha não possui 9 células.');
+  p.assert(linha.cells.length > 8, 'Linha não possui 9 células.');
   return linha.cells[8]!;
 }
 function obterLinhaVeiculo(ord: number) {
   console.debug('Pagina.obterLinhaVeiculo(ord)', ord);
   const tBody = obterPorTipoId('tbody', 'form-incluir-restricao:lista-veiculo_data');
   const index = ord % 100;
-  assert(tBody.rows.length > index, `Tabela não possui ${index + 1} linhas.`);
+  p.assert(tBody.rows.length > index, `Tabela não possui ${index + 1} linhas.`);
   return tBody.rows[index]!;
 }
 export function obterMagistrado() {
@@ -195,10 +184,10 @@ function obterValorInput(campo: string) {
 export function obterPlacaVeiculo(ord: number) {
   console.debug('Pagina.obterPlacaVeiculo(ord)', ord);
   const linha = obterLinhaVeiculo(ord);
-  assert(linha.cells.length > 1, 'Linha não possui 2 células.');
+  p.assert(linha.cells.length > 1, 'Linha não possui 2 células.');
   const celulaPlaca = linha.cells[1]!;
   const texto = celulaPlaca.textContent?.trim() ?? '';
-  assert(texto !== '', 'Não foi possível obter: placa.');
+  p.assert(texto !== '', 'Não foi possível obter: placa.');
   return texto;
 }
 function obterPrefixoVeiculo(ord: number) {
@@ -211,7 +200,7 @@ export function obterVeiculosDocumento(documento: string) {
   const botaoPesquisar = obterPorId(idBotaoPesquisar);
   const campoDocumento = obterPorTipoId('input', 'form-incluir-restricao:campo-cpf-cnpj');
   const promise = AjaxListener.listenOnce(idBotaoPesquisar).then(ext => {
-    if (hasShape({ totalRecords: isNumber })(ext)) {
+    if (p.hasShape({ totalRecords: p.isNumber })(ext)) {
       return ext.totalRecords;
     } else {
       return 0;
