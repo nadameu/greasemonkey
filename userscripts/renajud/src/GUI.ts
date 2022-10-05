@@ -1,7 +1,8 @@
-import { PreferenciasUsuario } from './PreferenciasUsuario';
-import * as Pagina from './Pagina';
-import { obterPorId } from './obter';
 import { assert, isNotNull } from '@nadameu/predicates';
+import { DadosPessoa } from './DadosPessoa';
+import { obterPorId } from './obter';
+import * as Pagina from './Pagina';
+import { PreferenciasUsuario } from './PreferenciasUsuario';
 
 const style = document.createElement('style');
 style.innerHTML = /* css */ `
@@ -42,13 +43,24 @@ painel.insertAdjacentHTML(
       </ul>
     </div>
   </div>
+  <div id="gm-tabela" style="display: none;">
+    <form class="ui-datatable" style="margin: 0;">
+      <h5>Selecione as partes para pesquisar veículos:</h5>
+      <table><thead>
+        <tr><th>Autor(es)</th><th>Réu(s)</th></tr>
+      </thead><tbody></tbody></table>
+      <div class="line_buttons">
+        <button id="gm-pesquisar">Pesquisar</button>
+      </div>
+    </form>
+  </div>
   <div id="gm-saida"></div>
 </div>`
 );
 const alteracoesGreasemonkey = obterPorId('gm-formulario');
 
 document.body.insertAdjacentHTML('beforeend', /* html */ `<div id="gm-impressao"></div>`);
-const impressaoGreasemonkey = painel.parentNode!.querySelector<HTMLDivElement>('#gm-impressao')!;
+const impressaoGreasemonkey = document.querySelector<HTMLDivElement>('#gm-impressao')!;
 
 const listeners: Array<(_: string) => void> = [];
 const dadosProcesso = alteracoesGreasemonkey.querySelector('textarea')!;
@@ -62,11 +74,20 @@ dadosProcesso.addEventListener(
 
 const logElement = alteracoesGreasemonkey.querySelector<HTMLDivElement>('#gm-saida')!;
 const divEntrada = alteracoesGreasemonkey.querySelector<HTMLDivElement>('#gm-entrada')!;
+const divTabela = alteracoesGreasemonkey.querySelector<HTMLDivElement>('#gm-tabela')!;
+const form = divTabela.querySelector<HTMLFormElement>('form')!;
 
 export const GUI = {
   addOnDadosInputListener(fn: (numproc: string) => void) {
     console.debug('GUI.addOnDadosInputListener(fn)', fn);
     listeners.push(fn);
+  },
+  addOnPesquisarListener(fn: (values: string[]) => void) {
+    console.debug('GUI.addOnPesquisarListener(fn)', fn);
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      fn([...(new FormData(form).values() as Iterable<string>)]);
+    });
   },
   criarOpcaoPreencherMagistrado() {
     console.debug('GUI.criarOpcaoPreencherMagistrado()');
@@ -116,6 +137,10 @@ export const GUI = {
     console.debug('GUI.hideEntrada()');
     divEntrada.style.display = 'none';
   },
+  hideTabela() {
+    console.debug('GUI.hideTabela()');
+    divTabela.style.display = 'none';
+  },
   restaurarTabelaVeiculos(fragmento: DocumentFragment) {
     console.debug('GUI.restaurarTabelaVeiculos(fragmento)', fragmento);
     const tBody = obterPorId('form-incluir-restricao:lista-veiculo_data');
@@ -136,6 +161,34 @@ export const GUI = {
     console.debug('GUI.showEntrada()');
     divEntrada.style.display = '';
   },
+  showTabela({ autores, reus }: { autores: DadosPessoa[]; reus: DadosPessoa[] }) {
+    console.debug('GUI.showTabela(partes)', { autores, reus });
+    const tabela = divTabela.querySelector('table')!;
+    const tbody = tabela.tBodies[0]!;
+    tbody.innerHTML = '';
+    const max = Math.max(0, autores.length, reus.length);
+    let evenOdd: 'even' | 'odd' = 'even';
+    for (let i = 0; i < max; i++) {
+      const tr = tbody.appendChild(document.createElement('tr'));
+      tr.className = `ui-datatable-${evenOdd}`;
+      evenOdd = evenOdd === 'even' ? 'odd' : 'even';
+      const celulaAutor = tr.appendChild(document.createElement('td'));
+      const autor = autores[i];
+      if (autor) {
+        adicionarPessoaCelula(autor, celulaAutor);
+      } else {
+        celulaAutor.innerHTML = '<br>';
+      }
+      const celulaReu = tr.appendChild(document.createElement('td'));
+      const reu = reus[i];
+      if (reu) {
+        adicionarPessoaCelula(reu, celulaReu);
+      } else {
+        celulaReu.innerHTML = '<br>';
+      }
+    }
+    divTabela.style.display = '';
+  },
   Logger: {
     clear() {
       console.debug('GUI.Logger.clear()');
@@ -147,3 +200,17 @@ export const GUI = {
     },
   },
 };
+
+function adicionarPessoaCelula(pessoa: DadosPessoa, celula: HTMLTableCellElement) {
+  const label = celula.appendChild(document.createElement('label'));
+  const checkbox = label.appendChild(document.createElement('input'));
+  checkbox.type = 'checkbox';
+  checkbox.name = 'partesSelecionadas';
+  if (pessoa.doc) {
+    checkbox.value = pessoa.doc;
+    label.appendChild(document.createTextNode(` ${pessoa.nome} (${pessoa.doc})`));
+  } else {
+    checkbox.disabled = true;
+    label.appendChild(document.createTextNode(` ${pessoa.nome}`));
+  }
+}
