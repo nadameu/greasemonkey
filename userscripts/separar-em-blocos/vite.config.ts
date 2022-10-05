@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
-import monkey, { cdn } from 'vite-plugin-monkey';
+import { defineConfig } from 'vite';
+import monkey from 'vite-plugin-monkey';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -33,13 +33,3 @@ export default defineConfig({
     }),
   ],
 });
-
-function mycdn(exportVarName = '', pathname = '') {
-  return [
-    exportVarName,
-    (version, name, _importName = '', resolveName = '') => {
-      pathname || (pathname = resolveName);
-      return `https://unpkg.com/${name}@${version}/${pathname}`;
-    },
-  ] as const;
-}
