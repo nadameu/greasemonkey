@@ -1,4 +1,22 @@
 <div id="gm-formulario">
+  <div id="gm-tabela" hidden="true">
+    <form style="margin: 0">
+      <h5>Selecione as partes para pesquisar veículos:</h5>
+      <table>
+        <thead>
+          <tr>
+            <th>Autor(es)</th>
+            <th>Réu(s)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div>
+        <button id="gm-pesquisar">Pesquisar</button>
+      </div>
+    </form>
+  </div>
+  <div id="gm-saida"></div>
   <div id="gm-entrada">
     <p>Cole aqui o resultado do botão “Copiar para colar no Excel”:</p>
     <textarea cols="80" rows="10" autofocus></textarea>
@@ -20,22 +38,4 @@
       </ul>
     </div>
   </div>
-  <div id="gm-tabela" style="display: none">
-    <form style="margin: 0">
-      <h5>Selecione as partes para pesquisar veículos:</h5>
-      <table>
-        <thead>
-          <tr>
-            <th>Autor(es)</th>
-            <th>Réu(s)</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <div>
-        <button id="gm-pesquisar">Pesquisar</button>
-      </div>
-    </form>
-  </div>
-  <div id="gm-saida"></div>
 </div>

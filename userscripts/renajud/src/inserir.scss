@@ -1,0 +1,81 @@
+@media print {
+  #gm-formulario,
+  .noprint {
+    display: none;
+  }
+}
+@media screen {
+  #gm-impressao,
+  .noscreen {
+    display: none;
+  }
+}
+#gm-formulario {
+  background: hsl(266, 50%, 95.1%);
+  box-sizing: border-box;
+  margin-top: 2%;
+  margin-left: 2%;
+  padding: 10px 3%;
+  width: 90%;
+  font-size: 14px;
+  color: #333;
+}
+#gm-entrada {
+  p {
+    margin: 0 0 1em;
+    color: inherit;
+    font-size: 1em;
+  }
+  textarea {
+    font-family: monospace;
+  }
+}
+#gm-explicacao {
+  font-size: 0.94em;
+  color: #444;
+  h4 {
+    font-size: 1.05em;
+    font-weight: 600;
+  }
+  ul {
+    list-style: square inside;
+
+    ul {
+      list-style: disc inside;
+      margin-left: 2ex;
+      margin-top: 0.5em;
+    }
+  }
+  li {
+    margin: 0 0 0.5em;
+    color: inherit;
+    font-size: 1em;
+  }
+}
+#gm-tabela {
+  table {
+    border-collapse: collapse;
+  }
+  th,
+  td {
+    border: 1px solid black;
+    padding: 0.5em 1ch;
+  }
+  div {
+    margin: 1em 0;
+  }
+}
+#gm-saida {
+  margin: 10px 0;
+  font-family: monospace;
+  &.erro {
+    padding: 10px 2%;
+    background: hsl(0, 50%, 50%);
+    color: #fff;
+  }
+}
+#gm-impressao {
+  table {
+    page-break-inside: avoid;
+  }
+}
