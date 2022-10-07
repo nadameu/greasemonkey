@@ -2,8 +2,6 @@ import { GM_xmlhttpRequest } from '$';
 import { GUI } from './GUI';
 
 export var ServicoWSDL = (function () {
-  'use strict';
-
   var dadosSalvos = new Map();
 
   function analisarRespostaNumeroProcesso(xhr) {

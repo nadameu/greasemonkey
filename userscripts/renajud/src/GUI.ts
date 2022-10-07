@@ -1,9 +1,7 @@
 import { PreferenciasUsuario } from './PreferenciasUsuario';
-import { Pagina } from './Pagina';
+import * as Pagina from './Pagina';
 
 export var GUI = (function () {
-  'use strict';
-
   var style = document.createElement('style');
   style.innerHTML = [
     '@media print { div#alteracoesGreasemonkey, .noprint { display: none; } }',

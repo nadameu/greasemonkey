@@ -1,94 +1,65 @@
-export var AjaxListener = (function () {
-  'use strict';
+import { Handler } from '@nadameu/handler';
 
-  var callbacks = new Map();
-  var resolves = new Map();
+export const AjaxListener = (() => {
+  const callbacks = new Map<string, Handler<unknown>[]>();
+  const resolves = new Map<string, Handler<unknown>[]>();
 
-  function getOrCreate(collection, id) {
+  function getOrCreate<T, U>(collection: Map<T, U[]>, id: T): U[] {
     if (!collection.has(id)) {
       collection.set(id, []);
     }
-    return collection.get(id);
+    return collection.get(id)!;
   }
 
-  function addItem(collection, id, item) {
+  function addItem<T, U>(collection: Map<T, U[]>, id: T, item: U): void {
     getOrCreate(collection, id).push(item);
   }
 
-  var addCallback = addItem.bind(null, callbacks);
-  var getCallbacks = getOrCreate.bind(null, callbacks);
+  const addCallback = addItem.bind(null, callbacks);
+  const getCallbacks = getOrCreate.bind(null, callbacks);
 
-  var addResolve = addItem.bind(null, resolves);
-  function getResolves(source) {
-    var sourceResolves = getOrCreate(resolves, source);
+  const addResolve = addItem.bind(null, resolves);
+  function getResolves(source: string) {
+    const sourceResolves = getOrCreate(resolves, source);
     resolves.delete(source);
     return sourceResolves;
   }
 
-  function privilegedCode() {
-    jQuery.fx.off = true;
+  jQuery.fx.off = true;
 
-    const origin = [location.protocol, document.domain].join('//');
-
-    function sendObject(obj) {
-      window.postMessage(JSON.stringify(obj), origin);
+  $(document).ajaxComplete((evt, xhr, options) => {
+    const extensionText =
+      Array.from(xhr.responseXML?.querySelectorAll('extension') ?? [])
+        .map(x => x.textContent ?? '')
+        .join('') || null;
+    let extension: unknown;
+    if (extensionText === null) {
+      extension = null;
+    } else {
+      extension = JSON.parse(extensionText);
     }
-
-    $(window.document).ajaxComplete(function (evt, xhr, options) {
-      var extension = $('extension', xhr.responseXML).text();
-      if (extension === '') {
-        extension = null;
-      } else {
-        extension = JSON.parse(extension);
-      }
-      var eventDetails = {
-        type: 'ajaxComplete',
-        source: options.source,
-        extension: extension,
-      };
-      sendObject(eventDetails);
-    });
-  }
-
-  var script = document.createElement('script');
-  script.innerHTML = '(' + privilegedCode.toString() + ')();';
-  document.getElementsByTagName('head')[0].appendChild(script);
-
-  const origin = [location.protocol, document.domain].join('//');
-  window.addEventListener(
-    'message',
-    function (evt) {
-      if (evt.origin !== origin) {
-        return;
-      }
-      try {
-        var eventDetails = JSON.parse(evt.data);
-        if (eventDetails.type === 'ajaxComplete') {
-          getResolves(eventDetails.source).forEach(resolve => resolve(eventDetails.extension));
-          getCallbacks(eventDetails.source).forEach(callback => callback(eventDetails.extension));
-          console.debug('ajaxComplete()', eventDetails);
-        } else {
-          throw new Error('Tipo desconhecido: ' + eventDetails.type);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    },
-    false
-  );
+    const source = (options as { source?: unknown }).source;
+    try {
+      getResolves(source).forEach(resolve => resolve(extension));
+      getCallbacks(source).forEach(callback => callback(extension));
+      console.debug('ajaxComplete()', { source, extension });
+    } catch (err) {
+      console.error(err);
+    }
+  });
 
   return {
-    listen(source, fn) {
+    listen(source: string, fn: (extension: unknown) => void) {
       console.debug('AjaxListener.listen(source)', source, fn);
       addCallback(source, fn);
     },
-    listenOnce(source) {
+    listenOnce<T>(source: string) {
       console.debug('AjaxListener.listenOnce(source)', source);
-      var hijackedResolve;
-      var promise = new Promise(function (resolve) {
-        hijackedResolve = resolve;
-      });
-      addResolve(source, hijackedResolve);
+      const resolvable: { (resolve: Handler<T>): void; resolve?: Handler<T> } = function (resolve) {
+        resolvable.resolve = resolve;
+      };
+      const promise = new Promise(resolvable);
+      addResolve(source, resolvable.resolve as Handler<T>);
       return promise;
     },
   };

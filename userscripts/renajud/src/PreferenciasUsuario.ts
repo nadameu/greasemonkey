@@ -1,6 +1,4 @@
 export var PreferenciasUsuario = (function () {
-  'use strict';
-
   function padrao(nome, valor) {
     let valorSalvo = localStorage.getItem(nome);
     if (valorSalvo === null) {
