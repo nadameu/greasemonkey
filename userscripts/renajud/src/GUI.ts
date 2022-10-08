@@ -1,4 +1,4 @@
-import { PreferenciasUsuario } from './PreferenciasUsuario';
+import * as PreferenciasUsuario from './PreferenciasUsuario';
 import * as Pagina from './Pagina';
 
 export var GUI = (() => {
@@ -22,7 +22,7 @@ export var GUI = (() => {
   var impressaoGreasemonkey = document.getElementById('impressaoGreasemonkey');
 
   var estadoElement = alteracoesGreasemonkey.querySelector('select');
-  var estadoSalvo = PreferenciasUsuario.estado;
+  var estadoSalvo = PreferenciasUsuario.getEstado();
   estadoElement.insertAdjacentHTML(
     'afterbegin',
     ['PR', 'RS', 'SC']
@@ -31,9 +31,9 @@ export var GUI = (() => {
   );
   estadoElement.addEventListener(
     'change',
-    function (e) {
+    e => {
       estadoSalvo = e.target.value;
-      PreferenciasUsuario.estado = estadoSalvo;
+      PreferenciasUsuario.setEstado(estadoSalvo);
     },
     false
   );
@@ -42,7 +42,7 @@ export var GUI = (() => {
   var numprocElement = alteracoesGreasemonkey.querySelector('input');
   numprocElement.addEventListener(
     'change',
-    function () {
+    () => {
       var numproc = GUI.numproc.replace(/\D+/g, '');
       GUI.numproc = numproc;
       listeners.forEach(fn => fn(numproc));
@@ -78,11 +78,11 @@ export var GUI = (() => {
         '<td><label><input type="checkbox" id="preencher-magistrado-automaticamente"/> Usar este valor como padrão para todos os processos</label></td>'
       );
       var checkbox = document.getElementById('preencher-magistrado-automaticamente');
-      checkbox.checked = PreferenciasUsuario.preencherMagistrado;
+      checkbox.checked = PreferenciasUsuario.getPreencherMagistrado();
       checkbox.addEventListener(
         'change',
-        function (evt) {
-          PreferenciasUsuario.preencherMagistrado = evt.target.checked;
+        evt => {
+          PreferenciasUsuario.setPreencherMagistrado(evt.target.checked);
         },
         false
       );

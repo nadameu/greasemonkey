@@ -5,7 +5,7 @@ function addSelectOneMenuListener(prefixo, fn) {
   var select = document.getElementById(`${prefixo}_input`);
   painelOpcoes.addEventListener(
     'click',
-    function (evt) {
+    evt => {
       var elementoClicado = evt.target;
       if (
         elementoClicado.tagName.toUpperCase() === 'LI' &&
@@ -75,8 +75,8 @@ export function addOnOrgaoChangeListener(fn) {
 
 export function aguardarProximaPaginaListagem(pagina) {
   console.debug('Pagina.aguardarProximaPaginaListagem(pagina)', pagina);
-  var promise = new Promise(function (resolve, reject) {
-    var onPaginaCarregada = function () {
+  var promise = new Promise((resolve, reject) => {
+    var onPaginaCarregada = () => {
       console.info('pagina carregada');
       var botoesPagina = [...document.getElementsByClassName('ui-paginator-page')].filter(botao =>
         botao.classList.contains('ui-state-active')
@@ -198,7 +198,7 @@ export function obterVeiculosDocumento(documento) {
   var campoDocumento = document.getElementById('form-incluir-restricao:campo-cpf-cnpj');
   var promise = getAjaxListener()
     .listenOnce(idBotaoPesquisar)
-    .then(function (ext) {
+    .then(ext => {
       if (ext === null) {
         return 0;
       } else {

@@ -5,7 +5,7 @@ export var ServicoWSDL = (() => {
   var dadosSalvos = new Map();
 
   function analisarRespostaNumeroProcesso(xhr) {
-    var promise = new Promise(function (resolve, reject) {
+    var promise = new Promise((resolve, reject) => {
       var parser = new DOMParser();
       var xml = parser.parseFromString(xhr.responseText, 'application/xml');
       if (xml.lastChild.nodeName === 'parsererror') {
@@ -38,7 +38,7 @@ export var ServicoWSDL = (() => {
       if (dadosSalvos.has(id)) {
         return Promise.resolve(dadosSalvos.get(id));
       }
-      var promise = new Promise(function (resolve, reject) {
+      var promise = new Promise((resolve, reject) => {
         var options = {
           method: 'POST',
           url: 'https://www2.trf4.jus.br/trf4/processos/acompanhamento/consultaws.php',
@@ -58,14 +58,14 @@ export var ServicoWSDL = (() => {
           headers: {
             SOAPAction: 'consulta_processual_ws_wsdl#ws_consulta_processo',
           },
-          onload: function (xhr) {
+          onload: xhr => {
             if (xhr.status >= 200 && xhr.status < 300) {
               resolve(xhr);
             } else {
               reject(new Error('Erro ao tentar obter os dados do processo.'));
             }
           },
-          onerror: function () {
+          onerror: () => {
             reject(new Error('Erro ao tentar obter os dados do processo.'));
           },
         };

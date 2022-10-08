@@ -1,7 +1,7 @@
 import { getAjaxListener } from './AjaxListener';
 import { GUI } from './GUI';
 import * as Pagina from './Pagina';
-import { PreferenciasUsuario } from './PreferenciasUsuario';
+import * as PreferenciasUsuario from './PreferenciasUsuario';
 import { ServicoWSDL } from './ServicoWSDL';
 
 export function main() {
@@ -9,23 +9,23 @@ export function main() {
   var firstDiv = form.getElementsByTagName('div')[0],
     id = firstDiv.id;
   var AjaxListener = getAjaxListener();
-  AjaxListener.listen(id, function (ext) {
+  AjaxListener.listen(id, ext => {
     if (ext.currentStep === 'inclui-restricao') {
       GUI.hide();
       GUI.areaImpressao.limpar();
       document.getElementById('form-incluir-restricao:campo-magistrado_input').childNodes[0].value =
         '';
       GUI.criarOpcaoPreencherMagistrado();
-      AjaxListener.listen('form-incluir-restricao:campo-municipio', function () {
-        PreferenciasUsuario.municipio = Pagina.obterMunicipio();
+      AjaxListener.listen('form-incluir-restricao:campo-municipio', () => {
+        PreferenciasUsuario.setMunicipio(Pagina.obterMunicipio());
         preencherTudo();
       });
-      AjaxListener.listen('form-incluir-restricao:campo-orgao', function () {
-        PreferenciasUsuario.orgao = Pagina.obterOrgao();
+      AjaxListener.listen('form-incluir-restricao:campo-orgao', () => {
+        PreferenciasUsuario.setOrgao(Pagina.obterOrgao());
         preencherTudo();
       });
-      Pagina.addOnMagistradoChangeListener(function (valor) {
-        PreferenciasUsuario.magistrado = valor;
+      Pagina.addOnMagistradoChangeListener(valor => {
+        PreferenciasUsuario.setMagistrado(valor);
         preencherTudo();
       });
       preencherTudo();
@@ -157,22 +157,28 @@ function preencherSelectOneMenu(idCampo, valor) {
 
 function preencherTudo() {
   console.debug('preencherTudo()');
-  if (Pagina.obterMunicipio() !== PreferenciasUsuario.municipio) {
-    preencherSelectOneMenu('form-incluir-restricao:campo-municipio', PreferenciasUsuario.municipio);
-  } else if (Pagina.obterMunicipio() !== '' && Pagina.obterOrgao() !== PreferenciasUsuario.orgao) {
+  if (Pagina.obterMunicipio() !== PreferenciasUsuario.getMunicipio()) {
+    preencherSelectOneMenu(
+      'form-incluir-restricao:campo-municipio',
+      PreferenciasUsuario.getMunicipio()
+    );
+  } else if (
+    Pagina.obterMunicipio() !== '' &&
+    Pagina.obterOrgao() !== PreferenciasUsuario.getOrgao()
+  ) {
     try {
-      preencherSelectOneMenu('form-incluir-restricao:campo-orgao', PreferenciasUsuario.orgao);
+      preencherSelectOneMenu('form-incluir-restricao:campo-orgao', PreferenciasUsuario.getOrgao());
     } catch (err) {
-      PreferenciasUsuario.orgao = '';
+      PreferenciasUsuario.setOrgao('');
     }
   } else if (
     Pagina.obterOrgao() !== '' &&
-    Pagina.obterMagistrado() !== PreferenciasUsuario.magistrado &&
-    PreferenciasUsuario.preencherMagistrado
+    Pagina.obterMagistrado() !== PreferenciasUsuario.getMagistrado() &&
+    PreferenciasUsuario.getPreencherMagistrado()
   ) {
     preencherSelectOneMenu(
       'form-incluir-restricao:campo-magistrado',
-      PreferenciasUsuario.magistrado
+      PreferenciasUsuario.getMagistrado()
     );
   } else if (Pagina.obterMagistrado() !== '') {
     document.getElementById('form-incluir-restricao:campo-numero-processo').value = GUI.numproc;
