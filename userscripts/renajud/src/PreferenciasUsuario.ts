@@ -1,4 +1,4 @@
-export var PreferenciasUsuario = (function () {
+export var PreferenciasUsuario = (() => {
   function padrao(nome, valor) {
     let valorSalvo = localStorage.getItem(nome);
     if (valorSalvo === null) {

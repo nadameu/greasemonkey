@@ -1,8 +1,8 @@
 import { getAjaxListener } from './AjaxListener';
 
 function addSelectOneMenuListener(prefixo, fn) {
-  var painelOpcoes = document.getElementById(prefixo + '_panel');
-  var select = document.getElementById(prefixo + '_input');
+  var painelOpcoes = document.getElementById(`${prefixo}_panel`);
+  var select = document.getElementById(`${prefixo}_input`);
   painelOpcoes.addEventListener(
     'click',
     function (evt) {
@@ -21,15 +21,13 @@ function addSelectOneMenuListener(prefixo, fn) {
 export function abrirDetalhesVeiculo(ord) {
   console.debug('Pagina.abrirDetalhesVeiculo(ord)', ord);
   var prefixo = obterPrefixoVeiculo(ord);
-  var idDivDetalhes = prefixo + ':detalhe-veiculo',
+  var idDivDetalhes = `${prefixo}:detalhe-veiculo`,
     divDetalhes = document.getElementById(idDivDetalhes);
   var abrirDetalhes = divDetalhes.previousElementSibling,
     idAbrirDetalhes = abrirDetalhes.id;
   var promise = getAjaxListener()
     .listenOnce(idAbrirDetalhes)
-    .then(function () {
-      return document.getElementById(prefixo + ':panel-group-dados-veiculo');
-    });
+    .then(() => document.getElementById(`${prefixo}:panel-group-dados-veiculo`));
   abrirDetalhes.click();
   return promise;
 }
@@ -37,12 +35,12 @@ export function abrirDetalhesVeiculo(ord) {
 export function abrirRestricoesVeiculo(ord) {
   console.debug('Pagina.abrirDetalhesVeiculo(ord)', ord);
   var prefixo = obterPrefixoVeiculo(ord);
-  var idAbrirRestricoes = prefixo + ':link-detalhes-veiculo-restricoes',
+  var idAbrirRestricoes = `${prefixo}:link-detalhes-veiculo-restricoes`,
     abrirRestricoes = document.getElementById(idAbrirRestricoes);
   var promise = getAjaxListener()
     .listenOnce(idAbrirRestricoes)
-    .then(function () {
-      var idDialogo = prefixo + ':dlg-detalhes-veiculo-restricoes',
+    .then(() => {
+      var idDialogo = `${prefixo}:dlg-detalhes-veiculo-restricoes`,
         dialogo = document.getElementById(idDialogo);
       var fieldsets = dialogo.getElementsByTagName('fieldset');
       var painelRestricoes = fieldsets[1];
@@ -101,7 +99,7 @@ export function aguardarProximaPaginaListagem(pagina) {
 export function fecharDetalhesVeiculo(ord) {
   console.debug('Pagina.fecharDetalhesVeiculo(ord)', ord);
   var prefixo = obterPrefixoVeiculo(ord);
-  var idDivDetalhes = prefixo + ':detalhe-veiculo',
+  var idDivDetalhes = `${prefixo}:detalhe-veiculo`,
     divDetalhes = document.getElementById(idDivDetalhes);
   var fecharDetalhes = divDetalhes.getElementsByTagName('button')[1];
   fecharDetalhes.click();
@@ -110,7 +108,7 @@ export function fecharDetalhesVeiculo(ord) {
 export function fecharRestricoesVeiculo(ord) {
   console.debug('Pagina.fecharRestricoesVeiculo(ord)', ord);
   var prefixo = obterPrefixoVeiculo(ord);
-  var idDivDetalhesRestricoes = prefixo + ':dlg-detalhes-veiculo-restricoes',
+  var idDivDetalhesRestricoes = `${prefixo}:dlg-detalhes-veiculo-restricoes`,
     divDetalhesRestricoes = document.getElementById(idDivDetalhesRestricoes);
   var fecharRestricoes = divDetalhesRestricoes.getElementsByTagName('button')[1];
   fecharRestricoes.click();
@@ -190,7 +188,7 @@ export function obterPlacaVeiculo(ord) {
 
 export function obterPrefixoVeiculo(ord) {
   console.debug('Pagina.obterPrefixoVeiculo(ord)', ord);
-  return 'form-incluir-restricao:lista-veiculo:' + ord;
+  return `form-incluir-restricao:lista-veiculo:${ord}`;
 }
 
 export function obterVeiculosDocumento(documento) {

@@ -1,7 +1,7 @@
 import { PreferenciasUsuario } from './PreferenciasUsuario';
 import * as Pagina from './Pagina';
 
-export var GUI = (function () {
+export var GUI = (() => {
   var style = document.createElement('style');
   style.innerHTML = [
     '@media print { div#alteracoesGreasemonkey, .noprint { display: none; } }',
@@ -26,10 +26,7 @@ export var GUI = (function () {
   estadoElement.insertAdjacentHTML(
     'afterbegin',
     ['PR', 'RS', 'SC']
-      .map(
-        estado =>
-          '<option' + (estado === estadoSalvo ? ' selected' : '') + '>' + estado + '</option>'
-      )
+      .map(estado => `<option${estado === estadoSalvo ? ' selected' : ''}>${estado}</option>`)
       .join('')
   );
   estadoElement.addEventListener(
@@ -93,10 +90,10 @@ export var GUI = (function () {
     definirRestricoesVeiculo(ord, restricoes) {
       console.debug('GUI.definirRestricoeVeiculo(ord, restricoes)', ord, restricoes);
       var celulaRestricao = Pagina.obterCelulaRestricaoVeiculo(ord);
-      celulaRestricao.innerHTML = '<div class="noscreen">' + celulaRestricao.innerHTML + '</div>\n';
+      celulaRestricao.innerHTML = `<div class="noscreen">${celulaRestricao.innerHTML}</div>\n`;
       celulaRestricao.insertAdjacentHTML(
         'beforeend',
-        restricoes.map(texto => '<div class="noprint">' + texto + '</div>').join('\n')
+        restricoes.map(texto => `<div class="noprint">${texto}</div>`).join('\n')
       );
     },
     areaImpressao: {

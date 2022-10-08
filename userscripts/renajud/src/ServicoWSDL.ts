@@ -1,7 +1,7 @@
 import { GM_xmlhttpRequest } from '$';
 import { GUI } from './GUI';
 
-export var ServicoWSDL = (function () {
+export var ServicoWSDL = (() => {
   var dadosSalvos = new Map();
 
   function analisarRespostaNumeroProcesso(xhr) {
@@ -47,8 +47,8 @@ export var ServicoWSDL = (function () {
             '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">',
             '<SOAP-ENV:Header/>',
             '<SOAP-ENV:Body>',
-            '<num_proc>' + numproc + '</num_proc>',
-            '<uf>' + estado + '</uf>',
+            `<num_proc>${numproc}</num_proc>`,
+            `<uf>${estado}</uf>`,
             '<todas_fases>N</todas_fases>',
             '<todas_partes>S</todas_partes>',
             '<todos_valores>N</todos_valores>',

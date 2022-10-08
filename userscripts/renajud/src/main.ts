@@ -57,13 +57,13 @@ async function onNumprocChangeListener(numproc) {
       documento = documentos[indiceDocumento];
 
       GUI.Logger.write(
-        'Obtendo veículos do réu ' + documento + '.'.repeat(14 - documento.length) + '...'
+        `Obtendo veículos do réu ${documento}${'.'.repeat(14 - documento.length)}...`
       );
       let qtdVeiculosAnterior = qtdVeiculos;
       qtdVeiculos = await Pagina.obterVeiculosDocumento(documento);
       let qtdVeiculosReu = qtdVeiculos - qtdVeiculosAnterior;
       GUI.Logger.write(
-        '.'.repeat(3 - qtdVeiculosReu.toString().length) + '(' + qtdVeiculosReu + ')... ok.\n'
+        `${'.'.repeat(3 - qtdVeiculosReu.toString().length)}(${qtdVeiculosReu})... ok.\n`
       );
 
       if (qtdVeiculosReu === 0) {
@@ -99,9 +99,7 @@ async function onNumprocChangeListener(numproc) {
         }
 
         let placa = Pagina.obterPlacaVeiculo(i);
-        GUI.Logger.write(
-          'Obtendo detalhes do veículo ' + placa.substr(0, 3) + '-' + placa.substr(3) + '...'
-        );
+        GUI.Logger.write(`Obtendo detalhes do veículo ${placa.substr(0, 3)}-${placa.substr(3)}...`);
 
         let detalhes = await Pagina.abrirDetalhesVeiculo(i);
         detalhes.style.pageBreakBefore = 'always';
@@ -138,12 +136,12 @@ async function onNumprocChangeListener(numproc) {
 
 function preencherSelectOneMenu(idCampo, valor) {
   console.debug('preencherSelectOneMenu(idCampo, valor)', idCampo, valor);
-  var idSelect = idCampo + '_input',
-    idPainel = idCampo + '_panel';
+  var idSelect = `${idCampo}_input`,
+    idPainel = `${idCampo}_panel`;
   var select = document.getElementById(idSelect);
-  var opcao = select.querySelectorAll('option[value="' + valor + '"]');
+  var opcao = select.querySelectorAll(`option[value="${valor}"]`);
   if (opcao.length === 0) {
-    throw new Error('Opção não encontrada (campo "' + idCampo + '"):', valor);
+    throw new Error(`Opção não encontrada (campo "${idCampo}"):`, valor);
   }
   var texto = opcao[0].innerHTML;
   var menu = document.getElementById(idCampo).getElementsByClassName('ui-selectonemenu-trigger');
@@ -151,7 +149,7 @@ function preencherSelectOneMenu(idCampo, valor) {
     li => li.dataset.label === texto
   );
   if (menu.length === 0) {
-    throw new Error('Campo não encontrado: "' + idCampo + '"', select, texto, menu, opcao);
+    throw new Error(`Campo não encontrado: "${idCampo}"`, select, texto, menu, opcao);
   }
   menu[0].click();
   item[0].click();
