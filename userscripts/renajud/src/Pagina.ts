@@ -1,16 +1,14 @@
+import { Handler } from '@nadameu/handler';
 import { getAjaxListener } from './AjaxListener';
 
-function addSelectOneMenuListener(prefixo, fn) {
+function addSelectOneMenuListener(prefixo: string, fn: Handler<string>) {
   var painelOpcoes = document.getElementById(`${prefixo}_panel`);
   var select = document.getElementById(`${prefixo}_input`);
   painelOpcoes.addEventListener(
     'click',
     evt => {
       var elementoClicado = evt.target;
-      if (
-        elementoClicado.tagName.toUpperCase() === 'LI' &&
-        elementoClicado.dataset.hasOwnProperty('label')
-      ) {
+      if (elementoClicado instanceof HTMLElement && elementoClicado.matches('li[data-label]')) {
         return fn(select.value);
       }
     },
@@ -18,7 +16,7 @@ function addSelectOneMenuListener(prefixo, fn) {
   );
 }
 
-export function abrirDetalhesVeiculo(ord) {
+export function abrirDetalhesVeiculo(ord: number) {
   console.debug('Pagina.abrirDetalhesVeiculo(ord)', ord);
   var prefixo = obterPrefixoVeiculo(ord);
   var idDivDetalhes = `${prefixo}:detalhe-veiculo`,
@@ -32,7 +30,7 @@ export function abrirDetalhesVeiculo(ord) {
   return promise;
 }
 
-export function abrirRestricoesVeiculo(ord) {
+export function abrirRestricoesVeiculo(ord: number) {
   console.debug('Pagina.abrirDetalhesVeiculo(ord)', ord);
   var prefixo = obterPrefixoVeiculo(ord);
   var idAbrirRestricoes = `${prefixo}:link-detalhes-veiculo-restricoes`,
@@ -61,19 +59,19 @@ export function abrirRestricoesVeiculo(ord) {
   return promise;
 }
 
-export function addOnMagistradoChangeListener(fn) {
+export function addOnMagistradoChangeListener(fn: Handler<string>) {
   addSelectOneMenuListener('form-incluir-restricao:campo-magistrado', fn);
 }
 
-export function addOnMunicipioChangeListener(fn) {
+export function addOnMunicipioChangeListener(fn: Handler<string>) {
   addSelectOneMenuListener('form-incluir-restricao:campo-municipio', fn);
 }
 
-export function addOnOrgaoChangeListener(fn) {
+export function addOnOrgaoChangeListener(fn: Handler<string>) {
   addSelectOneMenuListener('form-incluir-restricao:campo-orgao', fn);
 }
 
-export function aguardarProximaPaginaListagem(pagina) {
+export function aguardarProximaPaginaListagem(pagina: number) {
   console.debug('Pagina.aguardarProximaPaginaListagem(pagina)', pagina);
   var promise = new Promise((resolve, reject) => {
     var onPaginaCarregada = () => {
@@ -96,7 +94,7 @@ export function aguardarProximaPaginaListagem(pagina) {
   return promise;
 }
 
-export function fecharDetalhesVeiculo(ord) {
+export function fecharDetalhesVeiculo(ord: number) {
   console.debug('Pagina.fecharDetalhesVeiculo(ord)', ord);
   var prefixo = obterPrefixoVeiculo(ord);
   var idDivDetalhes = `${prefixo}:detalhe-veiculo`,
@@ -105,7 +103,7 @@ export function fecharDetalhesVeiculo(ord) {
   fecharDetalhes.click();
 }
 
-export function fecharRestricoesVeiculo(ord) {
+export function fecharRestricoesVeiculo(ord: number) {
   console.debug('Pagina.fecharRestricoesVeiculo(ord)', ord);
   var prefixo = obterPrefixoVeiculo(ord);
   var idDivDetalhesRestricoes = `${prefixo}:dlg-detalhes-veiculo-restricoes`,
@@ -155,13 +153,13 @@ export function limparPesquisa() {
   return promise;
 }
 
-export function obterCelulaRestricaoVeiculo(ord) {
+export function obterCelulaRestricaoVeiculo(ord: number) {
   console.debug('Pagina.obterCelulaRestricaoVeiculo(ord)', ord);
   var linha = obterLinhaVeiculo(ord);
   return linha.cells[8];
 }
 
-export function obterLinhaVeiculo(ord) {
+export function obterLinhaVeiculo(ord: number) {
   console.debug('Pagina.obterLinhaVeiculo(ord)', ord);
   var tBody = document.getElementById('form-incluir-restricao:lista-veiculo_data');
   return tBody.rows[ord % 100];
@@ -179,19 +177,19 @@ export function obterOrgao() {
   return document.getElementById('form-incluir-restricao:campo-orgao_input').value;
 }
 
-export function obterPlacaVeiculo(ord) {
+export function obterPlacaVeiculo(ord: number) {
   console.debug('Pagina.obterPlacaVeiculo(ord)', ord);
   var linha = obterLinhaVeiculo(ord);
   var celulaPlaca = linha.cells[1];
   return celulaPlaca.textContent;
 }
 
-export function obterPrefixoVeiculo(ord) {
+export function obterPrefixoVeiculo(ord: number) {
   console.debug('Pagina.obterPrefixoVeiculo(ord)', ord);
   return `form-incluir-restricao:lista-veiculo:${ord}`;
 }
 
-export function obterVeiculosDocumento(documento) {
+export function obterVeiculosDocumento(documento: string) {
   console.debug('Pagina.obterVeiculosDocumento(documento)', documento);
   var idBotaoPesquisar = 'form-incluir-restricao:botao-pesquisar';
   var botaoPesquisar = document.getElementById(idBotaoPesquisar);
@@ -210,7 +208,7 @@ export function obterVeiculosDocumento(documento) {
   return promise;
 }
 
-export function veiculoPossuiRestricoes(ord) {
+export function veiculoPossuiRestricoes(ord: number) {
   console.debug('Pagina.veiculoPossuiRestricoes(ord)', ord);
   var celulaRestricoes = obterCelulaRestricaoVeiculo(ord);
   return celulaRestricoes.textContent === 'Sim';
