@@ -1,4 +1,4 @@
-import { AjaxListener } from './AjaxListener';
+import { getAjaxListener } from './AjaxListener';
 
 function addSelectOneMenuListener(prefixo, fn) {
   var painelOpcoes = document.getElementById(prefixo + '_panel');
@@ -25,9 +25,11 @@ export function abrirDetalhesVeiculo(ord) {
     divDetalhes = document.getElementById(idDivDetalhes);
   var abrirDetalhes = divDetalhes.previousElementSibling,
     idAbrirDetalhes = abrirDetalhes.id;
-  var promise = AjaxListener.listenOnce(idAbrirDetalhes).then(function () {
-    return document.getElementById(prefixo + ':panel-group-dados-veiculo');
-  });
+  var promise = getAjaxListener()
+    .listenOnce(idAbrirDetalhes)
+    .then(function () {
+      return document.getElementById(prefixo + ':panel-group-dados-veiculo');
+    });
   abrirDetalhes.click();
   return promise;
 }
@@ -37,24 +39,26 @@ export function abrirRestricoesVeiculo(ord) {
   var prefixo = obterPrefixoVeiculo(ord);
   var idAbrirRestricoes = prefixo + ':link-detalhes-veiculo-restricoes',
     abrirRestricoes = document.getElementById(idAbrirRestricoes);
-  var promise = AjaxListener.listenOnce(idAbrirRestricoes).then(function () {
-    var idDialogo = prefixo + ':dlg-detalhes-veiculo-restricoes',
-      dialogo = document.getElementById(idDialogo);
-    var fieldsets = dialogo.getElementsByTagName('fieldset');
-    var painelRestricoes = fieldsets[1];
-    var listaRestricoes = painelRestricoes.getElementsByTagName('ul');
-    if (listaRestricoes.length > 0) {
-      listaRestricoes = [...listaRestricoes[0].childNodes].map(li => li.textContent.trim());
-    } else {
-      listaRestricoes = [];
-    }
-    var painelRestricoesRenajud = fieldsets[2];
-    return {
-      painel: painelRestricoes,
-      lista: listaRestricoes,
-      renajud: painelRestricoesRenajud,
-    };
-  });
+  var promise = getAjaxListener()
+    .listenOnce(idAbrirRestricoes)
+    .then(function () {
+      var idDialogo = prefixo + ':dlg-detalhes-veiculo-restricoes',
+        dialogo = document.getElementById(idDialogo);
+      var fieldsets = dialogo.getElementsByTagName('fieldset');
+      var painelRestricoes = fieldsets[1];
+      var listaRestricoes = painelRestricoes.getElementsByTagName('ul');
+      if (listaRestricoes.length > 0) {
+        listaRestricoes = [...listaRestricoes[0].childNodes].map(li => li.textContent.trim());
+      } else {
+        listaRestricoes = [];
+      }
+      var painelRestricoesRenajud = fieldsets[2];
+      return {
+        painel: painelRestricoes,
+        lista: listaRestricoes,
+        renajud: painelRestricoesRenajud,
+      };
+    });
   abrirRestricoes.click();
   return promise;
 }
@@ -82,12 +86,14 @@ export function aguardarProximaPaginaListagem(pagina) {
       if (botoesPagina.length === 2 && Number(botoesPagina[0].textContent) === pagina) {
         resolve();
       } else if (botoesPagina.length === 2) {
-        AjaxListener.listenOnce('form-incluir-restricao:lista-veiculo').then(onPaginaCarregada);
+        getAjaxListener()
+          .listenOnce('form-incluir-restricao:lista-veiculo')
+          .then(onPaginaCarregada);
       } else {
         reject();
       }
     };
-    AjaxListener.listenOnce('form-incluir-restricao:lista-veiculo').then(onPaginaCarregada);
+    getAjaxListener().listenOnce('form-incluir-restricao:lista-veiculo').then(onPaginaCarregada);
   });
   return promise;
 }
@@ -133,7 +139,7 @@ export function limpar() {
   if (botoes.length === 1) {
     var botaoLimpar = botoes[0],
       idBotaoLimpar = botaoLimpar.id;
-    promise = AjaxListener.listenOnce(idBotaoLimpar);
+    promise = getAjaxListener().listenOnce(idBotaoLimpar);
     botaoLimpar.click();
   }
   promise = promise.then(limparPesquisa);
@@ -146,7 +152,7 @@ export function limparPesquisa() {
     botaoPesquisar = document.getElementById(idBotaoPesquisar);
   var botaoLimparPesquisa = botaoPesquisar.nextElementSibling,
     idBotaoLimparPesquisa = botaoLimparPesquisa.id;
-  var promise = AjaxListener.listenOnce(idBotaoLimparPesquisa);
+  var promise = getAjaxListener().listenOnce(idBotaoLimparPesquisa);
   botaoLimparPesquisa.click();
   return promise;
 }
@@ -192,13 +198,15 @@ export function obterVeiculosDocumento(documento) {
   var idBotaoPesquisar = 'form-incluir-restricao:botao-pesquisar';
   var botaoPesquisar = document.getElementById(idBotaoPesquisar);
   var campoDocumento = document.getElementById('form-incluir-restricao:campo-cpf-cnpj');
-  var promise = AjaxListener.listenOnce(idBotaoPesquisar).then(function (ext) {
-    if (ext === null) {
-      return 0;
-    } else {
-      return ext.totalRecords;
-    }
-  });
+  var promise = getAjaxListener()
+    .listenOnce(idBotaoPesquisar)
+    .then(function (ext) {
+      if (ext === null) {
+        return 0;
+      } else {
+        return ext.totalRecords;
+      }
+    });
   campoDocumento.value = documento;
   botaoPesquisar.click();
   return promise;

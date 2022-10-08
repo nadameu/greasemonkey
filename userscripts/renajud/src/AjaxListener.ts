@@ -20,12 +20,19 @@ interface Listener {
   once: boolean;
 }
 
-export function createAjaxListener() {
+interface AjaxListener {
+  listen(source: string, fn: Handler<Extension | null>): void;
+  listenOnce(source: string): Promise<Extension | null>;
+}
+
+let ajaxListener: AjaxListener;
+export function getAjaxListener(): AjaxListener {
+  if (ajaxListener) return ajaxListener;
   const listeners = new Set<Listener>();
   jQuery.fx.off = true;
   $(document).ajaxComplete((_, xhr, opts) => onResult(toResult(xhr, opts)));
 
-  return { listen, listenOnce };
+  return (ajaxListener = { listen, listenOnce });
 
   function listen(source: string, fn: Handler<Extension | null>) {
     console.debug('AjaxListener.listen(source)', source, fn);

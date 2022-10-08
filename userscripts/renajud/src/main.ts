@@ -1,4 +1,4 @@
-import { AjaxListener } from './AjaxListener';
+import { getAjaxListener } from './AjaxListener';
 import { GUI } from './GUI';
 import * as Pagina from './Pagina';
 import { PreferenciasUsuario } from './PreferenciasUsuario';
@@ -8,6 +8,7 @@ export function main() {
   var form = document.getElementById('form-incluir-restricao');
   var firstDiv = form.getElementsByTagName('div')[0],
     id = firstDiv.id;
+  var AjaxListener = getAjaxListener();
   AjaxListener.listen(id, function (ext) {
     if (ext.currentStep === 'inclui-restricao') {
       GUI.hide();
