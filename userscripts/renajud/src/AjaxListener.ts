@@ -1,66 +1,80 @@
 import { Handler } from '@nadameu/handler';
+import { hasShape, isString } from '@nadameu/predicates';
 
-export const AjaxListener = (() => {
-  const callbacks = new Map<string, Handler<unknown>[]>();
-  const resolves = new Map<string, Handler<unknown>[]>();
+export type AjaxListenerResult = Err | Ok;
+export interface Err {
+  type: 'Err';
+  reason: string;
+}
+export interface Ok {
+  type: 'Ok';
+  source: string;
+  extension: Extension | null;
+}
 
-  function getOrCreate<T, U>(collection: Map<T, U[]>, id: T): U[] {
-    if (!collection.has(id)) {
-      collection.set(id, []);
-    }
-    return collection.get(id)!;
-  }
+export type Extension = never;
 
-  function addItem<T, U>(collection: Map<T, U[]>, id: T, item: U): void {
-    getOrCreate(collection, id).push(item);
-  }
+interface Listener {
+  source: string;
+  fn: Handler<Extension | null>;
+  once: boolean;
+}
 
-  const addCallback = addItem.bind(null, callbacks);
-  const getCallbacks = getOrCreate.bind(null, callbacks);
-
-  const addResolve = addItem.bind(null, resolves);
-  function getResolves(source: string) {
-    const sourceResolves = getOrCreate(resolves, source);
-    resolves.delete(source);
-    return sourceResolves;
-  }
-
+export function createAjaxListener() {
+  const listeners = new Set<Listener>();
   jQuery.fx.off = true;
+  $(document).ajaxComplete((_, xhr, opts) => onResult(toResult(xhr, opts)));
 
-  $(document).ajaxComplete((evt, xhr, options) => {
-    const extensionText =
-      Array.from(xhr.responseXML?.querySelectorAll('extension') ?? [])
-        .map(x => x.textContent ?? '')
-        .join('') || null;
-    let extension: unknown;
-    if (extensionText === null) {
-      extension = null;
-    } else {
-      extension = JSON.parse(extensionText);
-    }
-    const source = (options as { source?: unknown }).source;
+  return { listen, listenOnce };
+
+  function listen(source: string, fn: Handler<Extension | null>) {
+    console.debug('AjaxListener.listen(source)', source, fn);
+    const listener: Listener = { source, fn, once: false };
+    listeners.add(listener);
+  }
+
+  function listenOnce(source: string): Promise<Extension | null> {
+    console.debug('AjaxListener.listenOnce(source)', source);
+    let handler: Handler<Extension | null>;
+    const promise = new Promise<Extension | null>(resolve => {
+      handler = resolve;
+    });
+    const listener: Listener = { source, fn: handler!, once: true };
+    listeners.add(listener);
+    return promise;
+  }
+
+  function toResult(jqXHR: JQuery.jqXHR, ajaxOptions: JQuery.AjaxSettings): AjaxListenerResult {
+    if (!hasShape({ source: isString })(ajaxOptions))
+      return { type: 'Err', reason: 'Sem propriedade "source".' };
+
+    const createResult = (extension: Extension | null = null): AjaxListenerResult => ({
+      type: 'Ok',
+      source: ajaxOptions.source,
+      extension,
+    });
+
+    if (!jqXHR.responseXML) return createResult();
+    const extensions = jqXHR.responseXML.querySelectorAll('extension');
+    if (extensions.length !== 1) return createResult();
+    const text = extensions[0]!.textContent?.trim() || null;
+    if (text === null) return createResult();
     try {
-      getResolves(source).forEach(resolve => resolve(extension));
-      getCallbacks(source).forEach(callback => callback(extension));
-      console.debug('ajaxComplete()', { source, extension });
-    } catch (err) {
-      console.error(err);
+      return createResult(JSON.parse(text));
+    } catch (_) {
+      return createResult();
     }
-  });
+  }
 
-  return {
-    listen(source: string, fn: (extension: unknown) => void) {
-      console.debug('AjaxListener.listen(source)', source, fn);
-      addCallback(source, fn);
-    },
-    listenOnce<T>(source: string) {
-      console.debug('AjaxListener.listenOnce(source)', source);
-      const resolvable: { (resolve: Handler<T>): void; resolve?: Handler<T> } = function (resolve) {
-        resolvable.resolve = resolve;
-      };
-      const promise = new Promise(resolvable);
-      addResolve(source, resolvable.resolve as Handler<T>);
-      return promise;
-    },
-  };
-})();
+  function onResult(result: AjaxListenerResult): void {
+    if (result.type === 'Err') return console.debug('ajaxComplete() erro:', result.reason);
+    const { source, extension } = result;
+    for (const listener of listeners) {
+      if (listener.source !== source) continue;
+      listener.fn(extension);
+      if (listener.once) {
+        listeners.delete(listener);
+      }
+    }
+  }
+}
