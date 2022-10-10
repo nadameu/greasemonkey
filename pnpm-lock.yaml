@@ -185,6 +185,7 @@ importers:
       '@nadameu/create-element': workspace:^1.0.0
       '@nadameu/either': workspace:^2.0.0
       '@nadameu/handler': workspace:^1.0.0
+      '@nadameu/opaque': workspace:^1.0.0
       '@nadameu/predicates': workspace:^1.0.0
       '@nadameu/resolvable': workspace:^1.0.0
       descriptive-regexp: ^0.3.0
@@ -195,6 +196,7 @@ importers:
       '@nadameu/create-element': link:../../lib/create-element
       '@nadameu/either': link:../../lib/either
       '@nadameu/handler': link:../../lib/handler
+      '@nadameu/opaque': link:../../lib/opaque
       '@nadameu/predicates': link:../../lib/predicates
       '@nadameu/resolvable': link:../../lib/resolvable
       descriptive-regexp: 0.3.0
