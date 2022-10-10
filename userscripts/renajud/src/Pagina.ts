@@ -78,8 +78,8 @@ export async function aguardarProximaPaginaListagem(pagina: number) {
   async function go(): Promise<void> {
     await getAjaxListener().listenOnce('form-incluir-restricao:lista-veiculo');
     console.info('pagina carregada');
-    const botoesPagina = Array.from(document.getElementsByClassName('ui-paginator-page')).filter(
-      botao => botao.classList.contains('ui-state-active')
+    const botoesPagina = [...document.getElementsByClassName('ui-paginator-page')].filter(botao =>
+      botao.classList.contains('ui-state-active')
     );
     if (botoesPagina.length !== 2) throw null;
     if (Number(botoesPagina[0].textContent) === pagina) return;
@@ -121,7 +121,7 @@ export function imprimirSemVeiculos() {
 export async function limpar() {
   console.debug('Pagina.limpar()');
   const form = document.getElementById('form-incluir-restricao:panel-lista-veiculo');
-  const botoes = Array.from(form.getElementsByTagName('button')).filter(
+  const botoes = [...form.getElementsByTagName('button')].filter(
     botao => botao.textContent?.trim() === 'Limpar lista'
   );
   if (botoes.length === 1) {
