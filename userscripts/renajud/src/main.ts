@@ -1,16 +1,18 @@
 import { getAjaxListener } from './AjaxListener';
 import { GUI } from './GUI';
+import { NumProc } from './NumProc';
 import * as Pagina from './Pagina';
 import * as PreferenciasUsuario from './PreferenciasUsuario';
 import { ServicoWSDL } from './ServicoWSDL';
 
 export function main() {
-  var form = document.getElementById('form-incluir-restricao');
-  var firstDiv = form.getElementsByTagName('div')[0],
-    id = firstDiv.id;
-  var AjaxListener = getAjaxListener();
+  const form = document.getElementById('form-incluir-restricao');
+  const firstDiv = form.getElementsByTagName('div')[0];
+  const id = firstDiv.id;
+  const AjaxListener = getAjaxListener();
   AjaxListener.listen(id, ext => {
-    if (ext.currentStep === 'inclui-restricao') {
+    const currentStep = ext !== null && 'currentStep' in ext ? ext.currentStep : null;
+    if (currentStep === 'inclui-restricao') {
       GUI.hide();
       GUI.areaImpressao.limpar();
       document.getElementById('form-incluir-restricao:campo-magistrado_input').childNodes[0].value =
@@ -29,9 +31,9 @@ export function main() {
         preencherTudo();
       });
       preencherTudo();
-    } else if (ext.currentStep === 'pesquisa-veiculo') {
+    } else if (currentStep === 'pesquisa-veiculo') {
       GUI.show();
-    } else if (ext.currentStep === 'confirma-restricao') {
+    } else if (currentStep === 'confirma-restricao') {
       // Não faz nada
     }
   });
@@ -39,17 +41,17 @@ export function main() {
   GUI.addOnNumprocChangeListener(onNumprocChangeListener);
 }
 
-async function onNumprocChangeListener(numproc) {
+async function onNumprocChangeListener(numproc: NumProc) {
   try {
     GUI.Logger.clear();
     GUI.areaImpressao.limpar();
     await Pagina.limpar();
 
     GUI.Logger.write('Obtendo dados do processo...');
-    var documentos = await ServicoWSDL.obterDocumentosReus(numproc);
+    const documentos = await ServicoWSDL.obterDocumentosReus(numproc);
     GUI.Logger.write('..................... ok.\n');
 
-    var qtdVeiculos = 0;
+    let qtdVeiculos = 0;
     let len = documentos.length,
       ultimo = len - 1,
       documento;
@@ -79,9 +81,9 @@ async function onNumprocChangeListener(numproc) {
     if (qtdVeiculos > 0) {
       await Pagina.limparPesquisa();
 
-      var paginaAtual = 1;
+      const paginaAtual = 1;
 
-      for (var i = 0; i < qtdVeiculos; ++i) {
+      for (const i = 0; i < qtdVeiculos; ++i) {
         if (i > 99 && i % 100 === 0) {
           GUI.Logger.write('Imprimindo detalhes dos veículos...');
           Pagina.imprimir();
@@ -136,16 +138,16 @@ async function onNumprocChangeListener(numproc) {
 
 function preencherSelectOneMenu(idCampo, valor) {
   console.debug('preencherSelectOneMenu(idCampo, valor)', idCampo, valor);
-  var idSelect = `${idCampo}_input`,
+  const idSelect = `${idCampo}_input`,
     idPainel = `${idCampo}_panel`;
-  var select = document.getElementById(idSelect);
-  var opcao = select.querySelectorAll(`option[value="${valor}"]`);
+  const select = document.getElementById(idSelect);
+  const opcao = select.querySelectorAll(`option[value="${valor}"]`);
   if (opcao.length === 0) {
     throw new Error(`Opção não encontrada (campo "${idCampo}"):`, valor);
   }
-  var texto = opcao[0].innerHTML;
-  var menu = document.getElementById(idCampo).getElementsByClassName('ui-selectonemenu-trigger');
-  var item = [...document.getElementById(idPainel).getElementsByTagName('li')].filter(
+  const texto = opcao[0].innerHTML;
+  const menu = document.getElementById(idCampo).getElementsByClassName('ui-selectonemenu-trigger');
+  const item = [...document.getElementById(idPainel).getElementsByTagName('li')].filter(
     li => li.dataset.label === texto
   );
   if (menu.length === 0) {
