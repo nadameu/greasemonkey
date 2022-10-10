@@ -12,7 +12,16 @@ export interface Ok {
   extension: Extension | null;
 }
 
-export const isExtension = /* @__PURE__ */ p.hasShape({ totalRecords: p.isNumber });
+export const isExtension = /* @__PURE__ */ p.isAnyOf(
+  p.hasShape({ totalRecords: p.isNumber }),
+  p.hasShape({
+    currentStep: p.isAnyOf(
+      ...(['inclui-restricao', 'pesquisa-veiculo', 'confirma-restricao'] as const).map(x =>
+        p.isLiteral(x)
+      )
+    ),
+  })
+);
 export type Extension = p.Static<typeof isExtension>;
 
 interface Listener {
