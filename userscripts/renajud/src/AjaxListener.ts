@@ -1,5 +1,5 @@
 import { Handler } from '@nadameu/handler';
-import { hasShape, isString } from '@nadameu/predicates';
+import * as p from '@nadameu/predicates';
 
 export type AjaxListenerResult = Err | Ok;
 export interface Err {
@@ -12,7 +12,8 @@ export interface Ok {
   extension: Extension | null;
 }
 
-export type Extension = never;
+export const isExtension = /* @__PURE__ */ p.hasShape({ totalRecords: p.isNumber });
+export type Extension = p.Static<typeof isExtension>;
 
 interface Listener {
   source: string;
@@ -52,7 +53,7 @@ export function getAjaxListener(): AjaxListener {
   }
 
   function toResult(jqXHR: JQuery.jqXHR, ajaxOptions: JQuery.AjaxSettings): AjaxListenerResult {
-    if (!hasShape({ source: isString })(ajaxOptions))
+    if (!p.hasShape({ source: p.isString })(ajaxOptions))
       return { type: 'Err', reason: 'Sem propriedade "source".' };
 
     const createResult = (extension: Extension | null = null): AjaxListenerResult => ({
@@ -67,7 +68,9 @@ export function getAjaxListener(): AjaxListener {
     const text = extensions[0]!.textContent?.trim() || null;
     if (text === null) return createResult();
     try {
-      return createResult(JSON.parse(text));
+      const parsed = JSON.parse(text) as unknown;
+      if (isExtension(parsed)) return createResult(parsed);
+      else return createResult();
     } catch (_) {
       return createResult();
     }
