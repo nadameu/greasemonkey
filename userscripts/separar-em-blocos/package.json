@@ -17,9 +17,9 @@
     "@nadameu/either": "workspace:^2.0.0",
     "@nadameu/expect-unreachable": "workspace:^1.0.0",
     "@nadameu/handler": "workspace:^1.0.0",
-    "@nadameu/match": "workspace:^3.1.0",
+    "@nadameu/match": "workspace:^3.1.1",
     "@nadameu/opaque": "workspace:^1.0.0",
-    "@nadameu/predicates": "workspace:^1.1.1",
+    "@nadameu/predicates": "workspace:^1.2.0",
     "preact": "10.11.0"
   }
 }

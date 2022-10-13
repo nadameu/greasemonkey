@@ -16,13 +16,13 @@
     "@nadameu/either": "workspace:^2.0.0",
     "@nadameu/handler": "workspace:^1.0.0",
     "@nadameu/opaque": "workspace:^1.0.0",
-    "@nadameu/predicates": "workspace:^1.0.0",
+    "@nadameu/predicates": "workspace:^1.2.0",
     "@nadameu/resolvable": "workspace:^1.0.0",
     "descriptive-regexp": "^0.3.0"
   },
   "devDependencies": {
     "sass": "^1.55.0",
-    "vite": "^3.1.4",
-    "vite-plugin-monkey": "^2.6.0"
+    "vite": "^3.1.8",
+    "vite-plugin-monkey": "^2.7.3"
   }
 }
