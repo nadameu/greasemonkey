@@ -1,42 +1,40 @@
-type IMaybe<a> = [isJust: true, value: a] | [isJust: false];
-let Nothing: Maybe<never>;
-export class Maybe<a> {
-  private constructor(private _info: IMaybe<a>) {}
-  chain<b>(f: (_: a) => Maybe<b>): Maybe<b> {
-    return this._info[0] ? f(this._info[1]) : (this as Maybe<unknown> as Maybe<b>);
-  }
-  map<b>(f: (_: a) => b): Maybe<b> {
-    return this.chain(x => Maybe.of(f(x)));
-  }
-  safeMap<b>(f: (_: a) => b | null | undefined): Maybe<b> {
-    return this.chain(x => Maybe.from(f(x)));
-  }
+interface IMaybe<a> {
+  chain<b>(f: (_: a) => Maybe<b>): Maybe<b>;
+  map<b>(f: (_: a) => b): Maybe<b>;
+  safeMap<b>(f: (_: a) => b | null | undefined): Maybe<b>;
   valueOr(defaultValue: a): a;
   valueOr<b>(defaultValue: b): a | b;
-  valueOr<b>(defaultValue: b): a | b {
-    return this.valueOrElse(() => defaultValue);
-  }
   valueOrElse(f: () => a): a;
   valueOrElse<b>(f: () => b): a | b;
-  valueOrElse<b>(f: () => b): a | b {
-    return this._info[0] ? this._info[1] : f();
-  }
   where<b extends a>(p: (x: a) => x is b): Maybe<b>;
   where(p: (_: a) => boolean): Maybe<a>;
-  where(p: (_: a) => boolean): Maybe<a> {
-    return this.safeMap(x => (p(x) ? x : null));
-  }
-  static from<a>(value: a | null | undefined): Maybe<a> {
-    return new Maybe(value == null ? [false] : [true, value]);
-  }
-  static just<a>(value: a): Maybe<a> {
-    return new Maybe([true, value]);
-  }
-  static nothing<a = never>(): Maybe<a> {
-    if (!Nothing) Nothing = new Maybe([false]);
-    return Nothing;
-  }
-  static of<a>(value: a): Maybe<a> {
-    return Maybe.just(value);
-  }
 }
+export interface Just<a> extends IMaybe<a> {}
+const Just: <a>(value: a) => Maybe<a> = <a>(x: a, self: Maybe<a> | undefined = undefined) =>
+  (self = {
+    chain: f => f(x),
+    map: f => Just(f(x)),
+    safeMap: f => Maybe.from(f(x)),
+    valueOr: (_: any) => x,
+    valueOrElse: (_: any) => x,
+    where: (p: (_: any) => boolean) => (p(x) ? self! : Nothing),
+  });
+export interface Nothing<a = never> extends IMaybe<a> {}
+const returnNothing = (_: any) => Nothing;
+const Nothing: Nothing = {
+  chain: returnNothing,
+  map: returnNothing,
+  safeMap: returnNothing,
+  valueOr: (x: never) => x,
+  valueOrElse: (f: () => never) => f(),
+  where: returnNothing,
+};
+export type Maybe<a> = Just<a> | Nothing<a>;
+interface MaybeConstructor {
+  from<a>(value: a | null | undefined): Maybe<a>;
+  of<a>(value: a): Maybe<a>;
+}
+export const Maybe: MaybeConstructor = {
+  from: x => (x == null ? Nothing : Just(x)),
+  of: x => Just(x),
+};
