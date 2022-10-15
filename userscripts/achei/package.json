@@ -1,13 +1,22 @@
 {
-  "devDependencies": {
-    "c8": "^7.12.0",
-    "jsdom": "^20.0.1",
-    "vitest": "^0.19.1"
-  },
+  "name": "achei",
+  "description": "Link para informações da Intra na página do Achei!",
+  "author": "nadameu",
+  "private": true,
+  "version": "16.0.0",
+  "type": "module",
   "scripts": {
-    "build": "userscript build",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "format": "prettier --write ../../achei.user.js",
+    "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch"
+  },
+  "devDependencies": {
+    "c8": "^7.12.0",
+    "jsdom": "^20.0.1",
+    "vitest": "^0.24.3"
   }
 }
