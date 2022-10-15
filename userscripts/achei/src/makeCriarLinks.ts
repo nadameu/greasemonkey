@@ -1,6 +1,6 @@
 import { NodeSigla } from './NodeSigla';
 
-export function makeCriarLinks(doc: Document, dominio: string) {
+export const makeCriarLinks = (doc: Document, dominio: string) => {
   const template = doc.createElement('template');
   template.innerHTML = ' [ <a href="" target="_blank">Abrir na Intra</a> ]';
   const content = template.content;
@@ -10,4 +10,4 @@ export function makeCriarLinks(doc: Document, dominio: string) {
     const fragment = doc.importNode(content, true);
     node.parentNode!.insertBefore(fragment, node.nextSibling);
   };
-}
+};

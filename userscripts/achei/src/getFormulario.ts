@@ -1,5 +1,5 @@
-export async function getFormulario(doc: Document) {
-  const form = doc.querySelector<HTMLFormElement>('form[name="formulario"]');
-  if (!form) throw new Error('Não foi possível obter o formulário.');
-  return form;
-}
+import { throwError } from './throwError';
+
+export const getFormulario = async (doc: Document) =>
+  doc.querySelector<HTMLFormElement>('form[name="formulario"]') ??
+  throwError('Não foi possível obter o formulário.');
