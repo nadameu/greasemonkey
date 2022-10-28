@@ -4,8 +4,8 @@
 // @namespace   http://nadameu.com.br
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=acessar_documento&*
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=acessar_documento_implementacao&*
-// @grant       none
-// @version     2.0.0
+// @grant       window.focus
+// @version     2.0.1
 // @author      nadameu
 // @description Facilita o uso do teclado, focando o documento ao abri-lo em uma janela.
 // ==/UserScript==
