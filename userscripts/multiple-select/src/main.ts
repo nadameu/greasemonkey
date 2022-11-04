@@ -8,6 +8,12 @@
 export {};
 
 jQuery(function ($) {
+  const list_label = document.createElement('template');
+  list_label.innerHTML = '<li><label></label></li>';
+
+  const list_label_input = document.createElement('template');
+  list_label_input.innerHTML = '<li><label><input/></label></li>';
+
   class MultipleSelect {
     private $el: JQuery<HTMLSelectElement>;
     private options: MultipleSelectOptions;
@@ -16,7 +22,9 @@ jQuery(function ($) {
     private $drop: JQuery<HTMLDivElement>;
     private selectAllName: string;
     private selectGroupName: string;
+    private selectGroupJustName: string;
     private selectItemName: string;
+    private selectItemJustName: string;
     private $searchInput?: JQuery<HTMLInputElement>;
     private $selectAll?: JQuery<HTMLInputElement>;
     private $selectGroups?: JQuery<HTMLInputElement>;
@@ -78,7 +86,9 @@ jQuery(function ($) {
 
       this.selectAllName = `name="selectAll${name}"`;
       this.selectGroupName = `name="selectGroup${name}"`;
+      this.selectGroupJustName = `selectGroup${name}`;
       this.selectItemName = `name="selectItem${name}"`;
+      this.selectItemJustName = `selectItem${name}`;
     }
 
     init() {
@@ -102,12 +112,15 @@ jQuery(function ($) {
           '</li>'
         );
       }
-      $.each(this.$el.children(), function (i, elm) {
-        html.push(that.optionToHtml(i, elm));
-      });
+      html.push('<div id="here-go-children"></div>');
+      const frag = document.createDocumentFragment();
+      for (const [i, elm] of Array.from(this.$el.get(0)?.children ?? []).entries()) {
+        that.optionToHtml(frag, i, elm as HTMLElement);
+      }
       html.push(`<li class="ms-no-results">${this.options.noMatchesFound}</li>`);
       html.push('</ul>');
       this.$drop.html(html.join(''));
+      this.$drop.find('[id="here-go-children"]').get(0)!.replaceWith(frag);
 
       this.$drop.find('ul').css('max-height', `${this.options.maxHeight}px`);
       this.$drop.find('.multiple').css('width', `${this.options.multipleWidth}px`);
@@ -131,74 +144,77 @@ jQuery(function ($) {
       }
     }
 
-    optionToHtml(i: number, elm: HTMLElement, group?: string, groupDisabled?: boolean) {
+    optionToHtml(
+      parent: ParentNode,
+      i: number,
+      elm: HTMLElement,
+      group?: string,
+      groupDisabled?: boolean
+    ): void {
       const that = this;
       const $elm = $(elm);
-      const html = [];
       const multiple = this.options.multiple;
-      const optAttributesToCopy = ['class', 'title'];
-      const clss = $.map(optAttributesToCopy, function (att) {
-        const isMultiple = att === 'class' && multiple;
-        const attValue = $elm.attr(att) || '';
-        return isMultiple || attValue
-          ? ` ${att}="${isMultiple ? `multiple${attValue ? ' ' : ''}` : ''}${attValue}"`
-          : '';
-      }).join('');
       let disabled: boolean;
       const type = this.options.single ? 'radio' : 'checkbox';
-
-      if ($elm.is('option')) {
-        const value = $elm.val();
+      if (elm.matches('option')) {
+        const value = elm.value;
         const text = that.options.textTemplate($elm);
         const selected =
           that.$el.attr('multiple') != undefined
             ? $elm.prop('selected')
             : $elm.attr('selected') == 'selected';
-        const style = this.options.styler(value) ? ` style="${this.options.styler(value)}"` : '';
+        const style = this.options.styler(value);
 
         disabled = groupDisabled || $elm.prop('disabled');
-        if (this.options.blockSeparator > '' && this.options.blockSeparator == $elm.val()) {
-          html.push(
-            `<li${clss}${style}>`,
-            `<label class="${this.options.blockSeparator}${disabled ? 'disabled' : ''}">`,
-            text,
-            '</label>',
-            '</li>'
-          );
+        const cloned = list_label_input.content.firstChild!.cloneNode(true) as HTMLLIElement;
+        const listItemElement = parent.appendChild(cloned);
+        if (multiple) listItemElement.classList.add('multiple');
+        elm.classList.forEach(cls => listItemElement.classList.add(cls));
+        if (elm.hasAttribute('title'))
+          listItemElement.setAttribute('title', elm.getAttribute('title')!);
+        if (style) listItemElement.setAttribute('style', style);
+        const labelElement = listItemElement.firstChild as HTMLLabelElement;
+        if (this.options.blockSeparator > '' && this.options.blockSeparator == value) {
+          labelElement.className = `${this.options.blockSeparator}${disabled ? 'disabled' : ''}`;
+          labelElement.textContent = text;
         } else {
-          html.push(
-            `<li${clss}${style}>`,
-            `<label${disabled ? ' class="disabled"' : ''}>`,
-            `<input type="${type}" ${this.selectItemName} value="${value}"${
-              selected ? ' checked="checked"' : ''
-            }${disabled ? ' disabled="disabled"' : ''}${group ? ` data-group="${group}"` : ''}/> `,
-            text,
-            '</label>',
-            '</li>'
-          );
+          if (disabled) labelElement.className = 'disabled';
+          const inputElement = labelElement.firstChild as HTMLInputElement;
+          inputElement.type = type;
+          inputElement.name = this.selectItemJustName;
+          inputElement.value = value;
+          inputElement.checked = selected;
+          inputElement.disabled = disabled;
+          if (group) inputElement.dataset.group = group;
+          labelElement.append(text);
         }
-      } else if (!group && $elm.is('optgroup')) {
-        const _group = `group_${i}`,
-          label = $elm.attr('label');
+      } else if (!group && elm.matches('optgroup')) {
+        const _group = `group_${i}`;
+        const label = elm.getAttribute('label') ?? '';
 
-        disabled = $elm.prop('disabled');
-        html.push(
-          '<li class="group">',
-          `<label class="optgroup${disabled ? ' disabled' : ''}" data-group="${_group}">`,
-          this.options.hideOptgroupCheckboxes
-            ? ''
-            : `<input type="checkbox" ${this.selectGroupName}${
-                disabled ? ' disabled="disabled"' : ''
-              } /> `,
-          label,
-          '</label>',
-          '</li>'
+        disabled = elm.disabled;
+        const listItemElement = parent.appendChild(
+          list_label_input.content.firstChild!.cloneNode(true) as HTMLLIElement
         );
+        listItemElement.className = 'group';
+        const labelElement = listItemElement.firstChild as HTMLLabelElement;
+        labelElement.classList.add('optgroup');
+        if (disabled) labelElement.classList.add('disabled');
+        labelElement.dataset.group = _group;
+        labelElement.append(label);
+        if (this.options.hideOptgroupCheckboxes) {
+          labelElement.removeChild(labelElement.firstChild!);
+        } else {
+          const inputElement = labelElement.firstChild as HTMLInputElement;
+          inputElement.type = 'checkbox';
+          inputElement.name = this.selectGroupJustName;
+          inputElement.disabled = disabled;
+        }
+
         $.each($elm.children(), function (i, elm) {
-          html.push(that.optionToHtml(i, elm, _group, disabled));
+          that.optionToHtml(parent, i, elm, _group, disabled);
         });
       }
-      return html.join('');
     }
 
     events() {

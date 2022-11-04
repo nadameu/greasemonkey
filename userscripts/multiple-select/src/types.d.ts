@@ -51,7 +51,7 @@ interface MultipleSelectOptions {
   noMatchesFound: 'Nenhum resultado encontrado';
   multiple: false;
   multipleWidth: 80;
-  single: false;
+  single: boolean;
   filter: false;
   width: undefined;
   maxHeight: 250;
@@ -75,4 +75,8 @@ interface MultipleSelectOptions {
     value: string | number | string[] | undefined;
     checked: boolean;
   }): false;
+}
+
+interface Element {
+  matches<K extends keyof HTMLElementTagNameMap>(key: K): this is HTMLElementTagNameMap[K];
 }
