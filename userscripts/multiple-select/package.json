@@ -1,0 +1,13 @@
+{
+  "name": "multiple-select",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "format": "prettier --write ../../multiple-select.user.js",
+    "preview": "vite preview"
+  },
+  "devDependencies": {}
+}

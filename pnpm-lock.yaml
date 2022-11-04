@@ -186,6 +186,9 @@ importers:
     devDependencies:
       vitest: 0.18.1
 
+  userscripts/multiple-select:
+    specifiers: {}
+
   userscripts/renajud:
     specifiers:
       '@nadameu/create-element': workspace:^1.0.0
