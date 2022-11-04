@@ -1,13 +1,46 @@
+declare function infraTrim<T extends string | null | undefined>(arg0: T): T;
+
 interface JQuery<TElement = HTMLElement> extends Iterable<TElement> {
   multipleSelect: {
-    (): JQuery<HTMLElement>;
+    (this: JQuery<HTMLSelectElement>): JQuery<HTMLElement>;
+    (this: JQuery<HTMLSelectElement>, options: Partial<MultipleSelectOptions>): JQuery<HTMLElement>;
+    (
+      this: JQuery<HTMLSelectElement>,
+      method: 'enable' | 'disable' | 'checkAll' | 'uncheckAll' | 'focus' | 'blur' | 'refresh'
+    ): JQuery<HTMLSelectElement>;
+    (this: JQuery<HTMLSelectElement>, method: 'getSelects', type: 'value' | 'text'): string[];
+    (
+      this: JQuery<HTMLSelectElement>,
+      method: 'setSelects',
+      values: string[]
+    ): JQuery<HTMLSelectElement>;
+    (
+      this: JQuery<HTMLSelectElement>,
+      options: Partial<MultipleSelectOptions>,
+      method: 'enable' | 'disable' | 'checkAll' | 'uncheckAll' | 'focus' | 'blur' | 'refresh'
+    ): JQuery<HTMLSelectElement>;
+    (
+      this: JQuery<HTMLSelectElement>,
+      options: Partial<MultipleSelectOptions>,
+      method: 'getSelects',
+      type: 'value' | 'text'
+    ): string[];
+    (
+      this: JQuery<HTMLSelectElement>,
+      options: Partial<MultipleSelectOptions>,
+      method: 'setSelects',
+      values: string[]
+    ): JQuery<HTMLSelectElement>;
     defaults: MultipleSelectOptions;
   };
 }
 
 interface MultipleSelectOptions {
+  etcaetera?: string;
+  filterAcceptOnEnter?: boolean;
+  hideOptgroupCheckboxes?: boolean;
   name: '';
-  isOpen: false;
+  isOpen: boolean;
   placeholder: '';
   selectAll: true;
   selectAllText: 'Selecionar todos';
@@ -28,7 +61,7 @@ interface MultipleSelectOptions {
   blockSeparator: '';
   displayValues: false;
   delimiter: ', ';
-  styler(): false;
+  styler(arg: string | number | string[] | undefined): string | false;
   textTemplate($elm: JQuery<HTMLElement>): string;
   onOpen(): false;
   onClose(): false;
@@ -36,6 +69,10 @@ interface MultipleSelectOptions {
   onUncheckAll(): false;
   onFocus(): false;
   onBlur(): false;
-  onOptgroupClick(): false;
-  onClick(): false;
+  onOptgroupClick(param: { label: string; checked: boolean; children: HTMLInputElement[] }): false;
+  onClick(param: {
+    label: string;
+    value: string | number | string[] | undefined;
+    checked: boolean;
+  }): false;
 }
