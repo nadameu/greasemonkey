@@ -10,7 +10,7 @@ export default defineConfig({
   },
   plugins: [
     monkey({
-      entry: 'src/main.ts',
+      entry: 'src/main.js',
       userscript: {
         match: ['https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=relatorio_geral_listar&*'],
         namespace: 'http://nadameu.com.br',
