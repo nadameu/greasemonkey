@@ -2,7 +2,7 @@
 // @name         separar-em-blocos
 // @name:pt-BR   Separar em blocos
 // @namespace    http://nadameu.com.br
-// @version      3.1.2
+// @version      3.1.3
 // @author       nadameu
 // @description  Permite a separação de processos em blocos para movimentação separada
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
@@ -928,6 +928,11 @@
               class: 'rename',
               ref: input,
               onKeyPress,
+              onKeyUp: evt => {
+                if (evt.key === 'Escape' || evt.key === 'Esc') {
+                  setEditing(() => false);
+                }
+              },
               value: props.nome,
             }),
             o('br', {}),
@@ -1017,8 +1022,6 @@
           } else {
             store.dispatch(Action2.erroCapturado('Nome do bloco não pode estar em branco.'));
           }
-        } else if (evt.key === 'Escape') {
-          setEditing(() => false);
         }
       }
       function onRenomearClicked() {
