@@ -594,7 +594,17 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     if (editing) {
       displayNome = (
         <>
-          <input class="rename" ref={input} onKeyPress={onKeyPress} value={props.nome} />
+          <input
+            class="rename"
+            ref={input}
+            onKeyPress={onKeyPress}
+            onKeyUp={evt => {
+              if (evt.key === 'Escape' || evt.key === 'Esc') {
+                setEditing(() => false);
+              }
+            }}
+            value={props.nome}
+          />
           <br />
           <small>(Enter para confirmar, Esc para cancelar)</small>
         </>
@@ -670,8 +680,6 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
         } else {
           store.dispatch(Action.erroCapturado('Nome do bloco não pode estar em branco.'));
         }
-      } else if (evt.key === 'Escape') {
-        setEditing(() => false);
       }
     }
 
