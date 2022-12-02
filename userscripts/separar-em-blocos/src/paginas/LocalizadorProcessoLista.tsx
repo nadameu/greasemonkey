@@ -540,7 +540,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
             Criar bloco
           </button>
         </form>
-        <br />
+        {aviso !== null ? <br /> : null}
         {aviso}
       </>
     );
@@ -626,6 +626,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
       }
       return 'checked';
     })();
+    const qtdProcessos = <small>({createAbbr(props.nestaPagina, props.total)})</small>;
     return (
       <tr>
         <td>
@@ -643,16 +644,23 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
           </label>
         </td>
         <td>
-          <small
-            onClick={() => {
-              dialogNomeBloco.textContent = props.nome;
-              dialogProcessos.innerHTML = props.processos.join('<br>');
-              dialog.showModal();
-              window.getSelection()?.getRangeAt(0)?.selectNodeContents(dialogProcessos);
-            }}
-          >
-            ({createAbbr(props.nestaPagina, props.total)})
-          </small>
+          {props.total > 0 ? (
+            <a
+              href="#"
+              onClick={e => {
+                e.preventDefault();
+                dialogNomeBloco.textContent = props.nome;
+                console.log(dialogProcessos);
+                dialogProcessos.innerHTML = props.processos.join('<br>');
+                dialog.showModal();
+                window.getSelection()?.getRangeAt(0)?.selectNodeContents(dialogProcessos);
+              }}
+            >
+              {qtdProcessos}
+            </a>
+          ) : (
+            qtdProcessos
+          )}
         </td>
         <td>{botaoRenomear}</td>
         <td>
@@ -708,7 +716,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   }) {
     return (
       <img
-        class="infraButton"
+        style="cursor: pointer;"
         src={src}
         onMouseOver={() => infraTooltipMostrar(label)}
         onMouseOut={() => infraTooltipOcultar()}

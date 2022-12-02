@@ -10,7 +10,7 @@
   --muted-accent: hsl(266, 25%, 25%);
   --text: hsl(266, 0%, 100%);
 }
-.infra-styles {
+.bootstrap-styles {
   .gm-blocos__lista {
     margin: 4px;
     padding: 4px 8px;
@@ -31,8 +31,7 @@
     }
 
     table {
-      margin: 0;
-      margin-bottom: 16px;
+      margin: 6px 0 12px;
       border-collapse: collapse;
     }
 
@@ -40,8 +39,12 @@
       margin: 0;
       padding: 3px 0.5ch;
       vertical-align: middle;
+      a[href] {
+        color: white;
+      }
       label {
         font-size: 0.92rem;
+        margin: 0;
       }
       small {
         font-size: 0.75rem;
@@ -54,8 +57,8 @@
     }
 
     tfoot td {
-      padding-top: 1em;
-      padding-bottom: 1em;
+      padding-top: 0.75em;
+      padding-bottom: 0.75em;
     }
 
     input.rename {
@@ -74,7 +77,7 @@
   }
 }
 .bootstrap-styles .gm-blocos__processo button,
-.infra-styles .gm-blocos__lista button,
+.bootstrap-styles .gm-blocos__lista button,
 .gm-blocos__dialog button {
   display: block;
   margin: 0 auto 7px;
@@ -95,36 +98,40 @@
     box-shadow: none;
   }
 }
-.gm-blocos__dialog {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-family-sans-serif);
-  font-size: 1rem;
-  min-width: 25vw;
-  border: 3px ridge var(--border);
-  box-shadow: 0 4px 8px 4px hsla(266, 25%, 5%, 0.5);
-  border-radius: 12px;
+.bootstrap-styles {
+  .gm-blocos__dialog {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-family-sans-serif);
+    font-size: 1rem;
+    min-width: 25vw;
+    border: 3px ridge var(--border);
+    box-shadow: 0 4px 8px 4px hsla(266, 25%, 5%, 0.5);
+    border-radius: 12px;
 
-  &::backdrop {
-    background: hsla(266, 25%, 5%, 0.75);
-  }
+    &::backdrop {
+      background: hsla(266, 25%, 5%, 0.75);
+    }
 
-  form {
-    display: grid;
-    grid-template-rows: 1fr 10fr 1fr;
-    justify-items: center;
-    align-items: center;
+    form {
+      display: grid;
+      grid-template-rows: 1fr 10fr 1fr;
+      justify-items: center;
+      align-items: center;
 
-    div {
-      font-weight: 700;
+      div {
+        font-weight: 700;
+      }
     }
   }
-}
-.gm-blocos__nome {
-}
-.gm-blocos__processos {
-  border: 1px inset var(--border);
-  padding: 0.5em 0.5ch;
+  .gm-blocos__nome {
+    all: unset;
+  }
+  .gm-blocos__processos {
+    all: unset;
+    border: 1px inset var(--border);
+    padding: 0.5em 0.5ch;
+  }
 }
 .bootstrap-styles {
   .gm-blocos__processo {
