@@ -8,7 +8,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.4.0
+// @version 27.5.0
 // @grant none
 // ==/UserScript==
 */
@@ -364,9 +364,9 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 						`<a href="${processo.link}">${processo.numprocFormatado}</a>`,
 						`<abbr title="${textoData}">${processo[processo.campoDataConsiderada]
 							.toLocaleString()
-							.substr(0, 10)}</abbr> + ${esperado.toString().replace(/\.5$/, '&half;')}${
+							.slice(0, 10)}</abbr> + ${esperado.toString().replace(/\.5$/, '&half;')}${
 							esperado >= 2 ? ' dias' : ' dia'
-						} = ${processo.termoPrazoCorregedoria.toLocaleString().substr(0, 10)}`,
+						} = ${processo.termoPrazoCorregedoria.toLocaleString().slice(0, 10)}`,
 					].join(' | '),
 					`<span class="gmDetalheClasse"> | ${processo.classe.toUpperCase()}</span>`,
 					localizadoresExtra.length > 0
@@ -980,14 +980,17 @@ var Localizador = class {
 		const form = await obterFormularioRelatorioGeral();
 		const url = form.action;
 		const method = form.method;
-		const data = new FormData();
-		data.set('paginacao', '100');
-		data.set('selPrazo', 'A');
-		data.set('selLocalizadorPrincipal', this.infoLink.id);
-		data.set('selLocalizadorPrincipalSelecionados', this.infoLink.id);
-		data.set('optchkcClasse', 'S');
-		data.set('hdnInfraPaginaAtual', pagina.toString());
-		data.set('selRpvPrecatorio', 'null');
+		const data = ((values, f = new FormData()) => (
+			Object.entries(values).forEach(([key, value]) => f.append(key, value)), f
+		))({
+			paginacao: '100',
+			selPrazo: 'A',
+			selLocalizadorPrincipal: this.infoLink.id,
+			selLocalizadorPrincipalSelecionados: this.infoLink.id,
+			optchkcClasse: 'S',
+			hdnInfraPaginaAtual: pagina.toString(),
+			selRpvPrecatorio: 'null',
+		});
 		const doc = await XHR(method, url, data);
 		const tabela = doc.getElementById('tabelaLocalizadores');
 		const quantidadeProcessosCarregados = parseInt(
@@ -1228,33 +1231,16 @@ var COMPETENCIA_EF_MIN = 41;
 var COMPETENCIA_EF_MAX = 43;
 var CLASSE_EF = 99;
 var CLASSE_CARTA_PRECATORIA = 60;
-var DOMINGO = 0;
-var SEGUNDA = 1;
-var SABADO = 6;
-function adiantarParaSabado(data) {
-	let ajuste = 0;
-	switch (data.getDay()) {
-		case DOMINGO:
-			ajuste = -1;
-			break;
-		case SEGUNDA:
-			ajuste = -2;
-			break;
-	}
-	return new Date(data.getFullYear(), data.getMonth(), data.getDate() + ajuste);
+function ajustarDiaDaSemana(ajustes) {
+	return data => {
+		const diaDaSemana = data.getDay();
+		const resultado = new Date(data.getTime());
+		resultado.setDate(resultado.getDate() + ajustes[diaDaSemana]);
+		return resultado;
+	};
 }
-function prorrogarParaSegunda(data) {
-	let ajuste = 0;
-	switch (data.getDay()) {
-		case SABADO:
-			ajuste = 2;
-			break;
-		case DOMINGO:
-			ajuste = 1;
-			break;
-	}
-	return new Date(data.getFullYear(), data.getMonth(), data.getDate() + ajuste);
-}
+var adiantarParaSabado = ajustarDiaDaSemana([-1, -2, 0, 0, 0, 0, 0]);
+var prorrogarParaSegunda = ajustarDiaDaSemana([1, 0, 0, 0, 0, 0, 2]);
 var JANEIRO = 0;
 var MAIO = 4;
 var DEZEMBRO = 11;
@@ -1274,9 +1260,7 @@ function calcularProximo(ajusteAno, fn) {
 }
 var calcularRecessoData = calcularProximo(-1, calcularRecesso);
 var calcularInspecao = memoize(ano => {
-	const quinzeMaio = new Date(ano, MAIO, 15);
-	const diasAteSegundaFeira = (SEGUNDA - quinzeMaio.getDay() + 7) % 7;
-	const inicio = new Date(ano, MAIO, 15 + diasAteSegundaFeira);
+	const inicio = ajustarDiaDaSemana([15, 14, 20, 19, 18, 17, 16])(new Date(ano, MAIO, 1));
 	const retorno = new Date(ano, MAIO, inicio.getDate() + 7);
 	return { inicio, retorno };
 });
@@ -1493,205 +1477,103 @@ var minhasRegras = {
 			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 1,
 		},
 	},
+	TresDiasNoLocalizador: {
+		campoDataConsiderada: 'dataInclusaoLocalizador',
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 3,
+			[CompetenciasCorregedoria.CIVEL]: 3,
+			[CompetenciasCorregedoria.CRIMINAL]: 3,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 3,
+		},
+	},
+	DezDiasNoLocalizador: {
+		campoDataConsiderada: 'dataInclusaoLocalizador',
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 10,
+			[CompetenciasCorregedoria.CIVEL]: 10,
+			[CompetenciasCorregedoria.CRIMINAL]: 10,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 10,
+		},
+	},
+};
+var ANALISE_ESPECIAL = {
+	'MOVIMENTO': {
+		campoDataConsiderada: 'dataUltimoEvento',
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 45,
+			[CompetenciasCorregedoria.CIVEL]: 60,
+			[CompetenciasCorregedoria.CRIMINAL]: 60,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 180,
+		},
+	},
+	'MOVIMENTO-AGUARDA DESPACHO': {
+		campoDataConsiderada: 'dataSituacao',
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 45,
+			[CompetenciasCorregedoria.CIVEL]: 60,
+			[CompetenciasCorregedoria.CRIMINAL]: 60,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 180,
+		},
+	},
 };
 var infoMeta = {
-	'721307546622562490210000000013': {
-		MOVIMENTO: minhasRegras.Analisar,
+	'721495116809325210234371233103': {
+		BAIXADO: {
+			campoDataConsiderada: 'dataInclusaoLocalizador',
+			dias: {
+				[CompetenciasCorregedoria.JUIZADO]: 270,
+				[CompetenciasCorregedoria.CIVEL]: 270,
+				[CompetenciasCorregedoria.CRIMINAL]: 270,
+				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 270,
+			},
+		},
 	},
-	'721612283838905044100680025624': {
-		MOVIMENTO: minhasRegras.Prazo05,
-	},
-	'721308334450542230220000000003': {
-		MOVIMENTO: minhasRegras.Prazo10,
-	},
-	'721434640434691780220000000004': {
-		MOVIMENTO: minhasRegras.Prazo30,
-	},
-	'721362003373237310210000000001': {
+	'721678816799577723187215069504': {
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.AgAssinaturaJuiz,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.AgAssinaturaJuiz,
 	},
-	'721448979119064340240000000001': {
-		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
-		'MOVIMENTO': minhasRegras.ProcessoParado,
-	},
-	'721657212513154512241730859228': {
-		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
-		'MOVIMENTO': minhasRegras.ProcessoParado,
-	},
-	'721657212513154512241735980372': {
-		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
-		'MOVIMENTO': minhasRegras.ProcessoParado,
-	},
-	'721657212513154512241740268890': {
-		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
-		'MOVIMENTO': minhasRegras.ProcessoParado,
-	},
-	'721307551490768040230000000002': {
-		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoRPV,
-		'MOVIMENTO': minhasRegras.ProcessoParado,
-	},
-	'721423260735024680230000000001': {
-		'MOVIMENTO': minhasRegras.CumprirPrioridade,
-		'SUSP/SOBR-P.Decisão Judicial': minhasRegras.Suspensao,
-	},
-	'721596120821598545737898280283': {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721307546545352560220000000002': { MOVIMENTO: minhasRegras.Cumprir },
-	'721377617310101250210000000001': { MOVIMENTO: minhasRegras.Cumprir },
-	'721473784358242940217525843407': { MOVIMENTO: minhasRegras.Cumprir },
-	'721307546545352560220000000004': {
-		BAIXADO: minhasRegras.CumprirPrioridade,
-	},
-	'721307546545352560220000000001': {
-		'MOVIMENTO': minhasRegras.UmDiaNoLocalizador,
-		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
-		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
-	},
-	'721593790295233093891502637047': { MOVIMENTO: minhasRegras.ProcessoParado },
-	'721484231615301020214955770825': { MOVIMENTO: minhasRegras.Cumprir },
-	'721394121597912040240000000001': {
-		MOVIMENTO: {
-			campoDataConsiderada: 'dataUltimoEvento',
-			dias: {
-				[CompetenciasCorregedoria.JUIZADO]: 30,
-				[CompetenciasCorregedoria.CIVEL]: 30,
-				[CompetenciasCorregedoria.CRIMINAL]: 30,
-				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 30,
-			},
-		},
-	},
-	'721523553899874850256893780310': {
-		'MOVIMENTO': minhasRegras.UmDiaNoLocalizador,
-		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
-		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
-	},
-	'721552920360416260216834737727': {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721307551490768040230000000001': {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721562943669373244747535696808': {
-		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
-	},
-	'721583337216547742495762572419': {
-		MOVIMENTO: minhasRegras.Prazo30,
-	},
-	'721583337216547742495766327569': {
-		MOVIMENTO: minhasRegras.Prazo30,
-	},
-	'721607866102094019347001221238': {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721307552681884870230000000002': {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721308062479869640210000000001': {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721552920360416260216979817401': {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721307635473840010210000000001': {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721507130986103060244491911387': {
-		MOVIMENTO: minhasRegras.AnalisarPrioridade,
-	},
-	'721307554204880400230000000001': {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721307558985430470230000000001': {
-		MOVIMENTO: minhasRegras.Prazo05,
-	},
-	'721507130986103060244448466387': {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721507130986103060244459513559': {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721547820988212490231284718313': {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721544193174836710212300925863': {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721400171914790310250000000002': {
+	'721543582689027230247559882997': {
 		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
 	},
-	'721544107305944230242168515535': {
-		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
-		'SUSP/SOBR-Aguarda Julg.Embg.': minhasRegras.Suspensao,
-		'SUSP/SOBR-P.Decisão Judicial': minhasRegras.Suspensao,
-		'SUSP/SOBR-Parcel.Débito.': minhasRegras.Suspensao,
+	'721386347389654160220000000001': {
+		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
 	},
-	'721544452440114210217814629387': {
-		'SUSP/SOBR-Parcel.Débito.': minhasRegras.PrescricaoIntercorrente,
-	},
-	'721535037528900780222902466001': {
-		MOVIMENTO: minhasRegras.AnalisarPrioridade,
-	},
-	'721583337216547742495846775052': {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721583337216547742495852422554': {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721583337216547742495856888118': {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721483972730880570255881334762': {
-		'MOVIMENTO': minhasRegras.Cumprir,
+	'721625600839746808076693184521': {
+		'MOVIMENTO': minhasRegras.Analisar,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
-		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
+		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.Suspensao,
 	},
-	'721527261655975790236901397942': {
-		'MOVIMENTO': minhasRegras.Cumprir,
+	'721678897627245502696093937061': {
+		'MOVIMENTO': minhasRegras.TresDiasNoLocalizador,
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.TresDiasNoLocalizador,
+	},
+	'721297781561070411980000000002': {
+		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
+	},
+	'721394040218679380210000000001': {
+		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
+	},
+	'721307644314435100230000000009': {
+		'MOVIMENTO': minhasRegras.Analisar,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
-		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
 	},
-	'721548256047652070237271128328': {
-		'MOVIMENTO': minhasRegras.CumprirPrioridade,
-		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.DespacharPrioridade,
-		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.SentenciarPrioridade,
-		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
+	'721551871359630420265695671379': {
+		MOVIMENTO: ANALISE_ESPECIAL.MOVIMENTO,
 	},
-	'771387208544881780110000003529': {
-		MOVIMENTO: minhasRegras.CumprirPrioridade,
+	'721639501846219067004233521929': {
+		'MOVIMENTO': minhasRegras.Prazo30,
+		'MOVIMENTO-AGUARDA DESPACHO': ANALISE_ESPECIAL['MOVIMENTO-AGUARDA DESPACHO'],
 	},
-	'721335971440797820230000000084': { MOVIMENTO: minhasRegras.Cumprir },
-	'721426007793151980220000000102': {
-		MOVIMENTO: {
-			campoDataConsiderada: 'dataUltimoEvento',
-			dias: {
-				[CompetenciasCorregedoria.JUIZADO]: 7,
-				[CompetenciasCorregedoria.CIVEL]: 7,
-				[CompetenciasCorregedoria.CRIMINAL]: 7,
-				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 7,
-			},
-		},
-	},
-	'721335971440797820230000000033': {
+	'721551871359630420265534474938': ANALISE_ESPECIAL,
+	'721429895966181650220000000001': ANALISE_ESPECIAL,
+	'721664380459508958074173036341': ANALISE_ESPECIAL,
+	'721645799909469489104766864088': ANALISE_ESPECIAL,
+	'721551871359630420265653908728': {
 		MOVIMENTO: minhasRegras.ProcessoParado,
 	},
-	'721335971440797820230000000135': { MOVIMENTO: minhasRegras.ProcessoParado },
-	'721495116809325210234371229829': {
-		BAIXADO: {
-			...minhasRegras.Analisar,
-			campoDataConsiderada: 'dataInclusaoLocalizador',
-		},
-	},
-	'721274465163072970240000000027': {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721273070396362990240000000266': { '*': minhasRegras.Analisar },
-	'721273070396362990240000000076': {
-		'*': minhasRegras.Analisar,
-	},
-	'721273070396362990240000000171': {
-		'*': minhasRegras.Analisar,
+	'721594393185205026514869650277': ANALISE_ESPECIAL,
+	'721572270106589311955922169355': {
+		MOVIMENTO: minhasRegras.Cumprir,
 	},
 };
 var Processo = class {

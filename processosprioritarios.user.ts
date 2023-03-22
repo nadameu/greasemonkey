@@ -7,7 +7,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.4.0
+// @version 27.5.0
 // @grant none
 // ==/UserScript==
 */
@@ -1471,7 +1471,7 @@ interface InfoMeta {
 		[situacao: string]: {
 			campoDataConsiderada: 'dataSituacao' | 'dataUltimoEvento' | 'dataInclusaoLocalizador';
 			dias: {
-				[competencia in typeof CompetenciasCorregedoria[keyof typeof CompetenciasCorregedoria]]: number;
+				[competencia in (typeof CompetenciasCorregedoria)[keyof typeof CompetenciasCorregedoria]]: number;
 			};
 		};
 	};
@@ -1649,205 +1649,106 @@ const minhasRegras = {
 			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 1,
 		},
 	},
+	TresDiasNoLocalizador: {
+		campoDataConsiderada: 'dataInclusaoLocalizador' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 3,
+			[CompetenciasCorregedoria.CIVEL]: 3,
+			[CompetenciasCorregedoria.CRIMINAL]: 3,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 3,
+		},
+	},
+	DezDiasNoLocalizador: {
+		campoDataConsiderada: 'dataInclusaoLocalizador' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 10,
+			[CompetenciasCorregedoria.CIVEL]: 10,
+			[CompetenciasCorregedoria.CRIMINAL]: 10,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 10,
+		},
+	},
+};
+const ANALISE_ESPECIAL /* TRIPLO DOS PRAZOS NORMAIS */ = {
+	'MOVIMENTO': {
+		campoDataConsiderada: 'dataUltimoEvento' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 45,
+			[CompetenciasCorregedoria.CIVEL]: 60,
+			[CompetenciasCorregedoria.CRIMINAL]: 60,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 180,
+		},
+	},
+	'MOVIMENTO-AGUARDA DESPACHO': {
+		campoDataConsiderada: 'dataSituacao' as const,
+		dias: {
+			[CompetenciasCorregedoria.JUIZADO]: 45,
+			[CompetenciasCorregedoria.CIVEL]: 60,
+			[CompetenciasCorregedoria.CRIMINAL]: 60,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 180,
+		},
+	},
 };
 const infoMeta: InfoMeta = {
-	'721307546622562490210000000013' /* Devolução Turma */: {
-		MOVIMENTO: minhasRegras.Analisar,
+	'721495116809325210234371233103' /* Conta Req +1Ano com Saldo - BAIXADO */: {
+		BAIXADO: {
+			campoDataConsiderada: 'dataInclusaoLocalizador' as const,
+			dias: {
+				[CompetenciasCorregedoria.JUIZADO]: 270,
+				[CompetenciasCorregedoria.CIVEL]: 270,
+				[CompetenciasCorregedoria.CRIMINAL]: 270,
+				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 270,
+			},
+		},
 	},
-	'721612283838905044100680025624' /* 3DIR Ag pedido TED */: {
-		MOVIMENTO: minhasRegras.Prazo05,
-	},
-	'721308334450542230220000000003' /* 3DIR Ag pagar BB/CEF */: {
-		MOVIMENTO: minhasRegras.Prazo10,
-	},
-	'721434640434691780220000000004' /* 3DIR Ag saque +1 ano */: {
-		MOVIMENTO: minhasRegras.Prazo30,
-	},
-	'721362003373237310210000000001' /* 3DIR Ag Juiz assinar */: {
+	'721678816799577723187215069504' /* DIR Ag. Juiz assinar */: {
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.AgAssinaturaJuiz,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.AgAssinaturaJuiz,
 	},
-	'721448979119064340240000000001' /* 3DIR Ag pagamento precatório */: {
-		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
-		'MOVIMENTO': minhasRegras.ProcessoParado,
-	},
-	'721657212513154512241730859228' /* 3DIR Ag precatório 22 */: {
-		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
-		'MOVIMENTO': minhasRegras.ProcessoParado,
-	},
-	'721657212513154512241735980372' /* 3DIR Ag precatório 22 e 23 */: {
-		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
-		'MOVIMENTO': minhasRegras.ProcessoParado,
-	},
-	'721657212513154512241740268890' /* 3DIR Ag precatório sem data */: {
-		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoPrecatorio,
-		'MOVIMENTO': minhasRegras.ProcessoParado,
-	},
-	'721307551490768040230000000002' /* 3DIR Ag pagamento RPV */: {
-		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.AgPgtoRPV,
-		'MOVIMENTO': minhasRegras.ProcessoParado,
-	},
-	'721423260735024680230000000001' /* 3DIR Ag prazo */: {
-		'MOVIMENTO': minhasRegras.CumprirPrioridade,
-		'SUSP/SOBR-P.Decisão Judicial': minhasRegras.Suspensao,
-	},
-	'721596120821598545737898280283' /* 3DIR Agendar Zoom */: {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721307546545352560220000000002' /* 3DIR Baixa */: { MOVIMENTO: minhasRegras.Cumprir },
-	'721377617310101250210000000001' /* 3DIR Baixa Demo */: { MOVIMENTO: minhasRegras.Cumprir },
-	'721473784358242940217525843407' /* 3DIR Baixa Turma */: { MOVIMENTO: minhasRegras.Cumprir },
-	'721307546545352560220000000004' /* 3DIR Cumprimento */: {
-		BAIXADO: minhasRegras.CumprirPrioridade,
-	},
-	'721307546545352560220000000001' /* 3DIR Direção */: {
-		'MOVIMENTO': minhasRegras.UmDiaNoLocalizador,
-		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
-		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
-	},
-	'721593790295233093891502637047' /* 3DIR Entrega */: { MOVIMENTO: minhasRegras.ProcessoParado },
-	'721484231615301020214955770825' /* 3DIR Extrato CEF */: { MOVIMENTO: minhasRegras.Cumprir },
-	'721394121597912040240000000001' /* 3DIR RPV Prontas */: {
-		MOVIMENTO: {
-			campoDataConsiderada: 'dataUltimoEvento' as const,
-			dias: {
-				[CompetenciasCorregedoria.JUIZADO]: 30,
-				[CompetenciasCorregedoria.CIVEL]: 30,
-				[CompetenciasCorregedoria.CRIMINAL]: 30,
-				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 30,
-			},
-		},
-	},
-	'721523553899874850256893780310' /* 3DIR Temporário */: {
-		'MOVIMENTO': minhasRegras.UmDiaNoLocalizador,
-		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
-		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
-	},
-	'721552920360416260216834737727' /* 6PRO Analisar emenda */: {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721307551490768040230000000001' /* 9EXE Ag contrarrazões */: {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721562943669373244747535696808' /* 9EXE Ag decisão supe */: {
-		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
-	},
-	'721583337216547742495762572419' /* 9EXE Ag Fazer INSS 1 */: {
-		MOVIMENTO: minhasRegras.Prazo30,
-	},
-	'721583337216547742495766327569' /* 9EXE Ag Fazer INSS 1 */: {
-		MOVIMENTO: minhasRegras.Prazo30,
-	},
-	'721607866102094019347001221238' /* 9EXE Ag prov. partes baixa */: {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721307552681884870230000000002' /* 9EXE Ag providência partes */: {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721308062479869640210000000001' /* 9EXE Ag recurso */: {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721552920360416260216979817401' /* 9EXE Analisar recurso */: {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721307635473840010210000000001' /* 9EXE Cálculo devolvido */: {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721507130986103060244491911387' /* 9EXE Descumprimento INSS */: {
-		MOVIMENTO: minhasRegras.AnalisarPrioridade,
-	},
-	'721307554204880400230000000001' /* 9EXE Digitar RPV */: {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721307558985430470230000000001' /* 9EXE Exp RPV */: {
-		MOVIMENTO: minhasRegras.Prazo05,
-	},
-	'721507130986103060244448466387' /* 9EXE Habilitação sucessores */: {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721507130986103060244459513559' /* 9EXE Honorários de sucumbência */: {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721547820988212490231284718313' /* 9EXE Ord impugnação */: {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721544193174836710212300925863' /* 9EXE P. física */: {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721400171914790310250000000002' /* 9EXE Rec Assessoria */: {
+	'721543582689027230247559882997' /* DIR Assinar */: {
 		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
 	},
-	'721544107305944230242168515535' /* 9EXE Suspensos */: {
-		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
-		'SUSP/SOBR-Aguarda Julg.Embg.': minhasRegras.Suspensao,
-		'SUSP/SOBR-P.Decisão Judicial': minhasRegras.Suspensao,
-		'SUSP/SOBR-Parcel.Débito.': minhasRegras.Suspensao,
+	'721386347389654160220000000001' /* DIR Assinar (UAA) */: {
+		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
 	},
-	'721544452440114210217814629387' /* 9EXE Suspensos 921 */: {
-		'SUSP/SOBR-Parcel.Débito.': minhasRegras.PrescricaoIntercorrente,
-	},
-	'721535037528900780222902466001' /* 9EXE Triagem */: {
-		MOVIMENTO: minhasRegras.AnalisarPrioridade,
-	},
-	'721583337216547742495846775052' /* 9EXE Verif obrigação fazer 1 */: {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721583337216547742495852422554' /* 9EXE Verif obrigação fazer 2 */: {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721583337216547742495856888118' /* 9EXE Verif obrigação fazer M */: {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721483972730880570255881334762' /* C/ Luciana */: {
-		'MOVIMENTO': minhasRegras.Cumprir,
+	'721625600839746808076693184521' /* DIR Cessão de crédito */: {
+		'MOVIMENTO': minhasRegras.Analisar,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
-		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
+		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.Suspensao,
 	},
-	'721527261655975790236901397942' /* C/ Paulo */: {
-		'MOVIMENTO': minhasRegras.Cumprir,
+	'721678897627245502696093937061' /* DIR Conferir ass. digital */: {
+		'MOVIMENTO': minhasRegras.TresDiasNoLocalizador,
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.TresDiasNoLocalizador,
+	},
+	'721297781561070411980000000002' /* DIR Conferir req. pagamento */: {
+		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
+	},
+	'721394040218679380210000000001' /* DIR Conferir req. pagamento (UAA) */: {
+		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
+	},
+	'721307644314435100230000000009' /* DIR Direção */: {
+		'MOVIMENTO': minhasRegras.Analisar,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
-		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.Sentenciar,
 	},
-	'721548256047652070237271128328' /* META 2 */: {
-		'MOVIMENTO': minhasRegras.CumprirPrioridade,
-		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.DespacharPrioridade,
-		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.SentenciarPrioridade,
-		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
+	'721551871359630420265695671379' /* ESP Aguarda cls sent - aguarda conclusão sentença */: {
+		MOVIMENTO: ANALISE_ESPECIAL.MOVIMENTO,
 	},
-	'771387208544881780110000003529' /* PEDIDO DE TED AUTOMÁTICO */: {
-		MOVIMENTO: minhasRegras.CumprirPrioridade,
+	'721639501846219067004233521929' /* ESP Aguarda contest - aguarda contestação */: {
+		'MOVIMENTO': minhasRegras.Prazo30,
+		'MOVIMENTO-AGUARDA DESPACHO': ANALISE_ESPECIAL['MOVIMENTO-AGUARDA DESPACHO'],
 	},
-	'721335971440797820230000000084' /* REQ INTIMADA */: { MOVIMENTO: minhasRegras.Cumprir },
-	'721426007793151980220000000102' /* REQ PAGA LIBERADA */: {
-		MOVIMENTO: {
-			campoDataConsiderada: 'dataUltimoEvento' as const,
-			dias: {
-				[CompetenciasCorregedoria.JUIZADO]: 7,
-				[CompetenciasCorregedoria.CIVEL]: 7,
-				[CompetenciasCorregedoria.CRIMINAL]: 7,
-				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 7,
-			},
-		},
-	},
-	'721335971440797820230000000033' /* REQ PREPARADA INTIMAÇÃO */: {
+	'721551871359630420265534474938' /* ESP Analisar - analisar processos especial */:
+		ANALISE_ESPECIAL,
+	'721429895966181650220000000001' /* ESP Baixa - baixados diligência especial */: ANALISE_ESPECIAL,
+	'721664380459508958074173036341' /* ESP Baixa ruído - baixa ruído Tema 1083 ok */:
+		ANALISE_ESPECIAL,
+	'721645799909469489104766864088' /* ESP Desp saneador - efetuado despacho saneador */:
+		ANALISE_ESPECIAL,
+	'721551871359630420265653908728' /* ESP Prazo diverso - aguarda prazos diversos */: {
 		MOVIMENTO: minhasRegras.ProcessoParado,
 	},
-	'721335971440797820230000000135' /* REQ PROCESSADA */: { MOVIMENTO: minhasRegras.ProcessoParado },
-	'721495116809325210234371229829' /* Conta Req +1Ano com Saldo - BAIXADO */: {
-		BAIXADO: {
-			...minhasRegras.Analisar,
-			campoDataConsiderada: 'dataInclusaoLocalizador' as const,
-		},
-	},
-	'721274465163072970240000000027' /* TRF RECEBIDOS */: {
-		MOVIMENTO: minhasRegras.Analisar,
-	},
-	'721273070396362990240000000266' /* TRF/TR BAIXADOS */: { '*': minhasRegras.Analisar },
-	'721273070396362990240000000076' /* TRF/TR DECISÃO */: {
-		'*': minhasRegras.Analisar,
-	},
-	'721273070396362990240000000171' /* TRF/TR JULGADOS */: {
-		'*': minhasRegras.Analisar,
+	'721594393185205026514869650277' /* ESP rural */: ANALISE_ESPECIAL,
+	'721572270106589311955922169355' /* ESP Suspender Vigi - suspender especial vigilante */: {
+		MOVIMENTO: minhasRegras.Cumprir,
 	},
 };
 
