@@ -8,7 +8,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.5.0
+// @version 27.5.1
 // @grant none
 // ==/UserScript==
 */
@@ -1532,6 +1532,10 @@ var infoMeta = {
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.AgAssinaturaJuiz,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.AgAssinaturaJuiz,
 	},
+	'721679080435278498215046587812': {
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.AgAssinaturaJuiz,
+		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.AgAssinaturaJuiz,
+	},
 	'721543582689027230247559882997': {
 		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
 	},
@@ -1543,7 +1547,16 @@ var infoMeta = {
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
 		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.Suspensao,
 	},
+	'721626109611156388130009965927': {
+		'MOVIMENTO': minhasRegras.Analisar,
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
+		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.Suspensao,
+	},
 	'721678897627245502696093937061': {
+		'MOVIMENTO': minhasRegras.TresDiasNoLocalizador,
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.TresDiasNoLocalizador,
+	},
+	'721679500631941830108998264458': {
 		'MOVIMENTO': minhasRegras.TresDiasNoLocalizador,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.TresDiasNoLocalizador,
 	},
@@ -1557,22 +1570,44 @@ var infoMeta = {
 		'MOVIMENTO': minhasRegras.Analisar,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
 	},
+	'721409844801697800250000000001': {
+		'MOVIMENTO': minhasRegras.Analisar,
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
+	},
 	'721551871359630420265695671379': {
+		MOVIMENTO: ANALISE_ESPECIAL.MOVIMENTO,
+	},
+	'721559583825632361694363069867': {
 		MOVIMENTO: ANALISE_ESPECIAL.MOVIMENTO,
 	},
 	'721639501846219067004233521929': {
 		'MOVIMENTO': minhasRegras.Prazo30,
 		'MOVIMENTO-AGUARDA DESPACHO': ANALISE_ESPECIAL['MOVIMENTO-AGUARDA DESPACHO'],
 	},
+	'721559583825632361694304433363': {
+		'MOVIMENTO': minhasRegras.Prazo30,
+		'MOVIMENTO-AGUARDA DESPACHO': ANALISE_ESPECIAL['MOVIMENTO-AGUARDA DESPACHO'],
+	},
 	'721551871359630420265534474938': ANALISE_ESPECIAL,
+	'721559583825632361694326327854': ANALISE_ESPECIAL,
 	'721429895966181650220000000001': ANALISE_ESPECIAL,
+	'721463606227440410240239625806': ANALISE_ESPECIAL,
 	'721664380459508958074173036341': ANALISE_ESPECIAL,
+	'721664468679363161622284216925': ANALISE_ESPECIAL,
 	'721645799909469489104766864088': ANALISE_ESPECIAL,
+	'721618248566778096566566261198': ANALISE_ESPECIAL,
 	'721551871359630420265653908728': {
 		MOVIMENTO: minhasRegras.ProcessoParado,
 	},
+	'721559583825632361694349552705': {
+		MOVIMENTO: minhasRegras.ProcessoParado,
+	},
 	'721594393185205026514869650277': ANALISE_ESPECIAL,
+	'721595076290977630626454778652': ANALISE_ESPECIAL,
 	'721572270106589311955922169355': {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
+	'721573586678983228872828035368': {
 		MOVIMENTO: minhasRegras.Cumprir,
 	},
 };

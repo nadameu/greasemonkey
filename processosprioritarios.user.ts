@@ -7,7 +7,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.5.0
+// @version 27.5.1
 // @grant none
 // ==/UserScript==
 */
@@ -1471,7 +1471,7 @@ interface InfoMeta {
 		[situacao: string]: {
 			campoDataConsiderada: 'dataSituacao' | 'dataUltimoEvento' | 'dataInclusaoLocalizador';
 			dias: {
-				[competencia in (typeof CompetenciasCorregedoria)[keyof typeof CompetenciasCorregedoria]]: number;
+				[competencia in typeof CompetenciasCorregedoria[keyof typeof CompetenciasCorregedoria]]: number;
 			};
 		};
 	};
@@ -1704,6 +1704,10 @@ const infoMeta: InfoMeta = {
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.AgAssinaturaJuiz,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.AgAssinaturaJuiz,
 	},
+	'721679080435278498215046587812' /* DIR Ag. Juiz assinar (UAA) */: {
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.AgAssinaturaJuiz,
+		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.AgAssinaturaJuiz,
+	},
 	'721543582689027230247559882997' /* DIR Assinar */: {
 		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
 	},
@@ -1715,7 +1719,16 @@ const infoMeta: InfoMeta = {
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
 		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.Suspensao,
 	},
+	'721626109611156388130009965927' /* DIR Cessão de crédito (UAA) */: {
+		'MOVIMENTO': minhasRegras.Analisar,
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
+		'SUSP/SOBR-Aguarda Pagamento': minhasRegras.Suspensao,
+	},
 	'721678897627245502696093937061' /* DIR Conferir ass. digital */: {
+		'MOVIMENTO': minhasRegras.TresDiasNoLocalizador,
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.TresDiasNoLocalizador,
+	},
+	'721679500631941830108998264458' /* DIR Conferir ass. digital */: {
 		'MOVIMENTO': minhasRegras.TresDiasNoLocalizador,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.TresDiasNoLocalizador,
 	},
@@ -1729,25 +1742,50 @@ const infoMeta: InfoMeta = {
 		'MOVIMENTO': minhasRegras.Analisar,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
 	},
+	'721409844801697800250000000001' /* DIR Direção (UAA) */: {
+		'MOVIMENTO': minhasRegras.Analisar,
+		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
+	},
 	'721551871359630420265695671379' /* ESP Aguarda cls sent - aguarda conclusão sentença */: {
+		MOVIMENTO: ANALISE_ESPECIAL.MOVIMENTO,
+	},
+	'721559583825632361694363069867' /* ESP Aguarda cls sent - aguarda conclusão sentença (UAA) */: {
 		MOVIMENTO: ANALISE_ESPECIAL.MOVIMENTO,
 	},
 	'721639501846219067004233521929' /* ESP Aguarda contest - aguarda contestação */: {
 		'MOVIMENTO': minhasRegras.Prazo30,
 		'MOVIMENTO-AGUARDA DESPACHO': ANALISE_ESPECIAL['MOVIMENTO-AGUARDA DESPACHO'],
 	},
+	'721559583825632361694304433363' /* ESP Aguarda contest - aguarda contestação (UAA) */: {
+		'MOVIMENTO': minhasRegras.Prazo30,
+		'MOVIMENTO-AGUARDA DESPACHO': ANALISE_ESPECIAL['MOVIMENTO-AGUARDA DESPACHO'],
+	},
 	'721551871359630420265534474938' /* ESP Analisar - analisar processos especial */:
 		ANALISE_ESPECIAL,
+	'721559583825632361694326327854' /* ESP Analisar - analisar processos especial (UAA) */:
+		ANALISE_ESPECIAL,
 	'721429895966181650220000000001' /* ESP Baixa - baixados diligência especial */: ANALISE_ESPECIAL,
+	'721463606227440410240239625806' /* ESP Baixa - baixados diligência especial (UAA) */:
+		ANALISE_ESPECIAL,
 	'721664380459508958074173036341' /* ESP Baixa ruído - baixa ruído Tema 1083 ok */:
+		ANALISE_ESPECIAL,
+	'721664468679363161622284216925' /* ESP Baixa ruído - baixa ruído Tema 1083 ok (UAA) */:
 		ANALISE_ESPECIAL,
 	'721645799909469489104766864088' /* ESP Desp saneador - efetuado despacho saneador */:
 		ANALISE_ESPECIAL,
+	'721618248566778096566566261198' /* ESP Perícia porto (UAA) */: ANALISE_ESPECIAL,
 	'721551871359630420265653908728' /* ESP Prazo diverso - aguarda prazos diversos */: {
 		MOVIMENTO: minhasRegras.ProcessoParado,
 	},
+	'721559583825632361694349552705' /* ESP Prazo diverso - aguarda prazos diversos (UAA) */: {
+		MOVIMENTO: minhasRegras.ProcessoParado,
+	},
 	'721594393185205026514869650277' /* ESP rural */: ANALISE_ESPECIAL,
+	'721595076290977630626454778652' /* ESP rural (UAA) */: ANALISE_ESPECIAL,
 	'721572270106589311955922169355' /* ESP Suspender Vigi - suspender especial vigilante */: {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
+	'721573586678983228872828035368' /* ESP Suspender Vigi - suspender especial vigilante (UAA) */: {
 		MOVIMENTO: minhasRegras.Cumprir,
 	},
 };
