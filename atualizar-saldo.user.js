@@ -2,7 +2,7 @@
 // @name         atualizar-saldos
 // @name:pt-BR   Atualizar saldos
 // @namespace    http://nadameu.com.br
-// @version      4.0.0
+// @version      4.1.0
 // @author       nadameu
 // @description  Atualiza o saldo de contas judiciais
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
@@ -20,11 +20,11 @@
 // @require      https://unpkg.com/preact@10.11.0/dist/preact.min.js
 // ==/UserScript==
 
-(s => {
+(o => {
   const a = document.createElement('style');
-  (a.dataset.source = 'vite-plugin-monkey'), (a.innerText = s), document.head.appendChild(a);
+  (a.dataset.source = 'vite-plugin-monkey'), (a.innerText = o), document.head.appendChild(a);
 })(
-  '.infra-styles .gm-atualizar-saldo__contas,.infra-styles .gm-atualizar-saldo__processo{--button-bg: hsl(266deg, 25%, 40%);--fg-color: hsl(266deg, 80%, 15%);--border-color: hsl(266deg, 10%, 40%)}.infra-styles .gm-atualizar-saldo__contas span,.infra-styles .gm-atualizar-saldo__processo span{font-size:1.3em;line-height:2em;color:var(--fg-color)}.infra-styles .gm-atualizar-saldo__contas span.zerado,.infra-styles .gm-atualizar-saldo__processo span.zerado{--fg-color: hsl(266, 10%, 40%)}.infra-styles .gm-atualizar-saldo__contas span.erro,.infra-styles .gm-atualizar-saldo__processo span.erro{--fg-color: hsl(0, 85%, 40%)}.infra-styles .gm-atualizar-saldo__contas span.saldo,.infra-styles .gm-atualizar-saldo__processo span.saldo{--fg-color: hsl(266, 75%, 25%)}.infra-styles .gm-atualizar-saldo__contas button,.infra-styles .gm-atualizar-saldo__processo button{border:none;border-radius:4px;padding:4px 12px;font-size:1.3em;color:#fff;box-shadow:0 2px 4px #00000080;background:var(--button-bg)}.infra-styles .gm-atualizar-saldo__contas button.zerado,.infra-styles .gm-atualizar-saldo__processo button.zerado{--button-bg: hsl(266deg, 5%, 50%)}.infra-styles .gm-atualizar-saldo__contas button:hover,.infra-styles .gm-atualizar-saldo__contas button:focus,.infra-styles .gm-atualizar-saldo__processo button:hover,.infra-styles .gm-atualizar-saldo__processo button:focus{--button-bg: hsl(266deg, 40%, 45%)}.infra-styles .gm-atualizar-saldo__contas button:active,.infra-styles .gm-atualizar-saldo__processo button:active{box-shadow:none;translate:0 2px}.infra-styles .gm-atualizar-saldo__processo{margin:0 2px 8px;border-left:4px solid var(--border-color);padding:0 4px}.infra-styles .gm-atualizar-saldo__contas{border-left:4px solid var(--border-color);padding:0 4px}'
+  '.gm-atualizar-saldo__contas,.gm-atualizar-saldo__processo{--button-bg: hsl(266deg, 25%, 40%);--fg-color: hsl(266deg, 80%, 15%);--border-color: hsl(266deg, 10%, 40%)}.gm-atualizar-saldo__contas span,.gm-atualizar-saldo__processo span{line-height:2em;color:var(--fg-color)}.gm-atualizar-saldo__contas span.zerado,.gm-atualizar-saldo__processo span.zerado{--fg-color: hsl(266, 10%, 40%)}.gm-atualizar-saldo__contas span.erro,.gm-atualizar-saldo__processo span.erro{--fg-color: hsl(0, 85%, 40%)}.gm-atualizar-saldo__contas span.saldo,.gm-atualizar-saldo__processo span.saldo{--fg-color: hsl(266, 75%, 25%)}.gm-atualizar-saldo__contas button,.gm-atualizar-saldo__processo button{border:none;border-radius:4px;padding:4px 12px;font-size:1.3em;color:#fff;box-shadow:0 2px 4px #00000080;background:var(--button-bg)}.gm-atualizar-saldo__contas button.zerado,.gm-atualizar-saldo__processo button.zerado{--button-bg: hsl(266deg, 5%, 50%)}.gm-atualizar-saldo__contas button:hover,.gm-atualizar-saldo__contas button:focus,.gm-atualizar-saldo__processo button:hover,.gm-atualizar-saldo__processo button:focus{--button-bg: hsl(266deg, 40%, 45%)}.gm-atualizar-saldo__contas button:active,.gm-atualizar-saldo__processo button:active{box-shadow:none;translate:0 2px}.gm-atualizar-saldo__processo{margin:0 2px 8px;border-left:4px solid var(--border-color);padding:0 4px}.gm-atualizar-saldo__contas{border-left:4px solid var(--border-color);padding:0 4px}'
 );
 
 (function (preact2) {
