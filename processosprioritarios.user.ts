@@ -7,7 +7,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.5.2
+// @version 27.5.3
 // @grant none
 // ==/UserScript==
 */
@@ -1699,6 +1699,19 @@ const infoMeta: InfoMeta = {
 				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 270,
 			},
 		},
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
+	'721495116809325210234371222906' /* Conta Req +1Ano com Saldo - BAIXADO (UAA) */: {
+		BAIXADO: {
+			campoDataConsiderada: 'dataInclusaoLocalizador' as const,
+			dias: {
+				[CompetenciasCorregedoria.JUIZADO]: 270,
+				[CompetenciasCorregedoria.CIVEL]: 270,
+				[CompetenciasCorregedoria.CRIMINAL]: 270,
+				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 270,
+			},
+		},
+		MOVIMENTO: minhasRegras.Cumprir,
 	},
 	'721678816799577723187215069504' /* DIR Ag. Juiz assinar */: {
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.AgAssinaturaJuiz,
