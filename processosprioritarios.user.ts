@@ -7,7 +7,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.5.3
+// @version 27.5.4
 // @grant none
 // ==/UserScript==
 */
@@ -1732,6 +1732,12 @@ const infoMeta: InfoMeta = {
 	},
 	'721386347389654160220000000001' /* DIR Assinar (UAA) */: {
 		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
+	},
+	'721679694083286286748692052129' /* DIR Baixados petição */: {
+		BAIXADO: minhasRegras.Analisar,
+	},
+	'721679690893184903188669046192' /* DIR Baixados petição (UAA) */: {
+		BAIXADO: minhasRegras.Analisar,
 	},
 	'721625600839746808076693184521' /* DIR Cessão de crédito */: {
 		'MOVIMENTO': minhasRegras.Analisar,

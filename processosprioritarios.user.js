@@ -8,7 +8,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.5.3
+// @version 27.5.4
 // @grant none
 // ==/UserScript==
 */
@@ -1560,6 +1560,12 @@ var infoMeta = {
 	},
 	'721386347389654160220000000001': {
 		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
+	},
+	'721679694083286286748692052129': {
+		BAIXADO: minhasRegras.Analisar,
+	},
+	'721679690893184903188669046192': {
+		BAIXADO: minhasRegras.Analisar,
 	},
 	'721625600839746808076693184521': {
 		'MOVIMENTO': minhasRegras.Analisar,
