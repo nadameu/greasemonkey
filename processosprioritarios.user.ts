@@ -7,7 +7,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.5.1
+// @version 27.5.2
 // @grant none
 // ==/UserScript==
 */
@@ -1707,6 +1707,12 @@ const infoMeta: InfoMeta = {
 	'721679080435278498215046587812' /* DIR Ag. Juiz assinar (UAA) */: {
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.AgAssinaturaJuiz,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.AgAssinaturaJuiz,
+	},
+	'721679663361293615035576221072' /* DIR Ag. saque +1 ano */: {
+		MOVIMENTO: minhasRegras.Prazo30,
+	},
+	'721679664585209304825599511592' /* DIR Ag. saque +1 ano (UAA) */: {
+		MOVIMENTO: minhasRegras.Prazo30,
 	},
 	'721543582689027230247559882997' /* DIR Assinar */: {
 		MOVIMENTO: minhasRegras.UmDiaNoLocalizador,
