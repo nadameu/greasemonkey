@@ -4,7 +4,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_consultar\&/
 // @require     https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js
-// @version     9.1.0
+// @version     9.2.0
 // @grant       none
 // ==/UserScript==
 
@@ -86,6 +86,10 @@ if (acao === 'relatorio_geral_listar') {
 
 	const area = $('#divInfraAreaTelaD');
 
+  area.prepend($(`<input placeholder="Observações" value="${sessionStorage.observacoes || ''}">`).on('change', function() {
+    sessionStorage.observacoes = this.value.trim();
+  }));
+
 	area.prepend($('<button id="logarLocalizadores">Logar localizadores</button>'));
 	$('#logarLocalizadores').on('click', evt => {
 		evt.preventDefault();
@@ -96,7 +100,7 @@ if (acao === 'relatorio_geral_listar') {
 	$('#gerarArquivo').on('click', evt => {
 		evt.preventDefault();
 
-		const campos = ['processo', 'competenciaCorregedoria', '', 'classe', 'localizador', 'situacao', 'autuacao', 'dataEstatistica', 'data', '', '', '', '', '', '', '', '', '', 'principal', 'outrosLocalizadores', 'todosLocalizadores'];
+		const campos = ['processo', 'competenciaCorregedoria', '', 'classe', 'localizador', 'situacao', 'autuacao', 'dataEstatistica', 'data', '', '', '', '', '', '', '', '', '', 'principal', 'outrosLocalizadores', 'todosLocalizadores', 'observacoes'];
 		chainProcessos(dadosProcesso => dadosProcesso.localizador.map(localizador => {
 			const processo = [];
 			campos.forEach(function (campo, indiceCampo) {
@@ -119,7 +123,7 @@ if (acao === 'relatorio_geral_listar') {
 			return processo;
 		})).then(processos => {
 
-			const camposExcel = ['Processo', 'Competência Corregedoria', 'Competência', 'Classe', 'Localizador', 'Situação', 'Data autuação', 'Data Estat.', 'Data Últ. Fase', 'Regra', 'Campo a considerar', 'Data considerada', 'Motivo', 'Esperado', 'Dias', 'Setor', 'Atraso', 'Incluir?', 'Principal', 'Outros localizadores', 'Todos loc. A-Z'];
+			const camposExcel = ['Processo', 'Competência Corregedoria', 'Competência', 'Classe', 'Localizador', 'Situação', 'Data autuação', 'Data Estat.', 'Data Últ. Fase', 'Regra', 'Campo a considerar', 'Data considerada', 'Motivo', 'Esperado', 'Dias', 'Setor', 'Atraso', 'Incluir?', 'Principal', 'Outros localizadores', 'Todos loc. A-Z', 'Observações'];
 
 			const workbook = XLSX.utils.book_new();
 			const sheet = XLSX.utils.aoa_to_sheet([Array.from({ length: 11 }, () => '').concat(['=HOJE()']), camposExcel].concat(processos), { cellDates: true });
@@ -250,6 +254,7 @@ if (acao === 'relatorio_geral_listar') {
 				}
 				if (campo !== '') processo[campo] = valor;
 			}, this);
+      processo.observacoes = sessionStorage.observacoes || '';
 			processos.push(processo);
 		});
 	});
