@@ -4,7 +4,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_consultar\&/
 // @require     https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js
-// @version     9.0.0
+// @version     9.1.0
 // @grant       none
 // ==/UserScript==
 
@@ -96,7 +96,7 @@ if (acao === 'relatorio_geral_listar') {
 	$('#gerarArquivo').on('click', evt => {
 		evt.preventDefault();
 
-		const campos = ['processo', 'competenciaCorregedoria', '', 'classe', 'localizador', 'situacao', 'autuacao', 'dataEstatistica', 'data', '', '', '', '', '', '', 'setor', '', '', 'principal', 'outrosLocalizadores', 'todosLocalizadores'];
+		const campos = ['processo', 'competenciaCorregedoria', '', 'classe', 'localizador', 'situacao', 'autuacao', 'dataEstatistica', 'data', '', '', '', '', '', '', '', '', '', 'principal', 'outrosLocalizadores', 'todosLocalizadores'];
 		chainProcessos(dadosProcesso => dadosProcesso.localizador.map(localizador => {
 			const processo = [];
 			campos.forEach(function (campo, indiceCampo) {
@@ -140,7 +140,7 @@ if (acao === 'relatorio_geral_listar') {
 					}
 					if (R >= 2) {
 						if (C === 9) {
-							sheet[cell_ref] = { t: 'n', w: '?', f: `VLOOKUP(E${R + 1}, ${localizador_situacao_regra}.$A$2:$D$999, 1 + MATCH(F${R + 1}, ${localizador_situacao_regra}.$B$1:$D$1, 0), FALSE) ` };
+							sheet[cell_ref] = { t: 'n', w: '?', f: `VLOOKUP(E${R + 1}, ${localizador_situacao_regra}.$A$2:$D$999, 1 + MATCH(F${R + 1}, ${localizador_situacao_regra}.$B$1:$D$1, 0), FALSE)` };
 						} else if (C === 10) {
 							sheet[cell_ref] = { t: 'n', f: `VLOOKUP(J${R + 1}, ${regras_corregedoria}.$A$2:$D$99, 4, FALSE)` }
 						} else if (C === 11) {
@@ -151,10 +151,12 @@ if (acao === 'relatorio_geral_listar') {
 							sheet[cell_ref] = { t: 'n', f: `VLOOKUP(J${R + 1}, ${regras_corregedoria}.$A$2:$H$99, 4 + MATCH(B${R + 1}, ${regras_corregedoria}.$E$1:$H$1, 0), FALSE)` }
 						} else if (C === 14) {
 							sheet[cell_ref] = { t: 'n', f: `$L$1 - L${R + 1}`, z: '0' }
+						} else if (C === 15) {
+							sheet[cell_ref] = { t: 'n', w: '?', f: `VLOOKUP(E${R + 1}, ${localizador_situacao_regra}.$A$2:$E$999, 5, FALSE)` };
 						} else if (C === 16) {
 							sheet[cell_ref] = { t: 'n', f: `O${R + 1} / N${R + 1} - 1`, z: '0.00%' }
 						} else if (C === 17) {
-							sheet[cell_ref] = { t: 'n', f: `IF(Q${R + 1} > 0, \"S\", \"N\")` }
+							sheet[cell_ref] = { t: 'n', f: `IF(Q${R + 1} > 0, \"Sim\", \"Não\")` }
 						}
 					}
 				}
@@ -199,7 +201,6 @@ if (acao === 'relatorio_geral_listar') {
 				switch (campo) {
 					case 'processo': {
 						processo.numproc = valor.replace(/[-.]/g, '');
-						processo.setor = '???';
 						const classe = Number(this.dataset.classe);
 						const competencia = Number(this.dataset.competencia);
 						if (competencia >= 9 && competencia <= 20) {
