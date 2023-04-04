@@ -3,8 +3,8 @@
 // @namespace   http://nadameu.com.br/relatorio-semanal
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=relatorio_geral_consultar\&/
-// @require     https://unpkg.com/xlsx@0.15.5/dist/xlsx.full.min.js
-// @version     8.0.0
+// @require     https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js
+// @version     9.0.0
 // @grant       none
 // ==/UserScript==
 
@@ -96,7 +96,7 @@ if (acao === 'relatorio_geral_listar') {
 	$('#gerarArquivo').on('click', evt => {
 		evt.preventDefault();
 
-		const campos = ['processo', 'competenciaCorregedoria', '', 'classe', 'localizador', 'situacao', 'autuacao', 'dataEstatistica', 'data', '', '', '', '', '', '', 'setor', '', '', 'outrosLocalizadores', 'todosLocalizadores'];
+		const campos = ['processo', 'competenciaCorregedoria', '', 'classe', 'localizador', 'situacao', 'autuacao', 'dataEstatistica', 'data', '', '', '', '', '', '', 'setor', '', '', 'principal', 'outrosLocalizadores', 'todosLocalizadores'];
 		chainProcessos(dadosProcesso => dadosProcesso.localizador.map(localizador => {
 			const processo = [];
 			campos.forEach(function (campo, indiceCampo) {
@@ -108,6 +108,8 @@ if (acao === 'relatorio_geral_listar') {
 					processo[indiceCampo] = dadosProcesso.localizador.slice().sort().join('; ');
 				} else if (campo === 'data' || campo === 'autuacao' || campo === 'dataEstatistica') {
 					processo[indiceCampo] = dadosProcesso[campo];
+        } else if (campo === 'principal') {
+          processo[indiceCampo] = dadosProcesso[campo] === localizador ? 'Sim' : 'Não';
 				} else if (campo === '') {
 					// não faz nada
 				} else {
@@ -117,12 +119,12 @@ if (acao === 'relatorio_geral_listar') {
 			return processo;
 		})).then(processos => {
 
-			const camposExcel = ['Processo', 'Competência Corregedoria', 'Competência', 'Classe', 'Localizador', 'Situação', 'Data autuação', 'Data Estat.', 'Data Últ. Fase', 'Regra', 'Campo a considerar', 'Data considerada', 'Motivo', 'Esperado', 'Dias', 'Setor', 'Atraso', 'Incluir?', 'Outros localizadores', 'Todos loc. A-Z'];
+			const camposExcel = ['Processo', 'Competência Corregedoria', 'Competência', 'Classe', 'Localizador', 'Situação', 'Data autuação', 'Data Estat.', 'Data Últ. Fase', 'Regra', 'Campo a considerar', 'Data considerada', 'Motivo', 'Esperado', 'Dias', 'Setor', 'Atraso', 'Incluir?', 'Principal', 'Outros localizadores', 'Todos loc. A-Z'];
 
 			const workbook = XLSX.utils.book_new();
 			const sheet = XLSX.utils.aoa_to_sheet([Array.from({ length: 11 }, () => '').concat(['=HOJE()']), camposExcel].concat(processos), { cellDates: true });
 			const range = XLSX.utils.decode_range(sheet['!ref']);
-			const arquivo = 'file:///C:/Users/pmj/Desktop/regras.xls';
+			const arquivo = 'file:///C:/Users/pmj00/Desktop/regras.ods';
 			const localizador_situacao_regra = `'${arquivo}'#$localizador_situacao_regra`;
 			const regras_corregedoria = `'${arquivo}'#$regras_corregedoria`;
 			for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -231,7 +233,13 @@ if (acao === 'relatorio_geral_listar') {
 					case 'localizador':
 						valor = valor.substr(2);
 						valor = valor.split(' • ');
-						valor = valor.map(loc => loc.replace(/ \(Princ.\)$/, ''));
+						const RE = / \(Princ\.\)$/;
+						valor = valor.map(loc => {
+							if (! RE.test(loc)) return loc;
+
+							processo.principal = loc.replace(RE, '');
+							return processo.principal;
+						});
 						valor.forEach(loc => localizadores.add(loc));
 						break;
 
