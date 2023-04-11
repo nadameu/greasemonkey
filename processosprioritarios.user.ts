@@ -7,7 +7,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.5.4
+// @version 27.5.5
 // @grant none
 // ==/UserScript==
 */
@@ -2149,11 +2149,22 @@ function parsePares(pares: string[]) {
 		const dividido = par.split('=');
 		if (dividido.length < 2) throw new Error(`Não foi possível analisar o texto "${par}".`);
 		const [escapedNome, ...valores] = dividido as [string, ...string[]];
-		const nome = decodeURIComponent(escapedNome);
-		const valor = decodeURIComponent(valores.join('='));
+		const nome = tentarDecodificar(escapedNome);
+		const valor = tentarDecodificar(valores.join('='));
 		obj[nome] = valor;
 		return obj;
 	}, {});
+}
+function tentarDecodificar(valorCodificado: string): string {
+	try {
+		return decodeURIComponent(valorCodificado);
+	} catch (e) {
+		try {
+			return unescape(valorCodificado);
+		} catch (_) {
+			throw e;
+		}
+	}
 }
 function memoize<U>(fn: () => U): () => U;
 function memoize<T, U>(fn: (_: T) => U): (_: T) => U;
