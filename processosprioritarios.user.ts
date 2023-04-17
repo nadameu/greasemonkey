@@ -7,7 +7,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.5.5
+// @version 27.5.6
 // @grant none
 // ==/UserScript==
 */
@@ -1322,13 +1322,19 @@ interface LocalizadoresProcesso extends Array<LocalizadorProcesso> {
 	principal: LocalizadorProcesso;
 }
 class LocalizadoresProcessoFactory {
-	static fromCelula(celula: HTMLTableCellElement): LocalizadoresProcesso {
+	static fromCelula(celula: HTMLTableCellElement, numprocFormatado: string): LocalizadoresProcesso {
 		const localizadoresProcesso = [...celula.getElementsByTagName('input')].map(
 			LocalizadorProcessoFactory.fromInput,
 		);
 		const principais = localizadoresProcesso.filter(l => l.principal);
-		if (principais.length !== 1)
-			throw new Error('Não foi possível definir o localizador principal.');
+		if (principais.length !== 1) {
+			console.warn(`Não foi possível definir o localizador principal: ${numprocFormatado}.`);
+			return Object.assign(localizadoresProcesso, {
+				principal: localizadoresProcesso
+					.slice()
+					.sort((a, b) => (a.sigla < b.sigla ? -1 : a.sigla > b.sigla ? 1 : 0))[0]!,
+			});
+		}
 		return Object.assign(localizadoresProcesso, { principal: principais[0]! });
 	}
 }
@@ -2051,7 +2057,10 @@ class ProcessoFactory {
 			classe = linha.cells[6]!.firstChild!.textContent!;
 			labelsDadosComplementares.forEach(label => dadosComplementares.add(label.textContent!));
 		}
-		const localizadores = LocalizadoresProcessoFactory.fromCelula(linha.cells[7]!);
+		const localizadores = LocalizadoresProcessoFactory.fromCelula(
+			linha.cells[7]!,
+			numprocFormatado,
+		);
 		const breakUltimoEvento = linha.cells[8]!.querySelector('br');
 		const dataUltimoEvento = parseDataHora(breakUltimoEvento?.previousSibling?.textContent!);
 		const dataInclusaoLocalizador = parseDataHora(linha.cells[9]!.textContent!);
