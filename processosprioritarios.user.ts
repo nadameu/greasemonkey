@@ -7,7 +7,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 27.5.6
+// @version 28.0.0
 // @grant none
 // ==/UserScript==
 */
@@ -1678,10 +1678,10 @@ const ANALISE_ESPECIAL /* TRIPLO DOS PRAZOS NORMAIS */ = {
 	'MOVIMENTO': {
 		campoDataConsiderada: 'dataUltimoEvento' as const,
 		dias: {
-			[CompetenciasCorregedoria.JUIZADO]: 45,
-			[CompetenciasCorregedoria.CIVEL]: 60,
-			[CompetenciasCorregedoria.CRIMINAL]: 60,
-			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 180,
+			[CompetenciasCorregedoria.JUIZADO]: 90,
+			[CompetenciasCorregedoria.CIVEL]: 180,
+			[CompetenciasCorregedoria.CRIMINAL]: 90,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 360,
 		},
 	},
 	'MOVIMENTO-AGUARDA DESPACHO': {
@@ -1694,15 +1694,16 @@ const ANALISE_ESPECIAL /* TRIPLO DOS PRAZOS NORMAIS */ = {
 		},
 	},
 };
+const ANALISE_ESPECIAL_UAA = ANALISE_ESPECIAL;
 const infoMeta: InfoMeta = {
 	'721495116809325210234371233103' /* Conta Req +1Ano com Saldo - BAIXADO */: {
 		BAIXADO: {
 			campoDataConsiderada: 'dataInclusaoLocalizador' as const,
 			dias: {
-				[CompetenciasCorregedoria.JUIZADO]: 270,
-				[CompetenciasCorregedoria.CIVEL]: 270,
-				[CompetenciasCorregedoria.CRIMINAL]: 270,
-				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 270,
+				[CompetenciasCorregedoria.JUIZADO]: 300,
+				[CompetenciasCorregedoria.CIVEL]: 300,
+				[CompetenciasCorregedoria.CRIMINAL]: 300,
+				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 300,
 			},
 		},
 		MOVIMENTO: minhasRegras.Cumprir,
@@ -1711,10 +1712,10 @@ const infoMeta: InfoMeta = {
 		BAIXADO: {
 			campoDataConsiderada: 'dataInclusaoLocalizador' as const,
 			dias: {
-				[CompetenciasCorregedoria.JUIZADO]: 270,
-				[CompetenciasCorregedoria.CIVEL]: 270,
-				[CompetenciasCorregedoria.CRIMINAL]: 270,
-				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 270,
+				[CompetenciasCorregedoria.JUIZADO]: 300,
+				[CompetenciasCorregedoria.CIVEL]: 300,
+				[CompetenciasCorregedoria.CRIMINAL]: 300,
+				[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 300,
 			},
 		},
 		MOVIMENTO: minhasRegras.Cumprir,
@@ -1777,34 +1778,33 @@ const infoMeta: InfoMeta = {
 		'MOVIMENTO': minhasRegras.Analisar,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
 	},
-	'721551871359630420265695671379' /* ESP Aguarda cls sent - aguarda conclusão sentença */: {
-		MOVIMENTO: ANALISE_ESPECIAL.MOVIMENTO,
-	},
-	'721559583825632361694363069867' /* ESP Aguarda cls sent - aguarda conclusão sentença (UAA) */: {
-		MOVIMENTO: ANALISE_ESPECIAL.MOVIMENTO,
-	},
-	'721639501846219067004233521929' /* ESP Aguarda contest - aguarda contestação */: {
-		'MOVIMENTO': minhasRegras.Prazo30,
-		'MOVIMENTO-AGUARDA DESPACHO': ANALISE_ESPECIAL['MOVIMENTO-AGUARDA DESPACHO'],
-	},
-	'721559583825632361694304433363' /* ESP Aguarda contest - aguarda contestação (UAA) */: {
-		'MOVIMENTO': minhasRegras.Prazo30,
-		'MOVIMENTO-AGUARDA DESPACHO': ANALISE_ESPECIAL['MOVIMENTO-AGUARDA DESPACHO'],
-	},
+	'721551871359630420265695671379' /* ESP Aguarda cls sent - aguarda conclusão sentença */:
+		ANALISE_ESPECIAL,
+	'721559583825632361694363069867' /* ESP Aguarda cls sent - aguarda conclusão sentença (UAA) */:
+		ANALISE_ESPECIAL_UAA,
+	'721639501846219067004233521929' /* ESP Aguarda contest - aguarda contestação */:
+		ANALISE_ESPECIAL,
+	'721559583825632361694304433363' /* ESP Aguarda contest - aguarda contestação (UAA) */:
+		ANALISE_ESPECIAL_UAA,
 	'721551871359630420265534474938' /* ESP Analisar - analisar processos especial */:
 		ANALISE_ESPECIAL,
 	'721559583825632361694326327854' /* ESP Analisar - analisar processos especial (UAA) */:
-		ANALISE_ESPECIAL,
-	'721429895966181650220000000001' /* ESP Baixa - baixados diligência especial */: ANALISE_ESPECIAL,
-	'721463606227440410240239625806' /* ESP Baixa - baixados diligência especial (UAA) */:
-		ANALISE_ESPECIAL,
+		ANALISE_ESPECIAL_UAA,
+	'721429895966181650220000000001' /* ESP Baixa - baixados diligência especial */: {
+		...ANALISE_ESPECIAL,
+		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
+	},
+	'721463606227440410240239625806' /* ESP Baixa - baixados diligência especial (UAA) */: {
+		...ANALISE_ESPECIAL_UAA,
+		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
+	},
 	'721664380459508958074173036341' /* ESP Baixa ruído - baixa ruído Tema 1083 ok */:
 		ANALISE_ESPECIAL,
 	'721664468679363161622284216925' /* ESP Baixa ruído - baixa ruído Tema 1083 ok (UAA) */:
-		ANALISE_ESPECIAL,
+		ANALISE_ESPECIAL_UAA,
 	'721645799909469489104766864088' /* ESP Desp saneador - efetuado despacho saneador */:
 		ANALISE_ESPECIAL,
-	'721618248566778096566566261198' /* ESP Perícia porto (UAA) */: ANALISE_ESPECIAL,
+	'721618248566778096566566261198' /* ESP Perícia porto (UAA) */: ANALISE_ESPECIAL_UAA,
 	'721551871359630420265653908728' /* ESP Prazo diverso - aguarda prazos diversos */: {
 		MOVIMENTO: minhasRegras.ProcessoParado,
 	},
@@ -1812,7 +1812,7 @@ const infoMeta: InfoMeta = {
 		MOVIMENTO: minhasRegras.ProcessoParado,
 	},
 	'721594393185205026514869650277' /* ESP rural */: ANALISE_ESPECIAL,
-	'721595076290977630626454778652' /* ESP rural (UAA) */: ANALISE_ESPECIAL,
+	'721595076290977630626454778652' /* ESP rural (UAA) */: ANALISE_ESPECIAL_UAA,
 	'721572270106589311955922169355' /* ESP Suspender Vigi - suspender especial vigilante */: {
 		MOVIMENTO: minhasRegras.Cumprir,
 	},
