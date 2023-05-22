@@ -7,7 +7,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 28.0.0
+// @version 28.1.0
 // @grant none
 // ==/UserScript==
 */
@@ -1678,19 +1678,19 @@ const ANALISE_ESPECIAL /* TRIPLO DOS PRAZOS NORMAIS */ = {
 	'MOVIMENTO': {
 		campoDataConsiderada: 'dataUltimoEvento' as const,
 		dias: {
-			[CompetenciasCorregedoria.JUIZADO]: 90,
-			[CompetenciasCorregedoria.CIVEL]: 180,
-			[CompetenciasCorregedoria.CRIMINAL]: 90,
-			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 360,
+			[CompetenciasCorregedoria.JUIZADO]: 30,
+			[CompetenciasCorregedoria.CIVEL]: 60,
+			[CompetenciasCorregedoria.CRIMINAL]: 30,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 120,
 		},
 	},
 	'MOVIMENTO-AGUARDA DESPACHO': {
 		campoDataConsiderada: 'dataSituacao' as const,
 		dias: {
-			[CompetenciasCorregedoria.JUIZADO]: 45,
-			[CompetenciasCorregedoria.CIVEL]: 60,
-			[CompetenciasCorregedoria.CRIMINAL]: 60,
-			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 180,
+			[CompetenciasCorregedoria.JUIZADO]: 15,
+			[CompetenciasCorregedoria.CIVEL]: 20,
+			[CompetenciasCorregedoria.CRIMINAL]: 20,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 60,
 		},
 	},
 };
@@ -1778,47 +1778,40 @@ const infoMeta: InfoMeta = {
 		'MOVIMENTO': minhasRegras.Analisar,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
 	},
-	'721551871359630420265695671379' /* ESP Aguarda cls sent - aguarda conclusão sentença */:
+	'721684727574857279996493786825' /* DIR/ESP Aguarda cls sent - aguarda conclusão sentença */:
 		ANALISE_ESPECIAL,
-	'721559583825632361694363069867' /* ESP Aguarda cls sent - aguarda conclusão sentença (UAA) */:
+	'721684727574857279996522024881' /* DIR/ESP Aguarda cls sent - aguarda conclusão sentença (UAA) */:
 		ANALISE_ESPECIAL_UAA,
-	'721639501846219067004233521929' /* ESP Aguarda contest - aguarda contestação */:
+	'721684727574857279996495600009' /* DIR/ESP Aguarda contest - aguarda contestação */:
 		ANALISE_ESPECIAL,
-	'721559583825632361694304433363' /* ESP Aguarda contest - aguarda contestação (UAA) */:
+	'721684727574857279996522025967' /* DIR/ESP Aguarda contest - aguarda contestação (UAA) */:
 		ANALISE_ESPECIAL_UAA,
-	'721551871359630420265534474938' /* ESP Analisar - analisar processos especial */:
+	'721684727574857279996504966597' /* DIR/ESP Analisar - analisar processos especial */:
 		ANALISE_ESPECIAL,
-	'721559583825632361694326327854' /* ESP Analisar - analisar processos especial (UAA) */:
+	'721684727574857279996522026591' /* DIR/ESP Analisar - analisar processos especial (UAA) */:
 		ANALISE_ESPECIAL_UAA,
-	'721429895966181650220000000001' /* ESP Baixa - baixados diligência especial */: {
+	'721429895966181650220000000001' /* DIR/ESP Baixa - baixados diligência especial */: {
 		...ANALISE_ESPECIAL,
 		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
 	},
-	'721463606227440410240239625806' /* ESP Baixa - baixados diligência especial (UAA) */: {
+	'721684727574857279996522027201' /* DIR/ESP Baixa - baixados diligência especial (UAA) */: {
 		...ANALISE_ESPECIAL_UAA,
 		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
 	},
-	'721664380459508958074173036341' /* ESP Baixa ruído - baixa ruído Tema 1083 ok */:
+	'721684727574857279996511575389' /* DIR/ESP Baixa ruído - baixa ruído Tema 1083 ok */:
 		ANALISE_ESPECIAL,
-	'721664468679363161622284216925' /* ESP Baixa ruído - baixa ruído Tema 1083 ok (UAA) */:
+	'721684727574857279996522027894' /* DIR/ESP Baixa ruído - baixa ruído Tema 1083 ok (UAA) */:
 		ANALISE_ESPECIAL_UAA,
-	'721645799909469489104766864088' /* ESP Desp saneador - efetuado despacho saneador */:
+	'721684727574857279996515060631' /* DIR/ESP Desp saneador - efetuado despacho saneador */:
 		ANALISE_ESPECIAL,
-	'721618248566778096566566261198' /* ESP Perícia porto (UAA) */: ANALISE_ESPECIAL_UAA,
-	'721551871359630420265653908728' /* ESP Prazo diverso - aguarda prazos diversos */: {
+	'721684727574857279996517140254' /* DIR/ESP Prazo diverso - aguarda prazos diversos */: {
 		MOVIMENTO: minhasRegras.ProcessoParado,
 	},
-	'721559583825632361694349552705' /* ESP Prazo diverso - aguarda prazos diversos (UAA) */: {
+	'721684727574857279996522029179' /* DIR/ESP Prazo diverso - aguarda prazos diversos (UAA) */: {
 		MOVIMENTO: minhasRegras.ProcessoParado,
 	},
-	'721594393185205026514869650277' /* ESP rural */: ANALISE_ESPECIAL,
-	'721595076290977630626454778652' /* ESP rural (UAA) */: ANALISE_ESPECIAL_UAA,
-	'721572270106589311955922169355' /* ESP Suspender Vigi - suspender especial vigilante */: {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721573586678983228872828035368' /* ESP Suspender Vigi - suspender especial vigilante (UAA) */: {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
+	'721684727574857279996518809108' /* DIR/ESP rural */: ANALISE_ESPECIAL,
+	'721684727574857279996522029751' /* DIR/ESP rural (UAA) */: ANALISE_ESPECIAL_UAA,
 };
 
 class Processo implements InfoProcesso {

@@ -8,7 +8,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 28.0.0
+// @version 28.1.0
 // @grant none
 // ==/UserScript==
 */
@@ -1506,19 +1506,19 @@ var ANALISE_ESPECIAL = {
 	'MOVIMENTO': {
 		campoDataConsiderada: 'dataUltimoEvento',
 		dias: {
-			[CompetenciasCorregedoria.JUIZADO]: 90,
-			[CompetenciasCorregedoria.CIVEL]: 180,
-			[CompetenciasCorregedoria.CRIMINAL]: 90,
-			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 360,
+			[CompetenciasCorregedoria.JUIZADO]: 30,
+			[CompetenciasCorregedoria.CIVEL]: 60,
+			[CompetenciasCorregedoria.CRIMINAL]: 30,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 120,
 		},
 	},
 	'MOVIMENTO-AGUARDA DESPACHO': {
 		campoDataConsiderada: 'dataSituacao',
 		dias: {
-			[CompetenciasCorregedoria.JUIZADO]: 45,
-			[CompetenciasCorregedoria.CIVEL]: 60,
-			[CompetenciasCorregedoria.CRIMINAL]: 60,
-			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 180,
+			[CompetenciasCorregedoria.JUIZADO]: 15,
+			[CompetenciasCorregedoria.CIVEL]: 20,
+			[CompetenciasCorregedoria.CRIMINAL]: 20,
+			[CompetenciasCorregedoria.EXECUCAO_FISCAL]: 60,
 		},
 	},
 };
@@ -1606,38 +1606,31 @@ var infoMeta = {
 		'MOVIMENTO': minhasRegras.Analisar,
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.Despachar,
 	},
-	'721551871359630420265695671379': ANALISE_ESPECIAL,
-	'721559583825632361694363069867': ANALISE_ESPECIAL_UAA,
-	'721639501846219067004233521929': ANALISE_ESPECIAL,
-	'721559583825632361694304433363': ANALISE_ESPECIAL_UAA,
-	'721551871359630420265534474938': ANALISE_ESPECIAL,
-	'721559583825632361694326327854': ANALISE_ESPECIAL_UAA,
+	'721684727574857279996493786825': ANALISE_ESPECIAL,
+	'721684727574857279996522024881': ANALISE_ESPECIAL_UAA,
+	'721684727574857279996495600009': ANALISE_ESPECIAL,
+	'721684727574857279996522025967': ANALISE_ESPECIAL_UAA,
+	'721684727574857279996504966597': ANALISE_ESPECIAL,
+	'721684727574857279996522026591': ANALISE_ESPECIAL_UAA,
 	'721429895966181650220000000001': {
 		...ANALISE_ESPECIAL,
 		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
 	},
-	'721463606227440410240239625806': {
+	'721684727574857279996522027201': {
 		...ANALISE_ESPECIAL_UAA,
 		'SUSP/SOBR-Aguarda dec.Inst.Sup': minhasRegras.Suspensao,
 	},
-	'721664380459508958074173036341': ANALISE_ESPECIAL,
-	'721664468679363161622284216925': ANALISE_ESPECIAL_UAA,
-	'721645799909469489104766864088': ANALISE_ESPECIAL,
-	'721618248566778096566566261198': ANALISE_ESPECIAL_UAA,
-	'721551871359630420265653908728': {
+	'721684727574857279996511575389': ANALISE_ESPECIAL,
+	'721684727574857279996522027894': ANALISE_ESPECIAL_UAA,
+	'721684727574857279996515060631': ANALISE_ESPECIAL,
+	'721684727574857279996517140254': {
 		MOVIMENTO: minhasRegras.ProcessoParado,
 	},
-	'721559583825632361694349552705': {
+	'721684727574857279996522029179': {
 		MOVIMENTO: minhasRegras.ProcessoParado,
 	},
-	'721594393185205026514869650277': ANALISE_ESPECIAL,
-	'721595076290977630626454778652': ANALISE_ESPECIAL_UAA,
-	'721572270106589311955922169355': {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
-	'721573586678983228872828035368': {
-		MOVIMENTO: minhasRegras.Cumprir,
-	},
+	'721684727574857279996518809108': ANALISE_ESPECIAL,
+	'721684727574857279996522029751': ANALISE_ESPECIAL_UAA,
 };
 var Processo = class {
 	constructor({
