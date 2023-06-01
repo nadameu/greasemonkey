@@ -143,6 +143,9 @@ importers:
       jsdom: 20.0.0
       vitest: 0.19.1_c8@7.12.0+jsdom@20.0.0
 
+  userscripts/ajg:
+    specifiers: {}
+
   userscripts/atualizar-saldo:
     specifiers:
       '@nadameu/create-broadcast-service': workspace:^1.0.0

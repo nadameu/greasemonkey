@@ -1,0 +1,14 @@
+{
+  "name": "ajg",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Permite a criação de solicitações de pagamento em bloco",
+  "author": "nadameu",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && vite build",
+    "dev": "vite",
+    "format": "prettier --write ../../ajg.user.js",
+    "preview": "vite preview"
+  }
+}
