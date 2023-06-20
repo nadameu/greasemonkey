@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name Preenchimento dados baixa
-// @version 6.0.1
+// @version 6.0.2
 // @author nadameu
 // @namespace http://nadameu.com.br/baixa
 // @include /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br\/eproc(V2|2trf4)\/controlador\.php\?acao=baixa_arquivamento_processo_etapa_(1|3)&/
@@ -40,7 +40,7 @@ function fromString(string) {
 }
 
 const estilos$1 =
-  '.gmLabel {\n\tborder-color: #faa;\n}\n.gmLabel.gmChecked {\n\tbackground: #fdc;\n}\n#gmFechar {\n\tcursor: pointer;\n}\n.gmLabel label {\n\tcursor: pointer;\n}\n.gmValor {\n\tdisplay: inline-block;\n\twidth: 18px;\n\theight: 18px;\n\tline-height: 18px;\n\tcolor: #333;\n\tbackground: #cea;\n\tborder-radius: 100%;\n\ttext-align: center;\n}\n';
+  '#gmLabel {\n\tborder-color: #faa;\n}\n.bootstrap-styles #gmLabel.gmChecked {\n\tbackground: #fdc;\n}\n#gmFechar {\n\tcursor: pointer;\n}\n#gmLabel label {\n\tcursor: pointer;\n}\n.gmValor {\n\tdisplay: inline-block;\n\twidth: 18px;\n\theight: 18px;\n\tline-height: 18px;\n\tcolor: #333;\n\tbackground: #cea;\n\tborder-radius: 100%;\n\ttext-align: center;\n}\n';
 
 function fromArray$1(array) {
   if (array.length === 0) return null;
@@ -231,9 +231,9 @@ function valoresDecrescentes(as, bs) {
   return Math.max(...bs.map(({ valor }) => valor)) - Math.max(...as.map(({ valor }) => valor));
 }
 
-function etapa1({ baixar, pendencias }) {
+function etapa1({ baixar, capa }) {
   adicionarEstilos(estilos$1);
-  adicionarBotaoFecharAposBaixar(pendencias);
+  adicionarBotaoFecharAposBaixar(capa);
   const osd = OSD(
     'Digite a soma das opções que deseja selecionar. Pressione ENTER para confirmar.'
   );
@@ -262,13 +262,13 @@ function onKeyPress({ pushDígito, mostrarTexto, setValor, baixar }) {
     }
   };
 }
-function adicionarBotaoFecharAposBaixar(pendencias) {
-  pendencias.insertAdjacentHTML(
-    'beforebegin',
-    '<label class="btn btn-default gmLabel"><input id="gmFechar" type="checkbox">&nbsp;<label for="gmFechar">Fechar esta janela e a janela/aba do processo após baixar</label></label>'
+function adicionarBotaoFecharAposBaixar(capa) {
+  capa.insertAdjacentHTML(
+    'afterend',
+    '<label id="gmLabel" class="btn btn-default"><input id="gmFechar" type="checkbox">&nbsp;<label for="gmFechar">Fechar esta janela e a janela/aba do processo após baixar</label></label>'
   );
   const fechar = document.querySelector('#gmFechar');
-  const fecharLabel = document.querySelector('.gmLabel');
+  const fecharLabel = document.querySelector('#gmLabel');
   fechar.addEventListener('change', onFecharChange);
   if (localStorage.hasOwnProperty(FECHAR_APOS_BAIXAR)) {
     fechar.checked = localStorage.getItem(FECHAR_APOS_BAIXAR) === 'S';
@@ -326,8 +326,8 @@ function main() {
   const { acao, etapa } = extrairDadosUrl(document.location.href);
   if (etapa === '1') {
     const baixar = query('input#sbmBaixa');
-    const pendencias = query('#fldPendencias');
-    etapa1({ baixar, pendencias });
+    const capa = query('#fldCapa');
+    etapa1({ baixar, capa });
   } else if (etapa === '3') {
     etapa3();
   } else {
