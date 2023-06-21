@@ -8,7 +8,7 @@
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=acessar_documento&*
 // @match       https://homologa-1g1.trf4.jus.br/homologa_1g/controlador.php?acao=acessar_documento&*
 // @match       https://validar.iti.gov.br/
-// @version     2.0.0
+// @version     2.1.0
 // @author      nadameu
 // @grant       GM.getValue
 // @grant       GM.deleteValue
@@ -49,6 +49,7 @@ button {
       button.addEventListener('click', async () => {
         try {
           await GM.setValue('customPDF', url.href);
+          await GM.setValue('customPDFName', document.title.replace(/\W+/g, '_') + '.pdf');
           window.open('https://validar.iti.gov.br/');
         } catch (err) {
           console.error(err);
@@ -61,9 +62,11 @@ button {
     }
   } else if (/^validar\.iti\.gov\.br$/.test(document.location.hostname)) {
     try {
-      const url = await GM.getValue('customPDF');
+      const url = await GM.getValue('customPDF', undefined);
       if (!url) return;
       await GM.deleteValue('customPDF');
+      const filename = (await GM.getValue('customPDFName')) || 'documento_userscript.pdf';
+      await GM.deleteValue('customPDFName');
       const blob = await new Promise(async (resolve, reject) => {
         GM.xmlHttpRequest({
           url: url,
@@ -78,7 +81,7 @@ button {
       console.log('url', url);
       console.log('blob', blob);
       const transfer = new DataTransfer();
-      transfer.items.add(new File([blob], 'documento_userscript.pdf', { type: blob.type }));
+      transfer.items.add(new File([blob], filename, { type: blob.type }));
       document.getElementById('signature_files').files = transfer.files;
       $('#signature_files').trigger('change');
       $('#acceptTerms').trigger('click');
@@ -93,13 +96,4 @@ button {
       window.close();
     }
   }
-}
-
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
 }
