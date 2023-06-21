@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Fotos Intra
 // @namespace    http://nadameu.com.br/fotos-intra
-// @version      4.3.0
+// @version      4.4.0
 // @author       nadameu
 // @description  Corrige a distorção nas fotos da Intra
 // @website      http://www.nadameu.com.br/
@@ -61,7 +61,7 @@ function adicionarEstilosHome() {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: space-around;
 }
 .gm-aniversariantes::after {
   content: '';
