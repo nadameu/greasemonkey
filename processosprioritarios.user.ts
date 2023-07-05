@@ -157,7 +157,7 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 		if (localizador.lembrete) {
 			conteudo.push(' ');
 			conteudo.push(
-				`<img class="infraImgNormal" src="infra_css/imagens/balao.gif" style="width:0.9em; height:0.9em; opacity:1; border-width:0;" onmouseover="${safeHTML`return infraTooltipMostrar('${localizador.lembrete}','',400);`}" onmouseout="return infraTooltipOcultar();"/>`,
+				/*html*/ `<img class="infraImgNormal" src="infra_css/imagens/balao.gif" style="width:0.9em; height:0.9em; opacity:1; border-width:0;" onmouseover="${safeHTML`return infraTooltipMostrar('${localizador.lembrete}','',400);`}" onmouseout="return infraTooltipOcultar();"/>`,
 			);
 		}
 		const processosComPeticao = localizador.processos.filter(processo => {
@@ -1235,7 +1235,7 @@ class LocalizadorFactory {
 }
 
 class Localizadores extends Array<Localizador> {
-	constructor(public tabela: HTMLTableElement) {
+	private constructor() {
 		super();
 	}
 
@@ -1273,18 +1273,18 @@ class Localizadores extends Array<Localizador> {
 			}
 		}
 	}
-}
-class LocalizadoresFactory {
+
 	static fromTabela(tabela: HTMLTableElement) {
-		const localizadores = new Localizadores(tabela);
+		const localizadores = new Localizadores();
 		const linhas = [...tabela.querySelectorAll<HTMLTableRowElement>('tr[class^="infraTr"]')];
 		linhas.forEach(linha => {
 			localizadores.push(LocalizadorFactory.fromLinha(linha));
 		});
 		return localizadores;
 	}
+
 	static fromTabelaPainel(tabela: HTMLTableElement) {
-		const localizadores = new Localizadores(tabela);
+		const localizadores = new Localizadores();
 		const linhas = [...tabela.querySelectorAll<HTMLTableRowElement>('tr[class^="infraTr"]')];
 		linhas.forEach(linha => {
 			localizadores.push(LocalizadorFactory.fromLinhaPainel(linha));
@@ -2107,14 +2107,14 @@ function main() {
 	if (/\?acao=usuario_tipo_monitoramento_localizador_listar&/.test(location.search)) {
 		const tabela = document.getElementById('divInfraAreaTabela')?.querySelector('table');
 		if (!tabela) throw new Error('Não foi possível obter a tabela de localizadores.');
-		const localizadores = LocalizadoresFactory.fromTabela(tabela);
+		const localizadores = Localizadores.fromTabela(tabela);
 		adicionarBotaoComVinculo(localizadores);
 	} else if (/\?acao=localizador_processos_lista&/.test(location.search)) {
 		/* do nothing */
 	} else if (/&acao_origem=principal&/.test(location.search)) {
 		const tabela = document.getElementById('fldLocalizadores')?.querySelector('table');
 		if (!tabela) throw new Error('Não foi possível obter a tabela de localizadores.');
-		const localizadores = LocalizadoresFactory.fromTabelaPainel(tabela);
+		const localizadores = Localizadores.fromTabelaPainel(tabela);
 		adicionarBotaoComVinculo(localizadores);
 	}
 }
