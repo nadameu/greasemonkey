@@ -8,7 +8,7 @@
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=localizador_orgao_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=relatorio_geral_listar\&/
 // @include     /^https:\/\/eproc\.(jf(pr|rs|sc)|trf4)\.jus\.br/eproc(V2|2trf4)/controlador\.php\?acao\=[^&]+\&acao_origem=principal\&/
-// @version 28.1.0
+// @version 28.2.0
 // @grant none
 // ==/UserScript==
 */
@@ -32,7 +32,7 @@ function safeHTML(strings, ...vars) {
 var button = null;
 var progresso = null;
 var saida = null;
-var GUI = class {
+var GUI = class _GUI {
 	constructor() {
 		this.avisoCarregando = {
 			acrescentar(qtd) {
@@ -69,7 +69,9 @@ var GUI = class {
 			throw new Error('Função não implementada.');
 		};
 		const estilos = document.createElement('style');
-		estilos.innerHTML = `
+		estilos.innerHTML =
+			/* css */
+			`
 tr.infraTrEscura { background-color: #f0f0f0; }
 .gmProcessos { display: inline-block; margin: 0 0.25ex; padding: 0 0.5ex; font-weight: bold; min-width: 3.5ex; line-height: 1.5em; border: 2px solid transparent; border-radius: 1ex; text-align: center; color: black; }
 .gmProcessos.gmPrioridade0 { background-color: #ff8a8a; }
@@ -115,7 +117,7 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 		const ULTIMO_MINUTO = 59;
 		const ULTIMO_SEGUNDO = 59;
 		const ULTIMO_MILISSEGUNDO = 999;
-		const agora = new Date();
+		const agora = /* @__PURE__ */ new Date();
 		const aVencer = new Date(
 			agora.getFullYear(),
 			agora.getMonth(),
@@ -169,6 +171,7 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 		if (localizador.lembrete) {
 			conteudo.push(' ');
 			conteudo.push(
+				/*html*/
 				`<img class="infraImgNormal" src="infra_css/imagens/balao.gif" style="width:0.9em; height:0.9em; opacity:1; border-width:0;" onmouseover="${safeHTML`return infraTooltipMostrar('${localizador.lembrete}','',400);`}" onmouseout="return infraTooltipOcultar();"/>`,
 			);
 		}
@@ -223,7 +226,7 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 								});
 							}
 						});
-						const gui = GUI.getInstance();
+						const gui = _GUI.getInstance();
 						gui.avisoCarregando.exibir('Filtrando processos com prazo em aberto...');
 						gui.avisoCarregando.atualizar(0, localizador.quantidadeProcessos);
 						await localizador.excluirPrazosAbertos();
@@ -252,7 +255,7 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 							});
 						}
 					});
-					const gui = GUI.getInstance();
+					const gui = _GUI.getInstance();
 					gui.avisoCarregando.exibir('Atualizando...');
 					gui.avisoCarregando.atualizar(0, localizador.quantidadeProcessosNaoFiltrados);
 					await localizador.obterProcessos();
@@ -446,7 +449,7 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 			}
 			input.checked = localStorage.hasOwnProperty(id) ? localStorage.getItem(id) === 'S' : padrao;
 			input.addEventListener('click', onChange);
-			const gui = GUI.getInstance();
+			const gui = _GUI.getInstance();
 			input.addEventListener('click', () => {
 				Array.from(document.querySelectorAll('.gmDetalhes')).forEach(detalhe =>
 					detalhe.parentNode.removeChild(detalhe),
@@ -571,7 +574,7 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 		}
 		function extrairProcessos(localizadores2) {
 			const processos2 = /* @__PURE__ */ new Map();
-			const agora = new Date(),
+			const agora = /* @__PURE__ */ new Date(),
 				hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
 			localizadores2.forEach(localizador => {
 				localizador.processos.forEach(processo => {
@@ -623,7 +626,7 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 			}
 			get dadosTrintaDias() {
 				const UM_DIA = 864e5;
-				const agora = new Date(),
+				const agora = /* @__PURE__ */ new Date(),
 					hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime(),
 					maximo = hoje + 30 * UM_DIA;
 				return new Map(Array.from(this.dados.entries()).filter(([dia]) => dia <= maximo));
@@ -666,6 +669,7 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 					corProximosDias: 'hsla(60, 100%, 75%, 1)',
 					corNoPrazo: 'hsla(120, 75%, 80%, 1)',
 					espacamento: 0.2,
+					/* valor entre 0 e 1, proporcional à largura disponível */
 					get largura() {
 						return self.categorias.distancia * (1 - self.barras.espacamento);
 					},
@@ -757,7 +761,7 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 				const step = Math.ceil(
 					(larguraPossivelTexto + this.dimensoes.espacamento) / this.categorias.distancia,
 				);
-				const agora = new Date(),
+				const agora = /* @__PURE__ */ new Date(),
 					hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
 				context.fillStyle = this.texto.cor;
 				const y =
@@ -771,7 +775,7 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 			}
 			desenharBarras() {
 				const context = this.context;
-				const agora = new Date(),
+				const agora = /* @__PURE__ */ new Date(),
 					hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
 				const larguraBarra = this.categorias.distancia * (1 - this.barras.espacamento);
 				for (let i = 0; i < this.categorias.quantidade; i++) {
@@ -818,7 +822,7 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 			calcularCategorias() {
 				const UM_DIA = 864e5;
 				const dias = Array.from(this.dadosTrintaDias.keys());
-				const agora = new Date(),
+				const agora = /* @__PURE__ */ new Date(),
 					hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime(),
 					maximo = Math.max.apply(null, dias);
 				this.categorias.quantidade = (maximo - hoje) / UM_DIA + 1;
@@ -862,10 +866,10 @@ tr.infraTrEscura { background-color: #f0f0f0; }
 		areaTela.appendChild(grafico.render());
 	}
 	static getInstance() {
-		if (!GUI._instance) {
-			GUI._instance = new GUI();
+		if (!_GUI._instance) {
+			_GUI._instance = new _GUI();
 		}
-		return GUI._instance;
+		return _GUI._instance;
 	}
 };
 var obterFormularioRelatorioGeral = memoize(async () => {
@@ -1134,10 +1138,9 @@ var LocalizadorFactory = class {
 		});
 	}
 };
-var Localizadores = class extends Array {
-	constructor(tabela) {
+var Localizadores = class _Localizadores extends Array {
+	constructor() {
 		super();
-		this.tabela = tabela;
 	}
 	get quantidadeProcessos() {
 		return this.reduce((soma, localizador) => soma + localizador.quantidadeProcessos, 0);
@@ -1152,7 +1155,7 @@ var Localizadores = class extends Array {
 		const cookiesAntigos = parseCookies(document.cookie);
 		await Promise.all(this.map(loc => loc.obterProcessos()));
 		const cookiesNovos = parseCookies(document.cookie);
-		const expira = [new Date()]
+		const expira = [/* @__PURE__ */ new Date()]
 			.map(d => {
 				d.setFullYear(d.getFullYear() + 1);
 				return d;
@@ -1172,10 +1175,8 @@ var Localizadores = class extends Array {
 			}
 		}
 	}
-};
-var LocalizadoresFactory = class {
 	static fromTabela(tabela) {
-		const localizadores = new Localizadores(tabela);
+		const localizadores = new _Localizadores();
 		const linhas = [...tabela.querySelectorAll('tr[class^="infraTr"]')];
 		linhas.forEach(linha => {
 			localizadores.push(LocalizadorFactory.fromLinha(linha));
@@ -1183,7 +1184,7 @@ var LocalizadoresFactory = class {
 		return localizadores;
 	}
 	static fromTabelaPainel(tabela) {
-		const localizadores = new Localizadores(tabela);
+		const localizadores = new _Localizadores();
 		const linhas = [...tabela.querySelectorAll('tr[class^="infraTr"]')];
 		linhas.forEach(linha => {
 			localizadores.push(LocalizadorFactory.fromLinhaPainel(linha));
@@ -1556,6 +1557,12 @@ var infoMeta = {
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.AgAssinaturaJuiz,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.AgAssinaturaJuiz,
 	},
+	'721680108566365088322164058143': {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
+	'721680126854684189994152327932': {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
 	'721679663361293615035576221072': {
 		MOVIMENTO: minhasRegras.Prazo30,
 	},
@@ -1573,6 +1580,12 @@ var infoMeta = {
 	},
 	'721679690893184903188669046192': {
 		BAIXADO: minhasRegras.Analisar,
+	},
+	'721684770645605446411122420119': {
+		MOVIMENTO: minhasRegras.ProcessoParado,
+	},
+	'721684778978339984631915021248': {
+		MOVIMENTO: minhasRegras.ProcessoParado,
 	},
 	'721625600839746808076693184521': {
 		'MOVIMENTO': minhasRegras.Analisar,
@@ -1673,7 +1686,7 @@ var Processo = class {
 	}
 	get atraso() {
 		if (this._atraso === void 0) {
-			const hoje = new Date();
+			const hoje = /* @__PURE__ */ new Date();
 			this._atraso = calcularAtraso(this.termoPrazoCorregedoria, hoje) / MILISSEGUNDOS_EM_UM_DIA;
 		}
 		return this._atraso;
@@ -1831,7 +1844,7 @@ var ProcessoFactory = class {
 		const juizo = linha.cells[3].textContent;
 		const dataAutuacao = parseDataHora(linha.cells[4].textContent);
 		const diasNaSituacao = Number(linha.cells[5].textContent);
-		const dataSituacao = new Date();
+		const dataSituacao = /* @__PURE__ */ new Date();
 		dataSituacao.setDate(dataSituacao.getDate() - diasNaSituacao);
 		const labelsDadosComplementares = [...linha.cells[6].getElementsByTagName('label')];
 		const dadosComplementares = /* @__PURE__ */ new Set();
@@ -1895,13 +1908,13 @@ function main() {
 	if (/\?acao=usuario_tipo_monitoramento_localizador_listar&/.test(location.search)) {
 		const tabela = document.getElementById('divInfraAreaTabela')?.querySelector('table');
 		if (!tabela) throw new Error('Não foi possível obter a tabela de localizadores.');
-		const localizadores = LocalizadoresFactory.fromTabela(tabela);
+		const localizadores = Localizadores.fromTabela(tabela);
 		adicionarBotaoComVinculo(localizadores);
 	} else if (/\?acao=localizador_processos_lista&/.test(location.search)) {
 	} else if (/&acao_origem=principal&/.test(location.search)) {
 		const tabela = document.getElementById('fldLocalizadores')?.querySelector('table');
 		if (!tabela) throw new Error('Não foi possível obter a tabela de localizadores.');
-		const localizadores = LocalizadoresFactory.fromTabelaPainel(tabela);
+		const localizadores = Localizadores.fromTabelaPainel(tabela);
 		adicionarBotaoComVinculo(localizadores);
 	}
 }
