@@ -1728,6 +1728,12 @@ const infoMeta: InfoMeta = {
 		'MOVIMENTO-AGUARDA DESPACHO': minhasRegras.AgAssinaturaJuiz,
 		'MOVIMENTO-AGUARDA SENTENÇA': minhasRegras.AgAssinaturaJuiz,
 	},
+	'721680108566365088322164058143' /* DIR Ag. prazo */: {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
+	'721680126854684189994152327932' /* DIR Ag. prazo (UAA) */: {
+		MOVIMENTO: minhasRegras.Cumprir,
+	},
 	'721679663361293615035576221072' /* DIR Ag. saque +1 ano */: {
 		MOVIMENTO: minhasRegras.Prazo30,
 	},
@@ -1745,6 +1751,12 @@ const infoMeta: InfoMeta = {
 	},
 	'721679690893184903188669046192' /* DIR Baixados petição (UAA) */: {
 		BAIXADO: minhasRegras.Analisar,
+	},
+	'721684770645605446411122420119' /* DIR CEAB descumprimento */: {
+		MOVIMENTO: minhasRegras.ProcessoParado,
+	},
+	'721684778978339984631915021248' /* DIR CEAB descumprimento (UAA) */: {
+		MOVIMENTO: minhasRegras.ProcessoParado,
 	},
 	'721625600839746808076693184521' /* DIR Cessão de crédito */: {
 		'MOVIMENTO': minhasRegras.Analisar,
