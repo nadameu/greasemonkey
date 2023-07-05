@@ -7,7 +7,7 @@
 	"scripts": {
 		"build": "esbuild --bundle --charset=utf8 --format=esm --legal-comments=inline --target=firefox91 processosprioritarios.user.ts --outfile=processosprioritarios.user.js",
 		"format": "prettier --write processosprioritarios.user.js",
-		"start": "esbuild --bundle --serve --charset=utf8 --format=esm --legal-comments=inline --target=firefox91 processosprioritarios.user.ts"
+		"start": "esbuild --bundle --serve --charset=utf8 --format=esm --legal-comments=inline --target=firefox91 --outdir=temp processosprioritarios.user.ts"
 	},
 	"repository": {
 		"type": "git",
