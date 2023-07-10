@@ -7,7 +7,6 @@
 // @match       https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=acessar_documento&*
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=acessar_documento&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=acessar_documento&*
-// @match       https://homologa-1g1.trf4.jus.br/homologa_1g/controlador.php?acao=acessar_documento&*
 // @match       https://validar.iti.gov.br/
 // @version     2.1.0
 // @author      nadameu
