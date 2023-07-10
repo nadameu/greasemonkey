@@ -12,6 +12,7 @@
 // @connect     eproc.jfrs.jus.br
 // @connect     eproc.jfsc.jus.br
 // @connect     eproc.trf4.jus.br
+// @version     3.0.0
 // @author      nadameu
 // @grant       GM.getValue
 // @grant       GM.deleteValue
