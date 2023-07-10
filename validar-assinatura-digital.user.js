@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name        validar-assinatura-digital
 // @name:pt-BR  Validar assinatura digital
+// @description Envia documentos PDF para o site validar.iti.gov.br para validação de assinatura digital
 // @namespace   http://nadameu.com.br
 // @match       https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=acessar_documento&*
 // @match       https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=acessar_documento&*
