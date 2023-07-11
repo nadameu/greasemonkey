@@ -171,8 +171,6 @@ importers:
 
   userscripts/ajg: {}
 
-  userscripts/ajg2: {}
-
   userscripts/atualizar-saldo:
     dependencies:
       '@nadameu/create-broadcast-service':
