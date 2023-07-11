@@ -14,10 +14,11 @@ async function main() {
   const campos = ['Cid', 'Medicamento', 'Produto', 'Procedimento'];
   const ids = campos.map(nome => `valueOptions${nome}`);
 
-  let tries = 30 /* segundos */ * 60 /* FPS */;
+  let tries = 30 /* segundos */ * 60; /* FPS */
   await new Promise(res => {
     function loop() {
-      if (ids.some(id => document.getElementById(id) === null) && tries-- > 0) window.requestAnimationFrame(loop);
+      if (ids.some(id => document.getElementById(id) === null) && tries-- > 0)
+        window.requestAnimationFrame(loop);
       else res();
     }
     loop();
