@@ -1,5 +1,5 @@
-export class Nomeacao {
-  idUnica: null;
-  numProcesso: null;
-  numeroNomeacao: null;
+export interface Nomeacao {
+  idUnica: string;
+  numProcesso: string;
+  numeroNomeacao: string;
 }

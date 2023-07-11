@@ -1,3 +1,5 @@
 ﻿import { main } from './main';
 
-main(document);
+main().catch(err => {
+  console.error(err);
+});

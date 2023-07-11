@@ -1,6 +1,6 @@
 {
   "name": "ajg",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "private": true,
   "description": "Permite a criação de solicitações de pagamento em bloco",
   "author": "nadameu",
@@ -10,5 +10,8 @@
     "dev": "vite",
     "format": "prettier --write ../../ajg.user.js",
     "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@nadameu/create-element": "workspace:^1.0.0"
   }
 }

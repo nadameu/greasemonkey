@@ -1,19 +1,29 @@
-import { PaginaCriar } from './PaginaCriar';
-import { PaginaNomeacoes } from './PaginaNomeacoes';
+import { ErroLinkCriarNaoExiste } from './ErroLinkCriarNaoExiste';
+import { adicionarAvisoCarregando } from './adicionarAvisoCarregando';
+import { adicionarEstilos } from './adicionarEstilos';
+import { adicionarFormulario } from './adicionarFormulario';
+import { getTabela } from './getTabela';
+import { query } from './query';
 
-export function main(doc: Document) {
-  const pagina = validarPagina(doc);
-  pagina.adicionarAlteracoes();
-}
-
-function validarPagina(doc: Document) {
-  const acao = new URL(doc.URL).searchParams.get('acao');
-  switch (acao) {
-    case 'nomeacoes_ajg_listar':
-      return new PaginaNomeacoes(doc);
-
-    case 'criar_solicitacao_pagamento':
-      return new PaginaCriar(doc);
+export async function main() {
+  let linkCriar: HTMLAnchorElement;
+  try {
+    linkCriar = await query<HTMLAnchorElement>(
+      'a[href^="controlador.php?acao=criar_solicitacao_pagamento&"]'
+    );
+  } catch (_) {
+    return;
   }
-  throw new Error('Página desconhecida.');
+  adicionarEstilos();
+  const areaTelaD = await query<HTMLElement>('#divInfraAreaTelaD');
+  const tabela = await getTabela();
+  const aviso = adicionarAvisoCarregando({ tabela });
+  try {
+    await adicionarFormulario({ areaTelaD, linkCriar });
+    aviso.carregado = true;
+  } catch (err) {
+    aviso.carregado = false;
+    if (err instanceof ErroLinkCriarNaoExiste) return;
+    throw err;
+  }
 }
