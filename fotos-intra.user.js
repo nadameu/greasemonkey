@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Fotos Intra
 // @namespace    http://nadameu.com.br/fotos-intra
-// @version      4.5.0
+// @version      4.5.1
 // @author       nadameu
 // @description  Corrige a distorção nas fotos da Intra
 // @website      http://www.nadameu.com.br/
@@ -13,42 +13,51 @@
 
 let style;
 function adicionarEstilos(css) {
-  style = style ?? document.head.appendChild(document.createElement('style'));
+  style ??= document.head.appendChild(h("style", {}));
   style.textContent += css;
 }
 
 main();
 
 function main() {
-  if (document.location.pathname === '/') {
-    const coluna = queryOne('.coluna-direita');
-    let aniversariantes = null;
-    for (let child = coluna.firstElementChild; child !== null; child = child.nextElementSibling) {
-      if (child.matches('.widgettitle')) {
-        aniversariantes = null;
-        if (/^Aniversariantes/.test(child.textContent)) {
-          aniversariantes = h('div', { class: 'gm-aniversariantes' });
-          child.insertAdjacentElement('afterend', aniversariantes);
-        }
-        continue;
-      }
-      if (aniversariantes && child.matches('a[href^="/membros/"]')) {
-        const prev = child.previousElementSibling;
-        aniversariantes.appendChild(child);
-        child = prev;
+  if (document.location.pathname === "/") {
+    let list = null;
+    const children = queryOne(".coluna-direita").children;
+    for (const [i, child] of Array.from(children).entries()) {
+      if (
+        child.matches(".widgettitle") ||
+        child.querySelector(".widgettitle")
+      ) {
+        list = { titulo: child, children: [], previous: list };
+      } else if (list) {
+        list.children.push(child);
+      } else {
+        throw new Error("Não foi encontrado título da seção.");
       }
     }
-    if (! coluna.querySelector('.gm-aniversariantes')) {
-      throw new Error('Não foi possível localizar aniversariantes.');
+
+    let encontrados = false;
+    for (let current = list; current; current = current.previous) {
+      if (/^Aniversariantes/.test(current.titulo.textContent)) {
+        encontrados = true;
+        if (current.children.length < 1) continue;
+        const div = current.children[0].insertAdjacentElement(
+          "beforebegin",
+          h("div", { class: "gm-aniversariantes" })
+        );
+        div.append(...current.children);
+      }
     }
-    const fotos = document.querySelectorAll('.avatar');
+
+    if (!encontrados)
+      throw new Error("Não foi possível localizar aniversariantes.");
 
     adicionarEstilosGeral();
     adicionarEstilosHome();
-    fotos.forEach(foto => {
-      foto.removeAttribute('width');
-      foto.removeAttribute('height');
-    });
+    for (const foto of document.querySelectorAll(".avatar")) {
+      foto.removeAttribute("width");
+      foto.removeAttribute("height");
+    }
   } else {
     adicionarEstilosGeral();
   }
@@ -65,7 +74,7 @@ function h(tag, props, ...children) {
 }
 
 function adicionarEstilosHome() {
-  adicionarEstilos(`
+  adicionarEstilos(/* css */ `
 .gm-aniversariantes {
   display: flex;
   flex-direction: row;
@@ -90,7 +99,7 @@ function adicionarEstilosHome() {
 }
 
 function adicionarEstilosGeral() {
-  adicionarEstilos(`
+  adicionarEstilos(/* css */ `
 .avatar,
 #wp-admin-bar-user-info .avatar {
   width: auto !important;
