@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Fotos Intra
 // @namespace    http://nadameu.com.br/fotos-intra
-// @version      4.4.0
+// @version      4.5.0
 // @author       nadameu
 // @description  Corrige a distorção nas fotos da Intra
 // @website      http://www.nadameu.com.br/
@@ -22,20 +22,29 @@ main();
 function main() {
   if (document.location.pathname === '/') {
     const coluna = queryOne('.coluna-direita');
-    const titulo = queryOne(':scope > .widgettitle:first-child', coluna);
-    assert(
-      /^Aniversariantes/.test(titulo.textContent),
-      'Não foi possível localizar aniversariantes.'
-    );
-    const aniversariantes = coluna.querySelectorAll('a[href^="/membros/"]');
+    let aniversariantes = null;
+    for (let child = coluna.firstElementChild; child !== null; child = child.nextElementSibling) {
+      if (child.matches('.widgettitle')) {
+        aniversariantes = null;
+        if (/^Aniversariantes/.test(child.textContent)) {
+          aniversariantes = h('div', { class: 'gm-aniversariantes' });
+          child.insertAdjacentElement('afterend', aniversariantes);
+        }
+        continue;
+      }
+      if (aniversariantes && child.matches('a[href^="/membros/"]')) {
+        const prev = child.previousElementSibling;
+        aniversariantes.appendChild(child);
+        child = prev;
+      }
+    }
+    if (! coluna.querySelector('.gm-aniversariantes')) {
+      throw new Error('Não foi possível localizar aniversariantes.');
+    }
     const fotos = document.querySelectorAll('.avatar');
 
     adicionarEstilosGeral();
     adicionarEstilosHome();
-    const div = titulo.insertAdjacentElement(
-      'afterend',
-      h('div', { class: 'gm-aniversariantes' }, ...aniversariantes)
-    );
     fotos.forEach(foto => {
       foto.removeAttribute('width');
       foto.removeAttribute('height');
