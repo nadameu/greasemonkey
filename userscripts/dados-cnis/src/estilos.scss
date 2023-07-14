@@ -1,0 +1,20 @@
+.bootstrap-styles {
+  .gm-cnis {
+    button {
+      margin: 1em 0;
+      border: none;
+      padding: 4px 12px;
+      box-shadow: 0 2px 4px #00000080;
+      --btn-color: hsl(266, 0%, 45%);
+      background-color: var(--btn-color);
+      color: #fff;
+    }
+    button:hover {
+      --btn-color: hsl(266, 40%, 45%);
+    }
+    button:active {
+      box-shadow: none;
+      translate: 0 2px;
+    }
+  }
+}
