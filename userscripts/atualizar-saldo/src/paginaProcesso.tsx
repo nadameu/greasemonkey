@@ -1,9 +1,9 @@
 import { createStore } from '@nadameu/create-store';
 import { Either, validateAll } from '@nadameu/either';
-import { createTaggedUnion, Static } from '@nadameu/match';
+import { Static, createTaggedUnion } from '@nadameu/match';
 import { Natural } from '@nadameu/predicates';
 import { render } from 'preact';
-import { createMsgService, Mensagem } from './Mensagem';
+import { Mensagem, createMsgService } from './Mensagem';
 import { NumProc } from './NumProc';
 import { obter } from './obter';
 
@@ -55,32 +55,30 @@ function modificarPaginaProcesso({
   const bc = createMsgService();
   const store = createStore<Estado, Acao>(
     () => {
-      const INTERVALO = 100;
-      let aguardarMilissegundos = 3000;
-      const timer = window.setInterval(() => {
-        aguardarMilissegundos -= INTERVALO;
-        if (linkRPV.textContent === '') {
-          if (aguardarMilissegundos <= 0) {
-            window.clearInterval(timer);
-            store.dispatch(Acao.Erro);
-          }
-        } else {
-          window.clearInterval(timer);
+      const AGUARDAR_MS = 30000;
 
-          const info: TipoContas = {
-            rpv: { quantidade: 0, atualiza: false },
-            depositos: { quantidade: 0, atualiza: false },
-          };
+      const timer = window.setTimeout(() => {
+        observer.disconnect();
+        store.dispatch(Acao.Erro);
+      }, AGUARDAR_MS);
 
-          if (linkRPV.textContent === 'Há conta com saldo')
-            info.rpv = { quantidade: undefined, atualiza: true };
+      const observer = new MutationObserver(() => {
+        window.clearTimeout(timer);
+        observer.disconnect();
+        const info: TipoContas = {
+          rpv: { quantidade: 0, atualiza: false },
+          depositos: { quantidade: 0, atualiza: false },
+        };
 
-          if (linkDepositos.textContent === 'Há conta com saldo')
-            info.depositos = { quantidade: undefined, atualiza: false };
+        if (linkRPV.textContent === 'Há conta com saldo')
+          info.rpv = { quantidade: undefined, atualiza: true };
 
-          store.dispatch(Acao.VerificacaoTerminada(info));
-        }
-      }, INTERVALO);
+        if (linkDepositos.textContent === 'Há conta com saldo')
+          info.depositos = { quantidade: undefined, atualiza: false };
+
+        store.dispatch(Acao.VerificacaoTerminada(info));
+      });
+      observer.observe(linkRPV, { childList: true });
 
       bc.subscribe(msg => {
         Mensagem.match(msg, {

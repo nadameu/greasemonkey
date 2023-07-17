@@ -2,7 +2,7 @@
 // @name         atualizar-saldos
 // @name:pt-BR   Atualizar saldos
 // @namespace    http://nadameu.com.br
-// @version      4.1.0
+// @version      4.2.0
 // @author       nadameu
 // @description  Atualiza o saldo de contas judiciais
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
@@ -22,13 +22,14 @@
 
 (o => {
   const a = document.createElement('style');
-  (a.dataset.source = 'vite-plugin-monkey'), (a.innerText = o), document.head.appendChild(a);
+  (a.dataset.source = 'vite-plugin-monkey'), (a.textContent = o), document.head.append(a);
 })(
-  '.gm-atualizar-saldo__contas,.gm-atualizar-saldo__processo{--button-bg: hsl(266deg, 25%, 40%);--fg-color: hsl(266deg, 80%, 15%);--border-color: hsl(266deg, 10%, 40%)}.gm-atualizar-saldo__contas span,.gm-atualizar-saldo__processo span{line-height:2em;color:var(--fg-color)}.gm-atualizar-saldo__contas span.zerado,.gm-atualizar-saldo__processo span.zerado{--fg-color: hsl(266, 10%, 40%)}.gm-atualizar-saldo__contas span.erro,.gm-atualizar-saldo__processo span.erro{--fg-color: hsl(0, 85%, 40%)}.gm-atualizar-saldo__contas span.saldo,.gm-atualizar-saldo__processo span.saldo{--fg-color: hsl(266, 75%, 25%)}.gm-atualizar-saldo__contas button,.gm-atualizar-saldo__processo button{border:none;border-radius:4px;padding:4px 12px;font-size:1.3em;color:#fff;box-shadow:0 2px 4px #00000080;background:var(--button-bg)}.gm-atualizar-saldo__contas button.zerado,.gm-atualizar-saldo__processo button.zerado{--button-bg: hsl(266deg, 5%, 50%)}.gm-atualizar-saldo__contas button:hover,.gm-atualizar-saldo__contas button:focus,.gm-atualizar-saldo__processo button:hover,.gm-atualizar-saldo__processo button:focus{--button-bg: hsl(266deg, 40%, 45%)}.gm-atualizar-saldo__contas button:active,.gm-atualizar-saldo__processo button:active{box-shadow:none;translate:0 2px}.gm-atualizar-saldo__processo{margin:0 2px 8px;border-left:4px solid var(--border-color);padding:0 4px}.gm-atualizar-saldo__contas{border-left:4px solid var(--border-color);padding:0 4px}'
+  ' .gm-atualizar-saldo__contas,.gm-atualizar-saldo__processo{--button-bg: hsl(266deg, 25%, 40%);--fg-color: hsl(266deg, 80%, 15%);--border-color: hsl(266deg, 10%, 40%)}.gm-atualizar-saldo__contas span,.gm-atualizar-saldo__processo span{line-height:2em;color:var(--fg-color)}.gm-atualizar-saldo__contas span.zerado,.gm-atualizar-saldo__processo span.zerado{--fg-color: hsl(266, 10%, 40%)}.gm-atualizar-saldo__contas span.erro,.gm-atualizar-saldo__processo span.erro{--fg-color: hsl(0, 85%, 40%)}.gm-atualizar-saldo__contas span.saldo,.gm-atualizar-saldo__processo span.saldo{--fg-color: hsl(266, 75%, 25%)}.gm-atualizar-saldo__contas button,.gm-atualizar-saldo__processo button{border:none;border-radius:4px;padding:4px 12px;font-size:1.3em;color:#fff;box-shadow:0 2px 4px #00000080;background:var(--button-bg)}.gm-atualizar-saldo__contas button.zerado,.gm-atualizar-saldo__processo button.zerado{--button-bg: hsl(266deg, 5%, 50%)}.gm-atualizar-saldo__contas button:hover,.gm-atualizar-saldo__contas button:focus,.gm-atualizar-saldo__processo button:hover,.gm-atualizar-saldo__processo button:focus{--button-bg: hsl(266deg, 40%, 45%)}.gm-atualizar-saldo__contas button:active,.gm-atualizar-saldo__processo button:active{box-shadow:none;translate:0 2px}.gm-atualizar-saldo__processo{margin:0 2px 8px;border-left:4px solid var(--border-color);padding:0 4px}.gm-atualizar-saldo__contas{border-left:4px solid var(--border-color);padding:0 4px} '
 );
 
-(function (preact2) {
+(function (preact) {
   'use strict';
+
   class _Either {
     catch(f) {
       return this.match({
@@ -324,7 +325,7 @@
     };
     if ('function' == typeof o2 && (l = o2.defaultProps))
       for (s in l) void 0 === u[s] && (u[s] = l[s]);
-    return preact2.options.vnode && preact2.options.vnode(a), a;
+    return preact.options.vnode && preact.options.vnode(a), a;
   }
   const Estado$1 = createTaggedUnion({
     Ocioso: infoContas => ({
@@ -468,7 +469,7 @@
                   onClick,
                   children: 'Atualizar',
                 });
-          return o(preact2.Fragment, {
+          return o(preact.Fragment, {
             children: [
               o('span', {
                 class: classe,
@@ -496,7 +497,7 @@
       store.dispatch(Acao$1.Atualizar);
     }
     function update(estado) {
-      preact2.render(
+      preact.render(
         o(App, {
           estado,
         }),
@@ -696,7 +697,7 @@
                   onClick,
                   children: 'Atualizar',
                 });
-          return o(preact2.Fragment, {
+          return o(preact.Fragment, {
             children: [
               o('span', {
                 class: classe,
@@ -721,7 +722,7 @@
       store.dispatch(Acao.Atualizar);
     }
     function update(estado) {
-      preact2.render(
+      preact.render(
         o(App, {
           estado,
         }),
@@ -804,40 +805,39 @@
     const bc = createMsgService();
     const store = createStore(
       () => {
-        const INTERVALO = 100;
-        let aguardarMilissegundos = 3e3;
-        const timer = window.setInterval(() => {
-          aguardarMilissegundos -= INTERVALO;
-          if (linkRPV.textContent === '') {
-            if (aguardarMilissegundos <= 0) {
-              window.clearInterval(timer);
-              store.dispatch(Acao2.Erro);
-            }
-          } else {
-            window.clearInterval(timer);
-            const info = {
-              rpv: {
-                quantidade: 0,
-                atualiza: false,
-              },
-              depositos: {
-                quantidade: 0,
-                atualiza: false,
-              },
+        const AGUARDAR_MS = 3e4;
+        const timer = window.setTimeout(() => {
+          observer.disconnect();
+          store.dispatch(Acao2.Erro);
+        }, AGUARDAR_MS);
+        const observer = new MutationObserver(() => {
+          window.clearTimeout(timer);
+          observer.disconnect();
+          const info = {
+            rpv: {
+              quantidade: 0,
+              atualiza: false,
+            },
+            depositos: {
+              quantidade: 0,
+              atualiza: false,
+            },
+          };
+          if (linkRPV.textContent === 'Há conta com saldo')
+            info.rpv = {
+              quantidade: void 0,
+              atualiza: true,
             };
-            if (linkRPV.textContent === 'Há conta com saldo')
-              info.rpv = {
-                quantidade: void 0,
-                atualiza: true,
-              };
-            if (linkDepositos.textContent === 'Há conta com saldo')
-              info.depositos = {
-                quantidade: void 0,
-                atualiza: false,
-              };
-            store.dispatch(Acao2.VerificacaoTerminada(info));
-          }
-        }, INTERVALO);
+          if (linkDepositos.textContent === 'Há conta com saldo')
+            info.depositos = {
+              quantidade: void 0,
+              atualiza: false,
+            };
+          store.dispatch(Acao2.VerificacaoTerminada(info));
+        });
+        observer.observe(linkRPV, {
+          childList: true,
+        });
         bc.subscribe(msg => {
           Mensagem.match(msg, {
             InformaContas: ({ numproc: msgNumproc, qtdComSaldo, permiteAtualizar }) => {
@@ -970,7 +970,7 @@
         div.className = 'gm-atualizar-saldo__processo';
         informacoesAdicionais.insertAdjacentElement('beforebegin', div);
       }
-      preact2.render(
+      preact.render(
         o(App, {
           estado,
         }),
@@ -1031,7 +1031,7 @@
       });
     }
     function MensagemComBotao({ classe, mensagem, rpv, dep }) {
-      return o(preact2.Fragment, {
+      return o(preact.Fragment, {
         children: [
           o('span', {
             class: classe,
@@ -1066,7 +1066,6 @@
   function obterInformacoesAdicionais() {
     return obter('#fldInformacoesAdicionais', 'Tabela de informações adicionais não encontrada.');
   }
-  const main$1 = '';
   const paginas = {
     processo_selecionar: paginaProcesso,
     processo_precatorio_rpv: paginaContas,
