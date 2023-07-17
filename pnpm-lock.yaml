@@ -226,6 +226,21 @@ importers:
 
   userscripts/dados-cnis:
     dependencies:
+      '@nadameu/create-store':
+        specifier: workspace:^1.0.0
+        version: link:../../lib/create-store
+      '@nadameu/either':
+        specifier: workspace:^2.0.0
+        version: link:../../lib/either
+      '@nadameu/expect-unreachable':
+        specifier: workspace:^
+        version: link:../../lib/expect-unreachable
+      '@nadameu/match':
+        specifier: workspace:^3.1.1
+        version: link:../../lib/match
+      '@nadameu/predicates':
+        specifier: workspace:^1.0.0
+        version: link:../../lib/predicates
       preact:
         specifier: 10.16.0
         version: 10.16.0
