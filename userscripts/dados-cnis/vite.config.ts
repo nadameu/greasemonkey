@@ -12,12 +12,8 @@ export default defineConfig({
       entry: 'src/index.ts',
       userscript: {
         namespace: 'http://nadameu.com.br',
-        match: [
-          'https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*',
-          'https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*',
-          'https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*',
-          'https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*',
-        ],
+        include:
+          /^https:\/\/eproc\.(?:jf(?:pr|rs|sc)|trf4)\.jus.br\/eproc(?:V2|2trf4)\/controlador\.php\?acao=(?:processo_selecionar|pessoa_consulta_integrada\/listar)&/,
       },
     }),
   ],

@@ -226,6 +226,9 @@ importers:
 
   userscripts/dados-cnis:
     dependencies:
+      '@nadameu/create-element':
+        specifier: workspace:^1.0.0
+        version: link:../../lib/create-element
       '@nadameu/create-store':
         specifier: workspace:^1.0.0
         version: link:../../lib/create-store
@@ -233,7 +236,7 @@ importers:
         specifier: workspace:^2.0.0
         version: link:../../lib/either
       '@nadameu/expect-unreachable':
-        specifier: workspace:^
+        specifier: workspace:^1.0.0
         version: link:../../lib/expect-unreachable
       '@nadameu/match':
         specifier: workspace:^3.1.1
@@ -241,9 +244,6 @@ importers:
       '@nadameu/predicates':
         specifier: workspace:^1.0.0
         version: link:../../lib/predicates
-      preact:
-        specifier: 10.16.0
-        version: 10.16.0
 
   userscripts/renajud:
     dependencies:
@@ -4098,6 +4098,7 @@ packages:
 
   /preact@10.16.0:
     resolution: {integrity: sha512-XTSj3dJ4roKIC93pald6rWuB2qQJO9gO2iLLyTe87MrjQN+HklueLsmskbywEWqCHlclgz3/M4YLL2iBr9UmMA==}
+    dev: true
 
   /prelude-ls@1.1.2:
     resolution: {integrity: sha512-ESF23V4SKG6lVSGZgYNpbsiaAkdab6ZgOxe52p7+Kid3W3u3bxR4Vfd/o21dmN7jSt0IwgZ4v5MUd26FEtXE9w==}
