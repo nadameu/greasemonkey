@@ -1,9 +1,10 @@
+import { eitherToPromise } from './eitherToPromise';
 import { main } from './main';
 
-main().mapLeft(errors => {
-  console.group('<dados-cnis>');
-  for (const error of errors) {
+main()
+  .then(eitherToPromise)
+  .catch(error => {
+    console.group('<dados-cnis>');
     console.error(error);
-  }
-  console.groupEnd();
-});
+    console.groupEnd();
+  });
