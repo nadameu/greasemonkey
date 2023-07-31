@@ -7,8 +7,10 @@ import { isNumProc } from './types/NumProc';
 export function main(): Either<Error, void> {
   const params = new URL(document.location.href).searchParams;
   const acao = params.get('acao');
-  if (!acao) return Left(new Error('Página desconhecida.'));
   switch (acao) {
+    case null:
+      return Left(new Error('Página desconhecida.'));
+
     case 'localizador_processos_lista':
       return LocalizadorProcessoLista();
 
@@ -26,6 +28,6 @@ export function main(): Either<Error, void> {
       return Right(undefined);
 
     default:
-      return Left(new Error(`Ação desconhecida: "${acao}".`));
+      return Left(new Error(`Ação desconhecida: ${JSON.stringify(acao)}.`));
   }
 }

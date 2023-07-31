@@ -1,7 +1,6 @@
-import { createTaggedUnion, type matchBy } from '@nadameu/match';
+import { createTaggedUnion } from '@nadameu/match';
 import type { Bloco } from './Bloco';
 import type { BroadcastMessage } from './BroadcastMessage';
-import type { NumProc } from './NumProc';
 
 interface BlocosModificadosAction {
   type: 'blocosModificados';

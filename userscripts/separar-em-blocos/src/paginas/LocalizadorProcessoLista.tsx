@@ -11,14 +11,13 @@ import { Bloco } from '../types/Bloco';
 import { BroadcastMessage, isBroadcastMessage } from '../types/BroadcastMessage';
 import { isNumProc, NumProc } from '../types/NumProc';
 
-type MapaProcessos = Map<
-  NumProc,
-  {
-    linha: HTMLTableRowElement;
-    checkbox: HTMLInputElement;
-    checked: boolean;
-  }
->;
+interface InfoLinha {
+  linha: HTMLTableRowElement;
+  checkbox: HTMLInputElement;
+  checked: boolean;
+}
+
+type MapaProcessos = Map<NumProc, InfoLinha>;
 
 interface InfoBloco extends Bloco {
   nestaPagina: number;
