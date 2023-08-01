@@ -17,7 +17,7 @@
 // @match        https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=processo_depositos_judiciais&*
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_depositos_judiciais&*
 // @match        https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_depositos_judiciais&*
-// @require      https://unpkg.com/preact@10.11.0/dist/preact.min.js
+// @require      https://unpkg.com/preact@10.16.0/dist/preact.min.js
 // ==/UserScript==
 
 (o => {
@@ -301,16 +301,16 @@
     return createBroadcastService('gm-atualizar-saldo', isMensagem);
   }
   var _ = 0;
-  function o(o2, e, n, t, f) {
-    var l,
-      s,
-      u = {};
-    for (s in e) 'ref' == s ? (l = e[s]) : (u[s] = e[s]);
-    var a = {
+  function o(o2, e, n, t, f, l) {
+    var s,
+      u,
+      a = {};
+    for (u in e) 'ref' == u ? (s = e[u]) : (a[u] = e[u]);
+    var i = {
       type: o2,
-      props: u,
+      props: a,
       key: n,
-      ref: l,
+      ref: s,
       __k: null,
       __: null,
       __b: 0,
@@ -321,11 +321,11 @@
       constructor: void 0,
       __v: --_,
       __source: f,
-      __self: t,
+      __self: l,
     };
-    if ('function' == typeof o2 && (l = o2.defaultProps))
-      for (s in l) void 0 === u[s] && (u[s] = l[s]);
-    return preact.options.vnode && preact.options.vnode(a), a;
+    if ('function' == typeof o2 && (s = o2.defaultProps))
+      for (u in s) void 0 === a[u] && (a[u] = s[u]);
+    return preact.options.vnode && preact.options.vnode(i), i;
   }
   const Estado$1 = createTaggedUnion({
     Ocioso: infoContas => ({

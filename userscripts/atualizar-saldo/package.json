@@ -22,7 +22,6 @@
     "@nadameu/match": "workspace:^3.0.0",
     "@nadameu/opaque": "workspace:^1.0.0",
     "@nadameu/predicates": "workspace:^2.0.0",
-    "@nadameu/resolvable": "workspace:^1.0.0",
-    "preact": "10.11.0"
+    "@nadameu/resolvable": "workspace:^1.0.0"
   }
 }
