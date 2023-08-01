@@ -95,3 +95,15 @@ test('unsubscribe', () => {
   store.dispatch('inc');
   wasCalledWith([0, 1, 2, 3, 2]);
 });
+
+test('getState', () => {
+  const store = createStore(
+    () => 0,
+    (state, action: number) => state + action
+  );
+  expect(store.getState()).toEqual(0);
+  store.dispatch(+1);
+  expect(store.getState()).toEqual(1);
+  store.dispatch(-3);
+  expect(store.getState()).toEqual(-2);
+});
