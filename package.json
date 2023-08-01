@@ -1,10 +1,7 @@
 {
   "scripts": {
-    "build": "rollup -c --configPlugin=typescript",
     "format": "prettier --write .",
-    "serve": "http-server -c-1 -o .",
-    "start": "run-p serve watch",
-    "watch": "rollup -c --configPlugin=typescript --watch"
+    "serve": "http-server -c-1 -o ."
   },
   "devDependencies": {
     "@babel/core": "^7.22.9",
