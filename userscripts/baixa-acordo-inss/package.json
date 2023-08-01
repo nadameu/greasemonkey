@@ -6,7 +6,7 @@
     "test:watch": "vitest watch"
   },
   "devDependencies": {
-    "vitest": "^0.18.0"
+    "vitest": "^0.34.1"
   },
   "dependencies": {
     "descriptive-regexp": "^0.3.0"
