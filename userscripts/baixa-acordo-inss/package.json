@@ -3,6 +3,7 @@
     "build": "userscript build",
     "format": "prettier --write ../../baixa-acordo-inss.user.js",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch"
   },
   "dependencies": {
