@@ -1,14 +1,13 @@
-import { makeCriarLinks } from './makeCriarLinks';
-import { getNodeInfo } from './getNodeInfo';
-import { getFormulario } from './getFormulario';
 import { getDominio } from './getDominio';
-import { validate } from './validate';
+import { getFormulario } from './getFormulario';
+import { getNodeInfo } from './getNodeInfo';
+import { makeCriarLinks } from './makeCriarLinks';
 
 export async function main({ doc, log }: { doc: Document; log: typeof console.log }) {
-  const [criarLinks, nodeInfo] = await validate([
-    getDominio(doc).then(dominio => makeCriarLinks(doc, dominio)),
-    getFormulario(doc).then(getNodeInfo),
-  ]);
+  const dominio = await getDominio(doc);
+  const criarLinks = makeCriarLinks(doc, dominio);
+  const formulario = await getFormulario(doc);
+  const nodeInfo = getNodeInfo(formulario);
   nodeInfo.forEach(criarLinks);
   const qtd = nodeInfo.length;
   const s = qtd > 1 ? 's' : '';
