@@ -2,13 +2,13 @@
 // @name         separar-em-blocos
 // @name:pt-BR   Separar em blocos
 // @namespace    http://nadameu.com.br
-// @version      4.0.0
+// @version      4.1.0
 // @author       nadameu
 // @description  Permite a separação de processos em blocos para movimentação separada
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=localizador_processos_lista&*
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=relatorio_geral_consultar&*
-// @require      https://cdn.jsdelivr.net/combine/npm/preact@10.11.0,npm/preact@10.11.0/hooks/dist/hooks.umd.js
+// @require      https://cdn.jsdelivr.net/combine/npm/preact@10.16.0,npm/preact@10.16.0/hooks/dist/hooks.umd.js
 // @grant        window.close
 // ==/UserScript==
 
@@ -373,16 +373,16 @@
     blocos: isTypedArray(isBloco),
   });
   var _ = 0;
-  function o(o2, e, n, t, f) {
-    var l,
-      s,
-      u = {};
-    for (s in e) 'ref' == s ? (l = e[s]) : (u[s] = e[s]);
-    var a = {
+  function o(o2, e, n, t, f, l) {
+    var s,
+      u,
+      a = {};
+    for (u in e) 'ref' == u ? (s = e[u]) : (a[u] = e[u]);
+    var i = {
       type: o2,
-      props: u,
+      props: a,
       key: n,
-      ref: l,
+      ref: s,
       __k: null,
       __: null,
       __b: 0,
@@ -393,11 +393,11 @@
       constructor: void 0,
       __v: --_,
       __source: f,
-      __self: t,
+      __self: l,
     };
-    if ('function' == typeof o2 && (l = o2.defaultProps))
-      for (s in l) void 0 === u[s] && (u[s] = l[s]);
-    return preact.options.vnode && preact.options.vnode(a), a;
+    if ('function' == typeof o2 && (s = o2.defaultProps))
+      for (u in s) void 0 === a[u] && (a[u] = s[u]);
+    return preact.options.vnode && preact.options.vnode(i), i;
   }
   function LocalizadorProcessoLista() {
     const tabela = document.querySelector('table#tabelaLocalizadores');
