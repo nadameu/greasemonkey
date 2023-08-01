@@ -13,26 +13,23 @@
 
 let style;
 function adicionarEstilos(css) {
-  style ??= document.head.appendChild(h("style", {}));
+  style ??= document.head.appendChild(h('style', {}));
   style.textContent += css;
 }
 
 main();
 
 function main() {
-  if (document.location.pathname === "/") {
+  if (document.location.pathname === '/') {
     let list = null;
-    const children = queryOne(".coluna-direita").children;
+    const children = queryOne('.coluna-direita').children;
     for (const [i, child] of Array.from(children).entries()) {
-      if (
-        child.matches(".widgettitle") ||
-        child.querySelector(".widgettitle")
-      ) {
+      if (child.matches('.widgettitle') || child.querySelector('.widgettitle')) {
         list = { titulo: child, children: [], previous: list };
       } else if (list) {
         list.children.push(child);
       } else {
-        throw new Error("Não foi encontrado título da seção.");
+        throw new Error('Não foi encontrado título da seção.');
       }
     }
 
@@ -42,21 +39,20 @@ function main() {
         encontrados = true;
         if (current.children.length < 1) continue;
         const div = current.children[0].insertAdjacentElement(
-          "beforebegin",
-          h("div", { class: "gm-aniversariantes" })
+          'beforebegin',
+          h('div', { class: 'gm-aniversariantes' })
         );
         div.append(...current.children);
       }
     }
 
-    if (!encontrados)
-      throw new Error("Não foi possível localizar aniversariantes.");
+    if (!encontrados) throw new Error('Não foi possível localizar aniversariantes.');
 
     adicionarEstilosGeral();
     adicionarEstilosHome();
-    for (const foto of document.querySelectorAll(".avatar")) {
-      foto.removeAttribute("width");
-      foto.removeAttribute("height");
+    for (const foto of document.querySelectorAll('.avatar')) {
+      foto.removeAttribute('width');
+      foto.removeAttribute('height');
     }
   } else {
     adicionarEstilosGeral();
