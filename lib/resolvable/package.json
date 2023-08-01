@@ -6,11 +6,9 @@
   "dependencies": {
     "@nadameu/handler": "workspace:^1.0.0"
   },
-  "devDependencies": {
-    "vitest": "^0.22.1"
-  },
   "scripts": {
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch"
   }
 }
