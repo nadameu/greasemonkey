@@ -1,6 +1,10 @@
 import { expect, it } from 'vitest';
 import { obterReferencias } from '../src/referentes';
 
+it('Zero evento', () => {
+  expect(obterReferencias('Qualquer coisaRefer.Mais coisas')).to.deep.equal([]);
+});
+
 it('Um evento', () => {
   testarExpressoes([42]);
 });
