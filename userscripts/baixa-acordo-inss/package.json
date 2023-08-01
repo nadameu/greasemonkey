@@ -1,6 +1,7 @@
 {
   "scripts": {
     "build": "userscript build",
+    "format": "prettier --write ../../baixa-acordo-inss.user.js",
     "test": "vitest run",
     "test:watch": "vitest watch"
   },
