@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@nadameu/predicates": "workspace:^1.0.0",
+    "@nadameu/predicates": "workspace:^2.0.0",
     "@nadameu/resolvable": "workspace:^1.0.0",
     "descriptive-regexp": "^0.3.0"
   },

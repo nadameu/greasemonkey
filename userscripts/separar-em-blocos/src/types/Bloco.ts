@@ -8,7 +8,7 @@ export const isNomeBloco = p.isNonEmptyString;
 export const isBloco: p.Predicate<Bloco> = /* #__PURE__ */ p.hasShape({
   id: isIdBloco,
   nome: isNomeBloco,
-  processos: p.isArray(isNumProc),
+  processos: p.isTypedArray(isNumProc),
 });
 export interface Bloco {
   id: p.Static<typeof isIdBloco>;

@@ -17,6 +17,6 @@
     "@nadameu/either": "workspace:^2.0.0",
     "@nadameu/expect-unreachable": "workspace:^1.0.0",
     "@nadameu/match": "workspace:^3.1.1",
-    "@nadameu/predicates": "workspace:^1.0.0"
+    "@nadameu/predicates": "workspace:^2.0.0"
   }
 }

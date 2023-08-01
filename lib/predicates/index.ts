@@ -118,20 +118,16 @@ export function isAnyOf<T extends Predicate<any>[]>(
 ): Predicate<T extends Predicate<infer U>[] ? U : never> {
   return (value): value is any => predicates.some(p => p(value));
 }
-export const isNullish = /* @__PURE__ */ isAnyOf(isNull, isUndefined);
+export const isNullish: Predicate<null | undefined> = (x): x is null | undefined => x == null;
 export const isNotNullish = /* @__PURE__ */ negate(isNullish);
 
-export function isArray<T = unknown>(predicate = isUnknown as Predicate<T>): Predicate<T[]> {
-  return refine(
-    (value): value is unknown[] => Array.isArray(value),
-    (xs): xs is T[] => xs.every(predicate)
-  );
+export const isArray: Predicate<unknown[]> = (x): x is unknown[] => Array.isArray(x);
+export function isTypedArray<T>(predicate: Predicate<T>): Predicate<T[]> {
+  return refine(isArray, (xs): xs is T[] => xs.every(predicate));
 }
 
 export function hasKeys<K extends string>(...keys: K[]): Predicate<Record<K, unknown>> {
-  return refine(isObject, (obj: object): obj is Record<K, unknown> =>
-    keys.every(key => key in obj)
-  );
+  return refine(isObject, (obj): obj is Record<K, unknown> => keys.every(key => key in obj));
 }
 
 export function hasShape<T extends Record<string, Predicate<any> | OptionalPropertyPredicate<any>>>(

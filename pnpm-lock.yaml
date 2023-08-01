@@ -148,7 +148,7 @@ importers:
   lib/userscript:
     dependencies:
       '@nadameu/predicates':
-        specifier: workspace:^1.0.0
+        specifier: workspace:^2.0.0
         version: link:../predicates
       esbuild:
         specifier: ^0.14.49
@@ -205,7 +205,7 @@ importers:
         specifier: workspace:^1.0.0
         version: link:../../lib/opaque
       '@nadameu/predicates':
-        specifier: workspace:^1.1.1
+        specifier: workspace:^2.0.0
         version: link:../../lib/predicates
       '@nadameu/resolvable':
         specifier: workspace:^1.0.0
@@ -242,13 +242,13 @@ importers:
         specifier: workspace:^3.1.1
         version: link:../../lib/match
       '@nadameu/predicates':
-        specifier: workspace:^1.0.0
+        specifier: workspace:^2.0.0
         version: link:../../lib/predicates
 
   userscripts/renajud:
     dependencies:
       '@nadameu/predicates':
-        specifier: workspace:^1.0.0
+        specifier: workspace:^2.0.0
         version: link:../../lib/predicates
       '@nadameu/resolvable':
         specifier: workspace:^1.0.0
@@ -281,7 +281,7 @@ importers:
         specifier: workspace:^1.0.0
         version: link:../../lib/opaque
       '@nadameu/predicates':
-        specifier: workspace:^1.1.1
+        specifier: workspace:^2.0.0
         version: link:../../lib/predicates
       preact:
         specifier: 10.11.0
