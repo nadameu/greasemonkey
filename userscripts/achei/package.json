@@ -3,7 +3,7 @@
   "description": "Link para informações da Intra na página do Achei!",
   "private": true,
   "author": "nadameu",
-  "version": "16.0.0",
+  "version": "16.0.1",
   "type": "module",
   "scripts": {
     "build": "tsc && vite build",
