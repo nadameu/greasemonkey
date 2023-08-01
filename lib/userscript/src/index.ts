@@ -73,7 +73,7 @@ async function main() {
       entryPoints: [json.entry],
       format: 'esm',
       outfile: json.outfile,
-      target: 'firefox91',
+      target: 'firefox102',
     });
     console.log('ok');
     process.exit(0);
@@ -105,7 +105,7 @@ async function main() {
         entryPoints: [json.entry],
         format: 'esm',
         outfile: json.outfile,
-        target: 'firefox91',
+        target: 'firefox102',
       }
     );
     const filename = path.basename(json.outfile);

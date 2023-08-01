@@ -18,7 +18,7 @@ export default defineConfig({
   build: {
     outDir: '../..',
     emptyOutDir: false,
-    target: 'firefox91',
+    target: 'firefox102',
   },
   esbuild: { charset: 'utf8' },
   plugins: [

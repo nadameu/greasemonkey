@@ -6,7 +6,7 @@ export default defineConfig({
   build: {
     outDir: '../..',
     emptyOutDir: false,
-    target: 'firefox91',
+    target: 'firefox102',
   },
   plugins: [
     monkey({
