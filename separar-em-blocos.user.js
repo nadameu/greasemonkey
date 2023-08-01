@@ -14,13 +14,14 @@
 
 (s => {
   const o = document.createElement('style');
-  (o.dataset.source = 'vite-plugin-monkey'), (o.innerText = s), document.head.appendChild(o);
+  (o.dataset.source = 'vite-plugin-monkey'), (o.textContent = s), document.head.append(o);
 })(
-  '.gm-blocos__lista,.gm-blocos__dialog,.gm-blocos__processo{--accent: hsl(266, 40%, 25%);--bg: hsl(266, 10%, 30%);--border: hsl(266, 15%, 60%);--disabled: hsl(266, 5%, 37.5%);--disabled-text: hsl(266, 0%, 80%);--shadow: hsl(266, 12.5%, 17.5%);--muted-accent: hsl(266, 25%, 25%);--text: hsl(266, 0%, 100%)}.bootstrap-styles .gm-blocos__lista{margin:4px;padding:4px 8px;border-radius:4px;width:max-content;background:var(--bg);color:var(--text);box-shadow:0 3px 3px var(--shadow)}.bootstrap-styles .gm-blocos__lista h4{margin:3px 0;font-size:1.25rem;font-weight:300}.bootstrap-styles .gm-blocos__lista input[type=image]{border:none}.bootstrap-styles .gm-blocos__lista table{margin:6px 0 12px;border-collapse:collapse}.bootstrap-styles .gm-blocos__lista td{margin:0;padding:3px .5ch;vertical-align:middle}.bootstrap-styles .gm-blocos__lista td a[href]{color:#fff}.bootstrap-styles .gm-blocos__lista td label{font-size:.92rem;margin:0}.bootstrap-styles .gm-blocos__lista td small{font-size:.75rem}.bootstrap-styles .gm-blocos__lista tr{border:1px solid var(--disabled);border-width:1px 0}.bootstrap-styles .gm-blocos__lista tfoot td{padding-top:.75em;padding-bottom:.75em}.bootstrap-styles .gm-blocos__lista input.rename{font-size:1em}.bootstrap-styles .gm-blocos__lista .gm-erro,.bootstrap-styles .gm-blocos__lista .gm-aviso{padding:.1em .5ex;font-size:.9rem;background:hsl(0deg,10%,95%);color:#c00;margin:2px auto 6px;width:fit-content}.bootstrap-styles .gm-blocos__processo button,.bootstrap-styles .gm-blocos__lista button,.gm-blocos__dialog button{display:block;margin:0 auto 7px;padding:2px 20px;font-size:.86rem;border:none;border-radius:3px;box-shadow:0 2px 4px var(--shadow);background:var(--muted-accent);color:var(--text)}.bootstrap-styles .gm-blocos__processo button:hover,.bootstrap-styles .gm-blocos__lista button:hover,.gm-blocos__dialog button:hover{transition:background-color .1s ease-in;background:var(--accent)}.bootstrap-styles .gm-blocos__processo button:disabled,.bootstrap-styles .gm-blocos__lista button:disabled,.gm-blocos__dialog button:disabled{background:var(--disabled);color:var(--disabled-text);box-shadow:none}.bootstrap-styles .gm-blocos__dialog{background:var(--bg);color:var(--text);font-family:var(--font-family-sans-serif);font-size:1rem;min-width:25vw;border:3px ridge var(--border);box-shadow:0 4px 8px 4px #0c0a1080;border-radius:12px}.bootstrap-styles .gm-blocos__dialog::backdrop{background:hsla(266deg,25%,5%,.75)}.bootstrap-styles .gm-blocos__dialog form{display:grid;grid-template-rows:1fr 10fr 1fr;justify-items:center;align-items:center}.bootstrap-styles .gm-blocos__dialog form div{font-weight:700}.bootstrap-styles .gm-blocos__nome{all:unset}.bootstrap-styles .gm-blocos__processos{all:unset;border:1px inset var(--border);padding:.5em .5ch}.bootstrap-styles .gm-blocos__processo{margin:2px 3px 4px;padding:4px;border-radius:4px;background:var(--bg);color:var(--text);box-shadow:0 3px 3px var(--shadow)}.bootstrap-styles .gm-blocos__processo h4{margin:3px 0;font-size:1.25rem;font-weight:300}.bootstrap-styles .gm-blocos__processo ul{list-style-type:none;margin:3px 0 7px;padding:0}.bootstrap-styles .gm-blocos__processo li{position:relative;display:grid;grid-template-columns:auto 1fr auto;grid-gap:5px;align-items:center;margin:4px 0;padding:5px;border-radius:2px}.bootstrap-styles .gm-blocos__processo li:before{content:"";position:absolute;top:2px;width:100%;height:100%;border-bottom:1px solid #888;pointer-events:none}.bootstrap-styles .gm-blocos__processo li:last-of-type:before{content:none}.bootstrap-styles .gm-blocos__processo li:hover{background:var(--accent)}.bootstrap-styles .gm-blocos__processo label{margin:0;font-size:.92rem}.bootstrap-styles .gm-blocos__processo .placeholder span{height:1.38rem;animation:pulse 1s ease-in-out infinite alternate;border-radius:4px}.bootstrap-styles .gm-blocos__processo .placeholder span:first-of-type,.bootstrap-styles .gm-blocos__processo .placeholder span:last-of-type{width:1.38rem}@keyframes pulse{0%{background-color:var(--disabled)}to{background-color:var(--bg)}}.bootstrap-styles .gm-blocos__processo .error{margin:10px 5%;padding:4px 5%;border-radius:4px;font-weight:500;background:white;color:red}'
+  ' .gm-blocos__lista,.gm-blocos__dialog,.gm-blocos__processo{--accent: hsl(266, 40%, 25%);--bg: hsl(266, 10%, 30%);--border: hsl(266, 15%, 60%);--disabled: hsl(266, 5%, 37.5%);--disabled-text: hsl(266, 0%, 80%);--shadow: hsl(266, 12.5%, 17.5%);--muted-accent: hsl(266, 25%, 25%);--text: hsl(266, 0%, 100%)}.bootstrap-styles .gm-blocos__lista{margin:4px;padding:4px 8px;border-radius:4px;width:max-content;background:var(--bg);color:var(--text);box-shadow:0 3px 3px var(--shadow)}.bootstrap-styles .gm-blocos__lista h4{margin:3px 0;font-size:1.25rem;font-weight:300}.bootstrap-styles .gm-blocos__lista input[type=image]{border:none}.bootstrap-styles .gm-blocos__lista table{margin:6px 0 12px;border-collapse:collapse}.bootstrap-styles .gm-blocos__lista td{margin:0;padding:3px .5ch;vertical-align:middle}.bootstrap-styles .gm-blocos__lista td a[href]{color:#fff}.bootstrap-styles .gm-blocos__lista td label{font-size:.92rem;margin:0}.bootstrap-styles .gm-blocos__lista td small{font-size:.75rem}.bootstrap-styles .gm-blocos__lista tr{border:1px solid var(--disabled);border-width:1px 0}.bootstrap-styles .gm-blocos__lista tfoot td{padding-top:.75em;padding-bottom:.75em}.bootstrap-styles .gm-blocos__lista input.rename{font-size:1em}.bootstrap-styles .gm-blocos__lista .gm-erro,.bootstrap-styles .gm-blocos__lista .gm-aviso{padding:.1em .5ex;font-size:.9rem;background:hsl(0,10%,95%);color:#c00;margin:2px auto 6px;width:fit-content}.bootstrap-styles .gm-blocos__processo button,.bootstrap-styles .gm-blocos__lista button,.gm-blocos__dialog button{display:block;margin:0 auto 7px;padding:2px 20px;font-size:.86rem;border:none;border-radius:3px;box-shadow:0 2px 4px var(--shadow);background:var(--muted-accent);color:var(--text)}.bootstrap-styles .gm-blocos__processo button:hover,.bootstrap-styles .gm-blocos__lista button:hover,.gm-blocos__dialog button:hover{transition:background-color .1s ease-in;background:var(--accent)}.bootstrap-styles .gm-blocos__processo button:disabled,.bootstrap-styles .gm-blocos__lista button:disabled,.gm-blocos__dialog button:disabled{background:var(--disabled);color:var(--disabled-text);box-shadow:none}.bootstrap-styles .gm-blocos__dialog{background:var(--bg);color:var(--text);font-family:var(--font-family-sans-serif);font-size:1rem;min-width:25vw;border:3px ridge var(--border);box-shadow:0 4px 8px 4px #0c0a1080;border-radius:12px}.bootstrap-styles .gm-blocos__dialog::backdrop{background:hsla(266,25%,5%,.75)}.bootstrap-styles .gm-blocos__dialog form{display:grid;grid-template-rows:1fr 10fr 1fr;justify-items:center;align-items:center}.bootstrap-styles .gm-blocos__dialog form div{font-weight:700}.bootstrap-styles .gm-blocos__nome{all:unset}.bootstrap-styles .gm-blocos__processos{all:unset;border:1px inset var(--border);padding:.5em .5ch}.bootstrap-styles .gm-blocos__processo{margin:2px 3px 4px;padding:4px;border-radius:4px;background:var(--bg);color:var(--text);box-shadow:0 3px 3px var(--shadow)}.bootstrap-styles .gm-blocos__processo h4{margin:3px 0;font-size:1.25rem;font-weight:300}.bootstrap-styles .gm-blocos__processo ul{list-style-type:none;margin:3px 0 7px;padding:0}.bootstrap-styles .gm-blocos__processo li{position:relative;display:grid;grid-template-columns:auto 1fr auto;grid-gap:5px;align-items:center;margin:4px 0;padding:5px;border-radius:2px}.bootstrap-styles .gm-blocos__processo li:before{content:"";position:absolute;top:2px;width:100%;height:100%;border-bottom:1px solid #888;pointer-events:none}.bootstrap-styles .gm-blocos__processo li:last-of-type:before{content:none}.bootstrap-styles .gm-blocos__processo li:hover{background:var(--accent)}.bootstrap-styles .gm-blocos__processo label{margin:0;font-size:.92rem}.bootstrap-styles .gm-blocos__processo .placeholder span{height:1.38rem;animation:pulse 1s ease-in-out infinite alternate;border-radius:4px}.bootstrap-styles .gm-blocos__processo .placeholder span:first-of-type,.bootstrap-styles .gm-blocos__processo .placeholder span:last-of-type{width:1.38rem}@keyframes pulse{0%{background-color:var(--disabled)}to{background-color:var(--bg)}}.bootstrap-styles .gm-blocos__processo .error{margin:10px 5%;padding:4px 5%;border-radius:4px;font-weight:500;background:white;color:red} '
 );
 
-(function (preact2, hooks) {
+(function (preact, hooks) {
   'use strict';
+
   class _Either {
     catch(f) {
       return this.match({
@@ -85,7 +86,6 @@
     }
     return Right(results);
   }
-  const estilos = '';
   function createBroadcastService(id, validate) {
     const listeners = /* @__PURE__ */ new Set();
     const bc = new BroadcastChannel(id);
@@ -191,7 +191,6 @@
   function assert(condition, message) {
     if (!condition) throw new AssertionError(message);
   }
-  const isUnknown = value => true;
   function isOfType(typeRepresentation) {
     return value => typeof value === typeRepresentation;
   }
@@ -218,12 +217,10 @@
   function isAnyOf(...predicates) {
     return value => predicates.some(p => p(value));
   }
-  const isNullish = /* @__PURE__ */ isAnyOf(isNull, isUndefined);
-  function isArray(predicate = isUnknown) {
-    return refine(
-      value => Array.isArray(value),
-      xs => xs.every(predicate)
-    );
+  const isNullish = x => x == null;
+  const isArray = x => Array.isArray(x);
+  function isTypedArray(predicate) {
+    return refine(isArray, xs => xs.every(predicate));
   }
   function hasShape(predicates) {
     return refine(isObject, obj =>
@@ -239,7 +236,7 @@
   const isBloco = /* @__PURE__ */ hasShape({
     id: isIdBloco,
     nome: isNomeBloco,
-    processos: isArray(isNumProc),
+    processos: isTypedArray(isNumProc),
   });
   function promisify(eventName) {
     return obj =>
@@ -373,7 +370,7 @@
   }
   const isBroadcastMessage = /* @__PURE__ */ hasShape({
     type: isLiteral('Blocos'),
-    blocos: isArray(isBloco),
+    blocos: isTypedArray(isBloco),
   });
   var _ = 0;
   function o(o2, e, n, t, f) {
@@ -400,7 +397,7 @@
     };
     if ('function' == typeof o2 && (l = o2.defaultProps))
       for (s in l) void 0 === u[s] && (u[s] = l[s]);
-    return preact2.options.vnode && preact2.options.vnode(a), a;
+    return preact.options.vnode && preact.options.vnode(a), a;
   }
   function LocalizadorProcessoLista() {
     const tabela = document.querySelector('table#tabelaLocalizadores');
@@ -465,6 +462,7 @@
     div.className = 'gm-blocos__lista';
     document.body.insertAdjacentHTML(
       'beforeend',
+      /*html*/
       `<dialog class="gm-blocos__dialog"><form method="dialog"><div>Processos do bloco "<output class="gm-blocos__nome"></output>":</div><output class="gm-blocos__processos"></output><button>Fechar</button></form></dialog>`
     );
     const dialog = document.querySelector('.gm-blocos__dialog');
@@ -559,7 +557,7 @@
     store.dispatch(Action2.obterBlocos);
     return Right(void 0);
     function update(state) {
-      return preact2.render(
+      return preact.render(
         o(Main2, {
           state,
         }),
@@ -748,13 +746,13 @@
       });
     }
     function Loading() {
-      return o(preact2.Fragment, {
+      return o(preact.Fragment, {
         children: 'Carregando...',
       });
     }
     function ShowError2({ reason }) {
       const message = messageFromReason2(reason);
-      return o(preact2.Fragment, {
+      return o(preact.Fragment, {
         children: [
           o('div', {
             class: 'gm-erro',
@@ -813,7 +811,7 @@
         }
         return 'checked';
       })();
-      return o(preact2.Fragment, {
+      return o(preact.Fragment, {
         children: [
           o('h4', {
             children: 'Blocos',
@@ -887,7 +885,7 @@
       }
     }
     function Aviso(props) {
-      return o(preact2.Fragment, {
+      return o(preact.Fragment, {
         children: [
           o('div', {
             class: 'gm-aviso',
@@ -903,7 +901,7 @@
     }
     function BlocoPaginaLista(props) {
       const [editing, setEditing] = hooks.useState(false);
-      const input = preact2.createRef();
+      const input = preact.createRef();
       hooks.useEffect(() => {
         if (editing && input.current) {
           input.current.select();
@@ -922,7 +920,7 @@
         onClick: () => store.dispatch(Action2.removerProcessosAusentes(props.id)),
       });
       if (editing) {
-        displayNome = o(preact2.Fragment, {
+        displayNome = o(preact.Fragment, {
           children: [
             o('input', {
               class: 'rename',
@@ -1107,7 +1105,7 @@
     if (isNull(mainMenu)) return Left(new Error('Menu não encontrado'));
     const div = mainMenu.insertAdjacentElement('beforebegin', document.createElement('div'));
     div.className = 'gm-blocos__processo';
-    preact2.render(
+    preact.render(
       o(Main, {
         numproc,
       }),
@@ -1234,7 +1232,7 @@
   }
   function ShowError({ reason, onRecarregarClick }) {
     const message = messageFromReason(reason);
-    return o(preact2.Fragment, {
+    return o(preact.Fragment, {
       children: [
         o('h4', {
           children: 'Blocos',
@@ -1265,7 +1263,7 @@
       class: 'placeholder',
       children: [o('span', {}), o('span', {}), o('span', {})],
     });
-    return o(preact2.Fragment, {
+    return o(preact.Fragment, {
       children: [
         o('h4', {
           children: 'Blocos',
@@ -1300,7 +1298,7 @@
         props.criarBloco(nome);
       }
     }, []);
-    return o(preact2.Fragment, {
+    return o(preact.Fragment, {
       children: [
         o('h4', {
           children: 'Blocos',
@@ -1344,7 +1342,7 @@
     }, [props.id]);
     const transportar = hooks.useMemo(() => {
       if (props.inserido) return o('span', {});
-      return o(preact2.Fragment, {
+      return o(preact.Fragment, {
         children: [
           ' ',
           o('input', {
@@ -1380,8 +1378,9 @@
   function main() {
     const params = new URL(document.location.href).searchParams;
     const acao = params.get('acao');
-    if (!acao) return Left(new Error('Página desconhecida.'));
     switch (acao) {
+      case null:
+        return Left(new Error('Página desconhecida.'));
       case 'localizador_processos_lista':
         return LocalizadorProcessoLista();
       case 'processo_selecionar': {
@@ -1396,7 +1395,7 @@
       case 'relatorio_geral_consultar':
         return Right(void 0);
       default:
-        return Left(new Error(`Ação desconhecida: "${acao}".`));
+        return Left(new Error(`Ação desconhecida: ${JSON.stringify(acao)}.`));
     }
   }
   main().catch(e => {
