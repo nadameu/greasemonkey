@@ -1,4 +1,5 @@
 import { createBroadcastService } from '@nadameu/create-broadcast-service';
+import { h } from '@nadameu/create-element';
 import { createStore, Store } from '@nadameu/create-store';
 import { Either, Left, Right, traverse } from '@nadameu/either';
 import { Handler } from '@nadameu/handler';
@@ -26,25 +27,22 @@ interface InfoBloco extends Bloco {
 
 export function LocalizadorProcessoLista(): Either<Error, void> {
   const tabela = document.querySelector<HTMLTableElement>('table#tabelaLocalizadores');
-  const [desmarcarTodosProcessos, marcarTodosProcessos] = (() => {
-    const def = [() => {}, () => {}] as [
-      desmarcarTodosProcessos: () => void,
-      marcarTodosProcessos: () => void
-    ];
-    if (!tabela) return def;
+  const { desmarcarTodosProcessos, marcarTodosProcessos } = (() => {
+    const ret = { desmarcarTodosProcessos: () => {}, marcarTodosProcessos: () => {} };
+    if (!tabela) return ret;
     const imgInfraCheck = document.getElementById('imgInfraCheck') as HTMLImageElement | null;
-    if (!imgInfraCheck) return def;
+    if (!imgInfraCheck) return ret;
     const lnkInfraCheck = document.getElementById('lnkInfraCheck') as HTMLAnchorElement | null;
-    if (!lnkInfraCheck) return def;
+    if (!lnkInfraCheck) return ret;
 
-    const desmarcarTodosProcessos = () => {
+    ret.desmarcarTodosProcessos = () => {
       imgInfraCheck.title = imgInfraCheck.alt = 'Remover Seleção';
       lnkInfraCheck.click();
     };
-    const marcarTodosProcessos = () => {
+    ret.marcarTodosProcessos = () => {
       lnkInfraCheck.click();
     };
-    return [desmarcarTodosProcessos, marcarTodosProcessos];
+    return ret;
   })();
 
   const linhas = tabela?.rows ?? [];
@@ -76,22 +74,31 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     }
   }
 
-  let acoes = document.getElementById('fldAcoes');
-  if (p.isNullish(acoes)) {
-    acoes = document.getElementById('divInfraAreaTabela');
-    if (p.isNullish(acoes)) return Left(new Error('Não foi possível inserir os blocos na página.'));
-  }
+  const acoes =
+    document.getElementById('fldAcoes') ?? document.getElementById('divInfraAreaTabela');
+  if (p.isNullish(acoes)) return Left(new Error('Não foi possível inserir os blocos na página.'));
 
-  const div = acoes.insertAdjacentElement('beforebegin', document.createElement('div'))!;
-  div.className = 'gm-blocos__lista';
+  const div = acoes.insertAdjacentElement(
+    'beforebegin',
+    h('div', { className: 'gm-blocos__lista' })
+  ) as HTMLDivElement;
 
-  document.body.insertAdjacentHTML(
+  const dialogNomeBloco = h('output', { className: 'gm-blocos__nome' });
+  const dialogProcessos = h('output', { className: 'gm-blocos__processos' });
+  const dialog = document.body.insertAdjacentElement(
     'beforeend',
-    /*html*/ `<dialog class="gm-blocos__dialog"><form method="dialog"><div>Processos do bloco "<output class="gm-blocos__nome"></output>":</div><output class="gm-blocos__processos"></output><button>Fechar</button></form></dialog>`
-  );
-  const dialog = document.querySelector('.gm-blocos__dialog') as HTMLDialogElement;
-  const dialogNomeBloco = dialog.querySelector('.gm-blocos__nome') as HTMLOutputElement;
-  const dialogProcessos = dialog.querySelector('.gm-blocos__processos') as HTMLOutputElement;
+    h(
+      'dialog',
+      { className: 'gm-blocos__dialog' },
+      h(
+        'form',
+        { method: 'dialog' },
+        h('div', null, 'Processos do bloco "', dialogNomeBloco, '":'),
+        dialogProcessos,
+        h('button', null, 'Fechar')
+      )
+    )
+  ) as HTMLDialogElement;
 
   const Model: {
     init: InitModel;

@@ -232,6 +232,9 @@ importers:
       '@nadameu/create-broadcast-service':
         specifier: workspace:^1.1.0
         version: link:../../lib/create-broadcast-service
+      '@nadameu/create-element':
+        specifier: workspace:^1.0.0
+        version: link:../../lib/create-element
       '@nadameu/create-store':
         specifier: workspace:^1.0.0
         version: link:../../lib/create-store

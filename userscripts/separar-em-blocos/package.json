@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@nadameu/create-broadcast-service": "workspace:^1.1.0",
+    "@nadameu/create-element": "workspace:^1.0.0",
     "@nadameu/create-store": "workspace:^1.0.0",
     "@nadameu/either": "workspace:^2.0.0",
     "@nadameu/expect-unreachable": "workspace:^1.0.0",
