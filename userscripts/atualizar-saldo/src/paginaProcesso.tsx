@@ -1,14 +1,14 @@
 import { createStore } from '@nadameu/create-store';
-import { Either, validateAll } from '@nadameu/either';
 import { Static, createTaggedUnion } from '@nadameu/match';
 import { Natural } from '@nadameu/predicates';
 import { render } from 'preact';
 import { Mensagem, createMsgService } from './Mensagem';
 import { NumProc } from './NumProc';
 import { obter } from './obter';
+import { Result } from './Result';
 
-export function paginaProcesso(numproc: NumProc): Either<Error[], void> {
-  return validateAll([obterInformacoesAdicionais(), obterLinkRPV(), obterLinkDepositos()]).map(
+export function paginaProcesso(numproc: NumProc): Result<void> {
+  return Result.sequence(obterInformacoesAdicionais(), obterLinkRPV(), obterLinkDepositos()).map(
     ([informacoesAdicionais, linkRPV, linkDepositos]) =>
       modificarPaginaProcesso({ informacoesAdicionais, linkRPV, linkDepositos, numproc })
   );

@@ -1,10 +1,10 @@
-import { Either, Left, Right, validateAll } from '@nadameu/either';
 import * as p from '@nadameu/predicates';
-import { isNumproc, NumProc } from './NumProc';
+import './main.scss';
+import { isNumproc } from './NumProc';
 import { paginaContas } from './paginaContas';
 import { paginaDepositos } from './paginaDepositos';
 import { paginaProcesso } from './paginaProcesso';
-import './main.scss';
+import { Result } from './Result';
 
 const paginas = {
   processo_selecionar: paginaProcesso,
@@ -17,23 +17,34 @@ const isAcaoReconhecida = p.isAnyOf(
 );
 type AcaoReconhecida = p.Static<typeof isAcaoReconhecida>;
 
-export function main() {
+export function main(): Result<void> {
   const params = new URL(document.location.href).searchParams;
-  return validateAll([obterAcao(params), obterNumProc(params)]).chain(([acao, numproc]) =>
-    paginas[acao](numproc)
+  const acao = validar(
+    params,
+    'acao',
+    'Página desconhecida',
+    isAcaoReconhecida,
+    acao => `Ação desconhecida: "${acao}".`
   );
+  const numproc = validar(
+    params,
+    'num_processo',
+    'Número do processo não encontrado.',
+    isNumproc,
+    numproc => `Número de processo inválido: "${numproc}".`
+  );
+  return Result.sequence(acao, numproc).chain(([acao, numproc]) => paginas[acao](numproc));
 }
 
-function obterAcao(params: URLSearchParams): Either<Error, AcaoReconhecida> {
-  const acao = params.get('acao');
-  if (p.isNull(acao)) return Left(new Error('Página desconhecida'));
-  if (!isAcaoReconhecida(acao)) return Left(new Error(`Ação desconhecida: "${acao}".`));
-  return Right(acao);
-}
-
-function obterNumProc(params: URLSearchParams): Either<Error, NumProc> {
-  const numproc = params.get('num_processo');
-  if (p.isNull(numproc)) return Left(new Error('Número do processo não encontrado.'));
-  if (!isNumproc(numproc)) return Left(new Error(`Número de processo inválido: "${numproc}".`));
-  return Right(numproc);
+function validar<T extends string>(
+  params: URLSearchParams,
+  nomeParametro: string,
+  mensagemSeVazio: string,
+  validacao: (x: string) => x is T,
+  mensagemSeInvalido: (_: string) => string
+): Result<T> {
+  const valor = params.get(nomeParametro);
+  if (p.isNull(valor)) return Result.err(new Error(mensagemSeVazio));
+  if (!validacao(valor)) return Result.err(new Error(mensagemSeInvalido(valor)));
+  return Result.ok(valor);
 }

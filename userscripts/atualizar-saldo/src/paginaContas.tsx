@@ -1,11 +1,11 @@
 import { createStore, Subscription } from '@nadameu/create-store';
-import { Either, Left, Right, traverse } from '@nadameu/either';
 import { Handler } from '@nadameu/handler';
 import { createTaggedUnion, Static } from '@nadameu/match';
 import * as p from '@nadameu/predicates';
 import { render } from 'preact';
 import { createMsgService, Mensagem } from './Mensagem';
 import { NumProc } from './NumProc';
+import { Result } from './Result';
 
 declare function atualizarSaldo(
   numProcessoOriginario: string,
@@ -32,10 +32,10 @@ const Acao = createTaggedUnion({
 });
 type Acao = Static<typeof Acao>;
 
-export function paginaContas(numproc: NumProc): Either<Error[], void> {
+export function paginaContas(numproc: NumProc): Result<void> {
   const barra = document.getElementById('divInfraBarraLocalizacao');
   if (!barra) {
-    return Left([new Error('Barra de localização não encontrada.')]);
+    return Result.err(new Error('Barra de localização não encontrada.'));
   }
   const div = document.createElement('div');
   div.className = 'gm-atualizar-saldo__contas';
@@ -46,8 +46,8 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
   const store = createStore<Estado, Acao>(
     () => {
       const estado = obterContas().match<Estado>({
-        Left: Estado.Erro,
-        Right: Estado.Ocioso,
+        Err: Estado.Erro,
+        Ok: Estado.Ocioso,
       });
       if (estado.tag !== 'Erro') {
         bc.subscribe(msg =>
@@ -121,7 +121,7 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
   );
 
   sub = store.subscribe(update);
-  return Right(undefined as void);
+  return Result.ok(undefined as void);
 
   function App({ estado }: { estado: Estado }) {
     return Estado.match(estado, {
@@ -167,20 +167,22 @@ export function paginaContas(numproc: NumProc): Either<Error[], void> {
   function update(estado: Estado) {
     render(<App estado={estado} />, div);
   }
-  function obterContas(): Either<Error, InfoConta[]> {
+  function obterContas(): Result<InfoConta[]> {
     const tabela = document.querySelector<HTMLTableElement>('#divInfraAreaDadosDinamica > table');
-    if (!tabela) return Right([]);
-    return traverse(
+    if (!tabela) return Result.ok([]);
+    return Result.traverse(
       tabela.querySelectorAll<HTMLTableRowElement>('tr[id^="tdConta"]'),
-      obterInfoContaLinha
-    )
-      .mapLeft(e => new Error('Erro ao obter dados das contas.'))
-      .map(infos =>
-        infos.map(info => {
-          if (info.saldo > 0) return info;
-          else return { saldo: 0, atualizacao: null };
-        })
-      );
+      linha => {
+        const info = obterInfoContaLinha(linha);
+        if (info === null) return Result.err(new Error('Erro ao obter dados das contas.'));
+        else return Result.ok(info);
+      }
+    ).map(infos =>
+      infos.map(info => {
+        if (info.saldo > 0) return info;
+        else return { saldo: 0, atualizacao: null };
+      })
+    );
   }
 
   function ouvirXHR(handler: Handler<Acao>) {
@@ -229,17 +231,17 @@ interface InfoConta {
 const jsLinkRE =
   /^javascript:atualizarSaldo\('(\d{20})','(\d+)',(\d+),'(\d+)','(\d{20})',(\d{3}),'(\d+)',(\d+)\)$/;
 
-function obterInfoContaLinha(row: HTMLTableRowElement): Either<null, InfoConta> {
-  if (row.cells.length !== 15) return Left(null);
+function obterInfoContaLinha(row: HTMLTableRowElement): InfoConta | null {
+  if (row.cells.length !== 15) return null;
   const celulaSaldo = row.querySelector('td[id^="saldoRemanescente"]');
   if (!celulaSaldo) {
     if ((row.cells[12]?.textContent ?? '').match(/^Valor estornado/))
-      return Right({ saldo: 0, atualizacao: null });
-    return Left(null);
+      return { saldo: 0, atualizacao: null };
+    return null;
   }
   const textoSaldo = celulaSaldo.textContent ?? '';
   const match = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
-  if (!match || match.length < 2) return Left(null);
+  if (!match || match.length < 2) return null;
   const [, numeros] = match as [string, string];
   const saldo = Number(numeros.replace(/\./g, '').replace(',', '.'));
   const link = row.cells[row.cells.length - 1]!.querySelector<HTMLAnchorElement>(
@@ -248,7 +250,7 @@ function obterInfoContaLinha(row: HTMLTableRowElement): Either<null, InfoConta> 
   let atualizacao: (() => void) | null = null;
   if (link) {
     const match = link.href.match(jsLinkRE);
-    if (!match || match.length < 9) return Left(null);
+    if (!match || match.length < 9) return null;
     const [
       _,
       numProcessoOriginario,
@@ -266,7 +268,7 @@ function obterInfoContaLinha(row: HTMLTableRowElement): Either<null, InfoConta> 
       Number(strQtdMovimentos),
     ].filter(x => !Number.isNaN(x));
     if (conta === undefined || numBanco === undefined || qtdMovimentos === undefined) {
-      return Left(null);
+      return null;
     }
     atualizacao = () =>
       atualizarSaldo(
@@ -280,7 +282,7 @@ function obterInfoContaLinha(row: HTMLTableRowElement): Either<null, InfoConta> 
         qtdMovimentos
       );
   }
-  return Right({ saldo, atualizacao });
+  return { saldo, atualizacao };
 }
 
 function encontrarContaAtualizavel(xs: ArrayLike<InfoConta>, startAt = 0) {

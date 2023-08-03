@@ -1,9 +1,7 @@
 import { main } from './main';
 
-main().mapLeft(errors => {
+main().ifErr(error => {
   console.group('<atualizar-saldo>');
-  for (const error of errors) {
-    console.error(error);
-  }
+  console.error(error);
   console.groupEnd();
 });

@@ -30,85 +30,6 @@
 (function (preact) {
   'use strict';
 
-  class _Either {
-    catch(f) {
-      return this.match({
-        Left: f,
-        Right: () => this,
-      });
-    }
-    chain(f) {
-      return this.match({
-        Left: () => this,
-        Right: f,
-      });
-    }
-    mapLeft(f) {
-      return this.match({
-        Left: x => Left(f(x)),
-        Right: () => this,
-      });
-    }
-    map(f) {
-      return this.match({
-        Left: () => this,
-        Right: x => Right(f(x)),
-      });
-    }
-  }
-  class _Left extends _Either {
-    constructor(leftValue) {
-      super();
-      this.leftValue = leftValue;
-    }
-    isLeft = true;
-    isRight = false;
-    match({ Left: Left2 }) {
-      return Left2(this.leftValue);
-    }
-  }
-  function Left(leftValue) {
-    return new _Left(leftValue);
-  }
-  class _Right extends _Either {
-    constructor(rightValue) {
-      super();
-      this.rightValue = rightValue;
-    }
-    isLeft = false;
-    isRight = true;
-    match({ Right: Right2 }) {
-      return Right2(this.rightValue);
-    }
-  }
-  function Right(rightValue) {
-    return new _Right(rightValue);
-  }
-  function traverse(collection, transform) {
-    const results = [];
-    let i = 0;
-    for (const value of collection) {
-      const either = transform(value, i++);
-      if (either.isLeft) return either;
-      results.push(either.rightValue);
-    }
-    return Right(results);
-  }
-  function validateAll(eithers) {
-    return validateMap(eithers, x => x);
-  }
-  function validateMap(collection, transform) {
-    const errors = [];
-    const results = [];
-    let i = 0;
-    for (const value of collection) {
-      const either = transform(value, i++);
-      if (either.isLeft) errors.push(either.leftValue);
-      else results.push(either.rightValue);
-    }
-    if (errors.length > 0) return Left(errors);
-    return Right(results);
-  }
   class AssertionError extends Error {
     name = 'AssertionError';
     constructor(message) {
@@ -300,6 +221,82 @@
   function createMsgService() {
     return createBroadcastService('gm-atualizar-saldo', isMensagem);
   }
+  class Result {
+    static err(error) {
+      return new Err(error);
+    }
+    static sequence(...results) {
+      return Result.traverse(results, x => x);
+    }
+    static traverse(iterable, f) {
+      const values = [];
+      for (const value of iterable) {
+        const result = f(value);
+        if (result.isOk()) values.push(result.value);
+        else return result;
+      }
+      return Result.ok(values);
+    }
+    static ok(value) {
+      return new Ok(value);
+    }
+  }
+  class Err extends Result {
+    constructor(error) {
+      super();
+      this.error = error;
+    }
+    catch(f) {
+      return f(this.error);
+    }
+    chain(f) {
+      return this;
+    }
+    ifErr(f) {
+      f(this.error);
+    }
+    ifOk(f) {}
+    isErr() {
+      return true;
+    }
+    isOk() {
+      return false;
+    }
+    map(f) {
+      return this;
+    }
+    match(matchers) {
+      return matchers.Err(this.error);
+    }
+  }
+  class Ok extends Result {
+    constructor(value) {
+      super();
+      this.value = value;
+    }
+    catch(f) {
+      return this;
+    }
+    chain(f) {
+      return f(this.value);
+    }
+    ifErr(f) {}
+    ifOk(f) {
+      f(this.value);
+    }
+    isErr() {
+      return false;
+    }
+    isOk() {
+      return true;
+    }
+    map(f) {
+      return Result.ok(f(this.value));
+    }
+    match(matchers) {
+      return matchers.Ok(this.value);
+    }
+  }
   var _ = 0;
   function o(o2, e, n, t, f, l) {
     var s,
@@ -351,7 +348,7 @@
   function paginaContas(numproc) {
     const barra = document.getElementById('divInfraBarraLocalizacao');
     if (!barra) {
-      return Left([new Error('Barra de localização não encontrada.')]);
+      return Result.err(new Error('Barra de localização não encontrada.'));
     }
     const div = document.createElement('div');
     div.className = 'gm-atualizar-saldo__contas';
@@ -361,8 +358,8 @@
     const store = createStore(
       () => {
         const estado = obterContas().match({
-          Left: Estado$1.Erro,
-          Right: Estado$1.Ocioso,
+          Err: Estado$1.Erro,
+          Ok: Estado$1.Ocioso,
         });
         if (estado.tag !== 'Erro') {
           bc.subscribe(msg =>
@@ -445,7 +442,7 @@
         })
     );
     sub = store.subscribe(update);
-    return Right(void 0);
+    return Result.ok(void 0);
     function App({ estado }) {
       return Estado$1.match(estado, {
         Atualizando: ({ conta }) =>
@@ -506,19 +503,21 @@
     }
     function obterContas() {
       const tabela = document.querySelector('#divInfraAreaDadosDinamica > table');
-      if (!tabela) return Right([]);
-      return traverse(tabela.querySelectorAll('tr[id^="tdConta"]'), obterInfoContaLinha$1)
-        .mapLeft(e => new Error('Erro ao obter dados das contas.'))
-        .map(infos =>
-          infos.map(info => {
-            if (info.saldo > 0) return info;
-            else
-              return {
-                saldo: 0,
-                atualizacao: null,
-              };
-          })
-        );
+      if (!tabela) return Result.ok([]);
+      return Result.traverse(tabela.querySelectorAll('tr[id^="tdConta"]'), linha => {
+        const info = obterInfoContaLinha$1(linha);
+        if (info === null) return Result.err(new Error('Erro ao obter dados das contas.'));
+        else return Result.ok(info);
+      }).map(infos =>
+        infos.map(info => {
+          if (info.saldo > 0) return info;
+          else
+            return {
+              saldo: 0,
+              atualizacao: null,
+            };
+        })
+      );
     }
     function ouvirXHR(handler) {
       $.ajaxSetup({
@@ -567,19 +566,19 @@
   const jsLinkRE =
     /^javascript:atualizarSaldo\('(\d{20})','(\d+)',(\d+),'(\d+)','(\d{20})',(\d{3}),'(\d+)',(\d+)\)$/;
   function obterInfoContaLinha$1(row) {
-    if (row.cells.length !== 15) return Left(null);
+    if (row.cells.length !== 15) return null;
     const celulaSaldo = row.querySelector('td[id^="saldoRemanescente"]');
     if (!celulaSaldo) {
       if ((row.cells[12]?.textContent ?? '').match(/^Valor estornado/))
-        return Right({
+        return {
           saldo: 0,
           atualizacao: null,
-        });
-      return Left(null);
+        };
+      return null;
     }
     const textoSaldo = celulaSaldo.textContent ?? '';
     const match = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
-    if (!match || match.length < 2) return Left(null);
+    if (!match || match.length < 2) return null;
     const [, numeros] = match;
     const saldo = Number(numeros.replace(/\./g, '').replace(',', '.'));
     const link = row.cells[row.cells.length - 1].querySelector(
@@ -588,7 +587,7 @@
     let atualizacao = null;
     if (link) {
       const match2 = link.href.match(jsLinkRE);
-      if (!match2 || match2.length < 9) return Left(null);
+      if (!match2 || match2.length < 9) return null;
       const [
         _2,
         numProcessoOriginario,
@@ -606,7 +605,7 @@
         Number(strQtdMovimentos),
       ].filter(x => !Number.isNaN(x));
       if (conta === void 0 || numBanco === void 0 || qtdMovimentos === void 0) {
-        return Left(null);
+        return null;
       }
       atualizacao = () =>
         atualizarSaldo(
@@ -620,10 +619,10 @@
           qtdMovimentos
         );
     }
-    return Right({
+    return {
       saldo,
       atualizacao,
-    });
+    };
   }
   function encontrarContaAtualizavel(xs, startAt = 0) {
     const len = xs.length;
@@ -646,7 +645,7 @@
   function paginaDepositos(numproc) {
     const barra = document.getElementById('divInfraBarraLocalizacao');
     if (!barra) {
-      return Left([new Error('Barra de localização não encontrada.')]);
+      return Result.err(new Error('Barra de localização não encontrada.'));
     }
     const div = document.createElement('div');
     div.className = 'gm-atualizar-saldo__contas';
@@ -655,8 +654,8 @@
     const store = createStore(
       () =>
         obterContas().match({
-          Left: Estado.Erro,
-          Right: infoContas => {
+          Err: Estado.Erro,
+          Ok: infoContas => {
             bc.publish(
               Mensagem.InformaSaldoDeposito(numproc, infoContas.filter(x => x.saldo > 0).length)
             );
@@ -677,7 +676,7 @@
         })
     );
     const sub = store.subscribe(update);
-    return Right(void 0);
+    return Result.ok(void 0);
     function App({ estado }) {
       return Estado.match(estado, {
         Ocioso: ({ infoContas }) => {
@@ -731,36 +730,39 @@
     }
     function obterContas() {
       const tabela = document.querySelector('table#tblSaldoConta');
-      if (!tabela) return Left(new Error('Tabela de contas não encontrada'));
-      return traverse(
+      if (!tabela) return Result.err(new Error('Tabela de contas não encontrada'));
+      return Result.traverse(
         Array.from(tabela.querySelectorAll('tr[id^="tblSaldoContaROW"]')).filter(
           x => !/Saldos$/.test(x.id)
         ),
-        obterInfoContaLinha
-      ).mapLeft(e => new Error('Erro ao obter dados das contas.'));
+        linha => {
+          const info = obterInfoContaLinha(linha);
+          return info ? Result.ok(info) : Result.err(new Error('Erro ao obter dados das contas.'));
+        }
+      );
     }
   }
   function obterInfoContaLinha(row) {
-    if (row.cells.length !== 11 && row.cells.length !== 13) return Left(null);
+    if (row.cells.length !== 11 && row.cells.length !== 13) return null;
     const textoSaldo = row.cells[row.cells.length - 4].textContent ?? '';
     const match = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
-    if (!match || match.length < 2) return Left(null);
+    if (!match || match.length < 2) return null;
     const [, numeros] = match;
     const saldo = Number(numeros.replace(/\./g, '').replace(',', '.'));
     const link = row.cells[row.cells.length - 1].querySelector('a[onclick^="consultarSaldo("]');
     const atualizacao = link !== null;
-    return Right({
+    return {
       saldo,
       atualizacao,
-    });
+    };
   }
   function obter(selector, msg) {
     const elt = document.querySelector(selector);
-    if (isNull(elt)) return Left(new Error(msg));
-    else return Right(elt);
+    if (isNull(elt)) return Result.err(new Error(msg));
+    else return Result.ok(elt);
   }
   function paginaProcesso(numproc) {
-    return validateAll([obterInformacoesAdicionais(), obterLinkRPV(), obterLinkDepositos()]).map(
+    return Result.sequence(obterInformacoesAdicionais(), obterLinkRPV(), obterLinkDepositos()).map(
       ([informacoesAdicionais, linkRPV, linkDepositos]) =>
         modificarPaginaProcesso({
           informacoesAdicionais,
@@ -1074,27 +1076,31 @@
   const isAcaoReconhecida = isAnyOf(...Object.keys(paginas).map(k => isLiteral(k)));
   function main() {
     const params = new URL(document.location.href).searchParams;
-    return validateAll([obterAcao(params), obterNumProc(params)]).chain(([acao, numproc]) =>
-      paginas[acao](numproc)
+    const acao = validar(
+      params,
+      'acao',
+      'Página desconhecida',
+      isAcaoReconhecida,
+      acao2 => `Ação desconhecida: "${acao2}".`
     );
+    const numproc = validar(
+      params,
+      'num_processo',
+      'Número do processo não encontrado.',
+      isNumproc,
+      numproc2 => `Número de processo inválido: "${numproc2}".`
+    );
+    return Result.sequence(acao, numproc).chain(([acao2, numproc2]) => paginas[acao2](numproc2));
   }
-  function obterAcao(params) {
-    const acao = params.get('acao');
-    if (isNull(acao)) return Left(new Error('Página desconhecida'));
-    if (!isAcaoReconhecida(acao)) return Left(new Error(`Ação desconhecida: "${acao}".`));
-    return Right(acao);
+  function validar(params, nomeParametro, mensagemSeVazio, validacao, mensagemSeInvalido) {
+    const valor = params.get(nomeParametro);
+    if (isNull(valor)) return Result.err(new Error(mensagemSeVazio));
+    if (!validacao(valor)) return Result.err(new Error(mensagemSeInvalido(valor)));
+    return Result.ok(valor);
   }
-  function obterNumProc(params) {
-    const numproc = params.get('num_processo');
-    if (isNull(numproc)) return Left(new Error('Número do processo não encontrado.'));
-    if (!isNumproc(numproc)) return Left(new Error(`Número de processo inválido: "${numproc}".`));
-    return Right(numproc);
-  }
-  main().mapLeft(errors => {
+  main().ifErr(error => {
     console.group('<atualizar-saldo>');
-    for (const error of errors) {
-      console.error(error);
-    }
+    console.error(error);
     console.groupEnd();
   });
 })(preact);
