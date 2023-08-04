@@ -50,16 +50,14 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   const eitherMapa: Either<Error, MapaProcessos> = traverse(linhas, (linha, i) => {
     if (i === 0) return Right([]);
     const endereco = linha.cells[1]?.querySelector<HTMLAnchorElement>('a[href]')?.href;
-    if (p.isNullish(endereco))
+    if (p.isUndefined(endereco))
       return Left(new Error(`Link do processo não encontrado: linha ${i}.`));
     const numproc = new URL(endereco).searchParams.get('num_processo');
-    if (p.isNullish(numproc))
-      return Left(new Error(`Número do processo não encontrado: linha ${i}.`));
+    if (p.isNull(numproc)) return Left(new Error(`Número do processo não encontrado: linha ${i}.`));
     if (!isNumProc(numproc))
       return Left(new Error(`Número de processo desconhecido: ${JSON.stringify(numproc)}.`));
     const checkbox = linha.cells[0]?.querySelector<HTMLInputElement>('input[type=checkbox]');
-    if (p.isNullish(checkbox))
-      return Left(new Error(`Caixa de seleção não encontrada: linha ${i}.`));
+    if (p.isNull(checkbox)) return Left(new Error(`Caixa de seleção não encontrada: linha ${i}.`));
     return Right([[numproc, { linha, checkbox, checked: checkbox.checked }] as const]);
   }).map(entriess => new Map(entriess.flat(1)));
   if (eitherMapa.isLeft) return eitherMapa as Left<Error>;
@@ -76,7 +74,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
 
   const acoes =
     document.getElementById('fldAcoes') ?? document.getElementById('divInfraAreaTabela');
-  if (p.isNullish(acoes)) return Left(new Error('Não foi possível inserir os blocos na página.'));
+  if (p.isNull(acoes)) return Left(new Error('Não foi possível inserir os blocos na página.'));
 
   const div = acoes.insertAdjacentElement(
     'beforebegin',
@@ -85,20 +83,18 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
 
   const dialogNomeBloco = h('output', { className: 'gm-blocos__nome' });
   const dialogProcessos = h('output', { className: 'gm-blocos__processos' });
-  const dialog = document.body.insertAdjacentElement(
-    'beforeend',
+  const dialog = h(
+    'dialog',
+    { className: 'gm-blocos__dialog' },
     h(
-      'dialog',
-      { className: 'gm-blocos__dialog' },
-      h(
-        'form',
-        { method: 'dialog' },
-        h('div', null, 'Processos do bloco "', dialogNomeBloco, '":'),
-        dialogProcessos,
-        h('button', null, 'Fechar')
-      )
+      'form',
+      { method: 'dialog' },
+      h('div', null, 'Processos do bloco "', dialogNomeBloco, '":'),
+      dialogProcessos,
+      h('button', null, 'Fechar')
     )
   ) as HTMLDialogElement;
+  document.body.appendChild(dialog);
 
   const Model: {
     init: InitModel;
