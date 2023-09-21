@@ -257,6 +257,8 @@ importers:
         specifier: workspace:^2.0.0
         version: link:../../lib/predicates
 
+  userscripts/tempo-minutas: {}
+
 packages:
 
   /@ampproject/remapping@2.2.1:
