@@ -182,12 +182,10 @@
       },
       p = (t, e) =>
         Promise.resolve(t.cells).then(
-          (
-            t => e =>
-              e.length > t && void 0 !== e[t]
-                ? Promise.resolve(e[t])
-                : Promise.reject(new Error(`Índice inexistente: ${t}.`))
-          )(e)
+          (t => e =>
+            e.length > t && void 0 !== e[t]
+              ? Promise.resolve(e[t])
+              : Promise.reject(new Error(`Índice inexistente: ${t}.`)))(e)
         ),
       f = t => {
         const e = e => p(t, e),

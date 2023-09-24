@@ -3,14 +3,14 @@ type ValidTag = string | number | symbol;
 type CreatorFn<
   Tag extends ValidTagName,
   Args extends any[] = any[],
-  R extends Record<keyof any, unknown> = Record<keyof any, unknown>
+  R extends Record<keyof any, unknown> = Record<keyof any, unknown>,
 > = (...args: Args) => ValidResult<Tag, R>;
 type Definitions<Tag extends ValidTagName, D extends Record<keyof D, unknown>> = {
   [K in keyof D]: K extends 'match' ? never : CreatorFn<Tag> | null;
 };
 type ValidResult<
   Tag extends ValidTagName,
-  R extends Record<keyof any, unknown> = Record<keyof any, unknown>
+  R extends Record<keyof any, unknown> = Record<keyof any, unknown>,
 > = R & { [T in Tag]?: never };
 type Tagged<TagName extends ValidTagName, Tag extends ValidTag, Value> = Value & {
   [K in TagName]: Tag;
@@ -34,14 +34,14 @@ type Matchers<
   TagName extends ValidTagName,
   T extends Tagged__<TagName>,
   Tags extends T[TagName],
-  U
+  U,
 > = {
   [Tag in Tags]: (tagged: Extract<T, Tagged_<TagName, Tag>>) => U;
 };
 type Matchers_<
   TagName extends ValidTagName,
   T extends Tagged__<TagName>,
-  Tags extends T[TagName]
+  Tags extends T[TagName],
 > = Matchers<TagName, T, Tags, unknown>;
 type Matchers__<TagName extends ValidTagName, T extends Tagged__<TagName>> = Matchers_<
   TagName,

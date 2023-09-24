@@ -12,16 +12,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@nadameu/create-broadcast-service": "workspace:^1.0.0",
-    "@nadameu/create-element": "workspace:^1.0.0",
-    "@nadameu/create-store": "workspace:^1.0.0",
-    "@nadameu/either": "workspace:^2.0.0",
-    "@nadameu/expect-unreachable": "workspace:^1.0.0",
-    "@nadameu/finite-state-machine": "workspace:^1.0.0",
-    "@nadameu/handler": "workspace:^1.0.0",
-    "@nadameu/match": "workspace:^3.0.0",
-    "@nadameu/opaque": "workspace:^1.0.0",
-    "@nadameu/predicates": "workspace:^2.0.0",
-    "@nadameu/resolvable": "workspace:^1.0.0"
+    "@nadameu/create-broadcast-service": "workspace:^",
+    "@nadameu/create-element": "workspace:^",
+    "@nadameu/create-store": "workspace:^",
+    "@nadameu/either": "workspace:^",
+    "@nadameu/expect-unreachable": "workspace:^",
+    "@nadameu/finite-state-machine": "workspace:^",
+    "@nadameu/handler": "workspace:^",
+    "@nadameu/match": "workspace:^",
+    "@nadameu/opaque": "workspace:^",
+    "@nadameu/predicates": "workspace:^",
+    "@nadameu/resolvable": "workspace:^"
   }
 }

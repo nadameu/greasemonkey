@@ -29,7 +29,10 @@ export function onCustomEvent<T>(
 
 class EventoDesconhecidoError extends Error {
   name = 'EventoDesconhecidoError';
-  constructor(msg: string, public evento: Event) {
+  constructor(
+    msg: string,
+    public evento: Event
+  ) {
     super(msg);
   }
 }

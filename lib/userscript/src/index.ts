@@ -90,24 +90,23 @@ async function main() {
 
     const banner = await fs.promises.readFile(json.metadata, { encoding: 'utf-8' });
 
-    const result = await esbuild.serve(
-      {
-        host: 'localhost',
-        onRequest(req) {
-          console.log('requested', req.path, '@', new Date(Date.now()).toLocaleTimeString());
-        },
+    const ctx = await esbuild.context({
+      banner: { js: banner },
+      bundle: true,
+      charset: 'utf8',
+      define: { DEVELOPMENT: 'true' },
+      entryPoints: [json.entry],
+      format: 'esm',
+      outfile: json.outfile,
+      target: 'firefox102',
+    });
+
+    const result = await ctx.serve({
+      host: 'localhost',
+      onRequest(req) {
+        console.log('requested', req.path, '@', new Date(Date.now()).toLocaleTimeString());
       },
-      {
-        banner: { js: banner },
-        bundle: true,
-        charset: 'utf8',
-        define: { DEVELOPMENT: 'true' },
-        entryPoints: [json.entry],
-        format: 'esm',
-        outfile: json.outfile,
-        target: 'firefox102',
-      }
-    );
+    });
     const filename = path.basename(json.outfile);
     console.log(`Serving on http://${result.host}:${result.port}/${filename}`);
     console.log('Press Ctrl + C to stop.');
@@ -115,14 +114,14 @@ async function main() {
     process.stdin.setRawMode(true);
     process.stdin.on('data', buffer => {
       if (buffer[0] === 0x03) {
-        result.stop();
+        ctx
+          .cancel()
+          .then(() => ctx.dispose())
+          .then(() => process.exit(0));
       } else {
         console.log('Press Ctrl + C to stop.');
       }
     });
-
-    await result.wait;
-    process.exit(0);
   }
 }
 

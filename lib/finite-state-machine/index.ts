@@ -8,7 +8,7 @@ type Transitions<State extends { status: string }, Action extends { type: string
 
 export interface FiniteStateMachine<
   State extends { status: string },
-  Action extends { type: string }
+  Action extends { type: string },
 > {
   dispatch(action: Action): void;
   getState(): State;
@@ -17,7 +17,7 @@ export interface FiniteStateMachine<
 
 export function createFiniteStateMachine<
   State extends { status: string },
-  Action extends { type: string }
+  Action extends { type: string },
 >(
   initialState: State,
   transitions: Transitions<State, Action>,

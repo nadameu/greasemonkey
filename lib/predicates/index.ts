@@ -36,7 +36,7 @@ export interface Negate<U> {
 
 export type Static<T> = T extends Predicate<infer U> ? U : never;
 
-export const isUnknown: Predicate<unknown> = (value: unknown): value is unknown => true;
+export const isUnknown: Predicate<unknown> = (_value: unknown): _value is unknown => true;
 
 interface IsOfTypeMap {
   bigint: bigint;
@@ -167,7 +167,7 @@ export function isOptional<T>(predicate: Predicate<T>): OptionalPropertyPredicat
 
 export function isTaggedUnion<
   T extends string,
-  P extends Record<string, Record<string, Predicate<any>>>
+  P extends Record<string, Record<string, Predicate<any>>>,
 >(tagName: T, union: P): TaggedUnion<T, P> {
   return isAnyOf(
     ...Object.entries(union).map(
@@ -179,7 +179,7 @@ export function isTaggedUnion<
 
 type TaggedUnion<
   T extends string,
-  P extends Record<string, Record<string, Predicate<any>>>
+  P extends Record<string, Record<string, Predicate<any>>>,
 > = T extends never
   ? never
   : Predicate<

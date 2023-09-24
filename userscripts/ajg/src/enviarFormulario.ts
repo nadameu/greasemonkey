@@ -35,7 +35,10 @@ export async function enviarFormulario(
 class ErroEnvioFormulario extends Error {
   document: Document;
   name = 'ErroEnvioFormulario';
-  constructor(msg: string, public doc: Document) {
+  constructor(
+    msg: string,
+    public doc: Document
+  ) {
     super(msg);
     this.document = doc;
   }

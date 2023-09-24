@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "bin": "src/index.ts",
   "dependencies": {
-    "@nadameu/predicates": "workspace:^2.0.0",
-    "esbuild": "^0.18.17",
-    "esbuild-register": "^3.4.2"
+    "@nadameu/predicates": "workspace:^",
+    "esbuild": "^0.18.20",
+    "esbuild-register": "^3.5.0"
   }
 }

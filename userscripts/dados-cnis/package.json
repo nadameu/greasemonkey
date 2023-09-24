@@ -12,11 +12,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@nadameu/create-element": "workspace:^1.0.0",
-    "@nadameu/create-store": "workspace:^1.0.0",
-    "@nadameu/either": "workspace:^2.0.0",
-    "@nadameu/expect-unreachable": "workspace:^1.0.0",
-    "@nadameu/match": "workspace:^3.1.1",
-    "@nadameu/predicates": "workspace:^2.0.0"
+    "@nadameu/create-element": "workspace:^",
+    "@nadameu/create-store": "workspace:^",
+    "@nadameu/either": "workspace:^",
+    "@nadameu/expect-unreachable": "workspace:^",
+    "@nadameu/match": "workspace:^",
+    "@nadameu/predicates": "workspace:^"
   }
 }

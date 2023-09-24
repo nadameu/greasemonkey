@@ -12,6 +12,6 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@nadameu/create-element": "workspace:^1.0.0"
+    "@nadameu/create-element": "workspace:^"
   }
 }
