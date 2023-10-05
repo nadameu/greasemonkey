@@ -47,4 +47,30 @@ describe('TCO monad', () => {
     expect(factorial(10).run()).toEqual(3628800);
     expect(factorial(5e4).run()).toEqual(Infinity);
   });
+
+  const memo = new Map<number, number>();
+  function fib(n: number): TCO<number> {
+    return TCO.of(n).chain(n => {
+      if (memo.has(n)) return TCO.of(memo.get(n)!);
+      if (n <= 1) {
+        memo.set(n, n);
+        return TCO.of(n);
+      }
+      return TCO.of(n - 1)
+        .chain(fib)
+        .chain(n1 =>
+          TCO.of(n - 2)
+            .chain(fib)
+            .map(n2 => {
+              memo.set(n, n1 + n2);
+              return n1 + n2;
+            })
+        );
+    });
+  }
+
+  test('Fibonacci', () => {
+    expect(fib(50).run()).toEqual(12586269025);
+    expect(fib(100).run()).toEqual(354224848179262000000);
+  });
 });
