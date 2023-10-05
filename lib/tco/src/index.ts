@@ -1,55 +1,56 @@
-type Recursive<a> = { done: true; value: a } | { done: false; next: () => Recursive<a> };
-export class TCO<a> {
-  constructor(private _representation: Recursive<a>) {}
-
-  chain<b>(f: (_: a) => TCO<b>): TCO<b> {
-    return new TCO({
-      done: false,
-      next: () => {
-        const value = this.run();
-        return f(value)._representation;
-      },
-    });
-  }
-  map<b>(f: (_: a) => b): TCO<b> {
-    return this.chain(x => TCO.of(f(x)));
-  }
-  run() {
-    let result = this._representation;
-    while (!result.done) result = result.next();
-    return result.value;
-  }
-
-  static of<a>(value: a): TCO<a> {
-    return new TCO({ done: true, value });
-  }
+export interface Cache<a, b> {
+  has(key: a): boolean;
+  get(key: a): b | undefined;
+  set(key: a, value: b): void;
 }
 
-export function recursively<a, b>(recursiveFunction: (_: a) => Iterator<a, b, b>): (_: a) => b {
+function noop(): Cache<unknown, never> {
+  return {
+    has: _key => false,
+    get: _key => undefined,
+    set: (_key, _value) => {},
+  };
+}
+
+interface Info<a, b> {
+  arg: a;
+  iter: Iterator<a, b, b>;
+  result: IteratorResult<a, b>;
+  next: Info<a, b> | null;
+}
+
+export function recursively<a, b>(
+  recursiveFunction: (_: a) => Iterator<a, b, b>,
+  getCache: () => Cache<a, b>
+): (_: a) => b;
+export function recursively<a, b>(recursiveFunction: (_: a) => Iterator<a, b, b>): (_: a) => b;
+export function recursively<a, b>(
+  recursiveFunction: (_: a) => Iterator<a, b, b>,
+  getCache: () => Cache<a, b> = noop
+): (_: a) => b {
   return initialValue => {
-    type Info = {
-      arg: a;
-      iter: Iterator<a, b, b>;
-      result: IteratorResult<a, b>;
-      next: Info | null;
-    };
     const initialIter = recursiveFunction(initialValue);
     const initialResult = initialIter.next();
-    let current: Info = { arg: initialValue, iter: initialIter, result: initialResult, next: null };
-    const results = new Map<a, b>();
+    let current: Info<a, b> = {
+      arg: initialValue,
+      iter: initialIter,
+      result: initialResult,
+      next: null,
+    };
+    const cache = getCache();
     for (let max = Number.MAX_SAFE_INTEGER; max > 0; max -= 1) {
       if (current.result.done) {
         if (current.next === null) {
           return current.result.value;
         }
-        results.set(current.arg, current.result.value);
+        cache.set(current.arg, current.result.value);
         const next = current.next;
         const value = current.result.value;
         const result = next.iter.next(value);
         current = { ...next, result };
       } else {
-        if (results.has(current.result.value)) {
-          const result = current.iter.next(results.get(current.result.value)!);
+        if (cache.has(current.result.value)) {
+          const result = current.iter.next(cache.get(current.result.value)!);
           current = { ...current, result };
           continue;
         }
