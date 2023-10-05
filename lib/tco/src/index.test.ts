@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { TCO } from '.';
+import { TCO, recursively } from '.';
 
 describe('Tail-call-optimization', () => {
   function factorial(n: number): number {
@@ -72,5 +72,51 @@ describe('TCO monad', () => {
   test('Fibonacci', () => {
     expect(fib(50).run()).toEqual(12586269025);
     expect(fib(100).run()).toEqual(354224848179262000000);
+  });
+});
+
+describe('Generators', () => {
+  const fac = recursively<number, number>(function* (n) {
+    if (n <= 1) return 1;
+    const next = yield n - 1;
+    return n * next;
+  });
+
+  test('factorial', () => {
+    expect(fac(0)).toEqual(1);
+    expect(fac(1)).toEqual(1);
+    expect(fac(2)).toEqual(2);
+    expect(fac(3)).toEqual(6);
+    expect(fac(4)).toEqual(24);
+    expect(fac(5)).toEqual(120);
+    expect(fac(10)).toEqual(3628800);
+    expect(fac(5e4)).toEqual(Infinity);
+  });
+
+  const fib = recursively<number, number>(function* (n) {
+    if (n <= 1) return n;
+    const a = yield n - 1;
+    const b = yield n - 2;
+    return a + b;
+  });
+
+  test('fibonacci', () => {
+    expect(fib(0)).toEqual(0);
+    expect(fib(1)).toEqual(1);
+    expect(fib(2)).toEqual(1);
+    expect(fib(3)).toEqual(2);
+    expect(fib(4)).toEqual(3);
+    expect(fib(5)).toEqual(5);
+    expect(fib(6)).toEqual(8);
+    expect(fib(7)).toEqual(13);
+    expect(fib(50)).toEqual(12586269025);
+    expect(fib(100)).toEqual(354224848179262000000);
+  });
+
+  test("Doesn't raise errors", () => {
+    expect(() => fac(10)).not.toThrow();
+    expect(() => fac(5e4)).not.toThrow();
+    expect(fac(10)).toEqual(3628800);
+    expect(fac(5e4)).toEqual(Infinity);
   });
 });
