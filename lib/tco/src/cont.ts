@@ -52,13 +52,26 @@ export function create<T, U, K>(
         ? getCache<T, U, K>(hashFn)
         : typeof hashFn === 'boolean' && hashFn
         ? getCache<T, U, T>(x => x)
-        : {
-            get: () => null,
-            set() {},
-          };
+        : false;
     type Prev = null | { prev: Prev; input: T; transform: (value: U) => Result<T, U> };
     let prev: Prev = null;
     let curr: Result<T, U> = f(input);
+    if (!cache) {
+      while (true) {
+        if (curr.done) {
+          if (prev === null) {
+            return curr.value;
+          } else {
+            curr = prev.transform(curr.value);
+            prev = prev.prev;
+          }
+        } else {
+          const next = f(curr.input);
+          prev = { prev, input: curr.input, transform: curr.andThen };
+          curr = next;
+        }
+      }
+    }
     while (true) {
       if (curr.done) {
         if (prev === null) {
