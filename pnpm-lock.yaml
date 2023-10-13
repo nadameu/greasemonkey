@@ -132,6 +132,8 @@ importers:
         specifier: workspace:^
         version: link:../handler
 
+  lib/tco: {}
+
   lib/userscript:
     dependencies:
       '@nadameu/predicates':
@@ -163,9 +165,6 @@ importers:
       '@nadameu/create-store':
         specifier: workspace:^
         version: link:../../lib/create-store
-      '@nadameu/either':
-        specifier: workspace:^
-        version: link:../../lib/either
       '@nadameu/expect-unreachable':
         specifier: workspace:^
         version: link:../../lib/expect-unreachable

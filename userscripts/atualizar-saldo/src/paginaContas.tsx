@@ -2,10 +2,18 @@ import { createStore, Subscription } from '@nadameu/create-store';
 import { Handler } from '@nadameu/handler';
 import { createTaggedUnion, Static } from '@nadameu/match';
 import * as p from '@nadameu/predicates';
+import {
+  AL,
+  applicativeEither,
+  E,
+  Either,
+  Left as Err,
+  Right as Ok,
+  pipeValue as pipe,
+} from 'adt-ts';
 import { render } from 'preact';
 import { createMsgService, Mensagem } from './Mensagem';
 import { NumProc } from './NumProc';
-import { Result } from './Result';
 
 declare function atualizarSaldo(
   numProcessoOriginario: string,
@@ -32,10 +40,10 @@ const Acao = createTaggedUnion({
 });
 type Acao = Static<typeof Acao>;
 
-export function paginaContas(numproc: NumProc): Result<void> {
+export function paginaContas(numproc: NumProc): Either<Error, void> {
   const barra = document.getElementById('divInfraBarraLocalizacao');
   if (!barra) {
-    return Result.err(new Error('Barra de localização não encontrada.'));
+    return Err(new Error('Barra de localização não encontrada.'));
   }
   const div = document.createElement('div');
   div.className = 'gm-atualizar-saldo__contas';
@@ -45,10 +53,7 @@ export function paginaContas(numproc: NumProc): Result<void> {
   const bc = createMsgService();
   const store = createStore<Estado, Acao>(
     () => {
-      const estado = obterContas().match<Estado>({
-        Err: Estado.Erro,
-        Ok: Estado.Ocioso,
-      });
+      const estado = pipe(obterContas(), E.either<Error, Estado>(Estado.Erro)(Estado.Ocioso));
       if (estado.tag !== 'Erro') {
         bc.subscribe(msg =>
           Mensagem.match(msg, {
@@ -121,7 +126,7 @@ export function paginaContas(numproc: NumProc): Result<void> {
   );
 
   sub = store.subscribe(update);
-  return Result.ok(undefined as void);
+  return Ok(undefined as void);
 
   function App({ estado }: { estado: Estado }) {
     return Estado.match(estado, {
@@ -167,20 +172,15 @@ export function paginaContas(numproc: NumProc): Result<void> {
   function update(estado: Estado) {
     render(<App estado={estado} />, div);
   }
-  function obterContas(): Result<InfoConta[]> {
+  function obterContas(): Either<Error, InfoConta[]> {
     const tabela = document.querySelector<HTMLTableElement>('#divInfraAreaDadosDinamica > table');
-    if (!tabela) return Result.ok([]);
-    return Result.traverse(
+    if (!tabela) return Ok([]);
+    return pipe(
       tabela.querySelectorAll<HTMLTableRowElement>('tr[id^="tdConta"]'),
-      linha => {
+      AL.traverse(applicativeEither)(linha => {
         const info = obterInfoContaLinha(linha);
-        if (info === null) return Result.err(new Error('Erro ao obter dados das contas.'));
-        else return Result.ok(info);
-      }
-    ).map(infos =>
-      infos.map(info => {
-        if (info.saldo > 0) return info;
-        else return { saldo: 0, atualizacao: null };
+        if (info === null) return Err(new Error('Erro ao obter dados das contas.'));
+        else return Ok(info);
       })
     );
   }

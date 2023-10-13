@@ -3,7 +3,7 @@ import { createTaggedUnion, Static } from '@nadameu/match';
 import { render } from 'preact';
 import { createMsgService, Mensagem } from './Mensagem';
 import { NumProc } from './NumProc';
-import { Result } from './Result';
+import { A, applicativeEither, E, Either, Left, pipeValue as pipe, Right } from 'adt-ts';
 
 declare function consultarSaldo(idProcessoDepositoJudicialConta: string, idConta: string): void;
 declare function consultarSaldoTodos(): void;
@@ -19,10 +19,10 @@ const Acao = createTaggedUnion({
 });
 type Acao = Static<typeof Acao>;
 
-export function paginaDepositos(numproc: NumProc): Result<void> {
+export function paginaDepositos(numproc: NumProc): Either<Error, void> {
   const barra = document.getElementById('divInfraBarraLocalizacao');
   if (!barra) {
-    return Result.err(new Error('Barra de localização não encontrada.'));
+    return Left(new Error('Barra de localização não encontrada.'));
   }
   const div = document.createElement('div');
   div.className = 'gm-atualizar-saldo__contas';
@@ -31,16 +31,16 @@ export function paginaDepositos(numproc: NumProc): Result<void> {
   const bc = createMsgService();
   const store = createStore<Estado, Acao>(
     () =>
-      obterContas().match<Estado>({
-        Err: Estado.Erro,
-        Ok: infoContas => {
+      pipe(
+        obterContas(),
+        E.either<Error, Estado>(Estado.Erro)(infoContas => {
           bc.publish(
             Mensagem.InformaSaldoDeposito(numproc, infoContas.filter(x => x.saldo > 0).length)
           );
           bc.destroy();
           return Estado.Ocioso(infoContas);
-        },
-      }),
+        })
+      ),
     (estado, acao) =>
       Acao.match(acao, {
         Atualizar: () =>
@@ -55,7 +55,7 @@ export function paginaDepositos(numproc: NumProc): Result<void> {
   );
 
   const sub = store.subscribe(update);
-  return Result.ok(undefined as void);
+  return Right(undefined as void);
 
   function App({ estado }: { estado: Estado }) {
     return Estado.match(estado, {
@@ -95,17 +95,17 @@ export function paginaDepositos(numproc: NumProc): Result<void> {
   function update(estado: Estado) {
     render(<App estado={estado} />, div);
   }
-  function obterContas(): Result<InfoConta[]> {
+  function obterContas(): Either<Error, InfoConta[]> {
     const tabela = document.querySelector<HTMLTableElement>('table#tblSaldoConta');
-    if (!tabela) return Result.err(new Error('Tabela de contas não encontrada'));
-    return Result.traverse(
+    if (!tabela) return Left(new Error('Tabela de contas não encontrada'));
+    return pipe(
       Array.from(tabela.querySelectorAll<HTMLTableRowElement>('tr[id^="tblSaldoContaROW"]')).filter(
         x => !/Saldos$/.test(x.id)
       ),
-      linha => {
+      A.traverse(applicativeEither)(linha => {
         const info = obterInfoContaLinha(linha);
-        return info ? Result.ok(info) : Result.err(new Error('Erro ao obter dados das contas.'));
-      }
+        return info ? Right(info) : Left(new Error('Erro ao obter dados das contas.'));
+      })
     );
   }
 }

@@ -1,10 +1,10 @@
 import * as p from '@nadameu/predicates';
-import './main.scss';
+import { A, E, Either, Left, O, Right, applicativeEither, pipeValue as pipe } from 'adt-ts';
 import { isNumproc } from './NumProc';
+import './main.scss';
 import { paginaContas } from './paginaContas';
 import { paginaDepositos } from './paginaDepositos';
 import { paginaProcesso } from './paginaProcesso';
-import { Result } from './Result';
 
 const paginas = {
   processo_selecionar: paginaProcesso,
@@ -17,7 +17,7 @@ const isAcaoReconhecida = p.isAnyOf(
 );
 type AcaoReconhecida = p.Static<typeof isAcaoReconhecida>;
 
-export function main(): Result<void> {
+export function main(): Either<Error, void> {
   const params = new URL(document.location.href).searchParams;
   const acao = validar(
     params,
@@ -33,7 +33,11 @@ export function main(): Result<void> {
     isNumproc,
     numproc => `Número de processo inválido: "${numproc}".`
   );
-  return Result.sequence(acao, numproc).chain(([acao, numproc]) => paginas[acao](numproc));
+  return pipe(
+    { acao, numproc },
+    O.sequence(applicativeEither),
+    E.bind(({ acao, numproc }) => paginas[acao](numproc))
+  );
 }
 
 function validar<T extends string>(
@@ -42,9 +46,9 @@ function validar<T extends string>(
   mensagemSeVazio: string,
   validacao: (x: string) => x is T,
   mensagemSeInvalido: (_: string) => string
-): Result<T> {
+): Either<Error, T> {
   const valor = params.get(nomeParametro);
-  if (p.isNull(valor)) return Result.err(new Error(mensagemSeVazio));
-  if (!validacao(valor)) return Result.err(new Error(mensagemSeInvalido(valor)));
-  return Result.ok(valor);
+  if (p.isNull(valor)) return Left(new Error(mensagemSeVazio));
+  if (!validacao(valor)) return Left(new Error(mensagemSeInvalido(valor)));
+  return Right(valor);
 }

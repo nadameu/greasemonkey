@@ -1,16 +1,20 @@
 import { createStore } from '@nadameu/create-store';
 import { Static, createTaggedUnion } from '@nadameu/match';
 import { Natural } from '@nadameu/predicates';
+import { E, Either, O, applicativeEither, pipeValue as pipe } from 'adt-ts';
 import { render } from 'preact';
 import { Mensagem, createMsgService } from './Mensagem';
 import { NumProc } from './NumProc';
 import { obter } from './obter';
-import { Result } from './Result';
 
-export function paginaProcesso(numproc: NumProc): Result<void> {
-  return Result.sequence(obterInformacoesAdicionais(), obterLinkRPV(), obterLinkDepositos()).map(
-    ([informacoesAdicionais, linkRPV, linkDepositos]) =>
-      modificarPaginaProcesso({ informacoesAdicionais, linkRPV, linkDepositos, numproc })
+export function paginaProcesso(numproc: NumProc): Either<Error, void> {
+  return pipe(
+    O.sequence(applicativeEither)({
+      informacoesAdicionais: obterInformacoesAdicionais(),
+      linkDepositos: obterLinkDepositos(),
+      linkRPV: obterLinkRPV(),
+    }),
+    E.map(props => modificarPaginaProcesso({ ...props, numproc }))
   );
 }
 

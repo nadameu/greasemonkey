@@ -2,7 +2,7 @@
 // @name         atualizar-saldos
 // @name:pt-BR   Atualizar saldos
 // @namespace    http://nadameu.com.br
-// @version      4.3.0
+// @version      4.4.0
 // @author       nadameu
 // @description  Atualiza o saldo de contas judiciais
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_precatorio_rpv&*
@@ -35,6 +35,136 @@
 (function (preact) {
   'use strict';
 
+  const flip = f => b => a => f(a)(b);
+  const compose = f => g => a => f(g(a));
+  const identity = a => a;
+  const pipeValue = (x, ...fns) => fns.reduce((y, f) => f(y), x);
+  const lift2 =
+    ({ apply: apply2, map: map2 }) =>
+    f =>
+      compose(apply2)(map2(f));
+  const Left = leftValue => ({
+    isLeft: true,
+    isRight: false,
+    leftValue,
+  });
+  const Right = rightValue => ({
+    isLeft: false,
+    isRight: true,
+    rightValue,
+  });
+  const Nothing = {
+    isJust: false,
+    isNothing: true,
+  };
+  const Just = value => ({
+    isJust: true,
+    isNothing: false,
+    value,
+  });
+  const liftM1 =
+    ({ bind: bind2, pure: pure2 }) =>
+    f =>
+      bind2(compose(pure2)(f));
+  const ap = ({ bind: bind2, pure: pure2 }) =>
+    flip(fa =>
+      bind2(f =>
+        liftM1({
+          bind: bind2,
+          pure: pure2,
+        })(f)(fa)
+      )
+    );
+  const sequenceDefault =
+    ({ traverse: traverse2 }) =>
+    applicative =>
+      traverse2(applicative)(identity);
+  const traverseDefaultFoldableUnfoldable =
+    ({ foldr: foldr2, unfoldr: unfoldr2 }) =>
+    applicative =>
+    f =>
+    ta => {
+      return applicative.map(unfoldr2(x => x))(
+        foldr2(compose(lift2(applicative)(hd => tl => Just([hd, tl])))(f))(
+          applicative.pure(Nothing)
+        )(ta)
+      );
+    };
+  const iteratorReturnResult = {
+    done: true,
+    value: void 0,
+  };
+  const iteratorYieldResult = value => ({
+    done: false,
+    value,
+  });
+  const unfoldr$2 = f => b => ({
+    [Symbol.iterator]() {
+      let next = b;
+      return {
+        next() {
+          const result = f(next);
+          if (result.isJust) {
+            let value;
+            [value, next] = result.value;
+            return iteratorYieldResult(value);
+          } else return iteratorReturnResult;
+        },
+      };
+    },
+  });
+  const borrow$1 =
+    (key, ...args) =>
+    xs =>
+      Array.prototype[key].apply(xs, args);
+  const foldr$1 = f => b => borrow$1('reduceRight', (acc, x) => f(x)(acc), b);
+  const unfoldr$1 = f => b => Array.from(unfoldr$2(f)(b));
+  const traverse$2 = traverseDefaultFoldableUnfoldable({
+    foldr: foldr$1,
+    unfoldr: unfoldr$1,
+  });
+  const borrow =
+    (key, ...args) =>
+    xs =>
+      Array.prototype[key].apply(xs, args);
+  const foldr = f => b => borrow('reduceRight', (acc, x) => f(x)(acc), b);
+  const unfoldr = f => b => Array.from(unfoldr$2(f)(b));
+  const traverse$1 = traverseDefaultFoldableUnfoldable({
+    foldr,
+    unfoldr,
+  });
+  const either = f => g => fab => (fab.isLeft ? f(fab.leftValue) : g(fab.rightValue));
+  const bind = either(Left);
+  const pure = Right;
+  const map = liftM1({
+    bind,
+    pure,
+  });
+  const apply = ap({
+    bind,
+    pure,
+  });
+  const catchError = f => either(f)(Right);
+  const applicativeEither = {
+    apply,
+    map,
+    pure,
+  };
+  const entries = obj => Object.entries(obj);
+  const traverse = applicative => f => ta => {
+    const A = applicative;
+    return foldr$1(([k, x]) =>
+      A.apply(
+        A.map(x2 => obj => {
+          obj[k] = x2;
+          return obj;
+        })(f(x))
+      )
+    )(A.pure({}))(entries(ta));
+  };
+  const sequence = sequenceDefault({
+    traverse,
+  });
   class AssertionError extends Error {
     name = 'AssertionError';
     constructor(message) {
@@ -226,82 +356,6 @@
   function createMsgService() {
     return createBroadcastService('gm-atualizar-saldo', isMensagem);
   }
-  class Result {
-    static err(error) {
-      return new Err(error);
-    }
-    static sequence(...results) {
-      return Result.traverse(results, x => x);
-    }
-    static traverse(iterable, f) {
-      const values = [];
-      for (const value of iterable) {
-        const result = f(value);
-        if (result.isOk()) values.push(result.value);
-        else return result;
-      }
-      return Result.ok(values);
-    }
-    static ok(value) {
-      return new Ok(value);
-    }
-  }
-  class Err extends Result {
-    constructor(error) {
-      super();
-      this.error = error;
-    }
-    catch(f) {
-      return f(this.error);
-    }
-    chain(f) {
-      return this;
-    }
-    ifErr(f) {
-      f(this.error);
-    }
-    ifOk(f) {}
-    isErr() {
-      return true;
-    }
-    isOk() {
-      return false;
-    }
-    map(f) {
-      return this;
-    }
-    match(matchers) {
-      return matchers.Err(this.error);
-    }
-  }
-  class Ok extends Result {
-    constructor(value) {
-      super();
-      this.value = value;
-    }
-    catch(f) {
-      return this;
-    }
-    chain(f) {
-      return f(this.value);
-    }
-    ifErr(f) {}
-    ifOk(f) {
-      f(this.value);
-    }
-    isErr() {
-      return false;
-    }
-    isOk() {
-      return true;
-    }
-    map(f) {
-      return Result.ok(f(this.value));
-    }
-    match(matchers) {
-      return matchers.Ok(this.value);
-    }
-  }
   var _ = 0;
   function o(o2, e, n, t, f, l) {
     var s,
@@ -353,7 +407,7 @@
   function paginaContas(numproc) {
     const barra = document.getElementById('divInfraBarraLocalizacao');
     if (!barra) {
-      return Result.err(new Error('Barra de localização não encontrada.'));
+      return Left(new Error('Barra de localização não encontrada.'));
     }
     const div = document.createElement('div');
     div.className = 'gm-atualizar-saldo__contas';
@@ -362,10 +416,7 @@
     const bc = createMsgService();
     const store = createStore(
       () => {
-        const estado = obterContas().match({
-          Err: Estado$1.Erro,
-          Ok: Estado$1.Ocioso,
-        });
+        const estado = pipeValue(obterContas(), either(Estado$1.Erro)(Estado$1.Ocioso));
         if (estado.tag !== 'Erro') {
           bc.subscribe(msg =>
             Mensagem.match(msg, {
@@ -447,7 +498,7 @@
         })
     );
     sub = store.subscribe(update);
-    return Result.ok(void 0);
+    return Right(void 0);
     function App({ estado }) {
       return Estado$1.match(estado, {
         Atualizando: ({ conta }) =>
@@ -508,19 +559,13 @@
     }
     function obterContas() {
       const tabela = document.querySelector('#divInfraAreaDadosDinamica > table');
-      if (!tabela) return Result.ok([]);
-      return Result.traverse(tabela.querySelectorAll('tr[id^="tdConta"]'), linha => {
-        const info = obterInfoContaLinha$1(linha);
-        if (info === null) return Result.err(new Error('Erro ao obter dados das contas.'));
-        else return Result.ok(info);
-      }).map(infos =>
-        infos.map(info => {
-          if (info.saldo > 0) return info;
-          else
-            return {
-              saldo: 0,
-              atualizacao: null,
-            };
+      if (!tabela) return Right([]);
+      return pipeValue(
+        tabela.querySelectorAll('tr[id^="tdConta"]'),
+        traverse$1(applicativeEither)(linha => {
+          const info = obterInfoContaLinha$1(linha);
+          if (info === null) return Left(new Error('Erro ao obter dados das contas.'));
+          else return Right(info);
         })
       );
     }
@@ -650,7 +695,7 @@
   function paginaDepositos(numproc) {
     const barra = document.getElementById('divInfraBarraLocalizacao');
     if (!barra) {
-      return Result.err(new Error('Barra de localização não encontrada.'));
+      return Left(new Error('Barra de localização não encontrada.'));
     }
     const div = document.createElement('div');
     div.className = 'gm-atualizar-saldo__contas';
@@ -658,16 +703,16 @@
     const bc = createMsgService();
     const store = createStore(
       () =>
-        obterContas().match({
-          Err: Estado.Erro,
-          Ok: infoContas => {
+        pipeValue(
+          obterContas(),
+          either(Estado.Erro)(infoContas => {
             bc.publish(
               Mensagem.InformaSaldoDeposito(numproc, infoContas.filter(x => x.saldo > 0).length)
             );
             bc.destroy();
             return Estado.Ocioso(infoContas);
-          },
-        }),
+          })
+        ),
       (estado, acao) =>
         Acao.match(acao, {
           Atualizar: () =>
@@ -681,7 +726,7 @@
         })
     );
     const sub = store.subscribe(update);
-    return Result.ok(void 0);
+    return Right(void 0);
     function App({ estado }) {
       return Estado.match(estado, {
         Ocioso: ({ infoContas }) => {
@@ -735,15 +780,15 @@
     }
     function obterContas() {
       const tabela = document.querySelector('table#tblSaldoConta');
-      if (!tabela) return Result.err(new Error('Tabela de contas não encontrada'));
-      return Result.traverse(
+      if (!tabela) return Left(new Error('Tabela de contas não encontrada'));
+      return pipeValue(
         Array.from(tabela.querySelectorAll('tr[id^="tblSaldoContaROW"]')).filter(
           x => !/Saldos$/.test(x.id)
         ),
-        linha => {
+        traverse$2(applicativeEither)(linha => {
           const info = obterInfoContaLinha(linha);
-          return info ? Result.ok(info) : Result.err(new Error('Erro ao obter dados das contas.'));
-        }
+          return info ? Right(info) : Left(new Error('Erro ao obter dados das contas.'));
+        })
       );
     }
   }
@@ -763,18 +808,22 @@
   }
   function obter(selector, msg) {
     const elt = document.querySelector(selector);
-    if (isNull(elt)) return Result.err(new Error(msg));
-    else return Result.ok(elt);
+    if (isNull(elt)) return Left(new Error(msg));
+    else return Right(elt);
   }
   function paginaProcesso(numproc) {
-    return Result.sequence(obterInformacoesAdicionais(), obterLinkRPV(), obterLinkDepositos()).map(
-      ([informacoesAdicionais, linkRPV, linkDepositos]) =>
+    return pipeValue(
+      sequence(applicativeEither)({
+        informacoesAdicionais: obterInformacoesAdicionais(),
+        linkDepositos: obterLinkDepositos(),
+        linkRPV: obterLinkRPV(),
+      }),
+      map(props =>
         modificarPaginaProcesso({
-          informacoesAdicionais,
-          linkRPV,
-          linkDepositos,
+          ...props,
           numproc,
         })
+      )
     );
   }
   function modificarPaginaProcesso({ informacoesAdicionais, linkRPV, linkDepositos, numproc }) {
@@ -1095,17 +1144,28 @@
       isNumproc,
       numproc2 => `Número de processo inválido: "${numproc2}".`
     );
-    return Result.sequence(acao, numproc).chain(([acao2, numproc2]) => paginas[acao2](numproc2));
+    return pipeValue(
+      {
+        acao,
+        numproc,
+      },
+      sequence(applicativeEither),
+      bind(({ acao: acao2, numproc: numproc2 }) => paginas[acao2](numproc2))
+    );
   }
   function validar(params, nomeParametro, mensagemSeVazio, validacao, mensagemSeInvalido) {
     const valor = params.get(nomeParametro);
-    if (isNull(valor)) return Result.err(new Error(mensagemSeVazio));
-    if (!validacao(valor)) return Result.err(new Error(mensagemSeInvalido(valor)));
-    return Result.ok(valor);
+    if (isNull(valor)) return Left(new Error(mensagemSeVazio));
+    if (!validacao(valor)) return Left(new Error(mensagemSeInvalido(valor)));
+    return Right(valor);
   }
-  main().ifErr(error => {
-    console.group('<atualizar-saldo>');
-    console.error(error);
-    console.groupEnd();
-  });
+  pipeValue(
+    main(),
+    catchError(error => {
+      console.group('<atualizar-saldo>');
+      console.error(error);
+      console.groupEnd();
+      return Right(void 0);
+    })
+  );
 })(preact);
