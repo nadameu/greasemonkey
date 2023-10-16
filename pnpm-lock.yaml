@@ -226,6 +226,12 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0
 
+  userscripts/seeu-switch:
+    dependencies:
+      '@nadameu/create-element':
+        specifier: workspace:^
+        version: link:../../lib/create-element
+
   userscripts/separar-em-blocos:
     dependencies:
       '@nadameu/create-broadcast-service':
