@@ -226,6 +226,15 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0
 
+  userscripts/seeu-reabrir-ultimo-processo:
+    dependencies:
+      '@nadameu/create-element':
+        specifier: workspace:^
+        version: link:../../lib/create-element
+      '@nadameu/match':
+        specifier: workspace:^
+        version: link:../../lib/match
+
   userscripts/seeu-switch:
     dependencies:
       '@nadameu/create-element':
