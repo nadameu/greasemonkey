@@ -98,16 +98,17 @@ export function refine(...predicates: Function[]) {
   return (value: unknown) => predicates.every(p => p(value));
 }
 export const isObject = /* @__PURE__ */ refine(isOfTypeObject, isNotNull);
-export type Integer = Opaque<number, { readonly Integer: unique symbol }>;
-export const isInteger = /* @__PURE__*/ refine(isNumber, (x): x is Integer => Number.isInteger(x));
-export type Natural = Opaque<Integer, { readonly Natural: unique symbol }>;
+export type Integer = Opaque<number, { Integer: Integer }>;
+export const isInteger: Predicate<Integer> = /* @__PURE__*/ (x): x is Integer =>
+  Number.isInteger(x);
+export type Natural = Opaque<Integer, { Natural: Natural }>;
 export const isNatural = /* @__PURE__*/ refine(isInteger, (x: number): x is Natural => x > 0);
-export type NonNegativeInteger = Opaque<Integer, { readonly NonNegativeInteger: unique symbol }>;
-export const isNonNegativeInteger = /* @__PURE__*/ isAnyOf(
-  isLiteral(0),
-  isNatural
-) as Predicate<NonNegativeInteger>;
-export type NonEmptyString = Opaque<string, { readonly NonEmptyString: unique symbol }>;
+export type NonNegativeInteger = Opaque<Integer, { NonNegativeInteger: NonNegativeInteger }>;
+export const isNonNegativeInteger = /* @__PURE__*/ refine(
+  isInteger,
+  (x): x is NonNegativeInteger => x > -1
+);
+export type NonEmptyString = Opaque<string, { NonEmptyString: NonEmptyString }>;
 export const isNonEmptyString = /* @__PURE__*/ refine(
   isString,
   (x): x is NonEmptyString => x.trim().length > 0
