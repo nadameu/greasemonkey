@@ -226,6 +226,12 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0
 
+  userscripts/seeu-movimentacoes:
+    dependencies:
+      '@nadameu/pipe':
+        specifier: ^2.1.2
+        version: 2.1.2
+
   userscripts/seeu-reabrir-ultimo-processo:
     dependencies:
       '@nadameu/create-element':
@@ -279,6 +285,9 @@ importers:
       '@nadameu/either':
         specifier: workspace:^
         version: link:../../lib/either
+      '@nadameu/pipe':
+        specifier: ^2.1.2
+        version: 2.1.2
 
 packages:
 
@@ -1699,6 +1708,10 @@ packages:
       '@jridgewell/resolve-uri': 3.1.1
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
+
+  /@nadameu/pipe@2.1.2:
+    resolution: {integrity: sha512-WGWwSSmO9J/T2zJVV4uS0qXRK8RYhVAWxC4SkIQF7FmDs/AzZ6sqJJ/Rp3omzkty4Z2sGbfpIGlr3M0WXITu0w==}
+    dev: false
 
   /@nodelib/fs.scandir@2.1.5:
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}

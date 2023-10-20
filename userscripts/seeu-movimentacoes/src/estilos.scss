@@ -1,0 +1,29 @@
+body {
+  background-image: linear-gradient(
+    to bottom,
+    hsl(270, 100%, 98.8%) 0%,
+    hsl(267.7, 13.8%, 63.1%) 100%
+  );
+  background-attachment: fixed;
+}
+
+table.resultTable {
+  :scope > colgroup > col:nth-child(2) {
+    visibility: collapse;
+  }
+
+  tr div.extendedinfo {
+    width: fit-content;
+    border: none;
+  }
+
+  table.form {
+    width: auto;
+
+    td {
+      width: auto;
+      border: 1px solid red;
+      padding: 0 4px;
+    }
+  }
+}
