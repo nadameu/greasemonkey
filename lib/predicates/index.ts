@@ -71,6 +71,8 @@ export function isLiteral<T extends string | number | bigint | boolean | symbol 
 export const isUndefined = /* @__PURE__ */ isLiteral(undefined);
 export const isNull = /* @__PURE__ */ isLiteral(null);
 
+export function negate<U>(predicate: Predicate<U>): Negate<U>;
+export function negate<T, U extends T>(refinement: Refinement<T, U>): Refinement<T, Exclude<T, U>>;
 export function negate<U>(predicate: Predicate<U>): Negate<U> {
   return <T>(value: T | U): value is T => !predicate(value);
 }
@@ -188,3 +190,19 @@ type TaggedUnion<
         [Tag in keyof P]: Simplify<{ [TagName in T]: Tag } & Shape<P[Tag]>>;
       }[keyof P]
     >;
+
+type TuplePredicates<T extends Predicate<unknown>[], Result extends unknown[] = []> = T extends []
+  ? Result
+  : T extends [Predicate<infer Head>, ...infer Tail extends Predicate<unknown>[]]
+  ? TuplePredicates<Tail, [...Result, Head]>
+  : never;
+export const isTuple = <P extends Predicate<unknown>[]>(
+  ...predicates: P
+): Predicate<TuplePredicates<P>> =>
+  refine(isArray, (xs: unknown[]): xs is TuplePredicates<P> => {
+    if (xs.length !== predicates.length) return false;
+    for (let i = 0; i < predicates.length; i += 1) {
+      if (!predicates[i]!(xs[i]!)) return false;
+    }
+    return true;
+  });
