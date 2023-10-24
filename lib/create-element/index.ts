@@ -1,4 +1,4 @@
-export function createElement<K extends keyof HTMLElementTagNameMap>(
+export function h<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   props: Partial<HTMLElementTagNameMap[K]> | null = null,
   ...children: Array<HTMLElement | string>
@@ -10,4 +10,4 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(
   element.append(...children);
   return element;
 }
-export { createElement as h };
+export { h as createElement };
