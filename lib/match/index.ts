@@ -61,7 +61,7 @@ const neverSym = Symbol();
 export function match<T>(obj: T): MatchResult<T, never> {
   let result: TaggedUnion<{ Pending: { obj: any }; Done: { result: any } }> =
     taggedWith("Pending")({ obj });
-  const returnObject: MatchByTag<any, any> & MatchExhaustive<any> = {
+  const returnObject: MatchByTag<T, unknown> & MatchExhaustive<unknown> = {
     case(tag, action) {
       return when(isTaggedWith(tag), action);
     },
