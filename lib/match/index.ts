@@ -20,17 +20,17 @@ export function taggedWith<T extends string>(tag: T) {
   };
 }
 export function isTaggedObject(obj: unknown): obj is TaggedWith {
-  return typeof obj === "object" && obj !== null && _tag in obj;
+  return typeof obj === 'object' && obj !== null && _tag in obj;
 }
 export function isTaggedWith<T extends string>(tag: T) {
-  return function isTagged<O extends TaggedWith>(obj: O): obj is TaggedWith<T> {
+  return function isTagged<O extends TaggedWith>(obj: O): obj is Extract<O, TaggedWith<T>> {
     return obj[_tag] === tag;
   };
 }
 
 type MatchResult<T, R> = [T] extends [never]
   ? MatchExhaustive<R>
-  : T extends TaggedWith
+  : [T] extends [TaggedWith]
   ? MatchByTag<T, R>
   : Match<T, R>;
 
@@ -38,19 +38,16 @@ export interface MatchExhaustive<R = never> {
   get(): R;
 }
 export interface Match<T, R = never> {
-  when<U, R2>(
+  otherwise<R2>(action: (_: T) => R2): MatchExhaustive<R | R2>;
+  unsafeGet(): R;
+  when<U extends T, R2>(
     pred: (_: T) => _ is U,
     action: (_: U) => R2
   ): MatchResult<Exclude<T, U>, R | R2>;
-  when<R2>(
-    pred: (_: T) => boolean,
-    action: (_: T) => R2
-  ): MatchResult<T, R | R2>;
-  unsafeGet(): R;
+  when<R2>(pred: (_: T) => boolean, action: (_: T) => R2): MatchResult<T, R | R2>;
 }
-export interface MatchByTag<T extends TaggedWith, R = never>
-  extends Match<T, R> {
-  case<K extends string, R2>(
+export interface MatchByTag<T extends TaggedWith, R = never> extends Match<T, R> {
+  case<K extends T[typeof _tag], R2>(
     tag: K,
     action: (_: MemberOf<T, K>) => R2
   ): MatchResult<Exclude<T, MemberOf<T, K>>, R | R2>;
@@ -59,24 +56,28 @@ export interface MatchByTag<T extends TaggedWith, R = never>
 const neverSym = Symbol();
 
 export function match<T>(obj: T): MatchResult<T, never> {
-  let result: TaggedUnion<{ Pending: { obj: any }; Done: { result: any } }> =
-    taggedWith("Pending")({ obj });
-  const returnObject: MatchByTag<T, unknown> & MatchExhaustive<unknown> = {
+  let result: TaggedUnion<{ Pending: { obj: any }; Done: { result: any } }> = taggedWith('Pending')(
+    { obj }
+  );
+  const returnObject: MatchByTag<any, unknown> & MatchExhaustive<unknown> = {
     case(tag, action) {
       return when(isTaggedWith(tag), action);
     },
     get: unsafeGet,
-    when,
+    otherwise(action) {
+      return when(() => true, action);
+    },
     unsafeGet,
+    when,
   };
-  return returnObject;
+  return returnObject as MatchResult<T, never>;
 
   function unsafeGet() {
     switch (result[_tag]) {
-      case "Done":
+      case 'Done':
         return result.result;
-      case "Pending": {
-        throw new Error("Match was not exhaustive.");
+      case 'Pending': {
+        throw new Error('Match was not exhaustive.');
       }
       default: {
         const _exhaustive: never = result;
@@ -85,14 +86,14 @@ export function match<T>(obj: T): MatchResult<T, never> {
     }
   }
 
-  function when(pred, action) {
+  function when(pred: Function, action: Function) {
     switch (result[_tag]) {
-      case "Done":
+      case 'Done':
         return returnObject;
-      case "Pending": {
+      case 'Pending': {
         const obj = result.obj;
         if (pred(obj)) {
-          result = taggedWith("Done")({ result: action(obj) });
+          result = taggedWith('Done')({ result: action(obj) });
         }
         return returnObject;
       }
