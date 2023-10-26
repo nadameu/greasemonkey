@@ -2,8 +2,10 @@ const _tag: unique symbol = '@nadameu/match/tag' as any;
 type TaggedWith<T extends string = string> = { [_tag]: T };
 export type Tagged<T extends string, O extends object = {}> = Struct<TaggedWith<T> & O>;
 export type TaggedUnion<D extends Record<string, object>> = {
-  [T in keyof D & string]: Tagged<T, D[T]>;
-}[keyof D & string];
+  result: {
+    [T in keyof D & string]: Tagged<T, D[T]>;
+  }[keyof D & string];
+}['result'];
 
 type Struct<T> = { result: { [K in keyof T]: T[K] } }['result'];
 type TagOf<T extends TaggedWith> = T[typeof _tag];
@@ -53,53 +55,41 @@ export interface MatchByTag<T extends TaggedWith, R = never> extends Match<T, R>
   ): MatchResult<Exclude<T, MemberOf<T, K>>, R | R2>;
 }
 
-const neverSym = Symbol();
+const enum MatchTag {
+  NOT_FOUND = 'MatchNotFound',
+  FOUND = 'MatchFound',
+}
 
 export function match<T>(obj: T): MatchResult<T, never> {
-  let result: TaggedUnion<{ Pending: { obj: any }; Done: { result: any } }> = taggedWith('Pending')(
-    { obj }
-  );
+  let status: TaggedUnion<{ [MatchTag.NOT_FOUND]: {}; [MatchTag.FOUND]: { result: any } }> =
+    taggedWith(MatchTag.NOT_FOUND)();
   const returnObject: MatchByTag<any, unknown> & MatchExhaustive<unknown> = {
-    case(tag, action) {
-      return when(isTaggedWith(tag), action);
-    },
+    case: (tag, action) => when(isTaggedWith(tag), action),
     get: unsafeGet,
-    otherwise(action) {
-      return when(() => true, action);
-    },
+    otherwise: action => when(() => true, action),
     unsafeGet,
     when,
   };
   return returnObject as MatchResult<T, never>;
 
   function unsafeGet() {
-    switch (result[_tag]) {
-      case 'Done':
-        return result.result;
-      case 'Pending': {
+    switch (status[_tag]) {
+      case MatchTag.FOUND:
+        return status.result;
+      case MatchTag.NOT_FOUND:
         throw new Error('Match was not exhaustive.');
-      }
-      default: {
-        const _exhaustive: never = result;
-        return _exhaustive;
-      }
     }
   }
 
   function when(pred: Function, action: Function) {
-    switch (result[_tag]) {
-      case 'Done':
+    switch (status[_tag]) {
+      case MatchTag.FOUND:
         return returnObject;
-      case 'Pending': {
-        const obj = result.obj;
+      case MatchTag.NOT_FOUND: {
         if (pred(obj)) {
-          result = taggedWith('Done')({ result: action(obj) });
+          status = taggedWith(MatchTag.FOUND)({ result: action(obj) });
         }
         return returnObject;
-      }
-      default: {
-        const _exhaustive: never = result;
-        return _exhaustive;
       }
     }
   }
