@@ -122,3 +122,58 @@ test('isTagged', () => {
   expect(isTagged('name')({ _tag: 'name' } as any)).toBe(false);
   expect(isTagged('name')(tag('name')())).toBe(true);
 });
+
+describe('Types of tagName and tag', () => {
+  type props = { a: number; b: boolean };
+  test('string tagName', () => {
+    const _tag = '__tag__';
+    type MyType = TaggedWithUnion<typeof _tag, { variant: props; [sym]: props; 8: props }>;
+    const tag = tagWith(_tag);
+    expect<MyType>(tag('variant')({ a: 1, b: true })).toEqual({ [_tag]: 'variant', a: 1, b: true });
+    const sym = Symbol();
+    expect<MyType>(tag(sym)({ a: 1, b: true })).toEqual({ [_tag]: sym, a: 1, b: true });
+    expect<MyType>(tag(8)({ a: 1, b: true })).toEqual({ [_tag]: 8, a: 1, b: true });
+  });
+
+  test('symbol tagName', () => {
+    const _tag = Symbol();
+    type MyType = TaggedWithUnion<typeof _tag, { variant: props; [sym]: props; 8: props }>;
+    const tag = tagWith(_tag);
+    expect<MyType>(tag('variant')({ a: 1, b: true })).toEqual({ [_tag]: 'variant', a: 1, b: true });
+    const sym = Symbol();
+    expect<MyType>(tag(sym)({ a: 1, b: true })).toEqual({ [_tag]: sym, a: 1, b: true });
+    expect<MyType>(tag(8)({ a: 1, b: true })).toEqual({ [_tag]: 8, a: 1, b: true });
+  });
+
+  test('number tagName', () => {
+    const _tag = 42;
+    type MyType = TaggedWithUnion<typeof _tag, { variant: props; [sym]: props; 8: props }>;
+    const tag = tagWith(_tag);
+    expect<MyType>(tag('variant')({ a: 1, b: true })).toEqual({ [_tag]: 'variant', a: 1, b: true });
+    const sym = Symbol();
+    expect<MyType>(tag(sym)({ a: 1, b: true })).toEqual({ [_tag]: sym, a: 1, b: true });
+    expect<MyType>(tag(8)({ a: 1, b: true })).toEqual({ [_tag]: 8, a: 1, b: true });
+  });
+});
+
+describe('tuples', () => {
+  const sym = Symbol();
+  test.each<[string, unknown[]]>([
+    ['[]', [] as []],
+    ['[string]', ['hello']],
+    ['[number, string]', [39, 'hello']],
+  ])('%s', (_, arr) => {
+    test.each([
+      ['string', '_tag' as const],
+      ['number', 21 as const],
+      ['symbol', sym as typeof sym],
+    ])('%s', (_, _tag) => {
+      const tuple = tagWith(_tag)('Type0')(arr);
+      expect(tuple).toHaveProperty('_tag', 'Type0');
+      expect(tuple).toHaveProperty('length', arr.length);
+      expect(Array.isArray(tuple)).toBe(true);
+      const [...values] = tuple;
+      expect(values).toEqual(arr);
+    });
+  });
+});
