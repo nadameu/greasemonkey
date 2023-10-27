@@ -1,27 +1,40 @@
 import { describe, expect, test } from 'vitest';
-import { MemberOf, Tagged, TaggedUnion, match, taggedWith, isTaggedObject, isTaggedWith } from '.';
+import {
+  MemberWith,
+  TaggedWith,
+  TaggedUnion,
+  MemberOf,
+  isTagged,
+  tag,
+  Tagged,
+  TaggedWithUnion,
+  match,
+  tagWith,
+  isTaggedWith,
+} from '.';
 
 test('Maybe', () => {
-  type Internal<a> = TaggedUnion<{ Just: { value: a }; Nothing: {} }>;
-  interface Just<a> extends MemberOf<Internal<a>, 'Just'> {}
-  interface Nothing extends MemberOf<Internal<never>, 'Nothing'> {}
-  const Just = <a>(value: a): Just<a> => taggedWith('Just')({ value });
-  const Nothing: Nothing = taggedWith('Nothing')();
+  type Internal<a> = TaggedWithUnion<'__my_custom_tag', { Just: { value: a }; Nothing: {} }>;
+  interface Just<a> extends MemberWith<Internal<a>, '__my_custom_tag', 'Just'> {}
+  interface Nothing extends MemberWith<Internal<never>, '__my_custom_tag', 'Nothing'> {}
+  const tag = tagWith('__my_custom_tag');
+  const Just = <a>(value: a): Just<a> => tag('Just')({ value });
+  const Nothing: Nothing = tag('Nothing')();
   type Maybe<a> = Just<a> | Nothing;
 
-  expect<Maybe<number>>(Just(42)).toEqual({ '@nadameu/match/tag': 'Just', 'value': 42 });
-  expect<Maybe<number>>(Nothing).toEqual({ '@nadameu/match/tag': 'Nothing' });
+  expect<Maybe<number>>(Just(42)).toEqual({ __my_custom_tag: 'Just', value: 42 });
+  expect<Maybe<number>>(Nothing).toEqual({ __my_custom_tag: 'Nothing' });
 });
 
 describe('FingerTree', () => {
   interface Digit<a> extends Tagged<'Digit', { values: [a] | [a, a] | [a, a, a] | [a, a, a, a] }> {}
   const Digit = <a>(...values: [a] | [a, a] | [a, a, a] | [a, a, a, a]): Digit<a> =>
-    taggedWith('Digit')({ values });
+    tag('Digit')({ values });
   type InternalNode<a> = TaggedUnion<{ Node2: { values: [a, a] }; Node3: { values: [a, a, a] } }>;
   interface Node2<a> extends MemberOf<InternalNode<a>, 'Node2'> {}
-  const Node2 = <a>(...values: [a, a]): Node<a> => taggedWith('Node2')({ values });
+  const Node2 = <a>(...values: [a, a]): Node<a> => tag('Node2')({ values });
   interface Node3<a> extends MemberOf<InternalNode<a>, 'Node3'> {}
-  const Node3 = <a>(...values: [a, a, a]): Node<a> => taggedWith('Node3')({ values });
+  const Node3 = <a>(...values: [a, a, a]): Node<a> => tag('Node3')({ values });
   type Node<a> = Node2<a> | Node3<a>;
   type InternalFingerTree<a> = TaggedUnion<{
     Empty: {};
@@ -29,12 +42,12 @@ describe('FingerTree', () => {
     Deep: { left: Digit<a>; middle: FingerTree<Node<a>>; right: Digit<a> };
   }>;
   interface Empty extends MemberOf<InternalFingerTree<never>, 'Empty'> {}
-  const Empty: Empty = taggedWith('Empty')({});
+  const Empty: Empty = tag('Empty')({});
   interface Single<a> extends MemberOf<InternalFingerTree<a>, 'Single'> {}
-  const Single = <a>(value: a): Single<a> => taggedWith('Single')({ value });
+  const Single = <a>(value: a): Single<a> => tag('Single')({ value });
   interface Deep<a> extends MemberOf<InternalFingerTree<a>, 'Deep'> {}
   const Deep = <a>(left: Digit<a>, middle: FingerTree<Node<a>>, right: Digit<a>): Deep<a> =>
-    taggedWith('Deep')({ left, middle, right });
+    tag('Deep')({ left, middle, right });
   type FingerTree<a> = Empty | Single<a> | Deep<a>;
 
   test('match', () => {
@@ -100,14 +113,12 @@ test('Not exhaustive', () => {
   ).toThrow();
 });
 
-test('isTaggedObject', () => {
-  expect(isTaggedObject(null)).toBe(false);
-  expect(isTaggedObject({ tag: 'name' })).toBe(false);
-  expect(isTaggedObject(taggedWith('name')())).toBe(true);
+test('isTaggedWith', () => {
+  expect(isTaggedWith('__tag__')('name')({ tag: 'name' } as any)).toBe(false);
+  expect(isTaggedWith('tag')('name')(tagWith('tag')('name')())).toBe(true);
 });
 
-test('isTaggedWith', () => {
-  expect(() => isTaggedWith('name')(null as any)).toThrow();
-  expect(isTaggedWith('name')({ tag: 'name' } as any)).toBe(false);
-  expect(isTaggedWith('name')(taggedWith('name')())).toBe(true);
+test('isTagged', () => {
+  expect(isTagged('name')({ _tag: 'name' } as any)).toBe(false);
+  expect(isTagged('name')(tag('name')())).toBe(true);
 });

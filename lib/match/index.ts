@@ -1,96 +1,112 @@
 const _tag: unique symbol = '@nadameu/match/tag' as any;
-type TaggedWith<T extends string = string> = { [_tag]: T };
-export type Tagged<T extends string, O extends object = {}> = Struct<TaggedWith<T> & O>;
-export type TaggedUnion<D extends Record<string, object>> = {
-  result: {
-    [T in keyof D & string]: Tagged<T, D[T]>;
-  }[keyof D & string];
-}['result'];
+type ValidTagName = string | number | symbol;
+type ValidTag = string | number | symbol;
 
-type Struct<T> = { result: { [K in keyof T]: T[K] } }['result'];
-type TagOf<T extends TaggedWith> = T[typeof _tag];
+type Tag<TN extends ValidTagName, T extends ValidTag> = { [K in TN]: T };
 
-export type MemberOf<T extends TaggedWith, K extends TagOf<T> = TagOf<T>> = Extract<
-  T,
-  TaggedWith<K>
->;
+type ObjectWithoutKey<TN extends ValidTagName> = object & {
+  [K in TN]?: never;
+};
 
-export function taggedWith<T extends string>(tag: T) {
-  return function tagged<O extends object = {}>(properties: O = {} as any): Tagged<T, O> {
-    (properties as any)[_tag] = tag;
-    return properties as any;
+export type TaggedWith<
+  TN extends ValidTagName,
+  T extends ValidTag,
+  O extends ObjectWithoutKey<TN>,
+> = Tag<TN, T> & O;
+export type Tagged<T extends ValidTag, O> = Tag<typeof _tag, T> & O;
+
+export type TaggedWithUnion<
+  TN extends ValidTagName,
+  D extends Record<ValidTag, ObjectWithoutKey<TN>>,
+> = {
+  [K in keyof D]: TaggedWith<TN, K, D[K]>;
+}[keyof D];
+export type TaggedUnion<D extends Record<ValidTag, object>> = {
+  [K in keyof D]: Tagged<K, D[K]>;
+}[keyof D];
+
+export type MemberWith<U, TN extends keyof U, T extends U[TN] = U[TN]> = U extends { [k in TN]: T }
+  ? U
+  : never;
+export type MemberOf<
+  U extends Tag<typeof _tag, ValidTag>,
+  T extends U[typeof _tag] = U[typeof _tag],
+> = MemberWith<U, typeof _tag, T>;
+
+export const tagWith =
+  <TN extends ValidTagName>(tagName: TN) =>
+  <T extends ValidTag>(tag: T) =>
+  <O extends ObjectWithoutKey<TN>>(obj: O = {} as any): TaggedWith<TN, T, O> => {
+    (obj as any)[tagName] = tag;
+    return obj as any;
   };
-}
-export function isTaggedObject(obj: unknown): obj is TaggedWith {
-  return typeof obj === 'object' && obj !== null && _tag in obj;
-}
-export function isTaggedWith<T extends string>(tag: T) {
-  return function isTagged<O extends TaggedWith>(obj: O): obj is Extract<O, TaggedWith<T>> {
-    return obj[_tag] === tag;
-  };
-}
+export const tag = tagWith(_tag);
+
+export const isTaggedWith =
+  <TN extends ValidTagName>(tagName: TN) =>
+  <T extends ValidTag>(tag: T) =>
+  <O>(obj: O): obj is Extract<O, Tag<TN, T>> =>
+    typeof obj === 'object' &&
+    obj !== null &&
+    tagName in obj &&
+    obj[tagName as keyof O & object] === tag;
+export const isTagged = isTaggedWith(_tag);
 
 type MatchResult<T, R> = [T] extends [never]
   ? MatchExhaustive<R>
-  : [T] extends [TaggedWith]
-  ? MatchByTag<T, R>
-  : Match<T, R>;
+  : [T] extends [Tag<typeof _tag, ValidTag>]
+  ? MatchTagged<T, R>
+  : MatchPending<T, R>;
 
-export interface MatchExhaustive<R = never> {
+interface MatchExhaustive<R> {
   get(): R;
 }
-export interface Match<T, R = never> {
-  otherwise<R2>(action: (_: T) => R2): MatchExhaustive<R | R2>;
+interface MatchPending<T, R> {
+  otherwise<R2>(action: (obj: T) => R2): MatchResult<never, R | R2>;
   unsafeGet(): R;
   when<U extends T, R2>(
-    pred: (_: T) => _ is U,
-    action: (_: U) => R2
+    predicate: (obj: T) => obj is U,
+    action: (obj: U) => R2
   ): MatchResult<Exclude<T, U>, R | R2>;
-  when<R2>(pred: (_: T) => boolean, action: (_: T) => R2): MatchResult<T, R | R2>;
+  when<R2>(predicate: (obj: T) => boolean, action: (obj: T) => R2): MatchResult<T, R | R2>;
 }
-export interface MatchByTag<T extends TaggedWith, R = never> extends Match<T, R> {
+interface MatchTagged<T extends Tag<typeof _tag, ValidTag>, R> extends MatchPending<T, R> {
   case<K extends T[typeof _tag], R2>(
     tag: K,
-    action: (_: MemberOf<T, K>) => R2
-  ): MatchResult<Exclude<T, MemberOf<T, K>>, R | R2>;
+    action: (obj: Extract<T, Tag<typeof _tag, K>>) => R2
+  ): MatchResult<Exclude<T, Tag<typeof _tag, K>>, R | R2>;
 }
 
-const enum MatchTag {
+const enum Matching {
   NOT_FOUND = 'MatchNotFound',
   FOUND = 'MatchFound',
 }
 
-export function match<T>(obj: T): MatchResult<T, never> {
-  let status: TaggedUnion<{ [MatchTag.NOT_FOUND]: {}; [MatchTag.FOUND]: { result: any } }> =
-    taggedWith(MatchTag.NOT_FOUND)();
-  const returnObject: MatchByTag<any, unknown> & MatchExhaustive<unknown> = {
-    case: (tag, action) => when(isTaggedWith(tag), action),
-    get: unsafeGet,
-    otherwise: action => when(() => true, action),
-    unsafeGet,
-    when,
-  };
-  return returnObject as MatchResult<T, never>;
-
-  function unsafeGet() {
-    switch (status[_tag]) {
-      case MatchTag.FOUND:
-        return status.result;
-      case MatchTag.NOT_FOUND:
-        throw new Error('Match was not exhaustive.');
-    }
-  }
-
-  function when(pred: Function, action: Function) {
-    switch (status[_tag]) {
-      case MatchTag.FOUND:
-        return returnObject;
-      case MatchTag.NOT_FOUND: {
-        if (pred(obj)) {
-          status = taggedWith(MatchTag.FOUND)({ result: action(obj) });
-        }
-        return returnObject;
+export const match = <T>(obj: T): MatchResult<T, never> => {
+  let status: TaggedWithUnion<
+    'tag',
+    { [Matching.NOT_FOUND]: {}; [Matching.FOUND]: { result: unknown } }
+  > = tagWith('tag')(Matching.NOT_FOUND)();
+  const ret = {
+    case(tag: keyof any, action: Function) {
+      return ret.when(isTagged(tag), action);
+    },
+    get() {
+      if (status.tag === Matching.FOUND) return status.result;
+      else throw new Error('Match not exhaustive.');
+    },
+    otherwise(action: Function) {
+      return ret.when(() => true, action);
+    },
+    unsafeGet() {
+      return ret.get();
+    },
+    when(predicate: Function, action: Function) {
+      if (status.tag === Matching.NOT_FOUND && predicate(obj)) {
+        status = tagWith('tag')(Matching.FOUND)({ result: action(obj) });
       }
-    }
-  }
-}
+      return ret;
+    },
+  };
+  return ret as any;
+};
