@@ -11,10 +11,9 @@ export const empty: List<never> = { empty: true };
 export const prepend = <a>(first: a, rest: List<a>): NEList<a> => ({ empty: false, first, rest });
 export const generate = (size: number): List<number> => {
   if (size <= 0) return empty;
-  const first: NEList<number> = prepend(0, empty);
-  let curr = first;
-  for (let i = 1; i < size; i += 1) {
-    curr = curr.rest = prepend(i, empty);
+  let curr: List<number> = empty;
+  for (let i = size - 1; i > -1; i -= 1) {
+    curr = prepend(i, curr);
   }
-  return first;
+  return curr;
 };

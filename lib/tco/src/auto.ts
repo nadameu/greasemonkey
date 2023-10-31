@@ -2,7 +2,7 @@ import { Trampoline, loop, run } from './trampoline';
 
 export const auto = <T extends unknown[], U>(
   f: (...args: T) => U,
-  maxRecursion = 2048
+  maxRecursion = 64
 ): { (...args: T): U } => {
   let running = 0;
   function rec(...args: T): Trampoline<U> {
