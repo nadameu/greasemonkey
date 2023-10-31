@@ -1,6 +1,8 @@
+import { apply } from '../function/functions';
+import { monoidSum } from '../index';
 import { Just, Maybe, Nothing, isJust, isNothing } from '../maybe/definitions';
 import { tuple } from '../tuple/definitions';
-import { Monoid } from '../typeclasses';
+import { Monoid } from '../typeclasses/definitions';
 import { isYield } from './result/definitions';
 
 const Si: typeof Symbol.iterator = Symbol.iterator;
@@ -45,10 +47,13 @@ export const zip = <a, b>(fa: Iterable<a>, fb: Iterable<b>): Iterable<[a, b]> =>
   *[Si]() {
     const ia = fa[Si]();
     const ib = fb[Si]();
-    let ra = ia.next();
-    let rb = ib.next();
-    for (; isYield(ra) && isYield(rb); ra = ia.next(), rb = ib.next())
+    for (
+      let ra = ia.next(), rb = ib.next();
+      isYield(ra) && isYield(rb);
+      ra = ia.next(), rb = ib.next()
+    ) {
       yield tuple(ra.value, rb.value);
+    }
   },
 });
 
@@ -87,7 +92,7 @@ export const concat = <a>(fa: Iterable<a>, fb: Iterable<a>): Iterable<a> => ({
   },
 });
 
-export const length = foldMap<unknown, number>({ empty: () => 0, concat: (a, b) => a + b }, _ => 1);
+export const length = foldMap<unknown, number>(monoidSum, _ => 1);
 
 export const isEmpty = <a>(fa: Iterable<a>): boolean => isNothing(head(fa));
 
@@ -97,10 +102,10 @@ export const take =
   (n: number) =>
   <a>(fa: Iterable<a>): Iterable<a> => ({
     *[Si]() {
-      let i = 0;
-      for (const a of fa) {
-        if (i >= n) break;
-        yield a;
+      const it = fa[Si]();
+      while (n-- > 0) {
+        const res = it.next();
+        if (isYield(res)) yield res.value;
       }
     },
   });
