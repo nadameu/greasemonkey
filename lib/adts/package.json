@@ -1,0 +1,9 @@
+{
+  "name": "@nadameu/adts",
+  "version": "1.0.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "dependencies": {
+    "@nadameu/pipe": "^2.1.2"
+  }
+}

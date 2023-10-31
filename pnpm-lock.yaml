@@ -90,6 +90,12 @@ importers:
         specifier: workspace:^
         version: link:../expect-unreachable
 
+  lib/adts:
+    dependencies:
+      '@nadameu/pipe':
+        specifier: ^2.1.2
+        version: 2.1.2
+
   lib/create-broadcast-service:
     dependencies:
       '@nadameu/handler':
