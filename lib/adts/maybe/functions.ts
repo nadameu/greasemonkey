@@ -36,9 +36,14 @@ export const getOrElse =
     isNothing(fa) ? getDefault() : fa.value;
 
 export const maybeBool: {
-  <a>(pred: (_: a) => boolean): (a: a) => Maybe<a>;
   <a, b extends a>(pred: (a: a) => a is b): (a: a) => Maybe<b>;
+  <a>(pred: (_: a) => boolean): (a: a) => Maybe<a>;
 } =
   <a>(pred: (_: a) => boolean) =>
   (a: a): Maybe<a> =>
     pred(a) ? Just(a) : Nothing;
+
+export const filter: {
+  <a, b extends a>(pred: (a: a) => a is b): (fa: Maybe<a>) => Maybe<b>;
+  <a>(pred: (_: a) => boolean): (fa: Maybe<a>) => Maybe<a>;
+} = <a>(pred: (_: a) => boolean) => flatMap(maybeBool(pred));
