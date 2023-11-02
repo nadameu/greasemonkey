@@ -44,7 +44,13 @@ function iniciarRolagem() {
     tps++;
   }, frameInterval);
   timer = window.setInterval(() => {
-    console.log(posicaoAtual, direcaoAtual, velocidadeAtual, frameInterval, tps);
+    console.log(
+      posicaoAtual,
+      direcaoAtual,
+      velocidadeAtual,
+      frameInterval,
+      tps
+    );
     tps = 0;
   }, 1000);
 }

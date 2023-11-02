@@ -133,7 +133,8 @@
     foldr,
     unfoldr,
   });
-  const either = f => g => fab => (fab.isLeft ? f(fab.leftValue) : g(fab.rightValue));
+  const either = f => g => fab =>
+    fab.isLeft ? f(fab.leftValue) : g(fab.rightValue);
   const bind = either(Left);
   const pure = Right;
   const map = liftM1({
@@ -268,7 +269,10 @@
   }
   function matchBy(tagName) {
     return (obj, matchers, otherwise) => {
-      if ((typeof obj !== 'object' && typeof obj !== 'function') || obj === null)
+      if (
+        (typeof obj !== 'object' && typeof obj !== 'function') ||
+        obj === null
+      )
         throw new Error(
           `${Object.prototype.toString
             .call(obj)
@@ -277,7 +281,9 @@
         );
       const tag = obj[tagName];
       if (tag === void 0)
-        throw new Error(`Object does not have a valid "${String(tagName)}" property.`);
+        throw new Error(
+          `Object does not have a valid "${String(tagName)}" property.`
+        );
       const fn = matchers[tag] ?? otherwise ?? matchNotFound;
       return fn(obj);
     };
@@ -295,7 +301,8 @@
       subscribe,
     };
     function onMessage(evt) {
-      if (validate(evt.data)) for (const listener of listeners) listener(evt.data);
+      if (validate(evt.data))
+        for (const listener of listeners) listener(evt.data);
     }
     function destroy() {
       bc.removeEventListener('message', onMessage);
@@ -416,7 +423,10 @@
     const bc = createMsgService();
     const store = createStore(
       () => {
-        const estado = pipeValue(obterContas(), either(Estado$1.Erro)(Estado$1.Ocioso));
+        const estado = pipeValue(
+          obterContas(),
+          either(Estado$1.Erro)(Estado$1.Ocioso)
+        );
         if (estado.tag !== 'Erro') {
           bc.subscribe(msg =>
             Mensagem.match(msg, {
@@ -457,7 +467,11 @@
                 return Estado$1.Atualizando(infoContas, primeiraConta);
               },
               Atualizando: () =>
-                Estado$1.Erro(new Error('Tentativa de atualização durante outra atualização.')),
+                Estado$1.Erro(
+                  new Error(
+                    'Tentativa de atualização durante outra atualização.'
+                  )
+                ),
             }),
           SaldoAtualizado: ({ saldo }) =>
             Estado$1.match(estado, {
@@ -475,16 +489,28 @@
                   .concat(infoContas.slice(conta + 1));
                 const proxima = encontrarContaAtualizavel(infoNova, conta + 1);
                 if (proxima < 0) {
-                  const qtdComSaldo = infoNova.map(x => x.saldo).filter(x => x > 0).length;
-                  const permiteAtualizar = infoNova.some(x => x.atualizacao !== null);
-                  bc.publish(Mensagem.InformaContas(numproc, qtdComSaldo, permiteAtualizar));
+                  const qtdComSaldo = infoNova
+                    .map(x => x.saldo)
+                    .filter(x => x > 0).length;
+                  const permiteAtualizar = infoNova.some(
+                    x => x.atualizacao !== null
+                  );
+                  bc.publish(
+                    Mensagem.InformaContas(
+                      numproc,
+                      qtdComSaldo,
+                      permiteAtualizar
+                    )
+                  );
                   return Estado$1.Ocioso(infoNova);
                 }
                 infoNova[proxima].atualizacao();
                 return Estado$1.Atualizando(infoNova, proxima);
               },
             }),
-          ErroComunicacao: ({ mensagem = 'Ocorreu um erro na atualização dos saldos.' }) =>
+          ErroComunicacao: ({
+            mensagem = 'Ocorreu um erro na atualização dos saldos.',
+          }) =>
             Estado$1.match(
               estado,
               {
@@ -507,7 +533,9 @@
           }),
         Ocioso: ({ infoContas }) => {
           const contasComSaldo = infoContas.filter(x => x.saldo > 0).length;
-          const contasAtualizaveis = infoContas.map(x => x.atualizacao).filter(x => x !== null);
+          const contasAtualizaveis = infoContas
+            .map(x => x.atualizacao)
+            .filter(x => x !== null);
           const classe = contasComSaldo === 0 ? 'zerado' : 'saldo';
           const mensagem =
             contasComSaldo === 0
@@ -558,13 +586,16 @@
       );
     }
     function obterContas() {
-      const tabela = document.querySelector('#divInfraAreaDadosDinamica > table');
+      const tabela = document.querySelector(
+        '#divInfraAreaDadosDinamica > table'
+      );
       if (!tabela) return Right([]);
       return pipeValue(
         tabela.querySelectorAll('tr[id^="tdConta"]'),
         traverse$1(applicativeEither)(linha => {
           const info = obterInfoContaLinha$1(linha);
-          if (info === null) return Left(new Error('Erro ao obter dados das contas.'));
+          if (info === null)
+            return Left(new Error('Erro ao obter dados das contas.'));
           else return Right(info);
         })
       );
@@ -580,7 +611,8 @@
             return;
           const url = new URL(this.url, document.location.href);
           if (!/\/controlador_ajax\.php$/.test(url.pathname)) return;
-          if (url.searchParams.get('acao_ajax') !== 'atualizar_precatorio_rpv') return;
+          if (url.searchParams.get('acao_ajax') !== 'atualizar_precatorio_rpv')
+            return;
           try {
             check(isLiteral(200), xhr.status);
             const responseXML = xhr.responseXML;
@@ -589,7 +621,10 @@
               const mensagem =
                 erros.length === 0
                   ? void 0
-                  : Array.from(erros, erro => erro.getAttribute('descricao')?.trim() ?? '')
+                  : Array.from(
+                      erros,
+                      erro => erro.getAttribute('descricao')?.trim() ?? ''
+                    )
                       .filter(x => x !== '')
                       .join('\n') || void 0;
               return handler(Acao$1.ErroComunicacao(mensagem));
@@ -707,7 +742,10 @@
           obterContas(),
           either(Estado.Erro)(infoContas => {
             bc.publish(
-              Mensagem.InformaSaldoDeposito(numproc, infoContas.filter(x => x.saldo > 0).length)
+              Mensagem.InformaSaldoDeposito(
+                numproc,
+                infoContas.filter(x => x.saldo > 0).length
+              )
             );
             bc.destroy();
             return Estado.Ocioso(infoContas);
@@ -731,7 +769,9 @@
       return Estado.match(estado, {
         Ocioso: ({ infoContas }) => {
           const contasComSaldo = infoContas.filter(x => x.saldo > 0).length;
-          const contasAtualizaveis = infoContas.filter(x => x.atualizacao).length;
+          const contasAtualizaveis = infoContas.filter(
+            x => x.atualizacao
+          ).length;
           const classe = contasComSaldo === 0 ? 'zerado' : 'saldo';
           const mensagem =
             contasComSaldo === 0
@@ -782,12 +822,14 @@
       const tabela = document.querySelector('table#tblSaldoConta');
       if (!tabela) return Left(new Error('Tabela de contas não encontrada'));
       return pipeValue(
-        Array.from(tabela.querySelectorAll('tr[id^="tblSaldoContaROW"]')).filter(
-          x => !/Saldos$/.test(x.id)
-        ),
+        Array.from(
+          tabela.querySelectorAll('tr[id^="tblSaldoContaROW"]')
+        ).filter(x => !/Saldos$/.test(x.id)),
         traverse$2(applicativeEither)(linha => {
           const info = obterInfoContaLinha(linha);
-          return info ? Right(info) : Left(new Error('Erro ao obter dados das contas.'));
+          return info
+            ? Right(info)
+            : Left(new Error('Erro ao obter dados das contas.'));
         })
       );
     }
@@ -799,7 +841,9 @@
     if (!match || match.length < 2) return null;
     const [, numeros] = match;
     const saldo = Number(numeros.replace(/\./g, '').replace(',', '.'));
-    const link = row.cells[row.cells.length - 1].querySelector('a[onclick^="consultarSaldo("]');
+    const link = row.cells[row.cells.length - 1].querySelector(
+      'a[onclick^="consultarSaldo("]'
+    );
     const atualizacao = link !== null;
     return {
       saldo,
@@ -826,7 +870,12 @@
       )
     );
   }
-  function modificarPaginaProcesso({ informacoesAdicionais, linkRPV, linkDepositos, numproc }) {
+  function modificarPaginaProcesso({
+    informacoesAdicionais,
+    linkRPV,
+    linkDepositos,
+    numproc,
+  }) {
     const Estado2 = createTaggedUnion({
       AguardaVerificacaoInicial: null,
       AguardaAtualizacao: ({ rpv, depositos }) => ({
@@ -896,7 +945,11 @@
         });
         bc.subscribe(msg => {
           Mensagem.match(msg, {
-            InformaContas: ({ numproc: msgNumproc, qtdComSaldo, permiteAtualizar }) => {
+            InformaContas: ({
+              numproc: msgNumproc,
+              qtdComSaldo,
+              permiteAtualizar,
+            }) => {
               if (msgNumproc !== numproc) return;
               store.dispatch(
                 Acao2.AtualizacaoRPV({
@@ -1063,11 +1116,17 @@
             if (qtd === 1) return `1 conta`;
             return `${qtd} contas`;
           }
-          const msgR = qRPV === 0 ? null : `${textoContas(qRPV)} de requisição de pagamento`;
-          const msgD = qDep === 0 ? null : `${textoContas(qDep)} de depósito judicial`;
+          const msgR =
+            qRPV === 0
+              ? null
+              : `${textoContas(qRPV)} de requisição de pagamento`;
+          const msgD =
+            qDep === 0 ? null : `${textoContas(qDep)} de depósito judicial`;
           const msgs = [msgR, msgD].filter(x => x !== null);
           const mensagem =
-            msgs.length === 0 ? 'Sem saldo em conta(s).' : `Há ${msgs.join(' e ')} com saldo.`;
+            msgs.length === 0
+              ? 'Sem saldo em conta(s).'
+              : `Há ${msgs.join(' e ')} com saldo.`;
           return o(MensagemComBotao, {
             classe,
             mensagem,
@@ -1114,20 +1173,31 @@
     }
   }
   function obterLinkRPV() {
-    return obter('a#labelPrecatorios', 'Link para requisições de pagamento não encontrado.');
+    return obter(
+      'a#labelPrecatorios',
+      'Link para requisições de pagamento não encontrado.'
+    );
   }
   function obterLinkDepositos() {
-    return obter('a#labelDepositoJudicial', 'Link para depósitos judiciais não encontrado.');
+    return obter(
+      'a#labelDepositoJudicial',
+      'Link para depósitos judiciais não encontrado.'
+    );
   }
   function obterInformacoesAdicionais() {
-    return obter('#fldInformacoesAdicionais', 'Tabela de informações adicionais não encontrada.');
+    return obter(
+      '#fldInformacoesAdicionais',
+      'Tabela de informações adicionais não encontrada.'
+    );
   }
   const paginas = {
     processo_selecionar: paginaProcesso,
     processo_precatorio_rpv: paginaContas,
     processo_depositos_judiciais: paginaDepositos,
   };
-  const isAcaoReconhecida = isAnyOf(...Object.keys(paginas).map(k => isLiteral(k)));
+  const isAcaoReconhecida = isAnyOf(
+    ...Object.keys(paginas).map(k => isLiteral(k))
+  );
   function main() {
     const params = new URL(document.location.href).searchParams;
     const acao = validar(
@@ -1153,7 +1223,13 @@
       bind(({ acao: acao2, numproc: numproc2 }) => paginas[acao2](numproc2))
     );
   }
-  function validar(params, nomeParametro, mensagemSeVazio, validacao, mensagemSeInvalido) {
+  function validar(
+    params,
+    nomeParametro,
+    mensagemSeVazio,
+    validacao,
+    mensagemSeInvalido
+  ) {
     const valor = params.get(nomeParametro);
     if (isNull(valor)) return Left(new Error(mensagemSeVazio));
     if (!validacao(valor)) return Left(new Error(mensagemSeInvalido(valor)));

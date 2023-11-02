@@ -11,7 +11,11 @@ export function paginaListar(): Promise<Either<Error, void>> {
       document.head.appendChild(h('style', {}, css));
 
       for (const { linha, json } of linhasPrev) {
-        const button = h('button', { type: 'button', className: 'gm-cnis' }, 'Analisar dados CNIS');
+        const button = h(
+          'button',
+          { type: 'button', className: 'gm-cnis' },
+          'Analisar dados CNIS'
+        );
         button.addEventListener('click', evt => {
           evt.preventDefault();
           console.log(json.href);
@@ -23,7 +27,9 @@ export function paginaListar(): Promise<Either<Error, void>> {
 }
 
 interface MinhaTabela extends HTMLTableElement {
-  readonly tBodies: HTMLTableElement['tBodies'] & { 0: HTMLTableSectionElement };
+  readonly tBodies: HTMLTableElement['tBodies'] & {
+    0: HTMLTableSectionElement;
+  };
 }
 
 const isTabelaCorreta = (tabela: HTMLTableElement): tabela is MinhaTabela => {
@@ -40,7 +46,8 @@ async function obterLinhasPrev() {
     /^executarAcao\('pessoa_consulta_integrada\/download_json', '([^']+)', this.closest\('tr'\)\);$/;
   const jsonSelector = '.container-acoes-table__desktop > a.btnDownloadJson';
   for (const linha of linhas) {
-    if (linha.cells.length < 9) throw new Error('Formato da linha desconhecido.');
+    if (linha.cells.length < 9)
+      throw new Error('Formato da linha desconhecido.');
     const tipo = linha.cells[1]!.textContent?.trim() ?? '';
     if (tipo !== 'Dossiê Previdenciário') continue;
     const linkJson = await eitherToPromise(
@@ -51,7 +58,8 @@ async function obterLinhasPrev() {
     const json = new URL(href, document.URL);
     linhasDossiePrev.push({ linha, json });
   }
-  if (linhasDossiePrev.length < 1) throw new Error('Nenhum dossiê previdenciário.');
+  if (linhasDossiePrev.length < 1)
+    throw new Error('Nenhum dossiê previdenciário.');
   return linhasDossiePrev;
 }
 

@@ -1,7 +1,9 @@
 import { List } from './List';
 
-export const count = async (x: number): Promise<number> => (x <= 0 ? 0 : (await count(x - 1)) + 1);
-export const fac = async (x: number): Promise<number> => (x <= 1 ? 1 : x * (await fac(x - 1)));
+export const count = async (x: number): Promise<number> =>
+  x <= 0 ? 0 : (await count(x - 1)) + 1;
+export const fac = async (x: number): Promise<number> =>
+  x <= 1 ? 1 : x * (await fac(x - 1));
 const memoize = <K, T>(f: (_: K) => T): ((_: K) => T) => {
   const map = new Map<K, T>();
   return key => {
@@ -12,7 +14,8 @@ const memoize = <K, T>(f: (_: K) => T): ((_: K) => T) => {
   };
 };
 export const fib = memoize(
-  async (x: number): Promise<number> => (x <= 1 ? x : (await fib(x - 2)) + (await fib(x - 1)))
+  async (x: number): Promise<number> =>
+    x <= 1 ? x : (await fib(x - 2)) + (await fib(x - 1))
 );
 export const collatz = (x: number): Promise<number> => {
   const set = new Set<number>();

@@ -11,7 +11,9 @@ export const fac = create(
 );
 export const fib = create(
   (x: number): Result<number, number> =>
-    x <= 1 ? fib.done(x) : fib.loop(x - 2, x2 => fib.loop(x - 1, x1 => fib.done(x2 + x1))),
+    x <= 1
+      ? fib.done(x)
+      : fib.loop(x - 2, x2 => fib.loop(x - 1, x1 => fib.done(x2 + x1))),
   true
 );
 export const collatz = (x: number) => {

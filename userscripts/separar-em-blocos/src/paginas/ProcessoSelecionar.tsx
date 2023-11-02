@@ -1,4 +1,7 @@
-import { BroadcastService, createBroadcastService } from '@nadameu/create-broadcast-service';
+import {
+  BroadcastService,
+  createBroadcastService,
+} from '@nadameu/create-broadcast-service';
 import { Either, Left, Right } from '@nadameu/either';
 import { matchBy } from '@nadameu/match';
 import * as p from '@nadameu/predicates';
@@ -6,15 +9,25 @@ import { JSX, render } from 'preact';
 import { useCallback, useEffect, useMemo, useReducer } from 'preact/hooks';
 import * as DB from '../database';
 import { Bloco, BlocoProcesso } from '../types/Bloco';
-import { BroadcastMessage, isBroadcastMessage } from '../types/BroadcastMessage';
+import {
+  BroadcastMessage,
+  isBroadcastMessage,
+} from '../types/BroadcastMessage';
 import { NumProc } from '../types/NumProc';
 import { Action } from '../types/ProcessoSelecionarAction';
-import { LoadingState, State, SuccessState } from '../types/ProcessoSelecionarState';
+import {
+  LoadingState,
+  State,
+  SuccessState,
+} from '../types/ProcessoSelecionarState';
 
 export function ProcessoSelecionar(numproc: NumProc): Either<Error, void> {
   const mainMenu = document.getElementById('main-menu');
   if (p.isNull(mainMenu)) return Left(new Error('Menu não encontrado'));
-  const div = mainMenu.insertAdjacentElement('beforebegin', document.createElement('div'))!;
+  const div = mainMenu.insertAdjacentElement(
+    'beforebegin',
+    document.createElement('div')
+  )!;
   div.className = 'gm-blocos__processo';
   render(<Main {...{ numproc }} />, div);
   return Right(undefined);
@@ -54,12 +67,18 @@ function createReducer({
       if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
       const processos = new Set(bloco.processos);
       fn(processos, numproc);
-      const blocos = await DB.updateBloco({ ...bloco, processos: [...processos] });
+      const blocos = await DB.updateBloco({
+        ...bloco,
+        processos: [...processos],
+      });
       return Action.blocosModificados(blocos, { fecharJanela });
     });
   }
 
-  function reducer(state: State, action: Action): State | readonly [State, Promise<Action>] {
+  function reducer(
+    state: State,
+    action: Action
+  ): State | readonly [State, Promise<Action>] {
     return Action.match(action, {
       blocosModificados: ({ blocos, fecharJanela }) => {
         bc.publish({ type: 'Blocos', blocos });
@@ -70,9 +89,12 @@ function createReducer({
         asyncAction(state, async () => {
           const blocos = await DB.getBlocos();
           if (blocos.some(x => x.nome === nome))
-            return Action.erro(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
+            return Action.erro(
+              `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
+            );
           const bloco: Bloco = {
-            id: (Math.max(-1, ...blocos.map(x => x.id)) + 1) as p.NonNegativeInteger,
+            id: (Math.max(-1, ...blocos.map(x => x.id)) +
+              1) as p.NonNegativeInteger,
             nome,
             processos: [],
           };
@@ -89,7 +111,9 @@ function createReducer({
         }),
       mensagemRecebida: ({ msg: { blocos } }) => State.Success(blocos),
       obterBlocos: () =>
-        asyncAction(state, async () => Action.blocosModificados(await DB.getBlocos())),
+        asyncAction(state, async () =>
+          Action.blocosModificados(await DB.getBlocos())
+        ),
       remover: ({ id }) =>
         modificarProcessos(state, {
           id,
@@ -125,9 +149,16 @@ function Main({ numproc }: { numproc: NumProc }): JSX.Element {
   useEffect(() => {
     dispatch(Action.obterBlocos);
   }, []);
-  const criarBloco = useCallback((nome: Bloco['nome']) => dispatch(Action.criarBloco(nome)), []);
+  const criarBloco = useCallback(
+    (nome: Bloco['nome']) => dispatch(Action.criarBloco(nome)),
+    []
+  );
   const toggleBloco = useCallback(
-    (id: Bloco['id'], operacao: 'inserir' | 'remover', fecharJanela: boolean) => {
+    (
+      id: Bloco['id'],
+      operacao: 'inserir' | 'remover',
+      fecharJanela: boolean
+    ) => {
       if (operacao === 'inserir') {
         dispatch(Action.inserir(id, { fecharJanela }));
       } else {
@@ -138,11 +169,20 @@ function Main({ numproc }: { numproc: NumProc }): JSX.Element {
   );
   if (state.status === 'Error')
     return (
-      <ShowError reason={state.reason} onRecarregarClick={() => dispatch(Action.obterBlocos)} />
+      <ShowError
+        reason={state.reason}
+        onRecarregarClick={() => dispatch(Action.obterBlocos)}
+      />
     );
-  if (state.status === 'Loading' && state.blocos.length === 0) return <Placeholder />;
+  if (state.status === 'Loading' && state.blocos.length === 0)
+    return <Placeholder />;
   return (
-    <Blocos state={state} numproc={numproc} criarBloco={criarBloco} toggleBloco={toggleBloco} />
+    <Blocos
+      state={state}
+      numproc={numproc}
+      criarBloco={criarBloco}
+      toggleBloco={toggleBloco}
+    />
   );
 }
 function ShowError({
@@ -201,9 +241,16 @@ function Blocos(props: {
   state: LoadingState | SuccessState;
   numproc: NumProc;
   criarBloco: (nome: Bloco['nome']) => void;
-  toggleBloco: (id: Bloco['id'], operacao: 'inserir' | 'remover', fecharJanela: boolean) => void;
+  toggleBloco: (
+    id: Bloco['id'],
+    operacao: 'inserir' | 'remover',
+    fecharJanela: boolean
+  ) => void;
 }) {
-  const disabled = useMemo(() => props.state.status === 'Loading', [props.state.status]);
+  const disabled = useMemo(
+    () => props.state.status === 'Loading',
+    [props.state.status]
+  );
   const infoBlocos: BlocoProcesso[] = useMemo(
     () =>
       props.state.blocos.map(({ id, nome, processos }) => ({
@@ -244,7 +291,11 @@ function Blocos(props: {
 function BlocoPaginaProcesso(
   props: BlocoProcesso & {
     disabled: boolean;
-    toggleBloco: (id: Bloco['id'], operacao: 'inserir' | 'remover', fecharJanela: boolean) => void;
+    toggleBloco: (
+      id: Bloco['id'],
+      operacao: 'inserir' | 'remover',
+      fecharJanela: boolean
+    ) => void;
   }
 ) {
   const onChange = useCallback(
@@ -269,7 +320,9 @@ function BlocoPaginaProcesso(
         <input
           type="image"
           src="infra_css/imagens/transportar.gif"
-          onMouseOver={() => infraTooltipMostrar('Inserir processo no bloco e fechar a janela.')}
+          onMouseOver={() =>
+            infraTooltipMostrar('Inserir processo no bloco e fechar a janela.')
+          }
           onMouseOut={() => infraTooltipOcultar()}
           onClick={onTransportarClick}
           disabled={props.disabled}

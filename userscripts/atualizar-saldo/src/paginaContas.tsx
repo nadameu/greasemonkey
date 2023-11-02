@@ -28,7 +28,10 @@ declare function atualizarSaldo(
 
 const Estado = createTaggedUnion({
   Ocioso: (infoContas: InfoConta[]) => ({ infoContas }),
-  Atualizando: (infoContas: InfoConta[], conta: number) => ({ infoContas, conta }),
+  Atualizando: (infoContas: InfoConta[], conta: number) => ({
+    infoContas,
+    conta,
+  }),
   Erro: (erro: Error) => ({ erro }),
 });
 type Estado = Static<typeof Estado>;
@@ -53,7 +56,10 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
   const bc = createMsgService();
   const store = createStore<Estado, Acao>(
     () => {
-      const estado = pipe(obterContas(), E.either<Error, Estado>(Estado.Erro)(Estado.Ocioso));
+      const estado = pipe(
+        obterContas(),
+        E.either<Error, Estado>(Estado.Erro)(Estado.Ocioso)
+      );
       if (estado.tag !== 'Erro') {
         bc.subscribe(msg =>
           Mensagem.match(msg, {
@@ -95,7 +101,9 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
               return Estado.Atualizando(infoContas, primeiraConta);
             },
             Atualizando: () =>
-              Estado.Erro(new Error('Tentativa de atualização durante outra atualização.')),
+              Estado.Erro(
+                new Error('Tentativa de atualização durante outra atualização.')
+              ),
           }),
         SaldoAtualizado: ({ saldo }) =>
           Estado.match(estado, {
@@ -108,16 +116,24 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
                 .concat(infoContas.slice(conta + 1));
               const proxima = encontrarContaAtualizavel(infoNova, conta + 1);
               if (proxima < 0) {
-                const qtdComSaldo = infoNova.map(x => x.saldo).filter(x => x > 0).length;
-                const permiteAtualizar = infoNova.some(x => x.atualizacao !== null);
-                bc.publish(Mensagem.InformaContas(numproc, qtdComSaldo, permiteAtualizar));
+                const qtdComSaldo = infoNova
+                  .map(x => x.saldo)
+                  .filter(x => x > 0).length;
+                const permiteAtualizar = infoNova.some(
+                  x => x.atualizacao !== null
+                );
+                bc.publish(
+                  Mensagem.InformaContas(numproc, qtdComSaldo, permiteAtualizar)
+                );
                 return Estado.Ocioso(infoNova);
               }
               infoNova[proxima]!.atualizacao!();
               return Estado.Atualizando(infoNova, proxima);
             },
           }),
-        ErroComunicacao: ({ mensagem = 'Ocorreu um erro na atualização dos saldos.' }) =>
+        ErroComunicacao: ({
+          mensagem = 'Ocorreu um erro na atualização dos saldos.',
+        }) =>
           Estado.match(estado, { Erro: () => estado }, () => {
             bc.destroy();
             return Estado.Erro(new Error(mensagem));
@@ -145,7 +161,9 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
             ? 'Há 1 conta com saldo.'
             : `Há ${contasComSaldo} contas com saldo.`;
         const botao =
-          contasAtualizaveis.length === 0 ? null : <button onClick={onClick}>Atualizar</button>;
+          contasAtualizaveis.length === 0 ? null : (
+            <button onClick={onClick}>Atualizar</button>
+          );
         return (
           <>
             <span class={classe}>{mensagem}</span>
@@ -173,13 +191,16 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
     render(<App estado={estado} />, div);
   }
   function obterContas(): Either<Error, InfoConta[]> {
-    const tabela = document.querySelector<HTMLTableElement>('#divInfraAreaDadosDinamica > table');
+    const tabela = document.querySelector<HTMLTableElement>(
+      '#divInfraAreaDadosDinamica > table'
+    );
     if (!tabela) return Ok([]);
     return pipe(
       tabela.querySelectorAll<HTMLTableRowElement>('tr[id^="tdConta"]'),
       AL.traverse(applicativeEither)(linha => {
         const info = obterInfoContaLinha(linha);
-        if (info === null) return Err(new Error('Erro ao obter dados das contas.'));
+        if (info === null)
+          return Err(new Error('Erro ao obter dados das contas.'));
         else return Ok(info);
       })
     );
@@ -191,7 +212,8 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
         if (!p.hasShape({ url: p.isString })(this)) return;
         const url = new URL(this.url, document.location.href);
         if (!/\/controlador_ajax\.php$/.test(url.pathname)) return;
-        if (url.searchParams.get('acao_ajax') !== 'atualizar_precatorio_rpv') return;
+        if (url.searchParams.get('acao_ajax') !== 'atualizar_precatorio_rpv')
+          return;
         try {
           p.check(p.isLiteral(200), xhr.status);
           const responseXML = xhr.responseXML;
@@ -200,7 +222,10 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
             const mensagem =
               erros.length === 0
                 ? undefined
-                : Array.from(erros, erro => erro.getAttribute('descricao')?.trim() ?? '')
+                : Array.from(
+                    erros,
+                    erro => erro.getAttribute('descricao')?.trim() ?? ''
+                  )
                     .filter(x => x !== '')
                     .join('\n') || undefined;
             return handler(Acao.ErroComunicacao(mensagem));
@@ -244,9 +269,9 @@ function obterInfoContaLinha(row: HTMLTableRowElement): InfoConta | null {
   if (!match || match.length < 2) return null;
   const [, numeros] = match as [string, string];
   const saldo = Number(numeros.replace(/\./g, '').replace(',', '.'));
-  const link = row.cells[row.cells.length - 1]!.querySelector<HTMLAnchorElement>(
-    'a[href^="javascript:atualizarSaldo("]'
-  );
+  const link = row.cells[
+    row.cells.length - 1
+  ]!.querySelector<HTMLAnchorElement>('a[href^="javascript:atualizarSaldo("]');
   let atualizacao: (() => void) | null = null;
   if (link) {
     const match = link.href.match(jsLinkRE);
@@ -261,13 +286,27 @@ function obterInfoContaLinha(row: HTMLTableRowElement): InfoConta | null {
       strBanco,
       idRequisicaoBeneficiarioPagamento,
       strQtdMovimentos,
-    ] = match as [string, string, string, string, string, string, string, string, string];
+    ] = match as [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+    ];
     const [conta, numBanco, qtdMovimentos] = [
       Number(strConta),
       Number(strBanco),
       Number(strQtdMovimentos),
     ].filter(x => !Number.isNaN(x));
-    if (conta === undefined || numBanco === undefined || qtdMovimentos === undefined) {
+    if (
+      conta === undefined ||
+      numBanco === undefined ||
+      qtdMovimentos === undefined
+    ) {
       return null;
     }
     atualizacao = () =>

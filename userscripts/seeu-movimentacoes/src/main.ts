@@ -7,7 +7,9 @@ export const main = _(
   query('li[name="tabMovimentacoesProcesso"].currentTab'),
   mapLeft(() => 'IGNORE' as const),
   mapReader(() => {
-    const links = document.querySelectorAll<HTMLImageElement>('img[id^=iconmovimentacoes]');
+    const links = document.querySelectorAll<HTMLImageElement>(
+      'img[id^=iconmovimentacoes]'
+    );
     const listening = new Set<Element>();
     const observer = new IntersectionObserver(function onIntersection(entries) {
       for (const entry of entries) {
@@ -31,7 +33,9 @@ export const main = _(
                 if (c % 2 === 1) return [];
                 if (c === 0) {
                   const text = celula.textContent ?? '';
-                  const match = text.match(/^\s*([0-9\.]+)\s+Arquivo:\s+(.+)\s*$/);
+                  const match = text.match(
+                    /^\s*([0-9\.]+)\s+Arquivo:\s+(.+)\s*$/
+                  );
                   if (!match) return [];
                   return [[match[1]!, match[2]!]];
                 } else if (c === 2) {
@@ -42,7 +46,9 @@ export const main = _(
                 }
                 return [
                   Array.from(celula.childNodes)
-                    .map(x => (x instanceof Text ? x.nodeValue?.trim() ?? '' : x))
+                    .map(x =>
+                      x instanceof Text ? x.nodeValue?.trim() ?? '' : x
+                    )
                     .filter(x => x !== ''),
                 ];
               })

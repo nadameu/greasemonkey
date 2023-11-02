@@ -30,7 +30,8 @@ fieldsets.forEach(fieldset => {
     if (!target.matches('a.infraButton')) return;
 
     const [, tipoAcao] =
-      target.href.match(/^javascript:validarAcao\('([^']+)'\);void\(0\);$/) || [];
+      target.href.match(/^javascript:validarAcao\('([^']+)'\);void\(0\);$/) ||
+      [];
     if (!tipoAcao) return;
 
     evt.preventDefault();
@@ -43,7 +44,9 @@ fieldsets.forEach(fieldset => {
   });
 });
 
-document.head.appendChild(document.createElement('style')).textContent = /* css */ `
+document.head.appendChild(
+  document.createElement('style')
+).textContent = /* css */ `
 #fldAcoes a.infraButton {
   cursor: alias;
 }

@@ -55,17 +55,27 @@ function inserir() {
         let len = documentos.length,
           ultimo = len - 1,
           documento;
-        for (let indiceDocumento = 0; indiceDocumento < len; ++indiceDocumento) {
+        for (
+          let indiceDocumento = 0;
+          indiceDocumento < len;
+          ++indiceDocumento
+        ) {
           documento = documentos[indiceDocumento];
 
           GUI.Logger.write(
-            'Obtendo veículos do réu ' + documento + '.'.repeat(14 - documento.length) + '...'
+            'Obtendo veículos do réu ' +
+              documento +
+              '.'.repeat(14 - documento.length) +
+              '...'
           );
           let qtdVeiculosAnterior = qtdVeiculos;
           qtdVeiculos = yield Pagina.obterVeiculosDocumento(documento);
           let qtdVeiculosReu = qtdVeiculos - qtdVeiculosAnterior;
           GUI.Logger.write(
-            '.'.repeat(3 - qtdVeiculosReu.toString().length) + '(' + qtdVeiculosReu + ')... ok.\n'
+            '.'.repeat(3 - qtdVeiculosReu.toString().length) +
+              '(' +
+              qtdVeiculosReu +
+              ')... ok.\n'
           );
 
           if (qtdVeiculosReu === 0) {
@@ -102,7 +112,11 @@ function inserir() {
 
             let placa = Pagina.obterPlacaVeiculo(i);
             GUI.Logger.write(
-              'Obtendo detalhes do veículo ' + placa.substr(0, 3) + '-' + placa.substr(3) + '...'
+              'Obtendo detalhes do veículo ' +
+                placa.substr(0, 3) +
+                '-' +
+                placa.substr(3) +
+                '...'
             );
 
             let detalhes = yield Pagina.abrirDetalhesVeiculo(i);
@@ -117,7 +131,9 @@ function inserir() {
               GUI.areaImpressao.adicionar(detalhesRestricoes.painel);
               if (detalhesRestricoes.renajud) {
                 GUI.areaImpressao.adicionar(document.createElement('br'));
-                [...detalhesRestricoes.renajud.childNodes].forEach(GUI.areaImpressao.adicionar);
+                [...detalhesRestricoes.renajud.childNodes].forEach(
+                  GUI.areaImpressao.adicionar
+                );
               }
               Pagina.fecharRestricoesVeiculo(i);
             }
@@ -149,12 +165,20 @@ function inserir() {
       throw new Error('Opção não encontrada (campo "' + idCampo + '"):', valor);
     }
     var texto = opcao[0].innerHTML;
-    var menu = document.getElementById(idCampo).getElementsByClassName('ui-selectonemenu-trigger');
-    opcao = [...document.getElementById(idPainel).getElementsByTagName('li')].filter(
-      li => li.dataset.label === texto
-    );
+    var menu = document
+      .getElementById(idCampo)
+      .getElementsByClassName('ui-selectonemenu-trigger');
+    opcao = [
+      ...document.getElementById(idPainel).getElementsByTagName('li'),
+    ].filter(li => li.dataset.label === texto);
     if (menu.length === 0) {
-      throw new Error('Campo não encontrado: "' + idCampo + '"', select, texto, menu, opcao);
+      throw new Error(
+        'Campo não encontrado: "' + idCampo + '"',
+        select,
+        texto,
+        menu,
+        opcao
+      );
     }
     menu[0].click();
     opcao[0].click();
@@ -172,7 +196,10 @@ function inserir() {
       Pagina.obterOrgao() !== PreferenciasUsuario.orgao
     ) {
       try {
-        preencherSelectOneMenu('form-incluir-restricao:campo-orgao', PreferenciasUsuario.orgao);
+        preencherSelectOneMenu(
+          'form-incluir-restricao:campo-orgao',
+          PreferenciasUsuario.orgao
+        );
       } catch (err) {
         PreferenciasUsuario.orgao = '';
       }
@@ -186,7 +213,9 @@ function inserir() {
         PreferenciasUsuario.magistrado
       );
     } else if (Pagina.obterMagistrado() !== '') {
-      document.getElementById('form-incluir-restricao:campo-numero-processo').value = GUI.numproc;
+      document.getElementById(
+        'form-incluir-restricao:campo-numero-processo'
+      ).value = GUI.numproc;
     } else {
       console.info('Tudo preenchido.');
     }
@@ -199,13 +228,17 @@ function inserir() {
     if (ext.currentStep === 'inclui-restricao') {
       GUI.hide();
       GUI.areaImpressao.limpar();
-      document.getElementById('form-incluir-restricao:campo-magistrado_input').childNodes[0].value =
-        '';
+      document.getElementById(
+        'form-incluir-restricao:campo-magistrado_input'
+      ).childNodes[0].value = '';
       GUI.criarOpcaoPreencherMagistrado();
-      AjaxListener.listen('form-incluir-restricao:campo-municipio', function () {
-        PreferenciasUsuario.municipio = Pagina.obterMunicipio();
-        preencherTudo();
-      });
+      AjaxListener.listen(
+        'form-incluir-restricao:campo-municipio',
+        function () {
+          PreferenciasUsuario.municipio = Pagina.obterMunicipio();
+          preencherTudo();
+        }
+      );
       AjaxListener.listen('form-incluir-restricao:campo-orgao', function () {
         PreferenciasUsuario.orgao = Pagina.obterOrgao();
         preencherTudo();
@@ -347,8 +380,12 @@ var AjaxListener = (function () {
       try {
         var eventDetails = JSON.parse(evt.data);
         if (eventDetails.type === 'ajaxComplete') {
-          getResolves(eventDetails.source).forEach(resolve => resolve(eventDetails.extension));
-          getCallbacks(eventDetails.source).forEach(callback => callback(eventDetails.extension));
+          getResolves(eventDetails.source).forEach(resolve =>
+            resolve(eventDetails.extension)
+          );
+          getCallbacks(eventDetails.source).forEach(callback =>
+            callback(eventDetails.extension)
+          );
           console.debug('ajaxComplete()', eventDetails);
         } else {
           throw new Error('Tipo desconhecido: ' + eventDetails.type);
@@ -394,9 +431,14 @@ var GUI = (function () {
     'beforebegin',
     '<div id="alteracoesGreasemonkey"><select></select> <input placeholder="Número do processo" size="25" maxlength="25" autofocus/><div></div></div>'
   );
-  var alteracoesGreasemonkey = document.getElementById('alteracoesGreasemonkey');
+  var alteracoesGreasemonkey = document.getElementById(
+    'alteracoesGreasemonkey'
+  );
 
-  document.body.insertAdjacentHTML('beforeend', '<div id="impressaoGreasemonkey"></div>');
+  document.body.insertAdjacentHTML(
+    'beforeend',
+    '<div id="impressaoGreasemonkey"></div>'
+  );
   var impressaoGreasemonkey = document.getElementById('impressaoGreasemonkey');
 
   var estadoElement = alteracoesGreasemonkey.querySelector('select');
@@ -406,7 +448,11 @@ var GUI = (function () {
     ['PR', 'RS', 'SC']
       .map(
         estado =>
-          '<option' + (estado === estadoSalvo ? ' selected' : '') + '>' + estado + '</option>'
+          '<option' +
+          (estado === estadoSalvo ? ' selected' : '') +
+          '>' +
+          estado +
+          '</option>'
       )
       .join('')
   );
@@ -449,7 +495,9 @@ var GUI = (function () {
     },
     criarOpcaoPreencherMagistrado() {
       console.debug('GUI.criarOpcaoPreencherMagistrado()');
-      var menu = document.getElementById('form-incluir-restricao:campo-magistrado');
+      var menu = document.getElementById(
+        'form-incluir-restricao:campo-magistrado'
+      );
       var celula = menu.parentNode;
       while (celula && celula.tagName.toUpperCase() !== 'TD') {
         celula = celula.parentNode;
@@ -458,7 +506,9 @@ var GUI = (function () {
         'afterend',
         '<td><label><input type="checkbox" id="preencher-magistrado-automaticamente"/> Usar este valor como padrão para todos os processos</label></td>'
       );
-      var checkbox = document.getElementById('preencher-magistrado-automaticamente');
+      var checkbox = document.getElementById(
+        'preencher-magistrado-automaticamente'
+      );
       checkbox.checked = PreferenciasUsuario.preencherMagistrado;
       checkbox.addEventListener(
         'change',
@@ -469,12 +519,19 @@ var GUI = (function () {
       );
     },
     definirRestricoesVeiculo(ord, restricoes) {
-      console.debug('GUI.definirRestricoeVeiculo(ord, restricoes)', ord, restricoes);
+      console.debug(
+        'GUI.definirRestricoeVeiculo(ord, restricoes)',
+        ord,
+        restricoes
+      );
       var celulaRestricao = Pagina.obterCelulaRestricaoVeiculo(ord);
-      celulaRestricao.innerHTML = '<div class="noscreen">' + celulaRestricao.innerHTML + '</div>\n';
+      celulaRestricao.innerHTML =
+        '<div class="noscreen">' + celulaRestricao.innerHTML + '</div>\n';
       celulaRestricao.insertAdjacentHTML(
         'beforeend',
-        restricoes.map(texto => '<div class="noprint">' + texto + '</div>').join('\n')
+        restricoes
+          .map(texto => '<div class="noprint">' + texto + '</div>')
+          .join('\n')
       );
     },
     areaImpressao: {
@@ -493,13 +550,18 @@ var GUI = (function () {
     },
     restaurarTabelaVeiculos(fragmento) {
       console.debug('GUI.restaurarTabelaVeiculos(fragmento)', fragmento);
-      var tBody = document.getElementById('form-incluir-restricao:lista-veiculo_data');
+      var tBody = document.getElementById(
+        'form-incluir-restricao:lista-veiculo_data'
+      );
       tBody.insertBefore(fragmento, tBody.firstChild);
     },
     salvarTabelaVeiculos() {
       console.debug('GUI.salvarTabelaVeiculos()');
       var fragmento = document.createDocumentFragment();
-      var linhas = [...document.getElementById('form-incluir-restricao:lista-veiculo_data').rows];
+      var linhas = [
+        ...document.getElementById('form-incluir-restricao:lista-veiculo_data')
+          .rows,
+      ];
       linhas.forEach(linha => fragmento.appendChild(linha));
       return fragmento;
     },
@@ -561,24 +623,28 @@ var Pagina = (function () {
       var prefixo = Pagina.obterPrefixoVeiculo(ord);
       var idAbrirRestricoes = prefixo + ':link-detalhes-veiculo-restricoes',
         abrirRestricoes = document.getElementById(idAbrirRestricoes);
-      var promise = AjaxListener.listenOnce(idAbrirRestricoes).then(function () {
-        var idDialogo = prefixo + ':dlg-detalhes-veiculo-restricoes',
-          dialogo = document.getElementById(idDialogo);
-        var fieldsets = dialogo.getElementsByTagName('fieldset');
-        var painelRestricoes = fieldsets[1];
-        var listaRestricoes = painelRestricoes.getElementsByTagName('ul');
-        if (listaRestricoes.length > 0) {
-          listaRestricoes = [...listaRestricoes[0].childNodes].map(li => li.textContent.trim());
-        } else {
-          listaRestricoes = [];
+      var promise = AjaxListener.listenOnce(idAbrirRestricoes).then(
+        function () {
+          var idDialogo = prefixo + ':dlg-detalhes-veiculo-restricoes',
+            dialogo = document.getElementById(idDialogo);
+          var fieldsets = dialogo.getElementsByTagName('fieldset');
+          var painelRestricoes = fieldsets[1];
+          var listaRestricoes = painelRestricoes.getElementsByTagName('ul');
+          if (listaRestricoes.length > 0) {
+            listaRestricoes = [...listaRestricoes[0].childNodes].map(li =>
+              li.textContent.trim()
+            );
+          } else {
+            listaRestricoes = [];
+          }
+          var painelRestricoesRenajud = fieldsets[2];
+          return {
+            painel: painelRestricoes,
+            lista: listaRestricoes,
+            renajud: painelRestricoesRenajud,
+          };
         }
-        var painelRestricoesRenajud = fieldsets[2];
-        return {
-          painel: painelRestricoes,
-          lista: listaRestricoes,
-          renajud: painelRestricoesRenajud,
-        };
-      });
+      );
       abrirRestricoes.click();
       return promise;
     },
@@ -596,18 +662,25 @@ var Pagina = (function () {
       var promise = new Promise(function (resolve, reject) {
         var onPaginaCarregada = function () {
           console.info('pagina carregada');
-          var botoesPagina = [...document.getElementsByClassName('ui-paginator-page')].filter(
-            botao => botao.classList.contains('ui-state-active')
-          );
-          if (botoesPagina.length === 2 && Number(botoesPagina[0].textContent) === pagina) {
+          var botoesPagina = [
+            ...document.getElementsByClassName('ui-paginator-page'),
+          ].filter(botao => botao.classList.contains('ui-state-active'));
+          if (
+            botoesPagina.length === 2 &&
+            Number(botoesPagina[0].textContent) === pagina
+          ) {
             resolve();
           } else if (botoesPagina.length === 2) {
-            AjaxListener.listenOnce('form-incluir-restricao:lista-veiculo').then(onPaginaCarregada);
+            AjaxListener.listenOnce(
+              'form-incluir-restricao:lista-veiculo'
+            ).then(onPaginaCarregada);
           } else {
             reject();
           }
         };
-        AjaxListener.listenOnce('form-incluir-restricao:lista-veiculo').then(onPaginaCarregada);
+        AjaxListener.listenOnce('form-incluir-restricao:lista-veiculo').then(
+          onPaginaCarregada
+        );
       });
       return promise;
     },
@@ -622,9 +695,13 @@ var Pagina = (function () {
     fecharRestricoesVeiculo(ord) {
       console.debug('Pagina.fecharRestricoesVeiculo(ord)', ord);
       var prefixo = Pagina.obterPrefixoVeiculo(ord);
-      var idDivDetalhesRestricoes = prefixo + ':dlg-detalhes-veiculo-restricoes',
-        divDetalhesRestricoes = document.getElementById(idDivDetalhesRestricoes);
-      var fecharRestricoes = divDetalhesRestricoes.getElementsByTagName('button')[1];
+      var idDivDetalhesRestricoes =
+          prefixo + ':dlg-detalhes-veiculo-restricoes',
+        divDetalhesRestricoes = document.getElementById(
+          idDivDetalhesRestricoes
+        );
+      var fecharRestricoes =
+        divDetalhesRestricoes.getElementsByTagName('button')[1];
       fecharRestricoes.click();
     },
     imprimir() {
@@ -633,7 +710,9 @@ var Pagina = (function () {
     },
     imprimirSemVeiculos() {
       console.debug('Pagina.imprimirSemVeiculos()');
-      var veiculos = document.getElementById('form-incluir-restricao:panel-lista-veiculo');
+      var veiculos = document.getElementById(
+        'form-incluir-restricao:panel-lista-veiculo'
+      );
       veiculos.style.display = 'none';
       Pagina.imprimir();
       veiculos.style.display = '';
@@ -641,7 +720,9 @@ var Pagina = (function () {
     limpar() {
       console.debug('Pagina.limpar()');
       var promise = Promise.resolve();
-      var form = document.getElementById('form-incluir-restricao:panel-lista-veiculo');
+      var form = document.getElementById(
+        'form-incluir-restricao:panel-lista-veiculo'
+      );
       var botoes = [...form.getElementsByTagName('button')].filter(
         botao => botao.textContent.trim() === 'Limpar lista'
       );
@@ -671,17 +752,24 @@ var Pagina = (function () {
     },
     obterLinhaVeiculo(ord) {
       console.debug('Pagina.obterLinhaVeiculo(ord)', ord);
-      var tBody = document.getElementById('form-incluir-restricao:lista-veiculo_data');
+      var tBody = document.getElementById(
+        'form-incluir-restricao:lista-veiculo_data'
+      );
       return tBody.rows[ord % 100];
     },
     obterMagistrado() {
-      return document.getElementById('form-incluir-restricao:campo-magistrado_input').value;
+      return document.getElementById(
+        'form-incluir-restricao:campo-magistrado_input'
+      ).value;
     },
     obterMunicipio() {
-      return document.getElementById('form-incluir-restricao:campo-municipio_input').value;
+      return document.getElementById(
+        'form-incluir-restricao:campo-municipio_input'
+      ).value;
     },
     obterOrgao() {
-      return document.getElementById('form-incluir-restricao:campo-orgao_input').value;
+      return document.getElementById('form-incluir-restricao:campo-orgao_input')
+        .value;
     },
     obterPlacaVeiculo(ord) {
       console.debug('Pagina.obterPlacaVeiculo(ord)', ord);
@@ -697,14 +785,18 @@ var Pagina = (function () {
       console.debug('Pagina.obterVeiculosDocumento(documento)', documento);
       var idBotaoPesquisar = 'form-incluir-restricao:botao-pesquisar';
       var botaoPesquisar = document.getElementById(idBotaoPesquisar);
-      var campoDocumento = document.getElementById('form-incluir-restricao:campo-cpf-cnpj');
-      var promise = AjaxListener.listenOnce(idBotaoPesquisar).then(function (ext) {
-        if (ext === null) {
-          return 0;
-        } else {
-          return ext.totalRecords;
+      var campoDocumento = document.getElementById(
+        'form-incluir-restricao:campo-cpf-cnpj'
+      );
+      var promise = AjaxListener.listenOnce(idBotaoPesquisar).then(
+        function (ext) {
+          if (ext === null) {
+            return 0;
+          } else {
+            return ext.totalRecords;
+          }
         }
-      });
+      );
       campoDocumento.value = documento;
       botaoPesquisar.click();
       return promise;
@@ -735,7 +827,9 @@ var ServicoWSDL = (function () {
       if (processo.lastChild.nodeName === 'parsererror') {
         throw new Error('Erro ao tentar obter os dados do processo.');
       }
-      var erros = [...processo.getElementsByTagName('Erro')].map(err => err.textContent);
+      var erros = [...processo.getElementsByTagName('Erro')].map(
+        err => err.textContent
+      );
       if (erros.length) {
         reject(new Error(erros.join('\n')));
       } else {
@@ -797,10 +891,14 @@ var ServicoWSDL = (function () {
 })();
 
 var loc = location.href;
-if (loc === 'https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf') {
+if (
+  loc ===
+  'https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-insercao.jsf'
+) {
   inserir();
 } else if (
-  loc === 'https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-retirar.jsf'
+  loc ===
+  'https://renajud.denatran.serpro.gov.br/renajud/restrito/restricoes-retirar.jsf'
 ) {
   retirar();
 }

@@ -16,11 +16,15 @@ export function onCustomEvent<T>(
 ) {
   target.addEventListener('gm/cnis', evt => {
     if (!isObject(evt) || !('detail' in evt))
-      return void handler(errorToDetail(new EventoDesconhecidoError('Evento desconhecido.', evt)));
+      return void handler(
+        errorToDetail(new EventoDesconhecidoError('Evento desconhecido.', evt))
+      );
 
     if (!checker(evt.detail))
       return void handler(
-        errorToDetail(new Error(`Mensagem desconhecida: \`${JSON.stringify(evt.detail)}\`.`))
+        errorToDetail(
+          new Error(`Mensagem desconhecida: \`${JSON.stringify(evt.detail)}\`.`)
+        )
       );
 
     handler(evt.detail);

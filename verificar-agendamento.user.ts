@@ -25,20 +25,28 @@ async function main() {
 }
 
 async function obterBotao() {
-  const botoes = document.querySelectorAll<HTMLElement>('#btnManterAgendamento');
+  const botoes = document.querySelectorAll<HTMLElement>(
+    '#btnManterAgendamento'
+  );
   assert(botoes.length === 1, 'Mais de um botão encontrado.');
   const botao = botoes[0]!;
   return botao;
 }
 
 async function obterEhLote() {
-  const headings = document.querySelectorAll<HTMLHeadingElement>('#divInfraBarraLocalizacao h4');
+  const headings = document.querySelectorAll<HTMLHeadingElement>(
+    '#divInfraBarraLocalizacao h4'
+  );
   assert(headings.length === 1, 'Mais de um título encontrado.');
-  const minuta = headings[0]!.textContent?.match(/^Agendamento da Minuta .*(\d+)$/)?.[1];
+  const minuta = headings[0]!.textContent?.match(
+    /^Agendamento da Minuta .*(\d+)$/
+  )?.[1];
   assert(minuta != null, 'Número da minuta não encontrado.');
 
   const linhas = Array.from(
-    window.top?.document.body.querySelectorAll<HTMLTableRowElement>('#fldMinutas tr') ?? []
+    window.top?.document.body.querySelectorAll<HTMLTableRowElement>(
+      '#fldMinutas tr'
+    ) ?? []
   )
     .filter(row => row.cells.length >= 2)
     .filter(row => RegExp(minuta).test(row.cells[1]!.textContent ?? ''));
@@ -58,7 +66,11 @@ function assert(condition: boolean, message?: string): asserts condition {
 function validate<T, U>(promises: [Promise<T>, Promise<U>]): Promise<[T, U]>;
 function validate<T>(promises: Promise<T>[]): Promise<Awaited<T>[]> {
   return Promise.allSettled(promises).then(results => {
-    if (results.every((x): x is PromiseFulfilledResult<Awaited<T>> => x.status === 'fulfilled')) {
+    if (
+      results.every(
+        (x): x is PromiseFulfilledResult<Awaited<T>> => x.status === 'fulfilled'
+      )
+    ) {
       return results.map(x => x.value);
     } else {
       throw new AggregateError(

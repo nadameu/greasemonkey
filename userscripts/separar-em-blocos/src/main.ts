@@ -16,10 +16,15 @@ export function main(): Either<Error, void> {
 
     case 'processo_selecionar': {
       const numproc = params.get('num_processo');
-      if (!numproc) return Left(new Error('Número do processo não encontrado.'));
+      if (!numproc)
+        return Left(new Error('Número do processo não encontrado.'));
       if (!isNumProc(numproc))
         return Left(
-          new Error(`Não foi possível analisar o número do proceso: ${JSON.stringify(numproc)}.`)
+          new Error(
+            `Não foi possível analisar o número do proceso: ${JSON.stringify(
+              numproc
+            )}.`
+          )
         );
       return ProcessoSelecionar(numproc);
     }

@@ -77,7 +77,9 @@ const alterar = (el, valor) =>
   ]);
 
 const url = new URL(location.href);
-const matchAcao = url.searchParams.get('acao').match(/^oficio_requisitorio_(.*)$/);
+const matchAcao = url.searchParams
+  .get('acao')
+  .match(/^oficio_requisitorio_(.*)$/);
 const acao = (matchAcao || [])[1];
 
 if (acao === 'requisicoes_editar') {

@@ -8,7 +8,9 @@ export function buscarDocumento(
     xhr.open(method, url);
     xhr.responseType = 'document';
     xhr.addEventListener('load', () => resolve(xhr.response));
-    xhr.addEventListener('error', () => reject(new Error(`Erro ao obter o documento "${url}".`)));
+    xhr.addEventListener('error', () =>
+      reject(new Error(`Erro ao obter o documento "${url}".`))
+    );
     xhr.send(data);
   });
 }

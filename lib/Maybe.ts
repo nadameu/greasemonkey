@@ -1,4 +1,7 @@
-type AllMaybes<T, Acc extends any[] = []> = T extends [Maybe<infer U>, ...infer Rest]
+type AllMaybes<T, Acc extends any[] = []> = T extends [
+  Maybe<infer U>,
+  ...infer Rest,
+]
   ? AllMaybes<Rest, [...Acc, U]>
   : T extends []
   ? Maybe<Acc>
@@ -7,7 +10,8 @@ type AllMaybes<T, Acc extends any[] = []> = T extends [Maybe<infer U>, ...infer 
 export type Maybe<a> = Just<a> | Nothing<a>;
 abstract class _Maybe<a> {
   *[Symbol.iterator]() {
-    if ((this as unknown as Maybe<a>).isJust) yield (this as unknown as Just<a>).value;
+    if ((this as unknown as Maybe<a>).isJust)
+      yield (this as unknown as Just<a>).value;
   }
   abstract match<b>(Nothing: () => b, Just: (value: a) => b): b;
   apply<a, b>(this: Maybe<(_: a) => b>, that: Maybe<a>): Maybe<b> {
@@ -73,7 +77,11 @@ export function all(...maybes: Maybe<unknown>[]): Maybe<unknown[]> {
   return Just(results);
 }
 
-export function lift2<a, b, c>(f: (_: a) => (_: b) => c, fx: Maybe<a>, fy: Maybe<b>): Maybe<c> {
+export function lift2<a, b, c>(
+  f: (_: a) => (_: b) => c,
+  fx: Maybe<a>,
+  fy: Maybe<b>
+): Maybe<c> {
   return Just(f).apply(fx).apply(fy);
 }
 

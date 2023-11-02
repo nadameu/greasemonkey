@@ -125,7 +125,9 @@
       xhr.open(method, url);
       xhr.responseType = 'document';
       xhr.addEventListener('load', () => resolve(xhr.response));
-      xhr.addEventListener('error', () => reject(new Error(`Erro ao obter o documento "${url}".`)));
+      xhr.addEventListener('error', () =>
+        reject(new Error(`Erro ao obter o documento "${url}".`))
+      );
       xhr.send(data);
     });
   }
@@ -135,13 +137,20 @@
     const excecoes = Array.from(doc.querySelectorAll('.infraExcecao'));
     const tabelaErros = doc.querySelector('table[summary="Erro(s)"]');
     if (validacao) {
-      const match = validacao.textContent?.trim().match(/^Solicitação de pagamento (\d+) criada$/);
+      const match = validacao.textContent
+        ?.trim()
+        .match(/^Solicitação de pagamento (\d+) criada$/);
       if (match) {
         return match[1];
       }
     }
-    const msgsErro = /* @__PURE__ */ new Set(['Houve um erro ao tentar criar a solicitação!', '']);
-    excecoes.forEach(excecao => msgsErro.add(excecao.textContent?.trim() ?? ''));
+    const msgsErro = /* @__PURE__ */ new Set([
+      'Houve um erro ao tentar criar a solicitação!',
+      '',
+    ]);
+    excecoes.forEach(excecao =>
+      msgsErro.add(excecao.textContent?.trim() ?? '')
+    );
     if (tabelaErros) {
       const tBodyRows = Array.from(tabelaErros.rows).slice(1);
       tBodyRows
@@ -186,7 +195,8 @@
     const idUnica = parametros.get('id_unica') || null;
     const numProcesso = idUnica?.split('|')[1] || null;
     const numeroNomeacao = linha.cells[2]?.textContent?.trim() || null;
-    if (idUnica && numProcesso && numeroNomeacao) return { idUnica, numProcesso, numeroNomeacao };
+    if (idUnica && numProcesso && numeroNomeacao)
+      return { idUnica, numProcesso, numeroNomeacao };
     throw new ErroNomeacaoLinha(linha);
   }
   class ErroNomeacaoLinha extends Error {
@@ -234,7 +244,11 @@
           { className: 'gm-ajg__lista__processo' },
           nomeacao.numProcesso
         );
-        const definicao = createElement('dd', { className: 'gm-ajg__lista__resultado' }, 'Na fila');
+        const definicao = createElement(
+          'dd',
+          { className: 'gm-ajg__lista__resultado' },
+          'Na fila'
+        );
         lista.appendChild(termo);
         lista.appendChild(definicao);
         const DEBUG = false;
@@ -271,14 +285,16 @@
       lista.scrollIntoView();
       let mensagem;
       if (duvida) {
-        mensagem = 'Não foi possível verificar se uma ou mais solicitações foram criadas.';
+        mensagem =
+          'Não foi possível verificar se uma ou mais solicitações foram criadas.';
       } else {
         if (linhasProcessosSelecionados.length === 1) {
           mensagem = 'Solicitação criada com sucesso!';
         } else {
           mensagem = 'Solicitações criadas com sucesso!';
         }
-        mensagem += '\nA página será recarregada para atualizar a lista de processos.';
+        mensagem +=
+          '\nA página será recarregada para atualizar a lista de processos.';
       }
       window.alert(mensagem);
       if (!duvida) {
@@ -315,7 +331,8 @@
       if (form.length !== camposEsperados.length) throw new Error();
       for (const [i, nomeEsperado] of camposEsperados.entries()) {
         const elt = form.elements[i];
-        const nome = (elt && ('name' in elt ? elt.name : null)) || elt?.id || '';
+        const nome =
+          (elt && ('name' in elt ? elt.name : null)) || elt?.id || '';
         if (nome !== nomeEsperado) throw new Error();
       }
     } catch (_) {
@@ -341,10 +358,11 @@
     } finally {
       div.textContent = '';
     }
-    const form = await query('form[id="frmRequisicaoPagamentoAJG"]', doc).then(x =>
-      x.cloneNode(true)
+    const form = await query('form[id="frmRequisicaoPagamentoAJG"]', doc).then(
+      x => x.cloneNode(true)
     );
-    if (!validarFormularioExterno(form)) throw new Error('Formulário não foi validado!');
+    if (!validarFormularioExterno(form))
+      throw new Error('Formulário não foi validado!');
     div.innerHTML = html;
     const formularioAdicionado = document.querySelector('.gm-ajg__formulario');
     formularioAdicionado.method = form.method;
@@ -359,7 +377,9 @@
   async function main() {
     let linkCriar;
     try {
-      linkCriar = await query('a[href^="controlador.php?acao=criar_solicitacao_pagamento&"]');
+      linkCriar = await query(
+        'a[href^="controlador.php?acao=criar_solicitacao_pagamento&"]'
+      );
     } catch (_) {
       return;
     }

@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, Mock, test, vitest } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  Mock,
+  test,
+  vitest,
+} from 'vitest';
 import { createStore, Store, Subscription } from '.';
 
 function createCallChecker<T>(fn: Mock<[T], void>) {
@@ -46,7 +54,10 @@ describe('create', () => {
   test('reject once', () => {
     store.dispatch({ status: 'rejected', reason: 'error' });
 
-    wasCalledWith([{ status: 'pending' }, { status: 'rejected', reason: 'error' }]);
+    wasCalledWith([
+      { status: 'pending' },
+      { status: 'rejected', reason: 'error' },
+    ]);
   });
 
   test('reject then resolve', () => {

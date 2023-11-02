@@ -8,14 +8,21 @@ export async function enviarFormulario(
   const doc = await buscarDocumento(url, method, data);
   const validacao = doc.getElementById('txaInfraValidacao');
   const excecoes = Array.from(doc.querySelectorAll('.infraExcecao'));
-  const tabelaErros = doc.querySelector<HTMLTableElement>('table[summary="Erro(s)"]');
+  const tabelaErros = doc.querySelector<HTMLTableElement>(
+    'table[summary="Erro(s)"]'
+  );
   if (validacao) {
-    const match = validacao.textContent?.trim().match(/^Solicitação de pagamento (\d+) criada$/);
+    const match = validacao.textContent
+      ?.trim()
+      .match(/^Solicitação de pagamento (\d+) criada$/);
     if (match) {
       return match[1];
     }
   }
-  const msgsErro = new Set(['Houve um erro ao tentar criar a solicitação!', '']);
+  const msgsErro = new Set([
+    'Houve um erro ao tentar criar a solicitação!',
+    '',
+  ]);
   excecoes.forEach(excecao => msgsErro.add(excecao.textContent?.trim() ?? ''));
   if (tabelaErros) {
     const tBodyRows = Array.from(tabelaErros.rows).slice(1);

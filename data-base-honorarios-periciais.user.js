@@ -77,7 +77,9 @@ const alterar = (el, valor) =>
   ]);
 
 const url = new URL(location.href);
-const matchAcao = url.searchParams.get('acao').match(/^oficio_requisitorio_(.*)$/);
+const matchAcao = url.searchParams
+  .get('acao')
+  .match(/^oficio_requisitorio_(.*)$/);
 const acao = (matchAcao || [])[1];
 
 if (acao === 'requisicoes_editar') {
@@ -86,7 +88,9 @@ if (acao === 'requisicoes_editar') {
     () => {
       unsubscribe();
       const editarTodos = Array.from(
-        jQuery('#fldHonorarios #divConteudoHonorarios img[src$="/alterar.gif"]').parent()
+        jQuery(
+          '#fldHonorarios #divConteudoHonorarios img[src$="/alterar.gif"]'
+        ).parent()
       ).filter(
         link =>
           link &&
@@ -94,7 +98,8 @@ if (acao === 'requisicoes_editar') {
           link.parentElement.parentElement &&
           link.parentElement.parentElement.cells &&
           link.parentElement.parentElement.cells[2] &&
-          link.parentElement.parentElement.cells[2].textContent === 'Honorários Periciais'
+          link.parentElement.parentElement.cells[2].textContent ===
+            'Honorários Periciais'
       );
       const button = jQuery('<button>Data-base honorários periciais</button>');
       button.on('click', evt => {

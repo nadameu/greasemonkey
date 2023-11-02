@@ -40,7 +40,10 @@ function modificarPaginaProcesso({
 
   const Estado = createTaggedUnion({
     AguardaVerificacaoInicial: null,
-    AguardaAtualizacao: ({ rpv, depositos }: TipoContas) => ({ rpv, depositos }),
+    AguardaAtualizacao: ({ rpv, depositos }: TipoContas) => ({
+      rpv,
+      depositos,
+    }),
     Ocioso: ({ rpv, depositos }: TipoContas) => ({ rpv, depositos }),
     Erro: null,
   });
@@ -49,10 +52,21 @@ function modificarPaginaProcesso({
   const Acao = createTaggedUnion({
     Erro: null,
     PaginaContasAberta: null,
-    VerificacaoTerminada: ({ rpv, depositos }: TipoContas) => ({ rpv, depositos }),
-    AtualizacaoRPV: ({ quantidade, atualiza }: InfoTipo) => ({ quantidade, atualiza }),
-    AtualizacaoDepositos: ({ quantidade, atualiza }: InfoTipo) => ({ quantidade, atualiza }),
-    Clique: (alvo: 'BOTAO_RPV' | 'LINK_RPV' | 'BOTAO_DEP' | 'LINK_DEP') => ({ alvo }),
+    VerificacaoTerminada: ({ rpv, depositos }: TipoContas) => ({
+      rpv,
+      depositos,
+    }),
+    AtualizacaoRPV: ({ quantidade, atualiza }: InfoTipo) => ({
+      quantidade,
+      atualiza,
+    }),
+    AtualizacaoDepositos: ({ quantidade, atualiza }: InfoTipo) => ({
+      quantidade,
+      atualiza,
+    }),
+    Clique: (alvo: 'BOTAO_RPV' | 'LINK_RPV' | 'BOTAO_DEP' | 'LINK_DEP') => ({
+      alvo,
+    }),
   });
   type Acao = Static<typeof Acao>;
 
@@ -86,15 +100,27 @@ function modificarPaginaProcesso({
 
       bc.subscribe(msg => {
         Mensagem.match(msg, {
-          InformaContas: ({ numproc: msgNumproc, qtdComSaldo, permiteAtualizar }) => {
+          InformaContas: ({
+            numproc: msgNumproc,
+            qtdComSaldo,
+            permiteAtualizar,
+          }) => {
             if (msgNumproc !== numproc) return;
             store.dispatch(
-              Acao.AtualizacaoRPV({ quantidade: qtdComSaldo, atualiza: permiteAtualizar })
+              Acao.AtualizacaoRPV({
+                quantidade: qtdComSaldo,
+                atualiza: permiteAtualizar,
+              })
             );
           },
           InformaSaldoDeposito: ({ numproc: msgNumproc, qtdComSaldo }) => {
             if (msgNumproc !== numproc) return;
-            store.dispatch(Acao.AtualizacaoDepositos({ quantidade: qtdComSaldo, atualiza: false }));
+            store.dispatch(
+              Acao.AtualizacaoDepositos({
+                quantidade: qtdComSaldo,
+                atualiza: false,
+              })
+            );
           },
           PerguntaAtualizar: ({ numproc: msgNumproc }) => {
             if (msgNumproc !== numproc) return;
@@ -111,10 +137,14 @@ function modificarPaginaProcesso({
         AtualizacaoDepositos: ({ quantidade, atualiza }) =>
           Estado.match(estado, {
             AguardaAtualizacao: ({ rpv }) =>
-              Estado.AguardaAtualizacao({ rpv, depositos: { quantidade, atualiza } }),
+              Estado.AguardaAtualizacao({
+                rpv,
+                depositos: { quantidade, atualiza },
+              }),
             AguardaVerificacaoInicial: () => Estado.Erro,
             Erro: () => estado,
-            Ocioso: ({ rpv }) => Estado.Ocioso({ rpv, depositos: { quantidade, atualiza } }),
+            Ocioso: ({ rpv }) =>
+              Estado.Ocioso({ rpv, depositos: { quantidade, atualiza } }),
           }),
         AtualizacaoRPV: ({ quantidade, atualiza }) =>
           Estado.match(estado, {
@@ -122,7 +152,8 @@ function modificarPaginaProcesso({
               Estado.Ocioso({ rpv: { quantidade, atualiza }, depositos }),
             AguardaVerificacaoInicial: () => Estado.Erro,
             Erro: () => estado,
-            Ocioso: ({ depositos }) => Estado.Ocioso({ rpv: { quantidade, atualiza }, depositos }),
+            Ocioso: ({ depositos }) =>
+              Estado.Ocioso({ rpv: { quantidade, atualiza }, depositos }),
           }),
         Clique: ({ alvo }) =>
           Estado.match(estado, {
@@ -192,8 +223,12 @@ function modificarPaginaProcesso({
 
   function App({ estado }: { estado: Estado }) {
     return Estado.match(estado, {
-      AguardaVerificacaoInicial: () => <output>Verificando contas com saldo...</output>,
-      AguardaAtualizacao: () => <output>Aguardando atualização das contas...</output>,
+      AguardaVerificacaoInicial: () => (
+        <output>Verificando contas com saldo...</output>
+      ),
+      AguardaAtualizacao: () => (
+        <output>Aguardando atualização das contas...</output>
+      ),
       Ocioso: ({ depositos, rpv }) => {
         const qDep = depositos.quantidade as 0 | Natural | undefined;
         const qRPV = rpv.quantidade as 0 | Natural | undefined;
@@ -205,12 +240,20 @@ function modificarPaginaProcesso({
           if (qtd === 1) return `1 conta`;
           return `${qtd} contas`;
         }
-        const msgR = qRPV === 0 ? null : `${textoContas(qRPV)} de requisição de pagamento`;
-        const msgD = qDep === 0 ? null : `${textoContas(qDep)} de depósito judicial`;
+        const msgR =
+          qRPV === 0 ? null : `${textoContas(qRPV)} de requisição de pagamento`;
+        const msgD =
+          qDep === 0 ? null : `${textoContas(qDep)} de depósito judicial`;
         const msgs = [msgR, msgD].filter((x): x is string => x !== null);
         const mensagem =
-          msgs.length === 0 ? 'Sem saldo em conta(s).' : `Há ${msgs.join(' e ')} com saldo.`;
-        return <MensagemComBotao {...{ classe, mensagem, rpv: qRPV ?? -1, dep: qDep ?? -1 }} />;
+          msgs.length === 0
+            ? 'Sem saldo em conta(s).'
+            : `Há ${msgs.join(' e ')} com saldo.`;
+        return (
+          <MensagemComBotao
+            {...{ classe, mensagem, rpv: qRPV ?? -1, dep: qDep ?? -1 }}
+          />
+        );
       },
       Erro: () => {
         sub.unsubscribe();
@@ -276,5 +319,8 @@ function obterLinkDepositos() {
 }
 
 function obterInformacoesAdicionais() {
-  return obter('#fldInformacoesAdicionais', 'Tabela de informações adicionais não encontrada.');
+  return obter(
+    '#fldInformacoesAdicionais',
+    'Tabela de informações adicionais não encontrada.'
+  );
 }

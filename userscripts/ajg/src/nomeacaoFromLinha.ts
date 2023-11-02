@@ -1,7 +1,9 @@
 import { Nomeacao } from './Nomeacao';
 import { query } from './query';
 
-export async function nomeacaoFromLinha(linha: HTMLTableRowElement): Promise<Nomeacao> {
+export async function nomeacaoFromLinha(
+  linha: HTMLTableRowElement
+): Promise<Nomeacao> {
   const linkCriar = await query<HTMLAnchorElement>(
     'a[href^="controlador.php?acao=criar_solicitacao_pagamento&"]',
     linha
@@ -10,7 +12,8 @@ export async function nomeacaoFromLinha(linha: HTMLTableRowElement): Promise<Nom
   const idUnica = parametros.get('id_unica') || null;
   const numProcesso = idUnica?.split('|')[1] || null;
   const numeroNomeacao = linha.cells[2]?.textContent?.trim() || null;
-  if (idUnica && numProcesso && numeroNomeacao) return { idUnica, numProcesso, numeroNomeacao };
+  if (idUnica && numProcesso && numeroNomeacao)
+    return { idUnica, numProcesso, numeroNomeacao };
   throw new ErroNomeacaoLinha(linha);
 }
 

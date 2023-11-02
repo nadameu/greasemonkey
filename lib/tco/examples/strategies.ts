@@ -52,12 +52,18 @@ function Strategy(
 
 export const strategies = [
   Strategy('iterative', iterative),
-  Strategy('simple recursion', recursion, { limitation: Limitation.Stack, needsCaching: true }),
+  Strategy('simple recursion', recursion, {
+    limitation: Limitation.Stack,
+    needsCaching: true,
+  }),
   Strategy('tail-call recursion', tailCall, { limitation: Limitation.Stack }),
   Strategy('auto-trampoline', auto, { limitation: Limitation.Performance }),
   Strategy('step', step, { limitation: Limitation.Performance }),
   Strategy('trampoline', trampoline, { limitation: Limitation.Performance }),
-  Strategy('recursively', recursively, { limitation: Limitation.Heap, needsCaching: true }),
+  Strategy('recursively', recursively, {
+    limitation: Limitation.Heap,
+    needsCaching: true,
+  }),
   Strategy('cont', cont, { limitation: Limitation.Heap, needsCaching: true }),
   Strategy('trampoline-monad', trampolineMonad, {
     limitation: Limitation.Heap,

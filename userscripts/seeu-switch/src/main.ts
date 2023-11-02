@@ -1,5 +1,10 @@
 import { h } from '@nadameu/create-element';
-import { ABA_DIVERSA, BOTAO_ADICIONADO, MESMO_JUIZO, ResultType } from './ResultType';
+import {
+  ABA_DIVERSA,
+  BOTAO_ADICIONADO,
+  MESMO_JUIZO,
+  ResultType,
+} from './ResultType';
 import { XHR } from './XHR';
 import { adicionarEstilos } from './adicionarEstilos';
 import { assert } from './assert';
@@ -10,10 +15,16 @@ export function main(): ResultType {
   const labels = Array.from(
     document.querySelectorAll('#includeContent td.labelRadio > label')
   ).filter(x => x.textContent === 'Juízo:');
-  assert(labels.length === 1, `Encontrado(s) ${labels.length} elemento(s) com texto "Juízo:".`);
+  assert(
+    labels.length === 1,
+    `Encontrado(s) ${labels.length} elemento(s) com texto "Juízo:".`
+  );
   const label = labels[0]!;
   const td = label.closest('td')?.nextElementSibling;
-  assert(td != null, 'Não foi possível encontrar um local para adicionar o botão.');
+  assert(
+    td != null,
+    'Não foi possível encontrar um local para adicionar o botão.'
+  );
   const juizoProcesso = td?.textContent?.trim() ?? '';
   assert(juizoProcesso !== '', 'Juízo do processo desconhecido.');
   const areaAtual = document.querySelector('#areaatuacao')?.textContent ?? '';
@@ -69,7 +80,10 @@ async function alternar(url: string, area: string) {
   const links = Array.from(
     doc.querySelectorAll<HTMLAnchorElement>('a[href][target="mainFrame"]')
   ).filter(x => x.textContent?.trim() === area);
-  assert(links.length === 1, `Encontrado(s) ${links.length} link(s) para a área selecionada.`);
+  assert(
+    links.length === 1,
+    `Encontrado(s) ${links.length} link(s) para a área selecionada.`
+  );
   const link = links[0]!;
   document.body.appendChild(link);
   link.click();

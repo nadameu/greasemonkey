@@ -17,7 +17,10 @@ abstract class _Either<a, b> {
   map<c>(this: Left<a> | Right<b>, f: (_: b) => c): Either<a, c> {
     return this.match({ Left: () => this as Left<a>, Right: x => Right(f(x)) });
   }
-  abstract match<c>(matchers: { Left: (leftValue: a) => c; Right: (rightValue: b) => c }): c;
+  abstract match<c>(matchers: {
+    Left: (leftValue: a) => c;
+    Right: (rightValue: b) => c;
+  }): c;
 }
 
 export interface Left<a, b = never> extends _Either<a, b> {
@@ -58,9 +61,16 @@ export function Right<b, a = never>(rightValue: b): Either<a, b> {
   return new _Right(rightValue);
 }
 
-type Sequenced<a, es extends Array<Either<a, unknown>>, bs extends unknown[] = []> = es extends []
+type Sequenced<
+  a,
+  es extends Array<Either<a, unknown>>,
+  bs extends unknown[] = [],
+> = es extends []
   ? Either<a, bs>
-  : es extends [Either<a, infer b>, ...infer rest extends Array<Either<a, unknown>>]
+  : es extends [
+      Either<a, infer b>,
+      ...infer rest extends Array<Either<a, unknown>>,
+    ]
   ? Sequenced<a, rest, [...bs, b]>
   : es extends Array<Either<a, infer b>>
   ? Sequenced<a, [], [...bs, ...b[]]>
@@ -92,7 +102,9 @@ export function traverse<a, b, c>(
 
 export function partition<a, es extends Array<Either<a, unknown>>>(
   eithers: [...es]
-): Sequenced<a, es> extends Either<a, infer bs> ? { left: a[]; right: bs } : never;
+): Sequenced<a, es> extends Either<a, infer bs>
+  ? { left: a[]; right: bs }
+  : never;
 export function partition<a, b>(
   eithers: Iterable<Either<a, b>> | ArrayLike<Either<a, b>>
 ): { left: a[]; right: b[] };

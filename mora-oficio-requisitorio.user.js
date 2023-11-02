@@ -41,7 +41,8 @@ const addAjaxSuccessListener = (() => {
     listeners
       .filter(
         ({ acaoEsperada, reembolsoEsperado }) =>
-          acao === acaoEsperada && (reembolsoEsperado === null || reembolso === reembolsoEsperado)
+          acao === acaoEsperada &&
+          (reembolsoEsperado === null || reembolso === reembolsoEsperado)
       )
       .forEach(({ listener }) => listener());
   });
@@ -60,7 +61,8 @@ const Opcoes = {
  * @param {string} nome
  * @param {boolean} value
  */
-const definirFlag = (nome, value = true) => sessionStorage.setItem(nome, value ? 'S' : 'N');
+const definirFlag = (nome, value = true) =>
+  sessionStorage.setItem(nome, value ? 'S' : 'N');
 /**
  * @param {string} nome
  */
@@ -119,11 +121,14 @@ const editarValores = (
 
   addAjaxSuccessListener(paginaEdicao, null, () => {
     const titulos = jQuery('#divLista .ItemTitulo');
-    let salvar = Array.from(jQuery('.selTipoJurosMora')).reduce((salvar, moraElement, i) => {
-      const mora = jQuery(moraElement);
-      const titulo = jQuery(titulos.get(i)).text();
-      return reduceMora(salvar, mora, titulo);
-    }, true);
+    let salvar = Array.from(jQuery('.selTipoJurosMora')).reduce(
+      (salvar, moraElement, i) => {
+        const mora = jQuery(moraElement);
+        const titulo = jQuery(titulos.get(i)).text();
+        return reduceMora(salvar, mora, titulo);
+      },
+      true
+    );
     const nomesCampos = [
       'txtNumMesesExAnterior',
       'txtValorExAnterior',
@@ -151,7 +156,11 @@ const editarValores = (
     const oldAlert = window.alert;
 
     const salvarDone = () => {
-      window.top.setTimeout(win => win.jQuery('#btnPrepTransmissao').click(), 250, window.top);
+      window.top.setTimeout(
+        win => win.jQuery('#btnPrepTransmissao').click(),
+        250,
+        window.top
+      );
       jQuery('#btnFechar').click();
     };
 
@@ -175,7 +184,9 @@ const Acoes = {
 
     const $area = jQuery('#divInfraAreaDados');
 
-    const $botaoPoupanca = jQuery('<button>Poupança</button>').css('visibility', 'hidden').hide();
+    const $botaoPoupanca = jQuery('<button>Poupança</button>')
+      .css('visibility', 'hidden')
+      .hide();
     $botaoPoupanca.on('click', evt => {
       evt.preventDefault();
       definirFlag('poupanca');
@@ -185,12 +196,22 @@ const Acoes = {
       }
       if (getQtd('beneficiarios') > 0) {
         definirFlag('beneficiarios');
-        setTimeout(() => jQuery('#fldBeneficiarios > legend a[title="Editar Todos"]').click(), 250);
+        setTimeout(
+          () =>
+            jQuery(
+              '#fldBeneficiarios > legend a[title="Editar Todos"]'
+            ).click(),
+          250
+        );
       }
       if (getQtd('honorarios') > 0) {
         definirFlag('honorarios');
         if (!isFlag('beneficiarios')) {
-          setTimeout(() => jQuery('#fldHonorarios > legend a[title="Editar Todos"]').click(), 250);
+          setTimeout(
+            () =>
+              jQuery('#fldHonorarios > legend a[title="Editar Todos"]').click(),
+            250
+          );
         }
       }
     });
@@ -217,7 +238,10 @@ const Acoes = {
       'oficio_requisitorio_requisicoes_buscar_honorarios',
       'N',
       () =>
-        void setQtd('honorarios', jQuery('#divConteudoHonorarios > table').get(0).rows.length - 1)
+        void setQtd(
+          'honorarios',
+          jQuery('#divConteudoHonorarios > table').get(0).rows.length - 1
+        )
     );
     addAjaxSuccessListener(
       'oficio_requisitorio_requisicoes_buscar_honorarios',
@@ -249,7 +273,9 @@ const Acoes = {
       '#btnSalvarBeneficiarioNormal',
       done => {
         if (isFlag('honorarios')) {
-          window.top.jQuery('#fldHonorarios > legend a[title="Editar Todos"]').click();
+          window.top
+            .jQuery('#fldHonorarios > legend a[title="Editar Todos"]')
+            .click();
         } else {
           done();
         }
@@ -282,5 +308,7 @@ const Acoes = {
 };
 
 const url = new URL(location.href);
-const acao = url.searchParams.get('acao').match(/^oficio_requisitorio_(.*)$/)[1];
+const acao = url.searchParams
+  .get('acao')
+  .match(/^oficio_requisitorio_(.*)$/)[1];
 if (acao in Acoes) Acoes[acao]();

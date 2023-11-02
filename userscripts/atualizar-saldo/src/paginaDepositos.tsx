@@ -3,9 +3,20 @@ import { createTaggedUnion, Static } from '@nadameu/match';
 import { render } from 'preact';
 import { createMsgService, Mensagem } from './Mensagem';
 import { NumProc } from './NumProc';
-import { A, applicativeEither, E, Either, Left, pipeValue as pipe, Right } from 'adt-ts';
+import {
+  A,
+  applicativeEither,
+  E,
+  Either,
+  Left,
+  pipeValue as pipe,
+  Right,
+} from 'adt-ts';
 
-declare function consultarSaldo(idProcessoDepositoJudicialConta: string, idConta: string): void;
+declare function consultarSaldo(
+  idProcessoDepositoJudicialConta: string,
+  idConta: string
+): void;
 declare function consultarSaldoTodos(): void;
 
 const Estado = createTaggedUnion({
@@ -35,7 +46,10 @@ export function paginaDepositos(numproc: NumProc): Either<Error, void> {
         obterContas(),
         E.either<Error, Estado>(Estado.Erro)(infoContas => {
           bc.publish(
-            Mensagem.InformaSaldoDeposito(numproc, infoContas.filter(x => x.saldo > 0).length)
+            Mensagem.InformaSaldoDeposito(
+              numproc,
+              infoContas.filter(x => x.saldo > 0).length
+            )
           );
           bc.destroy();
           return Estado.Ocioso(infoContas);
@@ -71,7 +85,9 @@ export function paginaDepositos(numproc: NumProc): Either<Error, void> {
             ? 'Há 1 conta com saldo.'
             : `Há ${contasComSaldo} contas com saldo.`;
         const botao =
-          contasAtualizaveis === 0 ? null : <button onClick={onClick}>Atualizar</button>;
+          contasAtualizaveis === 0 ? null : (
+            <button onClick={onClick}>Atualizar</button>
+          );
         return (
           <>
             <span class={classe}>{mensagem}</span>
@@ -96,15 +112,21 @@ export function paginaDepositos(numproc: NumProc): Either<Error, void> {
     render(<App estado={estado} />, div);
   }
   function obterContas(): Either<Error, InfoConta[]> {
-    const tabela = document.querySelector<HTMLTableElement>('table#tblSaldoConta');
+    const tabela = document.querySelector<HTMLTableElement>(
+      'table#tblSaldoConta'
+    );
     if (!tabela) return Left(new Error('Tabela de contas não encontrada'));
     return pipe(
-      Array.from(tabela.querySelectorAll<HTMLTableRowElement>('tr[id^="tblSaldoContaROW"]')).filter(
-        x => !/Saldos$/.test(x.id)
-      ),
+      Array.from(
+        tabela.querySelectorAll<HTMLTableRowElement>(
+          'tr[id^="tblSaldoContaROW"]'
+        )
+      ).filter(x => !/Saldos$/.test(x.id)),
       A.traverse(applicativeEither)(linha => {
         const info = obterInfoContaLinha(linha);
-        return info ? Right(info) : Left(new Error('Erro ao obter dados das contas.'));
+        return info
+          ? Right(info)
+          : Left(new Error('Erro ao obter dados das contas.'));
       })
     );
   }
@@ -122,9 +144,9 @@ function obterInfoContaLinha(row: HTMLTableRowElement): InfoConta | null {
   if (!match || match.length < 2) return null;
   const [, numeros] = match as [string, string];
   const saldo = Number(numeros.replace(/\./g, '').replace(',', '.'));
-  const link = row.cells[row.cells.length - 1]!.querySelector<HTMLAnchorElement>(
-    'a[onclick^="consultarSaldo("]'
-  );
+  const link = row.cells[
+    row.cells.length - 1
+  ]!.querySelector<HTMLAnchorElement>('a[onclick^="consultarSaldo("]');
   const atualizacao = link !== null;
   return { saldo, atualizacao };
 }

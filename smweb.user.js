@@ -17,7 +17,10 @@ var config = $(
 config.val(
   config
     .val()
-    .replace('FontNames=Bookman Old Style&', 'FontNames=Arial;Bookman Old Style;Helvetica&')
+    .replace(
+      'FontNames=Bookman Old Style&',
+      'FontNames=Arial;Bookman Old Style;Helvetica&'
+    )
     .replace('&FormatSource=false&', '&FormatSource=true&') +
     '&EnterMode=div&FirefoxSpellChecker=true'
 );
@@ -51,16 +54,28 @@ $(
         [
           Paragrafo('titulo', 'CARTA DE #INTIMAÇÃO#'),
           Linha(),
-          Paragrafo('cabecalho', '<strong>@+classe@ N&ordm; @processo@</strong>'),
+          Paragrafo(
+            'cabecalho',
+            '<strong>@+classe@ N&ordm; @processo@</strong>'
+          ),
           Paragrafo('cabecalho', '<strong>#AUTOR#:</strong> @+autores@'),
           Paragrafo('cabecalho', '<strong>#RÉU#:</strong> @+reus@'),
           Linha(),
           Paragrafo('tratamento', '#Prezado(a) Senhor(a)#:'),
           Linha(),
           '<hr id="textoinicio" />',
-          Paragrafo('texto', '#1. Substitua este texto pelo conteúdo do documento a ser enviado;#'),
-          Paragrafo('texto', '#2. Acrescente uma linha em branco entre cada parágrafo;#'),
-          Paragrafo('texto', '#3. Verifique se todos os campos na cor laranja estão corretos.#'),
+          Paragrafo(
+            'texto',
+            '#1. Substitua este texto pelo conteúdo do documento a ser enviado;#'
+          ),
+          Paragrafo(
+            'texto',
+            '#2. Acrescente uma linha em branco entre cada parágrafo;#'
+          ),
+          Paragrafo(
+            'texto',
+            '#3. Verifique se todos os campos na cor laranja estão corretos.#'
+          ),
           '<hr id="textofim" />',
           Linha(),
           Paragrafo(
@@ -89,7 +104,10 @@ $(
           '<hr id="fim" />Tudo após esta linha será apagado.<br /><br /><br />',
         ]
           .join('\n')
-          .replace(/#(#*[^#]+#*)#/g, '<span style="color: OrangeRed;">$1</span>')
+          .replace(
+            /#(#*[^#]+#*)#/g,
+            '<span style="color: OrangeRed;">$1</span>'
+          )
       );
     });
     $(this).append(
@@ -179,9 +197,11 @@ var Paragrafo = (function () {
       '<span style="font-family: ' + fontePadrao + ';">',
       '<span style="font-size: ' + tamanho + 'pt;">',
     ];
-    for (var i = 0, l = extraTags.length; i < l; ++i) partes.push('<' + extraTags[i] + '>');
+    for (var i = 0, l = extraTags.length; i < l; ++i)
+      partes.push('<' + extraTags[i] + '>');
     partes.push(html);
-    for (var i = extraTags.length - 1; i > -1; --i) partes.push('</' + extraTags[i] + '>');
+    for (var i = extraTags.length - 1; i > -1; --i)
+      partes.push('</' + extraTags[i] + '>');
     partes = partes.concat(['</span>', '</span>', '</div>']);
     return partes.join('');
   }

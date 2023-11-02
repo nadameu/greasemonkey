@@ -33,7 +33,10 @@ it('Cinco eventos', () => {
   testarExpressoes([19, 14, 8, 26, 4], [4, 8, 14, 19, 26]);
 });
 
-function testarExpressoes(numeroEventos: number[], numerosEmOrdem: number[] = numeroEventos) {
+function testarExpressoes(
+  numeroEventos: number[],
+  numerosEmOrdem: number[] = numeroEventos
+) {
   for (const expressao of gerarExpressoes(numeroEventos)) {
     expect(obterReferencias(expressao)).to.deep.equal(
       numerosEmOrdem,
@@ -43,7 +46,8 @@ function testarExpressoes(numeroEventos: number[], numerosEmOrdem: number[] = nu
 }
 
 function gerarExpressoes(numeroEventos: number[]) {
-  if (numeroEventos.length < 1) throw new Error('Ao menos um número deve ser fornecido.');
+  if (numeroEventos.length < 1)
+    throw new Error('Ao menos um número deve ser fornecido.');
   const numeros = numeroEventos.slice();
   const ultimo = numeros.pop()!.toString();
   const partes = numeros.length === 0 ? [] : [numeros.join(', ')];

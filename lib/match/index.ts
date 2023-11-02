@@ -25,9 +25,11 @@ export type TaggedUnion<D extends Record<ValidTag, object>> = {
   [K in keyof D]: Tagged<K, D[K]>;
 }[keyof D];
 
-export type MemberWith<U, TN extends keyof U, T extends U[TN] = U[TN]> = U extends { [k in TN]: T }
-  ? U
-  : never;
+export type MemberWith<
+  U,
+  TN extends keyof U,
+  T extends U[TN] = U[TN],
+> = U extends { [k in TN]: T } ? U : never;
 export type MemberOf<
   U extends Tag<typeof _tag, ValidTag>,
   T extends U[typeof _tag] = U[typeof _tag],
@@ -36,7 +38,9 @@ export type MemberOf<
 export const tagWith =
   <TN extends ValidTagName>(tagName: TN) =>
   <T extends ValidTag>(tag: T) =>
-  <O extends ObjectWithoutKey<TN>>(obj: O = {} as any): TaggedWith<TN, T, O> => {
+  <O extends ObjectWithoutKey<TN>>(
+    obj: O = {} as any
+  ): TaggedWith<TN, T, O> => {
     (obj as any)[tagName] = tag;
     return obj as any;
   };
@@ -68,9 +72,13 @@ interface MatchPending<T, R> {
     predicate: (obj: T) => obj is U,
     action: (obj: U) => R2
   ): MatchResult<Exclude<T, U>, R | R2>;
-  when<R2>(predicate: (obj: T) => boolean, action: (obj: T) => R2): MatchResult<T, R | R2>;
+  when<R2>(
+    predicate: (obj: T) => boolean,
+    action: (obj: T) => R2
+  ): MatchResult<T, R | R2>;
 }
-interface MatchTagged<T extends Tag<typeof _tag, ValidTag>, R> extends MatchPending<T, R> {
+interface MatchTagged<T extends Tag<typeof _tag, ValidTag>, R>
+  extends MatchPending<T, R> {
   case<K extends T[typeof _tag], R2>(
     tag: K,
     action: (obj: Extract<T, Tag<typeof _tag, K>>) => R2

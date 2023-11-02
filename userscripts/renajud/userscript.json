@@ -1,1 +1,5 @@
-{ "entry": "src/index.ts", "metadata": "metadata.js", "outfile": "../../renajud.user.js" }
+{
+  "entry": "src/index.ts",
+  "metadata": "metadata.js",
+  "outfile": "../../renajud.user.js"
+}

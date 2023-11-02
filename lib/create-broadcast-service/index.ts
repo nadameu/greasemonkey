@@ -20,7 +20,8 @@ export function createBroadcastService<Msg>(
   return { destroy, publish, subscribe };
 
   function onMessage(evt: MessageEvent<unknown>) {
-    if (validate(evt.data)) for (const listener of listeners) listener(evt.data);
+    if (validate(evt.data))
+      for (const listener of listeners) listener(evt.data);
   }
 
   function destroy() {

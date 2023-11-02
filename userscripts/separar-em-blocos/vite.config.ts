@@ -18,7 +18,8 @@ export default defineConfig({
           'https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=localizador_processos_lista&*',
           'https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=relatorio_geral_consultar&*',
         ],
-        description: 'Permite a separação de processos em blocos para movimentação separada',
+        description:
+          'Permite a separação de processos em blocos para movimentação separada',
       },
       build: {
         externalGlobals: {

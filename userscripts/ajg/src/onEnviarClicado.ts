@@ -11,7 +11,9 @@ export async function onEnviarClicado() {
   const tabela = await getTabela();
   const linhas = Array.from(tabela.rows).slice(1);
   const linhasProcessosSelecionados = linhas.filter(linha => {
-    const checkbox = linha.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    const checkbox = linha.querySelector<HTMLInputElement>(
+      'input[type="checkbox"]'
+    );
     return checkbox && checkbox.checked;
   });
 
@@ -38,8 +40,16 @@ export async function onEnviarClicado() {
       data.set('num_processo', nomeacao.numProcesso);
       data.set('numeroNomeacao', nomeacao.numeroNomeacao);
 
-      const termo = h('dt', { className: 'gm-ajg__lista__processo' }, nomeacao.numProcesso);
-      const definicao = h('dd', { className: 'gm-ajg__lista__resultado' }, 'Na fila');
+      const termo = h(
+        'dt',
+        { className: 'gm-ajg__lista__processo' },
+        nomeacao.numProcesso
+      );
+      const definicao = h(
+        'dd',
+        { className: 'gm-ajg__lista__resultado' },
+        'Na fila'
+      );
       lista.appendChild(termo);
       lista.appendChild(definicao);
       const DEBUG = false;
@@ -78,14 +88,16 @@ export async function onEnviarClicado() {
 
     let mensagem: string;
     if (duvida) {
-      mensagem = 'Não foi possível verificar se uma ou mais solicitações foram criadas.';
+      mensagem =
+        'Não foi possível verificar se uma ou mais solicitações foram criadas.';
     } else {
       if (linhasProcessosSelecionados.length === 1) {
         mensagem = 'Solicitação criada com sucesso!';
       } else {
         mensagem = 'Solicitações criadas com sucesso!';
       }
-      mensagem += '\nA página será recarregada para atualizar a lista de processos.';
+      mensagem +=
+        '\nA página será recarregada para atualizar a lista de processos.';
     }
     window.alert(mensagem);
     if (!duvida) {

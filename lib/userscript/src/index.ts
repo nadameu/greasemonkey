@@ -44,7 +44,9 @@ async function main() {
     if (jsonExists) {
       let customData: any = {};
       try {
-        customData = JSON.parse(await fs.promises.readFile(jsonPath, { encoding: 'utf-8' }));
+        customData = JSON.parse(
+          await fs.promises.readFile(jsonPath, { encoding: 'utf-8' })
+        );
       } catch (e) {
         // No usable data
       }
@@ -56,14 +58,18 @@ async function main() {
   if (command === 'build') {
     let json: ValidJson;
     try {
-      json = JSON.parse(await fs.promises.readFile(jsonPath, { encoding: 'utf-8' }));
+      json = JSON.parse(
+        await fs.promises.readFile(jsonPath, { encoding: 'utf-8' })
+      );
       p.assert(isValidJson(json), 'Invalid JSON.');
     } catch (e) {
       const cause = e instanceof Error ? e : undefined;
       throw new Error('Invalid JSON.', { cause });
     }
 
-    const banner = await fs.promises.readFile(json.metadata, { encoding: 'utf-8' });
+    const banner = await fs.promises.readFile(json.metadata, {
+      encoding: 'utf-8',
+    });
 
     const result = await esbuild.build({
       banner: { js: banner },
@@ -81,14 +87,18 @@ async function main() {
   if (command === 'serve') {
     let json: ValidJson;
     try {
-      json = JSON.parse(await fs.promises.readFile(jsonPath, { encoding: 'utf-8' }));
+      json = JSON.parse(
+        await fs.promises.readFile(jsonPath, { encoding: 'utf-8' })
+      );
       p.assert(isValidJson(json), 'Invalid JSON.');
     } catch (e) {
       const cause = e instanceof Error ? e : undefined;
       throw new Error('Invalid JSON.', { cause });
     }
 
-    const banner = await fs.promises.readFile(json.metadata, { encoding: 'utf-8' });
+    const banner = await fs.promises.readFile(json.metadata, {
+      encoding: 'utf-8',
+    });
 
     const ctx = await esbuild.context({
       banner: { js: banner },
@@ -104,7 +114,12 @@ async function main() {
     const result = await ctx.serve({
       host: 'localhost',
       onRequest(req) {
-        console.log('requested', req.path, '@', new Date(Date.now()).toLocaleTimeString());
+        console.log(
+          'requested',
+          req.path,
+          '@',
+          new Date(Date.now()).toLocaleTimeString()
+        );
       },
     });
     const filename = path.basename(json.outfile);

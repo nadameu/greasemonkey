@@ -58,6 +58,9 @@ class FlatMap<a0, a> extends Trampoline<a> {
 type TrampolineU<a> = Of<a> | Suspend<a> | FlatMap<any, a>;
 
 export const done = <a>(value: a) => Trampoline.of(value);
-export const loop = <a>(run: () => Trampoline<a>): Trampoline<a> => new Suspend(run);
-export const zip = <a, b>(fa: Trampoline<a>, fb: Trampoline<b>): Trampoline<[a, b]> =>
-  fa.flatMap(a => fb.map(b => [a, b]));
+export const loop = <a>(run: () => Trampoline<a>): Trampoline<a> =>
+  new Suspend(run);
+export const zip = <a, b>(
+  fa: Trampoline<a>,
+  fb: Trampoline<b>
+): Trampoline<[a, b]> => fa.flatMap(a => fb.map(b => [a, b]));

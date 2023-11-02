@@ -8,7 +8,11 @@ interface Empty {
   empty: true;
 }
 export const empty: List<never> = { empty: true };
-export const prepend = <a>(first: a, rest: List<a>): NEList<a> => ({ empty: false, first, rest });
+export const prepend = <a>(first: a, rest: List<a>): NEList<a> => ({
+  empty: false,
+  first,
+  rest,
+});
 export const generate = (size: number): List<number> => {
   if (size <= 0) return empty;
   let curr: List<number> = empty;

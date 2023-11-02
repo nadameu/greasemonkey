@@ -77,7 +77,9 @@
     const a = n(49);
     (function () {
       return r.a(this, void 0, void 0, function* () {
-        return GM_addStyle(a), (yield Object(o.a)(document)).adicionarAlteracoes();
+        return (
+          GM_addStyle(a), (yield Object(o.a)(document)).adicionarAlteracoes()
+        );
       });
     })().then(
       t => console.log('Resultado:', t),
@@ -141,7 +143,10 @@
         t => t.href,
         t => new URL(t)
       );
-      if (!n) return Promise.reject(new Error('Não foi possível obter o endereço da página.'));
+      if (!n)
+        return Promise.reject(
+          new Error('Não foi possível obter o endereço da página.')
+        );
       if (t.domain.match(/^eproc\.(trf4|jf(pr|rs|sc))\.jus\.br$/)) {
         const t = Object(s.a)(n, t => t.searchParams.get('acao'));
         t && t in c && (e = c[t]);
@@ -205,7 +210,9 @@
       m = t => (e, n) => {
         const r = t.filter(t => t.searchParams.get(e) === n);
         return 0 === r.length
-          ? Promise.reject(new l(`Não há URL com o parâmetro "${e}" igual a "${n}".`))
+          ? Promise.reject(
+              new l(`Não há URL com o parâmetro "${e}" igual a "${n}".`)
+            )
           : Promise.resolve(r[0].href);
       };
     class h extends i.a {
@@ -219,9 +226,15 @@
               r.a(this, void 0, void 0, function* () {
                 const n = yield p(e.linha, 2),
                   r = a.a.criar('Verificar dados', n => {
-                    n.preventDefault(), n.stopPropagation(), this.solicitarAberturaRequisicao(t, e);
+                    n.preventDefault(),
+                      n.stopPropagation(),
+                      this.solicitarAberturaRequisicao(t, e);
                   });
-                return n.appendChild(this.doc.createTextNode(' ')), n.appendChild(r), e.numero;
+                return (
+                  n.appendChild(this.doc.createTextNode(' ')),
+                  n.appendChild(r),
+                  e.numero
+                );
               })
             )
           )
@@ -241,15 +254,18 @@
             numero: o,
             status: a,
             urlConsultar: yield s('acao', 'oficio_requisitorio_visualizar'),
-            urlEditar: yield s('acao', 'oficio_requisitorio_requisicoes_editar'),
+            urlEditar: yield s(
+              'acao',
+              'oficio_requisitorio_requisicoes_editar'
+            ),
           };
         });
       }
       obterRequisicoes() {
         return r.a(this, void 0, void 0, function* () {
-          const t = this.queryAll('#divInfraAreaTabela > table tr[class^="infraTr"]').map(
-            this.obterRequisicao
-          );
+          const t = this.queryAll(
+            '#divInfraAreaTabela > table tr[class^="infraTr"]'
+          ).map(this.obterRequisicao);
           return (
             Object(c.a)(t).then(t => {
               t.filter(t => !(t instanceof l)).forEach(t => {
@@ -270,9 +286,14 @@
         return r.a(this, void 0, void 0, function* () {
           const t = this.getWindow(),
             e = t.opener;
-          if (!e || e === t) throw new Error('Janela do processo não está aberta.');
+          if (!e || e === t)
+            throw new Error('Janela do processo não está aberta.');
           const n = new Promise((t, e) => {
-              setTimeout(e, 3e3, new Error('Janela do processo não respondeu.'));
+              setTimeout(
+                e,
+                3e3,
+                new Error('Janela do processo não respondeu.')
+              );
             }),
             r = new Promise((e, n) => {
               const r = ({ origin: n, data: a }) => {
@@ -285,7 +306,10 @@
               t.addEventListener('message', r);
             }),
             a = { acao: o.a.VERIFICAR_JANELA };
-          return e.postMessage(JSON.stringify(a), this.getLocation().origin), Promise.race([r, n]);
+          return (
+            e.postMessage(JSON.stringify(a), this.getLocation().origin),
+            Promise.race([r, n])
+          );
         });
       }
     }
@@ -314,7 +338,10 @@
       criar(t, e) {
         const n = document.createElement('button');
         return (
-          (n.className = 'infraButton'), (n.textContent = t), n.addEventListener('click', e), n
+          (n.className = 'infraButton'),
+          (n.textContent = t),
+          n.addEventListener('click', e),
+          n
         );
       },
     };
@@ -354,7 +381,9 @@
       queryTexto(t, e = this.doc) {
         return this.query(t, e).then(e => {
           const n = e.textContent;
-          return n ? Promise.resolve(n) : Promise.reject(`Elemento não possui texto: ${t}.`);
+          return n
+            ? Promise.resolve(n)
+            : Promise.reject(`Elemento não possui texto: ${t}.`);
         });
       }
       validarElemento(
@@ -551,7 +580,9 @@
       (e.getSetoid = function (t) {
         return {
           equals: function (e, n) {
-            return e.isNone() ? n.isNone() : !n.isNone() && t.equals(e.value, n.value);
+            return e.isNone()
+              ? n.isNone()
+              : !n.isNone() && t.equals(e.value, n.value);
           },
         };
       }),
@@ -580,7 +611,9 @@
     (e.getApplySemigroup = function (t) {
       return {
         concat: function (n, r) {
-          return n.isSome() && r.isSome() ? e.some(t.concat(n.value, r.value)) : e.none;
+          return n.isSome() && r.isSome()
+            ? e.some(t.concat(n.value, r.value))
+            : e.none;
         },
       };
     }),
@@ -596,7 +629,11 @@
       (e.getMonoid = function (t) {
         return {
           concat: function (n, r) {
-            return n.isNone() ? r : r.isNone() ? n : e.some(t.concat(n.value, r.value));
+            return n.isNone()
+              ? r
+              : r.isNone()
+              ? n
+              : e.some(t.concat(n.value, r.value));
           },
           empty: e.none,
         };
@@ -788,7 +825,12 @@
         };
       }),
       (e.concat = function (t, e) {
-        for (var n = t.length, r = e.length, o = Array(n + r), a = 0; a < n; a++) o[a] = t[a];
+        for (
+          var n = t.length, r = e.length, o = Array(n + r), a = 0;
+          a < n;
+          a++
+        )
+          o[a] = t[a];
         for (a = 0; a < r; a++) o[a + n] = e[a];
         return o;
       }),
@@ -804,7 +846,10 @@
         return (n = t).displayName || n.name || '<function' + n.length + '>';
       var n;
       if (null == t) return String(t);
-      if ('function' == typeof t.toString && t.toString !== Object.prototype.toString)
+      if (
+        'function' == typeof t.toString &&
+        t.toString !== Object.prototype.toString
+      )
         return t.toString();
       try {
         return JSON.stringify(t, null, 2);
@@ -862,7 +907,9 @@
       return a.fold(t)(t.empty);
     }),
       (e.getProductMonoid = function (t, e) {
-        return r({}, a.getProductSemigroup(t, e), { empty: [t.empty, e.empty] });
+        return r({}, a.getProductSemigroup(t, e), {
+          empty: [t.empty, e.empty],
+        });
       }),
       (e.getDualMonoid = function (t) {
         return r({}, a.getDualSemigroup(t), { empty: t.empty });
@@ -1007,7 +1054,11 @@
       (e.getDictionarySemigroup = function (t) {
         return {
           concat: function (e, n) {
-            for (var o = r({}, e), a = Object.keys(n), i = a.length, s = 0; s < i; s++) {
+            for (
+              var o = r({}, e), a = Object.keys(n), i = a.length, s = 0;
+              s < i;
+              s++
+            ) {
               var c = a[s];
               o[c] = e.hasOwnProperty(c) ? t.concat(e[c], n[c]) : n[c];
             }
@@ -1123,7 +1174,10 @@
         return {
           concat: function (t, n) {
             return e.fromCompare(function (e, r) {
-              return o.semigroupOrdering.concat(t.compare(e, r), n.compare(e, r));
+              return o.semigroupOrdering.concat(
+                t.compare(e, r),
+                n.compare(e, r)
+              );
             });
           },
         };
@@ -1305,16 +1359,24 @@
             .map(t => t.replace(/\D/g, ''));
         return Object(o.liftA3)(i.option)(t => e => n => {
           const r = this.queryAll('a', e).filter(t =>
-              i.fromNullable(t.getAttribute('onmouseover')).fold(!1, t => /ADVOGADO/.test(t))
+              i
+                .fromNullable(t.getAttribute('onmouseover'))
+                .fold(!1, t => /ADVOGADO/.test(t))
             ),
             o = a.catOptions(
-              r.map(t => i.fromNullable(t.previousElementSibling).mapNullable(t => t.textContent))
+              r.map(t =>
+                i
+                  .fromNullable(t.previousElementSibling)
+                  .mapNullable(t => t.textContent)
+              )
             );
           return { nome: t, cpfCnpj: n, advogados: o };
         })(e)(n)(r);
       }
       obterAutores() {
-        const t = this.queryAll('a[data-parte="AUTOR"]').map(t => this.obterAutor(t));
+        const t = this.queryAll('a[data-parte="AUTOR"]').map(t =>
+          this.obterAutor(t)
+        );
         return a.catOptions(t);
       }
       obterAutuacao() {
@@ -1335,7 +1397,9 @@
         });
       }
       obterDespachosCitacao() {
-        return this.destacarDocumentosPorEvento(/Despacho\/Decisão - Determina Citação/);
+        return this.destacarDocumentosPorEvento(
+          /Despacho\/Decisão - Determina Citação/
+        );
       }
       obterHonorarios() {
         return r.a(this, void 0, void 0, function* () {
@@ -1379,7 +1443,9 @@
           .reduce((t, e) => t.concat(e), []);
       }
       obterSentencas() {
-        return this.destacarDocumentosPorEvento(/(^(Julgamento|Sentença))|Voto/);
+        return this.destacarDocumentosPorEvento(
+          /(^(Julgamento|Sentença))|Voto/
+        );
       }
       obterTabelaEventos() {
         return this.query('#tblEventos');
@@ -1434,13 +1500,16 @@
                     .filter(t =>
                       i
                         .fromNullable(t.cells[3])
-                        .mapNullable(t => t.querySelector('.infraEventoPrazoParte'))
+                        .mapNullable(t =>
+                          t.querySelector('.infraEventoPrazoParte')
+                        )
                         .mapNullable(t => t.dataset.parte)
                         .exists(t => /^(AUTOR|REU|MPF)$/.test(t))
                     )
               )(n)(r).getOrElse([]);
             if (c.length > 0) {
-              const t = /^return infraTooltipMostrar\('([^']+)','Informações do Evento',1000\);$/,
+              const t =
+                  /^return infraTooltipMostrar\('([^']+)','Informações do Evento',1000\);$/,
                 n = a.mapOption(c, e =>
                   i
                     .fromNullable(e.cells[1])
@@ -1458,7 +1527,9 @@
                       );
                     })
                     .chain(t => {
-                      const e = t.findIndex(t => !!t && /^Fechamento do Prazo:$/.test(t));
+                      const e = t.findIndex(
+                        t => !!t && /^Fechamento do Prazo:$/.test(t)
+                      );
                       if (-1 === e) return i.none;
                       const n = u.d.analisar(t[e + 1]),
                         r = t[e + 2];
@@ -1479,7 +1550,9 @@
                   );
                 if (r.length > 0) {
                   r[0].classList.add('gmEventoDestacado'),
-                    t.descricao.match(e) ? (d.dataDecurso = t.data) : (d.dataFechamento = t.data);
+                    t.descricao.match(e)
+                      ? (d.dataDecurso = t.data)
+                      : (d.dataFechamento = t.data);
                 }
               }
             }
@@ -1495,7 +1568,9 @@
       }
       abrirJanela(t, e, n = !1) {
         this.fecharJanela(e);
-        const r = n ? 'menubar,toolbar,location,personalbar,status,scrollbars' : '',
+        const r = n
+            ? 'menubar,toolbar,location,personalbar,status,scrollbars'
+            : '',
           o = window.open(t, e, r);
         o && this.janelasDependentes.set(e, o);
       }
@@ -1534,7 +1609,9 @@
           const t = yield this.obterLinkListar(),
             e = yield f.a(t.href),
             n = new d.a(e),
-            r = (yield n.obterRequisicoes()).filter(t => 'Finalizada' === t.status);
+            r = (yield n.obterRequisicoes()).filter(
+              t => 'Finalizada' === t.status
+            );
           if (1 === r.length) {
             const t = r[0];
             return (
@@ -1549,7 +1626,8 @@
         return this.obterInformacoesAdicionais()
           .then(t => {
             const e = t.parentElement;
-            if (null == e) throw new Error('Informações adicionais não possui ancestral.');
+            if (null == e)
+              throw new Error('Informações adicionais não possui ancestral.');
             return n => {
               e.insertBefore(n, t.nextSibling);
             };
@@ -1622,7 +1700,9 @@
                       .map(t => u.d.analisar(t)),
                     a = i
                       .fromNullable(e.cells[3])
-                      .mapNullable(t => t.querySelector('label.infraEventoDescricao'))
+                      .mapNullable(t =>
+                        t.querySelector('label.infraEventoDescricao')
+                      )
                       .mapNullable(t => t.textContent);
                   return Object(o.liftA3)(i.option)(t => e => r => ({
                     evento: t,
@@ -1659,7 +1739,11 @@
                   .mapNullable(t => t.textContent)
                   .exists(e => t.test(e))
               )
-              .map(t => g('td', t).chain(t => this.queryOption('.infraLinkDocumento', t)))
+              .map(t =>
+                g('td', t).chain(t =>
+                  this.queryOption('.infraLinkDocumento', t)
+                )
+              )
           )
         );
       }
@@ -1734,13 +1818,19 @@
         t.shiftKey && (e = !0), this.abrirJanelaListar(e);
       }
       onMensagemRecebida(t) {
-        if ((console.info('Mensagem recebida', t), t.origin === this.getLocation().origin)) {
+        if (
+          (console.info('Mensagem recebida', t),
+          t.origin === this.getLocation().origin)
+        ) {
           const e = JSON.parse(t.data);
           if (e.acao === s.a.VERIFICAR_JANELA)
             t.source && this.enviarRespostaJanelaAberta(t.source, t.origin);
           else if (e.acao === s.a.ABRIR_REQUISICAO)
             console.log('Pediram-me para abrir uma requisicao', e.requisicao),
-              this.abrirJanelaRequisicao(e.requisicao.urlConsultar, e.requisicao.numero);
+              this.abrirJanelaRequisicao(
+                e.requisicao.urlConsultar,
+                e.requisicao.numero
+              );
           else if (e.acao === s.a.EDITAR_REQUISICAO) {
             const t = e.requisicao;
             this.fecharJanelaRequisicao(t);
@@ -1850,7 +1940,8 @@
           (i = a[o] =
             r.curried(
               function () {
-                for (var t = [], e = 0; e < arguments.length; e++) t[e] = arguments[e];
+                for (var t = [], e = 0; e < arguments.length; e++)
+                  t[e] = arguments[e];
                 return t;
               },
               o - 1,
@@ -1888,7 +1979,11 @@
       (e.getOrd = function (t) {
         return r({}, e.getSetoid(t), {
           compare: function (e, n) {
-            for (var r = e.length, o = n.length, a = Math.min(r, o), s = 0; s < a; s++) {
+            for (
+              var r = e.length, o = n.length, a = Math.min(r, o), s = 0;
+              s < a;
+              s++
+            ) {
               var c = t.compare(e[s], n[s]);
               if (0 !== c) return c;
             }
@@ -1897,7 +1992,8 @@
         });
       });
     var c = function (t, e) {
-        for (var n = t.length, r = new Array(n), o = 0; o < n; o++) r[o] = e(t[o]);
+        for (var n = t.length, r = new Array(n), o = 0; o < n; o++)
+          r[o] = e(t[o]);
         return r;
       },
       u = function (t, e) {
@@ -1970,7 +2066,9 @@
         return e.isEmpty(t) ? n : r(t.slice(0, t.length - 1), t[t.length - 1]);
       }),
       (e.foldrL = function (t, n, r) {
-        return e.isEmpty(t) ? n() : r(t.slice(0, t.length - 1), t[t.length - 1]);
+        return e.isEmpty(t)
+          ? n()
+          : r(t.slice(0, t.length - 1), t[t.length - 1]);
       }),
       (e.scanLeft = function (t, e, n) {
         var r = t.length,
@@ -1996,7 +2094,8 @@
         return e.isOutOfBound(t, n) ? a.none : a.some(n[t]);
       }),
       (e.cons = function (t, e) {
-        for (var n = e.length, r = Array(n + 1), o = 0; o < n; o++) r[o + 1] = e[o];
+        for (var n = e.length, r = Array(n + 1), o = 0; o < n; o++)
+          r[o + 1] = e[o];
         return (r[0] = t), r;
       }),
       (e.snoc = function (t, e) {
@@ -2044,7 +2143,8 @@
         return e.slice(0, e.length - t);
       }),
       (e.dropWhile = function (t, e) {
-        for (var n = m(t, e), r = t.length, o = Array(r - n), a = n; a < r; a++) o[a - n] = t[a];
+        for (var n = m(t, e), r = t.length, o = Array(r - n), a = n; a < r; a++)
+          o[a - n] = t[a];
         return o;
       }),
       (e.findIndex = function (t, e) {
@@ -2052,11 +2152,13 @@
         return a.none;
       }),
       (e.findFirst = function (t, e) {
-        for (var n = t.length, r = 0; r < n; r++) if (e(t[r])) return a.some(t[r]);
+        for (var n = t.length, r = 0; r < n; r++)
+          if (e(t[r])) return a.some(t[r]);
         return a.none;
       }),
       (e.findLast = function (t, e) {
-        for (var n = t.length - 1; n >= 0; n--) if (e(t[n])) return a.some(t[n]);
+        for (var n = t.length - 1; n >= 0; n--)
+          if (e(t[n])) return a.some(t[n]);
         return a.none;
       }),
       (e.findLastIndex = function (t, e) {
@@ -2075,14 +2177,18 @@
         return o.splice(t, 0, n), o;
       }),
       (e.insertAt = function (t, n, r) {
-        return t < 0 || t > r.length ? a.none : a.some(e.unsafeInsertAt(t, n, r));
+        return t < 0 || t > r.length
+          ? a.none
+          : a.some(e.unsafeInsertAt(t, n, r));
       }),
       (e.unsafeUpdateAt = function (t, n, r) {
         var o = e.copy(r);
         return (o[t] = n), o;
       }),
       (e.updateAt = function (t, n, r) {
-        return e.isOutOfBound(t, r) ? a.none : a.some(e.unsafeUpdateAt(t, n, r));
+        return e.isOutOfBound(t, r)
+          ? a.none
+          : a.some(e.unsafeUpdateAt(t, n, r));
       }),
       (e.unsafeDeleteAt = function (t, n) {
         var r = e.copy(n);
@@ -2117,7 +2223,8 @@
         };
       }),
       (e.zipWith = function (t, e, n) {
-        for (var r = [], o = Math.min(t.length, e.length), a = 0; a < o; a++) r[a] = n(t[a], e[a]);
+        for (var r = [], o = Math.min(t.length, e.length), a = 0; a < o; a++)
+          r[a] = n(t[a], e[a]);
         return r;
       }),
       (e.zip = function (t, n) {
@@ -2133,7 +2240,8 @@
       }),
       (e.member = function (t) {
         return function (e, n) {
-          for (var r, o = 0, a = e.length; o < a; o++) if (((r = e[o]), t.equals(r, n))) return !0;
+          for (var r, o = 0, a = e.length; o < a; o++)
+            if (((r = e[o]), t.equals(r, n))) return !0;
           return !1;
         };
       }),
@@ -2346,7 +2454,8 @@
     const o = {
       analisar(t) {
         const e = t.match(/^\d{4}$/);
-        if (!e || 1 !== e.length) throw new TypeError(`Valor não corresponde a um ano: "${t}".`);
+        if (!e || 1 !== e.length)
+          throw new TypeError(`Valor não corresponde a um ano: "${t}".`);
         return new Date(Object(r.a)(e[0]), 0);
       },
       converter: t => t.getFullYear().toString(),
@@ -2368,7 +2477,8 @@
     const a = {
       analisar(t) {
         const e = t.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-        if (!e || 4 !== e.length) throw new TypeError(`Valor não corresponde a uma data: "${t}".`);
+        if (!e || 4 !== e.length)
+          throw new TypeError(`Valor não corresponde a uma data: "${t}".`);
         let [, n, o, a] = e;
         return new Date(Object(r.a)(a), Object(r.a)(o) - 1, Object(r.a)(n));
       },
@@ -2398,7 +2508,9 @@
       o = n(23);
     const a = {
       analisar(t) {
-        const e = t.match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/);
+        const e = t.match(
+          /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/
+        );
         if (!e || 7 !== e.length)
           throw new TypeError(`Valor não corresponde a uma data/hora: "${t}".`);
         let [, n, o, a, i, s, c] = e;
@@ -2430,7 +2542,10 @@
   function (t, e, n) {
     'use strict';
     var r = n(14);
-    const o = { analisar: t => Object(r.a)('0' + t), converter: t => t.toString() };
+    const o = {
+      analisar: t => Object(r.a)('0' + t),
+      converter: t => t.toString(),
+    };
     e.a = o;
   },
   function (t, e, n) {
@@ -2463,7 +2578,8 @@
         let [n, r] = e.toFixed(2).split('.'),
           [, o, a] = n.match(/^(-?)(\d+)$/),
           i = '';
-        for (; a.length > 3; ) (i = `.${a.substr(-3)}` + i), (a = a.substr(0, a.length - 3));
+        for (; a.length > 3; )
+          (i = `.${a.substr(-3)}` + i), (a = a.substr(0, a.length - 3));
         return `${o || ''}${a}${i},${r}`;
       },
     };
@@ -2475,7 +2591,9 @@
       analisar(t) {
         const e = t.match(/^(-?\d+(,\d+)?)%$/);
         if (!e || 3 !== e.length)
-          throw new TypeError(`Valor não corresponde a uma porcentagem: "${t}".`);
+          throw new TypeError(
+            `Valor não corresponde a uma porcentagem: "${t}".`
+          );
         return Math.round(1e6 * parseFloat(e[1].replace(',', '.'))) / 1e8;
       },
       converter(t, e = !0) {
@@ -2497,9 +2615,14 @@
     const o = {
       analisar(t) {
         const e = t.match(/^([\d.,]+)\s+\(([\d.,]+) \+ ([\d.,]+)\)$/);
-        if (!e || 4 !== e.length) throw new TypeError(`Valor não corresponde ao esperado: "${t}".`);
+        if (!e || 4 !== e.length)
+          throw new TypeError(`Valor não corresponde ao esperado: "${t}".`);
         let [, n, o, a] = e;
-        return { principal: r.a.analisar(o), juros: r.a.analisar(a), total: r.a.analisar(n) };
+        return {
+          principal: r.a.analisar(o),
+          juros: r.a.analisar(a),
+          total: r.a.analisar(n),
+        };
       },
       converter: ({ principal: t, juros: e, total: n }) =>
         `${r.a.converter(n)} (${r.a.converter(t)} + ${r.a.converter(e)})`,
@@ -2607,7 +2730,8 @@
       obterRequisicao() {
         return r.a(this, void 0, void 0, function* () {
           return (
-            this._requisicao || (this._requisicao = yield this.analisarDadosRequisicao()),
+            this._requisicao ||
+              (this._requisicao = yield this.analisarDadosRequisicao()),
             this._requisicao
           );
         });
@@ -2650,7 +2774,10 @@
         return r.a(this, void 0, void 0, function* () {
           const t = new a.a(
             new l.a(/^<span class="titBold">Status:<\/span> (.*?)$/, 'status'),
-            new l.a(/^<span class="titBold">Originário Jef:<\/span> (.*?)$/, 'originarioJEF'),
+            new l.a(
+              /^<span class="titBold">Originário Jef:<\/span> (.*?)$/,
+              'originarioJEF'
+            ),
             new l.a(
               /^<span class="titBold">Extra Orçamentária:<\/span> (.*?)$/,
               'extraorcamentaria'
@@ -2660,14 +2787,26 @@
               'processoEletronico'
             ),
             new l.a(/^<span class="titBold">Juízo:<\/span> (.*?)$/, 'juizo'),
-            new l.a(/^<span class="titBold">Ação de Execução:<\/span> (.*?)$/, 'acaoDeExecucao'),
-            new l.a(/^<span class="titBold">Ação Originária:<\/span> (.*?)$/, 'acaoOriginaria'),
+            new l.a(
+              /^<span class="titBold">Ação de Execução:<\/span> (.*?)$/,
+              'acaoDeExecucao'
+            ),
+            new l.a(
+              /^<span class="titBold">Ação Originária:<\/span> (.*?)$/,
+              'acaoOriginaria'
+            ),
             new l.a(
               /^<span class="titBold">Total Requisitado \(R\$\):<\/span> (.*)$/,
               'valorTotalRequisitado'
             ),
-            new l.a(/^<span class="titBold">Requerido:<\/span> (.*)$/, 'requerido'),
-            new l.a(/^<span class="titBold">Advogado:<\/span> ?(.*)$/, 'advogado'),
+            new l.a(
+              /^<span class="titBold">Requerido:<\/span> (.*)$/,
+              'requerido'
+            ),
+            new l.a(
+              /^<span class="titBold">Advogado:<\/span> ?(.*)$/,
+              'advogado'
+            ),
             new l.a(
               /^<span class="titBold">Assunto Judicial:<\/span> (\d+)\s+- (.*)\s*$/,
               'codigoAssunto',
@@ -2699,12 +2838,16 @@
             n = (yield this.queryTexto('.titReq')).trim(),
             r = yield Promise.resolve(
               n.match(/^Requisição Nº: (\d+)$/) ||
-                Promise.reject(new Error('Número da requisição não encontrado.'))
+                Promise.reject(
+                  new Error('Número da requisição não encontrado.')
+                )
             )
               .then(t => t[1])
               .then(p.a);
           e.numero = r;
-          const o = yield this.query('#divInfraAreaTabela > table:nth-child(2)');
+          const o = yield this.query(
+            '#divInfraAreaTabela > table:nth-child(2)'
+          );
           o.classList.add('gm-requisicao__tabela'), t.analisarInto(o, e);
           let i = o.nextElementSibling,
             s = null,
@@ -2712,16 +2855,22 @@
           for (; i; ) {
             if (i.matches('table')) {
               const t = i;
-              if ('Beneficiários' === (t.textContent || '').trim()) (s = 'Beneficiários'), (u = 0);
-              else if ('Honorários' === (t.textContent || '').trim()) (s = 'Honorários'), (u = 0);
-              else if ('Reembolsos/Deduções/Multas' === (t.textContent || '').trim())
+              if ('Beneficiários' === (t.textContent || '').trim())
+                (s = 'Beneficiários'), (u = 0);
+              else if ('Honorários' === (t.textContent || '').trim())
+                (s = 'Honorários'), (u = 0);
+              else if (
+                'Reembolsos/Deduções/Multas' === (t.textContent || '').trim()
+              )
                 (s = 'Multa'), (u = 0);
               else if ('Beneficiários' === s)
                 e.beneficiarios.push(this.analisarTabelaBeneficiarios(t, u++));
-              else if ('Honorários' === s) e.honorarios.push(this.analisarTabelaHonorarios(t, u++));
+              else if ('Honorários' === s)
+                e.honorarios.push(this.analisarTabelaHonorarios(t, u++));
               else if ('Multa' !== s)
                 throw (
-                  (console.error('Tabela não analisada!', t), new Error('Tabela não analisada!'))
+                  (console.error('Tabela não analisada!', t),
+                  new Error('Tabela não analisada!'))
                 );
             }
             i = i.nextElementSibling;
@@ -2732,9 +2881,16 @@
       analisarTabela(t, e) {
         t.classList.add('gm-requisicao__tabela');
         const n = new a.a(
-          new l.a(/^<span class="titBoldUnder">(.+) \(([\d.\/-]+)\)<\/span>$/, 'nome', 'cpfCnpj'),
+          new l.a(
+            /^<span class="titBoldUnder">(.+) \(([\d.\/-]+)\)<\/span>$/,
+            'nome',
+            'cpfCnpj'
+          ),
           new l.a(/^<span class="titBold">Espécie:<\/span> (.*)$/, 'especie'),
-          new l.a(/^<span class="titBold">Tipo Honorário<\/span> (.+)$/, 'tipoHonorario'),
+          new l.a(
+            /^<span class="titBold">Tipo Honorário<\/span> (.+)$/,
+            'tipoHonorario'
+          ),
           new l.a(
             /^<span class="titBold">Data Base:<\/span> (\d{2}\/\d{4})&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Requisitado \(Principal Corrigido \+ Juros\):<\/span> ([\d.,]+ \([\d.,]+ \+ [\d.,]+\))$/,
             'dataBase',
@@ -2757,14 +2913,23 @@
             /^<span class="titBold">Tipo de Despesa:<\/span> (?:.*) \((\d+)\)$/,
             'codigoTipoDespesa'
           ),
-          new l.a(/^<span class="titBold">Doença Grave:<\/span> (Sim|Não)$/, 'doencaGrave'),
+          new l.a(
+            /^<span class="titBold">Doença Grave:<\/span> (Sim|Não)$/,
+            'doencaGrave'
+          ),
           new l.a(
             /^<span class="titBold">Doença Grave:<\/span> (Sim|Não)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Data Nascimento:<\/span> (\d{2}\/\d{2}\/\d{4})$/,
             'doencaGrave',
             'dataNascimento'
           ),
-          new l.a(/^<span class="titBold">Renúncia Valor:<\/span> ?(Sim|Não|)$/, 'renunciaValor'),
-          new l.a(/^<span class="titBold">Situação Servidor:<\/span> (.*)$/, 'situacaoServidor'),
+          new l.a(
+            /^<span class="titBold">Renúncia Valor:<\/span> ?(Sim|Não|)$/,
+            'renunciaValor'
+          ),
+          new l.a(
+            /^<span class="titBold">Situação Servidor:<\/span> (.*)$/,
+            'situacaoServidor'
+          ),
           new l.a(
             /^<span class="titBold">Destaque dos Honorários Contratuais:<\/span> (Sim|Não)$/,
             'destaqueHonorariosContratuais'
@@ -2773,7 +2938,10 @@
             /^<span class="titBold">Órgao de lotação do servidor:<\/span> (.*)$/,
             'orgaoLotacaoServidor'
           ),
-          new l.a(/^<span class="titBold">IRPF- RRA a deduzir:<\/span> (Sim|Não)$/, 'irpf'),
+          new l.a(
+            /^<span class="titBold">IRPF- RRA a deduzir:<\/span> (Sim|Não)$/,
+            'irpf'
+          ),
           new l.a(
             /^<span class="titBold">Ano Exercicio Corrente:<\/span> (\d{4})&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Meses Exercicio Corrente:<\/span> (\d*)&nbsp;&nbsp;&nbsp;&nbsp;<span class="titBold">Valor Exercicio Corrente:<\/span> ([\d.,]+)$/,
             'anoCorrente',
@@ -2790,13 +2958,22 @@
             'mesesAnterior',
             'valorAnterior'
           ),
-          new l.a(/^<span class="titBold">Beneficiário:<\/span> (.+)$/, 'beneficiario'),
+          new l.a(
+            /^<span class="titBold">Beneficiário:<\/span> (.+)$/,
+            'beneficiario'
+          ),
           new l.a(
             /^<span class="titBold">Requisição de Natureza Tributária \(ATUALIZADA PELA SELIC\):<\/span> (Sim|Não)$/,
             'naturezaTributaria'
           ),
-          new l.a(/^<span class="titBold">Incide PSS:<\/span> ?(Sim|Não)$/, 'pss'),
-          new l.a(/^<span class="titBold">Atualização Monetária:\s*<\/span>\s*(.+)$/, 'atualizacao')
+          new l.a(
+            /^<span class="titBold">Incide PSS:<\/span> ?(Sim|Não)$/,
+            'pss'
+          ),
+          new l.a(
+            /^<span class="titBold">Atualização Monetária:\s*<\/span>\s*(.+)$/,
+            'atualizacao'
+          )
         );
         return (
           n.definirConversores({
@@ -2868,10 +3045,20 @@
             ].join('\n'),
             o = 0;
           const a = []
-            .concat(t.calculos, t.contratos, t.despachosCitacao, t.honorarios, t.sentencas)
+            .concat(
+              t.calculos,
+              t.contratos,
+              t.despachosCitacao,
+              t.honorarios,
+              t.sentencas
+            )
             .sort((t, e) => e.evento - t.evento)
             .reduce((t, e) => {
-              t.has(e.evento) || t.set(e.evento, Object.assign({}, e, { documentos: new Map() }));
+              t.has(e.evento) ||
+                t.set(
+                  e.evento,
+                  Object.assign({}, e, { documentos: new Map() })
+                );
               const n = t.get(e.evento);
               return (
                 e.documentos.forEach(t => {
@@ -2905,14 +3092,20 @@
                     r.a(this, void 0, void 0, function* () {
                       (yield this.query(
                         `#gm-documento-ev${t.evento}-doc${e.ordem}`
-                      )).addEventListener('click', this.onLinkDocumentoClicado.bind(this));
+                      )).addEventListener(
+                        'click',
+                        this.onLinkDocumentoClicado.bind(this)
+                      );
                     })
                   )
                 );
               })
             ),
             this.exibirTitulo('Justiça Gratuita', e),
-            e.insertAdjacentHTML('beforeend', `<p class="gm-resposta">${t.justicaGratuita}</p>`);
+            e.insertAdjacentHTML(
+              'beforeend',
+              `<p class="gm-resposta">${t.justicaGratuita}</p>`
+            );
         });
       }
       exibirTitulo(t, e) {
@@ -2936,7 +3129,9 @@
               const l = t.honorarios
                 .map((t, e) => Object.assign({}, t, { ordinal: e }))
                 .filter(t => 'Honorários Contratuais' === t.tipoHonorario)
-                .filter(t => t.beneficiario.toUpperCase() === n.nome.toUpperCase());
+                .filter(
+                  t => t.beneficiario.toUpperCase() === n.nome.toUpperCase()
+                );
               l.forEach(t => {
                 const e = `.gm-requisicao__honorario--${t.ordinal}`;
                 this.validarElemento(`${e}__tipoHonorario`, !0),
@@ -3058,12 +3253,18 @@
         this.enviarSolicitacaoAberturaDocumento(o.opener, n, r);
       }
       onMensagemRecebida(t) {
-        if ((console.info('Mensagem recebida', t), t.origin === this.getLocation().origin)) {
+        if (
+          (console.info('Mensagem recebida', t),
+          t.origin === this.getLocation().origin)
+        ) {
           const e = JSON.parse(t.data);
           e.acao === o.a.RESPOSTA_DADOS &&
             (() =>
               r.a(this, void 0, void 0, function* () {
-                console.log('Dados da requisicação:', yield this.obterRequisicao()),
+                console.log(
+                  'Dados da requisicação:',
+                  yield this.obterRequisicao()
+                ),
                   yield this.validarDadosRequisicao(),
                   yield this.exibirValoresCalculados(),
                   yield this.adicionarAreaDocumentosProcesso(),
@@ -3101,11 +3302,14 @@
           ),
             this.validarElemento(
               '.gm-requisicao__dados__requerido',
-              t.reus.indexOf(e.requerido) > -1 && (1 === t.reus.length || void 0)
+              t.reus.indexOf(e.requerido) > -1 &&
+                (1 === t.reus.length || void 0)
             ),
             e.beneficiarios.forEach((e, n) => {
               const r = `gm-requisicao__beneficiario--${n}`,
-                o = t.autores.filter(t => t.cpfCnpj === e.cpfCnpj.replace(/[.\/-]/g, ''));
+                o = t.autores.filter(
+                  t => t.cpfCnpj === e.cpfCnpj.replace(/[.\/-]/g, '')
+                );
               this.validarElemento(`.${r}__cpfCnpj`, 1 === o.length);
             });
           const d = t.autores.reduce(
@@ -3115,24 +3319,40 @@
           e.honorarios.forEach((e, n) => {
             const r = `gm-requisicao__honorario--${n}`;
             if ('Honorários Contratuais' === e.tipoHonorario) {
-              const n = t.autores.find(t => t.nome.toUpperCase() === e.beneficiario);
+              const n = t.autores.find(
+                t => t.nome.toUpperCase() === e.beneficiario
+              );
               if (n) {
-                const t = n.advogados.filter(t => t.toUpperCase() === e.nome.toUpperCase());
+                const t = n.advogados.filter(
+                  t => t.toUpperCase() === e.nome.toUpperCase()
+                );
                 this.validarElemento(`.${r}__nome`, 1 === t.length);
               } else this.validarElemento(`.${r}__nome`, !1);
             } else
               'Honorários de Sucumbência' === e.tipoHonorario &&
-                this.validarElemento(`.${r}__nome`, d.has(e.nome.toUpperCase()));
+                this.validarElemento(
+                  `.${r}__nome`,
+                  d.has(e.nome.toUpperCase())
+                );
           });
         });
       }
       validarDadosRequisicao() {
         return r.a(this, void 0, void 0, function* () {
           const t = yield this.obterRequisicao();
-          this.validarElemento('.gm-requisicao__dados__status', 'Finalizada' === t.status),
+          this.validarElemento(
+            '.gm-requisicao__dados__status',
+            'Finalizada' === t.status
+          ),
             this.validarElemento('.gm-requisicao__dados__originarioJEF', !0),
-            this.validarElemento('.gm-requisicao__dados__extraorcamentaria', !0),
-            this.validarElemento('.gm-requisicao__dados__processoEletronico', !0),
+            this.validarElemento(
+              '.gm-requisicao__dados__extraorcamentaria',
+              !0
+            ),
+            this.validarElemento(
+              '.gm-requisicao__dados__processoEletronico',
+              !0
+            ),
             this.validarElemento('.gm-requisicao__dados__juizo', !0),
             this.validarElemento('.gm-requisicao__dados__acaoDeExecucao', !0),
             this.validarElemento('.gm-requisicao__dados__acaoOriginaria', !0),
@@ -3150,7 +3370,10 @@
                   valor: Object.assign({}, e.valor),
                   ordinaisContratuais: t.honorarios
                     .map((t, e) => ({ honorario: t, ordinal: e }))
-                    .filter(({ honorario: { tipoHonorario: t } }) => 'Honorários Contratuais' === t)
+                    .filter(
+                      ({ honorario: { tipoHonorario: t } }) =>
+                        'Honorários Contratuais' === t
+                    )
                     .filter(
                       ({ honorario: { beneficiario: t } }) =>
                         t.toUpperCase() === e.nome.toUpperCase()
@@ -3161,7 +3384,10 @@
               })),
               t.honorarios
                 .map((t, e) => ({ honorario: t, ordinal: e }))
-                .filter(({ honorario: { tipoHonorario: t } }) => 'Honorários Contratuais' === t)
+                .filter(
+                  ({ honorario: { tipoHonorario: t } }) =>
+                    'Honorários Contratuais' === t
+                )
                 .map(({ honorario: e, ordinal: n }) => ({
                   tipo: 'honorario',
                   ordinal: n,
@@ -3179,7 +3405,10 @@
                 })),
               t.honorarios
                 .map((t, e) => ({ honorario: t, ordinal: e }))
-                .filter(({ honorario: { tipoHonorario: t } }) => 'Honorários Contratuais' !== t)
+                .filter(
+                  ({ honorario: { tipoHonorario: t } }) =>
+                    'Honorários Contratuais' !== t
+                )
                 .map(({ honorario: t, ordinal: e }) => ({
                   tipo: 'honorario',
                   ordinal: e,
@@ -3194,7 +3423,8 @@
             u = i.reduce((t, { pagamento: e }) => t + e.valor.total, 0);
           this.validarElemento(
             '.gm-requisicao__dados__valorTotalRequisitado',
-            t.valorTotalRequisitado === p.b(u, 2) && (!(t.valorTotalRequisitado > c) || void 0)
+            t.valorTotalRequisitado === p.b(u, 2) &&
+              (!(t.valorTotalRequisitado > c) || void 0)
           ),
             i.forEach(i => {
               const s =
@@ -3211,7 +3441,8 @@
                   this.validarElemento(
                     `.${i.prefixo}__tipoJuros`,
                     ('honorario' === i.tipo &&
-                      ('Devolução à Seção Judiciária' === i.pagamento.tipoHonorario ||
+                      ('Devolução à Seção Judiciária' ===
+                        i.pagamento.tipoHonorario ||
                         'Honorários Periciais' === i.pagamento.tipoHonorario) &&
                       'Não incidem' === i.pagamento.tipoJuros) ||
                       (e && 'Poupança' === i.pagamento.tipoJuros) ||
@@ -3229,7 +3460,8 @@
               else {
                 const t =
                   u !==
-                  ('IPCA-E mais Juros de Mora Fix.no Tít. Executivo' === i.pagamento.atualizacao);
+                  ('IPCA-E mais Juros de Mora Fix.no Tít. Executivo' ===
+                    i.pagamento.atualizacao);
                 this.validarElemento(`.${i.prefixo}__atualizacao`, t);
               }
               switch (
@@ -3237,14 +3469,16 @@
                   this.validarElemento(`.${i.prefixo}__situacaoServidor`),
                 'orgaoLotacaoServidor' in i.pagamento &&
                   this.validarElemento(`.${i.prefixo}__orgaoLotacaoServidor`),
-                'pss' in i.pagamento && this.validarElemento(`.${i.prefixo}__pss`),
+                'pss' in i.pagamento &&
+                  this.validarElemento(`.${i.prefixo}__pss`),
                 i.pagamento.codigoTipoDespesa)
               ) {
                 case '11':
                   a =
                     n ||
                     ('honorario' === i.tipo &&
-                      'Honorários de Sucumbência' === i.pagamento.tipoHonorario) ||
+                      'Honorários de Sucumbência' ===
+                        i.pagamento.tipoHonorario) ||
                     void 0;
                   break;
                 case '12':
@@ -3258,7 +3492,8 @@
                   a =
                     o ||
                     ('honorario' === i.tipo &&
-                      'Devolução à Seção Judiciária' === i.pagamento.tipoHonorario) ||
+                      'Devolução à Seção Judiciária' ===
+                        i.pagamento.tipoHonorario) ||
                     void 0;
               }
               if (
@@ -3270,7 +3505,8 @@
                 if (i.pagamento.irpf) {
                   let t = 0;
                   i.pagamento.valorAnterior && (t += i.pagamento.valorAnterior),
-                    i.pagamento.valorCorrente && (t += i.pagamento.valorCorrente);
+                    i.pagamento.valorCorrente &&
+                      (t += i.pagamento.valorCorrente);
                   const e = p.b(t, 2) === i.pagamento.valor.total;
                   this.validarElemento(`.${i.prefixo}__valorCorrente`, e),
                     this.validarElemento(`.${i.prefixo}__valorAnterior`, e);
@@ -3289,7 +3525,10 @@
                       i.pagamento.renunciaValor === (0 === n)
                     ),
                     this.validarElemento(`.${i.prefixo}__especie`, n <= 0))
-                  : this.validarElemento(`.${i.prefixo}__especie`, n > 0 || void 0),
+                  : this.validarElemento(
+                      `.${i.prefixo}__especie`,
+                      n > 0 || void 0
+                    ),
                   this.validarElemento(
                     `.${i.prefixo}__destaqueHonorariosContratuais`,
                     i.pagamento.destaqueHonorariosContratuais ===
@@ -3306,12 +3545,16 @@
                       .forEach(t => {
                         this.validarElemento(
                           `.${i.prefixo}__dataBase`,
-                          t.dataBase.getTime() === i.pagamento.dataBase.getTime()
+                          t.dataBase.getTime() ===
+                            i.pagamento.dataBase.getTime()
                         );
                         const { principal: e, total: n } = t.valor,
                           { principal: r, total: o } = i.pagamento.valor,
                           a = (e * o) / (n * r);
-                        this.validarElemento(`.${i.prefixo}__valor`, Math.abs(a - 1) < 0.005);
+                        this.validarElemento(
+                          `.${i.prefixo}__valor`,
+                          Math.abs(a - 1) < 0.005
+                        );
                       });
                   const e = [i.pagamento.valor.total]
                       .concat(
@@ -3327,7 +3570,10 @@
                         i.pagamento.renunciaValor === (0 === n)
                       ),
                       this.validarElemento(`.${i.prefixo}__especie`, n <= 0))
-                    : this.validarElemento(`.${i.prefixo}__especie`, n > 0 || void 0);
+                    : this.validarElemento(
+                        `.${i.prefixo}__especie`,
+                        n > 0 || void 0
+                      );
                 } else {
                   const t = i.pagamento.valor.total / c > 0.99;
                   null !== i.pagamento.especie.match(/^RPV/)
@@ -3336,7 +3582,10 @@
                         i.pagamento.renunciaValor === t
                       ),
                       this.validarElemento(`.${i.prefixo}__especie`, !t))
-                    : this.validarElemento(`.${i.prefixo}__especie`, t || void 0);
+                    : this.validarElemento(
+                        `.${i.prefixo}__especie`,
+                        t || void 0
+                      );
                 }
             });
         });
@@ -3363,7 +3612,8 @@
             const e = t.cells[0].innerHTML.trim();
             this.padroes.forEach(r => {
               const o = r.matchInto(e, n);
-              if (this.prefixo && o) for (let e in o) t.classList.add(`${this.prefixo}__${e}`);
+              if (this.prefixo && o)
+                for (let e in o) t.classList.add(`${this.prefixo}__${e}`);
             });
           }),
           this.aplicarConversores(n),
@@ -3438,7 +3688,8 @@
         (this.beneficiarios = []), (this.honorarios = []);
       }
       get isPrecatorio() {
-        if (void 0 === this.especie) throw new Error('Espécie de requisição não definida');
+        if (void 0 === this.especie)
+          throw new Error('Espécie de requisição não definida');
         return null !== this.especie.match(/^Precatório/);
       }
     }
@@ -3460,7 +3711,9 @@
     const c = n(48);
     class u extends s.a {
       constructor() {
-        super(...arguments), (this._isLoadingPages = !1), (this._isLoadingDates = !1);
+        super(...arguments),
+          (this._isLoadingPages = !1),
+          (this._isLoadingDates = !1);
       }
       adicionarAlteracoes() {
         return r.a(this, void 0, void 0, function* () {
@@ -3501,26 +3754,38 @@
         });
       }
       adicionarBotaoOrdenar() {
-        return o.a.criar('Ordenar por data de trânsito', this.onBotaoOrdenarClicked.bind(this));
+        return o.a.criar(
+          'Ordenar por data de trânsito',
+          this.onBotaoOrdenarClicked.bind(this)
+        );
       }
       obterDadosPaginacao() {
         return r.a(this, void 0, void 0, function* () {
           const t = yield this.query('#hdnInfraPaginaAtual');
           if (0 !== Number(t.value)) throw new d();
-          yield this.query('#lnkInfraProximaPaginaSuperior').catch(() => Promise.reject(new d()));
+          yield this.query('#lnkInfraProximaPaginaSuperior').catch(() =>
+            Promise.reject(new d())
+          );
           const e = this.doc.querySelector('#selInfraPaginacaoSuperior'),
             n = null === e ? 2 : e.options.length,
             r = yield this.query('#divInfraAreaTabela > table'),
             o = yield this.query('caption', r),
-            a = (o.textContent || '').match(/Lista de  \((\d+) registros - \d+ a \d+\):/);
-          if (!a) throw new Error('Descrição do número de elementos desconhecida.');
+            a = (o.textContent || '').match(
+              /Lista de  \((\d+) registros - \d+ a \d+\):/
+            );
+          if (!a)
+            throw new Error('Descrição do número de elementos desconhecida.');
           return {
             tBody: yield this.query('tbody'),
             caption: o,
             registros: Number(a[1]),
             form: yield p(r, 'form'),
-            paginacaoSuperior: yield this.query('#divInfraAreaPaginacaoSuperior'),
-            paginacaoInferior: yield this.query('#divInfraAreaPaginacaoInferior'),
+            paginacaoSuperior: yield this.query(
+              '#divInfraAreaPaginacaoSuperior'
+            ),
+            paginacaoInferior: yield this.query(
+              '#divInfraAreaPaginacaoInferior'
+            ),
             paginaAtual: t,
             paginas: n,
           };
@@ -3529,9 +3794,12 @@
       obterDadosOficios() {
         return r.a(this, void 0, void 0, function* () {
           const t = yield Promise.all(
-            this.queryAll('img[src$="infra_css/imagens/lupa.gif"]').map(t => p(t, 'a[href]'))
+            this.queryAll('img[src$="infra_css/imagens/lupa.gif"]').map(t =>
+              p(t, 'a[href]')
+            )
           );
-          if (0 === t.length) throw new Error('Não foram encontrados ofícios requisitórios.');
+          if (0 === t.length)
+            throw new Error('Não foram encontrados ofícios requisitórios.');
           const e = this.getLocation().href,
             n = t
               .map(t => t.getAttribute('onclick') || '')
@@ -3539,7 +3807,9 @@
               .filter(t => null !== t)
               .map(t => new URL(t[1], e).href);
           if (n.length !== t.length)
-            throw new Error('Não foi possível obter a URL de todos os ofícios.');
+            throw new Error(
+              'Não foi possível obter a URL de todos os ofícios.'
+            );
           const r = yield Promise.all(t.map(t => p(t, 'tr')));
           return { linhas: r, tabela: yield p(r[0], 'table'), urls: n };
         });
@@ -3580,7 +3850,9 @@
                 p.set('hdnInfraPaginaAtual', t.toString()),
                 f('POST', this.getLocation().href, p).then(t =>
                   Array.from(
-                    t.querySelectorAll('#divInfraAreaTabela > table > tbody > tr:nth-child(n + 2)')
+                    t.querySelectorAll(
+                      '#divInfraAreaTabela > table > tbody > tr:nth-child(n + 2)'
+                    )
                   )
                 )
               );
@@ -3633,7 +3905,9 @@
           n = e.textContent;
         this.obterDadosOficios().then(t => {
           !(function () {
-            const t = JSON.parse(localStorage.getItem('datas-transito') || '[]');
+            const t = JSON.parse(
+              localStorage.getItem('datas-transito') || '[]'
+            );
             m = new Map(
               t.reduce(
                 ({ last: [t, e], arr: n }, [r, o]) => ({
@@ -3664,7 +3938,9 @@
                           /<td><span class="titBold">Data do trânsito em julgado da sentença ou acórdão\(JEF\):<\/span> (\d{2}\/\d{2}\/\d{4})<\/td>/
                         ) ||
                         (console.log('Data do trânsito não encontrada:', t),
-                        Promise.reject(new Error('Data do trânsito não encontrada')))
+                        Promise.reject(
+                          new Error('Data do trânsito não encontrada')
+                        ))
                     )
                     .then(t => t[1])
                     .then(a.c.analisar)
@@ -3697,7 +3973,8 @@
                         'afterbegin',
                         Object(i.a)(String(r + 1), 3, '0')
                       ),
-                      (n.insertCell(n.cells.length).textContent = a.c.converter(e)),
+                      (n.insertCell(n.cells.length).textContent =
+                        a.c.converter(e)),
                       t
                     );
                   }, this.doc.createDocumentFragment())
@@ -3717,7 +3994,10 @@
                     .reduce(
                       ({ last: [t, e], arr: n }, [r, o]) => {
                         const a = Math.round(o.getTime() / 36e5);
-                        return { last: [r, a], arr: n.concat([[r - t, a - e]]) };
+                        return {
+                          last: [r, a],
+                          arr: n.concat([[r - t, a - e]]),
+                        };
                       },
                       { last: [0, 0], arr: [] }
                     ).arr
@@ -3782,6 +4062,7 @@
       '.extraLinkOficioRequisitorio:active,\r\n.extraLinkOficioRequisitorio:focus {\r\n\tborder: 1px dotted;\r\n\tbackground: yellow;\r\n}\r\n';
   },
   function (t, e) {
-    t.exports = '.gm-conferir-rpv__tbody > tr:hover {\r\n\tbackground-color: #ccc;\r\n}\r\n';
+    t.exports =
+      '.gm-conferir-rpv__tbody > tr:hover {\r\n\tbackground-color: #ccc;\r\n}\r\n';
   },
 ]);

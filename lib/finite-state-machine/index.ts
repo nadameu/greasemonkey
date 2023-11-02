@@ -1,7 +1,13 @@
-type Transitions<State extends { status: string }, Action extends { type: string }> = {
+type Transitions<
+  State extends { status: string },
+  Action extends { type: string },
+> = {
   [S in State['status']]: {
     [A in Action['type']]?: {
-      (action: Extract<Action, { type: A }>, state: Extract<State, { status: S }>): State;
+      (
+        action: Extract<Action, { type: A }>,
+        state: Extract<State, { status: S }>
+      ): State;
     };
   };
 };
@@ -30,7 +36,10 @@ export function createFiniteStateMachine<
     return state;
   }
   function dispatch(action: Action) {
-    const transition = transitions[state.status as State['status']][action.type as Action['type']];
+    const transition =
+      transitions[state.status as State['status']][
+        action.type as Action['type']
+      ];
     if (transition) {
       state = transition(action as any, state as any);
     } else {
@@ -40,7 +49,9 @@ export function createFiniteStateMachine<
       subscriber(state);
     }
   }
-  function subscribe(subscriber: { (state: State): void }): { unsubscribe(): void } {
+  function subscribe(subscriber: { (state: State): void }): {
+    unsubscribe(): void;
+  } {
     subscribers.push(subscriber);
     subscriber(state);
     return {

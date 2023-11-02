@@ -19,7 +19,9 @@
   if (!match) return;
   const rgb = match.slice(1);
 
-  const foregroundColor = `rgb(${rgb.map(color => Math.round(0.95 * Number(color))).join(', ')})`;
+  const foregroundColor = `rgb(${rgb
+    .map(color => Math.round(0.95 * Number(color)))
+    .join(', ')})`;
 
   const backgroundAlphaColor = `rgba(${rgb.join(', ')}, 0.5)`;
 

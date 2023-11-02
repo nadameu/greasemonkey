@@ -47,7 +47,10 @@ export const Action = /* #__PURE__ */ createTaggedUnion(
     }),
     criarBloco: (nome: Bloco['nome']) => ({ nome }),
     erro: (reason: unknown) => ({ reason }),
-    inserir: (id: Bloco['id'], { fecharJanela = false } = {}) => ({ id, fecharJanela }),
+    inserir: (id: Bloco['id'], { fecharJanela = false } = {}) => ({
+      id,
+      fecharJanela,
+    }),
     mensagemRecebida: (msg: BroadcastMessage) => ({ msg }),
     obterBlocos: null,
     remover: (id: Bloco['id']) => ({ id }),

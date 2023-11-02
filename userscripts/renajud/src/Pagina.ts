@@ -13,7 +13,10 @@ import {
 import * as AjaxListener from './AjaxListener';
 import { obterPorId, obterPorTipoId } from './obter';
 
-function addSelectOneMenuListener(prefixo: string, fn: (value: string) => void) {
+function addSelectOneMenuListener(
+  prefixo: string,
+  fn: (value: string) => void
+) {
   const painelOpcoes = obterPorId(prefixo + '_panel');
   const select = obterPorTipoId('input', prefixo + '_input');
   painelOpcoes.addEventListener(
@@ -36,7 +39,8 @@ export function abrirDetalhesVeiculo(ord: number) {
   const prefixo = obterPrefixoVeiculo(ord);
   const idDivDetalhes = prefixo + ':detalhe-veiculo',
     divDetalhes = obterPorId(idDivDetalhes);
-  const abrirDetalhes = divDetalhes.previousElementSibling as HTMLElement | null,
+  const abrirDetalhes =
+      divDetalhes.previousElementSibling as HTMLElement | null,
     idAbrirDetalhes = abrirDetalhes?.id;
   assert(
     isNotNull(abrirDetalhes) && isNotNullish(idAbrirDetalhes),
@@ -93,18 +97,25 @@ export function aguardarProximaPaginaListagem(pagina: number) {
   const promise = new Promise<void>(function (resolve, reject) {
     const onPaginaCarregada = function () {
       console.info('pagina carregada');
-      const botoesPagina = [...document.getElementsByClassName('ui-paginator-page')].filter(botao =>
-        botao.classList.contains('ui-state-active')
-      );
-      if (botoesPagina.length === 2 && Number(botoesPagina[0]!.textContent) === pagina) {
+      const botoesPagina = [
+        ...document.getElementsByClassName('ui-paginator-page'),
+      ].filter(botao => botao.classList.contains('ui-state-active'));
+      if (
+        botoesPagina.length === 2 &&
+        Number(botoesPagina[0]!.textContent) === pagina
+      ) {
         resolve();
       } else if (botoesPagina.length === 2) {
-        AjaxListener.listenOnce('form-incluir-restricao:lista-veiculo').then(onPaginaCarregada);
+        AjaxListener.listenOnce('form-incluir-restricao:lista-veiculo').then(
+          onPaginaCarregada
+        );
       } else {
         reject();
       }
     };
-    AjaxListener.listenOnce('form-incluir-restricao:lista-veiculo').then(onPaginaCarregada);
+    AjaxListener.listenOnce('form-incluir-restricao:lista-veiculo').then(
+      onPaginaCarregada
+    );
   });
   return promise;
 }
@@ -122,7 +133,8 @@ export function fecharRestricoesVeiculo(ord: number) {
   const prefixo = obterPrefixoVeiculo(ord);
   const idDivDetalhesRestricoes = prefixo + ':dlg-detalhes-veiculo-restricoes',
     divDetalhesRestricoes = obterPorId(idDivDetalhesRestricoes);
-  const fecharRestricoes = divDetalhesRestricoes.getElementsByTagName('button')[1];
+  const fecharRestricoes =
+    divDetalhesRestricoes.getElementsByTagName('button')[1];
   assert(isNotNullish(fecharRestricoes), 'Não encontrado: fechar restrições.');
   fecharRestricoes.click();
 }
@@ -157,7 +169,8 @@ export function limparPesquisa() {
   console.debug('Pagina.limparPesquisa()');
   const idBotaoPesquisar = 'form-incluir-restricao:botao-pesquisar',
     botaoPesquisar = obterPorId(idBotaoPesquisar);
-  const botaoLimparPesquisa = botaoPesquisar.nextElementSibling as HTMLElement | null,
+  const botaoLimparPesquisa =
+      botaoPesquisar.nextElementSibling as HTMLElement | null,
     idBotaoLimparPesquisa = botaoLimparPesquisa?.id;
   assert(
     isNotNull(botaoLimparPesquisa) && isNotNullish(idBotaoLimparPesquisa),
@@ -175,7 +188,10 @@ export function obterCelulaRestricaoVeiculo(ord: number) {
 }
 function obterLinhaVeiculo(ord: number) {
   console.debug('Pagina.obterLinhaVeiculo(ord)', ord);
-  const tBody = obterPorTipoId('tbody', 'form-incluir-restricao:lista-veiculo_data');
+  const tBody = obterPorTipoId(
+    'tbody',
+    'form-incluir-restricao:lista-veiculo_data'
+  );
   const index = ord % 100;
   assert(tBody.rows.length > index, `Tabela não possui ${index + 1} linhas.`);
   return tBody.rows[index]!;
@@ -190,7 +206,8 @@ export function obterOrgao() {
   return obterValorInput('orgao');
 }
 function obterValorInput(campo: string) {
-  return obterPorTipoId('input', `form-incluir-restricao:campo-${campo}_input`).value;
+  return obterPorTipoId('input', `form-incluir-restricao:campo-${campo}_input`)
+    .value;
 }
 export function obterPlacaVeiculo(ord: number) {
   console.debug('Pagina.obterPlacaVeiculo(ord)', ord);
@@ -209,7 +226,10 @@ export function obterVeiculosDocumento(documento: string) {
   console.debug('Pagina.obterVeiculosDocumento(documento)', documento);
   const idBotaoPesquisar = 'form-incluir-restricao:botao-pesquisar';
   const botaoPesquisar = obterPorId(idBotaoPesquisar);
-  const campoDocumento = obterPorTipoId('input', 'form-incluir-restricao:campo-cpf-cnpj');
+  const campoDocumento = obterPorTipoId(
+    'input',
+    'form-incluir-restricao:campo-cpf-cnpj'
+  );
   const promise = AjaxListener.listenOnce(idBotaoPesquisar).then(ext => {
     if (hasShape({ totalRecords: isNumber })(ext)) {
       return ext.totalRecords;

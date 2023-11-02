@@ -49,9 +49,13 @@ div.infraAreaTelaD, div.infraBarraLocalizacao {
 document.getElementsByTagName('head')[0].appendChild(style);
 
 var celulas = [
-  ...document.querySelectorAll('#divInfraAreaDadosDinamica th, #divInfraAreaDadosDinamica td'),
+  ...document.querySelectorAll(
+    '#divInfraAreaDadosDinamica th, #divInfraAreaDadosDinamica td'
+  ),
 ];
-celulas = celulas.filter(celula => celula.style.backgroundColor === 'rgb(240, 247, 226)');
+celulas = celulas.filter(
+  celula => celula.style.backgroundColor === 'rgb(240, 247, 226)'
+);
 celulas.forEach(function (celula) {
   celula.style.backgroundColor = '';
   celula.classList.add('gmDestaque');

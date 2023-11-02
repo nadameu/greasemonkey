@@ -5,7 +5,10 @@ const done = <U, T = never>(value: U): Result<T, U> => ({
   done: true,
   value,
 });
-const loop = <T, U>(input: T, andThen: (value: U) => Result<T, U>): Result<T, U> => ({
+const loop = <T, U>(
+  input: T,
+  andThen: (value: U) => Result<T, U>
+): Result<T, U> => ({
   done: false,
   input,
   andThen,
@@ -33,7 +36,9 @@ export type CreatedFunction<T, U> = {
   loop(input: T, andThen: (value: U) => Result<T, U>): Result<T, U>;
   done(value: U): Result<T, U>;
 };
-export function create<T, U>(f: (input: T) => Result<T, U>): CreatedFunction<T, U>;
+export function create<T, U>(
+  f: (input: T) => Result<T, U>
+): CreatedFunction<T, U>;
 export function create<T, U>(
   f: (input: T) => Result<T, U>,
   memoize: boolean
@@ -53,7 +58,11 @@ export function create<T, U, K>(
         : typeof hashFn === 'boolean' && hashFn
         ? getCache<T, U, T>(x => x)
         : false;
-    type Prev = null | { prev: Prev; input: T; transform: (value: U) => Result<T, U> };
+    type Prev = null | {
+      prev: Prev;
+      input: T;
+      transform: (value: U) => Result<T, U>;
+    };
     let prev: Prev = null;
     let curr: Result<T, U> = f(input);
     if (!cache) {

@@ -4,4 +4,5 @@ declare namespace Internal {
     private [OpaqueSymbol]: S;
   }
 }
-export type Opaque<T, S extends Record<keyof any, unknown>> = T & Internal.Opaque<S>;
+export type Opaque<T, S extends Record<keyof any, unknown>> = T &
+  Internal.Opaque<S>;

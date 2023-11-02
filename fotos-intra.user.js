@@ -24,7 +24,10 @@ function main() {
     let list = null;
     const children = queryOne('.coluna-direita').children;
     for (const [i, child] of Array.from(children).entries()) {
-      if (child.matches('.widgettitle') || child.querySelector('.widgettitle')) {
+      if (
+        child.matches('.widgettitle') ||
+        child.querySelector('.widgettitle')
+      ) {
         list = { titulo: child, children: [], previous: list };
       } else if (list) {
         list.children.push(child);
@@ -46,7 +49,8 @@ function main() {
       }
     }
 
-    if (!encontrados) throw new Error('Não foi possível localizar aniversariantes.');
+    if (!encontrados)
+      throw new Error('Não foi possível localizar aniversariantes.');
 
     adicionarEstilosGeral();
     adicionarEstilosHome();

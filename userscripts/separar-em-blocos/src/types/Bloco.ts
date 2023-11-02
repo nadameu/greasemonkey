@@ -16,11 +16,12 @@ export interface Bloco {
   processos: NumProc[];
 }
 
-export const isBlocoProcesso: p.Predicate<BlocoProcesso> = /* #__PURE__ */ p.hasShape({
-  id: isIdBloco,
-  nome: isNomeBloco,
-  inserido: p.isBoolean,
-});
+export const isBlocoProcesso: p.Predicate<BlocoProcesso> =
+  /* #__PURE__ */ p.hasShape({
+    id: isIdBloco,
+    nome: isNomeBloco,
+    inserido: p.isBoolean,
+  });
 export interface BlocoProcesso {
   id: p.Static<typeof isIdBloco>;
   nome: p.Static<typeof isNomeBloco>;

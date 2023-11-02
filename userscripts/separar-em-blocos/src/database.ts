@@ -1,8 +1,17 @@
-import { assert, isAnyOf, isUndefined, NonNegativeInteger } from '@nadameu/predicates';
+import {
+  assert,
+  isAnyOf,
+  isUndefined,
+  NonNegativeInteger,
+} from '@nadameu/predicates';
 import { Bloco, isBloco, isIdBloco } from './types/Bloco';
 
-function promisify(eventName: 'complete'): (tx: IDBTransaction) => Promise<void>;
-function promisify(eventName: 'success'): <T = any>(req: IDBRequest<T>) => Promise<T>;
+function promisify(
+  eventName: 'complete'
+): (tx: IDBTransaction) => Promise<void>;
+function promisify(
+  eventName: 'success'
+): <T = any>(req: IDBRequest<T>) => Promise<T>;
 function promisify(eventName: 'complete' | 'success') {
   return <T = any>(obj: IDBTransaction | IDBRequest<T>): Promise<any> =>
     new Promise<T | void>((res, rej) => {
@@ -62,11 +71,15 @@ function makeTransaction<T>(
 ): Promise<[T]>;
 function makeTransaction<T, U>(
   mode: TransactionMode,
-  createRequests: (store: IDBObjectStore) => readonly [IDBRequest<T>, IDBRequest<U>]
+  createRequests: (
+    store: IDBObjectStore
+  ) => readonly [IDBRequest<T>, IDBRequest<U>]
 ): Promise<[T, U]>;
 function makeTransaction<T, U, V>(
   mode: TransactionMode,
-  createRequests: (store: IDBObjectStore) => readonly [IDBRequest<T>, IDBRequest<U>, IDBRequest<V>]
+  createRequests: (
+    store: IDBObjectStore
+  ) => readonly [IDBRequest<T>, IDBRequest<U>, IDBRequest<V>]
 ): Promise<[T, U, V]>;
 function makeTransaction<T>(
   mode: TransactionMode,
@@ -92,7 +105,10 @@ export async function deleteBlocos() {
 }
 
 export async function getBlocos() {
-  const [blocos] = await makeTransaction('readonly', store => [store.getAll()] as const);
+  const [blocos] = await makeTransaction(
+    'readonly',
+    store => [store.getAll()] as const
+  );
   return validarBlocos(blocos);
 }
 
@@ -109,7 +125,9 @@ const compararBlocos = /* #__PURE__ */ compareUsing(
     compareUsing(x => x.toLowerCase()),
     compareDefault,
     nome => {
-      throw new Error(`Há dois blocos com o mesmo nome: ${JSON.stringify(nome)}.`);
+      throw new Error(
+        `Há dois blocos com o mesmo nome: ${JSON.stringify(nome)}.`
+      );
     }
   )
 );

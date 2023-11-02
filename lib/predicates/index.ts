@@ -7,7 +7,10 @@ export class AssertionError extends Error {
   }
 }
 
-export function assert(condition: boolean, message?: string): asserts condition {
+export function assert(
+  condition: boolean,
+  message?: string
+): asserts condition {
   if (!condition) throw new AssertionError(message);
 }
 
@@ -16,8 +19,16 @@ export function check<T, U extends T>(
   value: T,
   message?: string
 ): Exclude<T, U>;
-export function check<T>(predicate: Predicate<T>, value: unknown, message?: string): T;
-export function check<T>(predicate: Predicate<T>, value: unknown, message?: string): T {
+export function check<T>(
+  predicate: Predicate<T>,
+  value: unknown,
+  message?: string
+): T;
+export function check<T>(
+  predicate: Predicate<T>,
+  value: unknown,
+  message?: string
+): T {
   assert(predicate(value), message);
   return value;
 }
@@ -36,7 +47,9 @@ export interface Negate<U> {
 
 export type Static<T> = T extends Predicate<infer U> ? U : never;
 
-export const isUnknown: Predicate<unknown> = (_value: unknown): _value is unknown => true;
+export const isUnknown: Predicate<unknown> = (
+  _value: unknown
+): _value is unknown => true;
 
 interface IsOfTypeMap {
   bigint: bigint;
@@ -52,7 +65,8 @@ interface IsOfTypeMap {
 export function isOfType<K extends keyof IsOfTypeMap>(
   typeRepresentation: K
 ): Predicate<IsOfTypeMap[K]> {
-  return (value: unknown): value is IsOfTypeMap[K] => typeof value === typeRepresentation;
+  return (value: unknown): value is IsOfTypeMap[K] =>
+    typeof value === typeRepresentation;
 }
 
 export const isBigInt = /* @__PURE__ */ isOfType('bigint');
@@ -63,16 +77,18 @@ export const isOfTypeObject = /* @__PURE__ */ isOfType('object');
 export const isString = /* @__PURE__ */ isOfType('string');
 export const isSymbol = /* @__PURE__ */ isOfType('symbol');
 
-export function isLiteral<T extends string | number | bigint | boolean | symbol | null | undefined>(
-  literal: T
-): Predicate<T> {
+export function isLiteral<
+  T extends string | number | bigint | boolean | symbol | null | undefined,
+>(literal: T): Predicate<T> {
   return (value: unknown): value is T => value === literal;
 }
 export const isUndefined = /* @__PURE__ */ isLiteral(undefined);
 export const isNull = /* @__PURE__ */ isLiteral(null);
 
 export function negate<U>(predicate: Predicate<U>): Negate<U>;
-export function negate<T, U extends T>(refinement: Refinement<T, U>): Refinement<T, Exclude<T, U>>;
+export function negate<T, U extends T>(
+  refinement: Refinement<T, U>
+): Refinement<T, Exclude<T, U>>;
 export function negate<U>(predicate: Predicate<U>): Negate<U> {
   return <T>(value: T | U): value is T => !predicate(value);
 }
@@ -104,8 +120,14 @@ export type Integer = Opaque<number, { Integer: Integer }>;
 export const isInteger: Predicate<Integer> = /* @__PURE__*/ (x): x is Integer =>
   Number.isInteger(x);
 export type Natural = Opaque<Integer, { Natural: Natural }>;
-export const isNatural = /* @__PURE__*/ refine(isInteger, (x: number): x is Natural => x > 0);
-export type NonNegativeInteger = Opaque<Integer, { NonNegativeInteger: NonNegativeInteger }>;
+export const isNatural = /* @__PURE__*/ refine(
+  isInteger,
+  (x: number): x is Natural => x > 0
+);
+export type NonNegativeInteger = Opaque<
+  Integer,
+  { NonNegativeInteger: NonNegativeInteger }
+>;
 export const isNonNegativeInteger = /* @__PURE__*/ refine(
   isInteger,
   (x): x is NonNegativeInteger => x > -1
@@ -121,24 +143,40 @@ export function isAnyOf<T extends Predicate<any>[]>(
 ): Predicate<T extends Predicate<infer U>[] ? U : never> {
   return (value): value is any => predicates.some(p => p(value));
 }
-export const isNullish: Predicate<null | undefined> = (x): x is null | undefined => x == null;
+export const isNullish: Predicate<null | undefined> = (
+  x
+): x is null | undefined => x == null;
 export const isNotNullish = /* @__PURE__ */ negate(isNullish);
 
-export const isArray: Predicate<unknown[]> = (x): x is unknown[] => Array.isArray(x);
+export const isArray: Predicate<unknown[]> = (x): x is unknown[] =>
+  Array.isArray(x);
 export function isTypedArray<T>(predicate: Predicate<T>): Predicate<T[]> {
   return refine(isArray, (xs): xs is T[] => xs.every(predicate));
 }
 
-export function hasKeys<K extends string>(...keys: K[]): Predicate<Record<K, unknown>> {
-  return refine(isObject, (obj): obj is Record<K, unknown> => keys.every(key => key in obj));
+export function hasKeys<K extends string>(
+  ...keys: K[]
+): Predicate<Record<K, unknown>> {
+  return refine(isObject, (obj): obj is Record<K, unknown> =>
+    keys.every(key => key in obj)
+  );
 }
 
-export function hasShape<T extends Record<string, Predicate<any> | OptionalPropertyPredicate<any>>>(
-  predicates: T
-): Predicate<Shape<T>> {
+export function isKeyOf<T extends object>(
+  obj: T
+): Refinement<keyof any, keyof T> {
+  return (k): k is keyof T => k in obj;
+}
+
+export function hasShape<
+  T extends Record<string, Predicate<any> | OptionalPropertyPredicate<any>>,
+>(predicates: T): Predicate<Shape<T>> {
   return refine(isObject, ((obj: { [K in string & keyof T]?: unknown }) =>
     (
-      Object.entries(predicates) as [string & keyof T, Predicate<any> & { optional?: boolean }][]
+      Object.entries(predicates) as [
+        string & keyof T,
+        Predicate<any> & { optional?: boolean },
+      ][]
     ).every(([key, predicate]) =>
       key in obj ? predicate(obj[key]) : predicate.optional === true
     )) as Refinement<object, Shape<T>>);
@@ -146,13 +184,13 @@ export function hasShape<T extends Record<string, Predicate<any> | OptionalPrope
 
 type Shape<T> = Simplify<
   {
-    [K in keyof T as T[K] extends { optional: true } ? never : K]-?: T[K] extends Predicate<infer U>
-      ? U
-      : never;
+    [K in keyof T as T[K] extends { optional: true }
+      ? never
+      : K]-?: T[K] extends Predicate<infer U> ? U : never;
   } & {
-    [K in keyof T as T[K] extends { optional: true } ? K : never]?: T[K] extends Predicate<infer U>
-      ? U
-      : never;
+    [K in keyof T as T[K] extends { optional: true }
+      ? K
+      : never]?: T[K] extends Predicate<infer U> ? U : never;
   }
 >;
 
@@ -162,7 +200,9 @@ type Simplify<T> = T extends never
       [K in keyof T]: T[K];
     };
 
-export function isOptional<T>(predicate: Predicate<T>): OptionalPropertyPredicate<T> {
+export function isOptional<T>(
+  predicate: Predicate<T>
+): OptionalPropertyPredicate<T> {
   const p: OptionalPropertyPredicate<T> = (x): x is T => predicate(x);
   p.optional = true;
   return p;
@@ -191,9 +231,15 @@ type TaggedUnion<
       }[keyof P]
     >;
 
-type TuplePredicates<T extends Predicate<unknown>[], Result extends unknown[] = []> = T extends []
+type TuplePredicates<
+  T extends Predicate<unknown>[],
+  Result extends unknown[] = [],
+> = T extends []
   ? Result
-  : T extends [Predicate<infer Head>, ...infer Tail extends Predicate<unknown>[]]
+  : T extends [
+      Predicate<infer Head>,
+      ...infer Tail extends Predicate<unknown>[],
+    ]
   ? TuplePredicates<Tail, [...Result, Head]>
   : never;
 export const isTuple = <P extends Predicate<unknown>[]>(

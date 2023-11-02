@@ -52,7 +52,9 @@ function fromId(id) {
   return element === null ? null : fromElement(element);
 }
 function fromElement(element) {
-  return element.matches('input[type="radio"][name]') && element.name !== '' ? element : null;
+  return element.matches('input[type="radio"][name]') && element.name !== ''
+    ? element
+    : null;
 }
 
 function fromIds(ids) {
@@ -136,7 +138,9 @@ function OSD(mensagemInicial, doc = document, win = doc.defaultView) {
   function alteraTextoAguardaEFade(texto) {
     div.textContent = texto;
     div.getBoundingClientRect();
-    div.style.transition = `opacity 500ms linear ${calcularEsperaMínima(texto)}ms`;
+    div.style.transition = `opacity 500ms linear ${calcularEsperaMínima(
+      texto
+    )}ms`;
     div.style.opacity = '0';
   }
   function ajustarTamanhoFonte() {
@@ -146,7 +150,10 @@ function OSD(mensagemInicial, doc = document, win = doc.defaultView) {
     return doc.documentElement.clientHeight;
   }
   function calcularEsperaMínima(mensagem) {
-    return Math.max(ESPERA_MINIMA, mensagem.length * MILISSEGUNDOS_POR_CARACTERE);
+    return Math.max(
+      ESPERA_MINIMA,
+      mensagem.length * MILISSEGUNDOS_POR_CARACTERE
+    );
   }
 }
 
@@ -160,7 +167,9 @@ function produto(xs) {
 const analisarGrupos = grupos => {
   const quantidades = grupos.map(grupo => grupo.length);
   const multiplicadores = multiplicarAnteriores(quantidades);
-  const maximos = grupos.map((_, i) => (quantidades[i] - 1) * multiplicadores[i]);
+  const maximos = grupos.map(
+    (_, i) => (quantidades[i] - 1) * multiplicadores[i]
+  );
   return {
     maximo: maximos.reduce((a, b) => a + b, 0),
     grupos: grupos.map(
@@ -182,14 +191,18 @@ function Elemento(elemento) {
     elemento.checked = selecionado;
   }
   function adicionarTexto(texto) {
-    elemento.insertAdjacentHTML('beforebegin', `<span class="gmValor">${texto}</span>`);
+    elemento.insertAdjacentHTML(
+      'beforebegin',
+      `<span class="gmValor">${texto}</span>`
+    );
   }
 }
 
 function Selecionador(grupos) {
   const { elementos, maximo } = obterElementos(grupos);
   for (const grupo of elementos)
-    for (const { valor, elemento } of grupo) elemento.adicionarTexto(String(valor));
+    for (const { valor, elemento } of grupo)
+      elemento.adicionarTexto(String(valor));
   return { maximo, setValor };
   function setValor(valor) {
     if (valor > maximo) throw new RangeError(`Valor inválido: ${valor}.`);
@@ -228,7 +241,10 @@ function valorDecrescente(a, b) {
   return b.valor - a.valor;
 }
 function valoresDecrescentes(as, bs) {
-  return Math.max(...bs.map(({ valor }) => valor)) - Math.max(...as.map(({ valor }) => valor));
+  return (
+    Math.max(...bs.map(({ valor }) => valor)) -
+    Math.max(...as.map(({ valor }) => valor))
+  );
 }
 
 function etapa1({ baixar, capa }) {
@@ -290,7 +306,12 @@ function criarSelecionador() {
   const condenação = fromIds(['rdoItem1/3', 'rdoItem1/1', 'rdoItem1/2']);
   const honoráriosCustas = fromIds(['rdoItem2/3', 'rdoItem2/1', 'rdoItem2/2']);
   const apensosLEF = fromIds(['rdoItem3/2', 'rdoItem3/1']);
-  const gruposPossíveis = [jáTeveBaixaDefinitiva, condenação, honoráriosCustas, apensosLEF];
+  const gruposPossíveis = [
+    jáTeveBaixaDefinitiva,
+    condenação,
+    honoráriosCustas,
+    apensosLEF,
+  ];
   if (somenteGruposVálidos(gruposPossíveis)) {
     const gruposVálidos = fromArray(gruposPossíveis);
     if (gruposVálidos !== null) return Selecionador(gruposVálidos);
@@ -336,7 +357,9 @@ function main() {
 }
 function extrairDadosUrl(url) {
   const acao = new URL(url).searchParams.get('acao');
-  const match = (acao === null ? '' : acao).match(/^baixa_arquivamento_processo_etapa_(1|3)$/);
+  const match = (acao === null ? '' : acao).match(
+    /^baixa_arquivamento_processo_etapa_(1|3)$/
+  );
   const etapa = (match === null ? ['', 'desconhecida'] : match)[1];
   return { acao, etapa };
 }

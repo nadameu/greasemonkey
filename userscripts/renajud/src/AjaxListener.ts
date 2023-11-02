@@ -68,8 +68,14 @@ function privilegedCode() {
     key: K,
     type: 'number'
   ): obj is T & { [k in K]: number };
-  function hasKeyOfType<T, K extends string>(obj: T, key: K, type: string): boolean {
-    return key in obj && typeof (obj as T & { [k in K]: unknown })[key] === type;
+  function hasKeyOfType<T, K extends string>(
+    obj: T,
+    key: K,
+    type: string
+  ): boolean {
+    return (
+      key in obj && typeof (obj as T & { [k in K]: unknown })[key] === type
+    );
   }
 
   $(window.document).ajaxComplete((evt, xhr, options) => {
@@ -109,8 +115,12 @@ window.addEventListener(
     try {
       const eventDetails = JSON.parse(evt.data);
       if (eventDetails.type === 'ajaxComplete') {
-        getResolves(eventDetails.source).forEach(resolve => resolve(eventDetails.extension));
-        getCallbacks(eventDetails.source).forEach(callback => callback(eventDetails.extension));
+        getResolves(eventDetails.source).forEach(resolve =>
+          resolve(eventDetails.extension)
+        );
+        getCallbacks(eventDetails.source).forEach(callback =>
+          callback(eventDetails.extension)
+        );
         console.debug('ajaxComplete()', eventDetails);
       } else {
         throw new Error('Tipo desconhecido: ' + eventDetails.type);

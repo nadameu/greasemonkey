@@ -9,7 +9,8 @@ const urlInfo = ['pr', 'rs', 'sc']
 
 function buildUrl(acao: string) {
   return urlInfo.map(
-    ({ domain, directory }) => `https://${domain}/${directory}/controlador.php?acao=${acao}&*`
+    ({ domain, directory }) =>
+      `https://${domain}/${directory}/controlador.php?acao=${acao}&*`
   );
 }
 

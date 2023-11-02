@@ -14,7 +14,9 @@
 
 (s => {
   const o = document.createElement('style');
-  (o.dataset.source = 'vite-plugin-monkey'), (o.textContent = s), document.head.append(o);
+  (o.dataset.source = 'vite-plugin-monkey'),
+    (o.textContent = s),
+    document.head.append(o);
 })(
   ' .gm-blocos__lista,.gm-blocos__dialog,.gm-blocos__processo{--accent: hsl(266, 40%, 25%);--bg: hsl(266, 10%, 30%);--border: hsl(266, 15%, 60%);--disabled: hsl(266, 5%, 37.5%);--disabled-text: hsl(266, 0%, 80%);--shadow: hsl(266, 12.5%, 17.5%);--muted-accent: hsl(266, 25%, 25%);--text: hsl(266, 0%, 100%)}.bootstrap-styles .gm-blocos__lista{margin:4px;padding:4px 8px;border-radius:4px;width:max-content;background:var(--bg);color:var(--text);box-shadow:0 3px 3px var(--shadow)}.bootstrap-styles .gm-blocos__lista h4{margin:3px 0;font-size:1.25rem;font-weight:300}.bootstrap-styles .gm-blocos__lista input[type=image]{border:none}.bootstrap-styles .gm-blocos__lista table{margin:6px 0 12px;border-collapse:collapse}.bootstrap-styles .gm-blocos__lista td{margin:0;padding:3px .5ch;vertical-align:middle}.bootstrap-styles .gm-blocos__lista td a[href]{color:#fff}.bootstrap-styles .gm-blocos__lista td label{font-size:.92rem;margin:0}.bootstrap-styles .gm-blocos__lista td small{font-size:.75rem}.bootstrap-styles .gm-blocos__lista tr{border:1px solid var(--disabled);border-width:1px 0}.bootstrap-styles .gm-blocos__lista tfoot td{padding-top:.75em;padding-bottom:.75em}.bootstrap-styles .gm-blocos__lista input.rename{font-size:1em}.bootstrap-styles .gm-blocos__lista .gm-erro,.bootstrap-styles .gm-blocos__lista .gm-aviso{padding:.1em .5ex;font-size:.9rem;background:hsl(0,10%,95%);color:#c00;margin:2px auto 6px;width:fit-content}.bootstrap-styles .gm-blocos__processo button,.bootstrap-styles .gm-blocos__lista button,.gm-blocos__dialog button{display:block;margin:0 auto 7px;padding:2px 20px;font-size:.86rem;border:none;border-radius:3px;box-shadow:0 2px 4px var(--shadow);background:var(--muted-accent);color:var(--text)}.bootstrap-styles .gm-blocos__processo button:hover,.bootstrap-styles .gm-blocos__lista button:hover,.gm-blocos__dialog button:hover{transition:background-color .1s ease-in;background:var(--accent)}.bootstrap-styles .gm-blocos__processo button:disabled,.bootstrap-styles .gm-blocos__lista button:disabled,.gm-blocos__dialog button:disabled{background:var(--disabled);color:var(--disabled-text);box-shadow:none}.bootstrap-styles .gm-blocos__dialog{background:var(--bg);color:var(--text);font-family:var(--font-family-sans-serif);font-size:1rem;min-width:25vw;border:3px ridge var(--border);box-shadow:0 4px 8px 4px #0c0a1080;border-radius:12px}.bootstrap-styles .gm-blocos__dialog::backdrop{background:hsla(266,25%,5%,.75)}.bootstrap-styles .gm-blocos__dialog form{display:grid;grid-template-rows:1fr 10fr 1fr;justify-items:center;align-items:center}.bootstrap-styles .gm-blocos__dialog form div{font-weight:700}.bootstrap-styles .gm-blocos__nome{all:unset}.bootstrap-styles .gm-blocos__processos{all:unset;border:1px inset var(--border);padding:.5em .5ch}.bootstrap-styles .gm-blocos__processo{margin:2px 3px 4px;padding:4px;border-radius:4px;background:var(--bg);color:var(--text);box-shadow:0 3px 3px var(--shadow)}.bootstrap-styles .gm-blocos__processo h4{margin:3px 0;font-size:1.25rem;font-weight:300}.bootstrap-styles .gm-blocos__processo ul{list-style-type:none;margin:3px 0 7px;padding:0}.bootstrap-styles .gm-blocos__processo li{position:relative;display:grid;grid-template-columns:auto 1fr auto;grid-gap:5px;align-items:center;margin:4px 0;padding:5px;border-radius:2px}.bootstrap-styles .gm-blocos__processo li:before{content:"";position:absolute;top:2px;width:100%;height:100%;border-bottom:1px solid #888;pointer-events:none}.bootstrap-styles .gm-blocos__processo li:last-of-type:before{content:none}.bootstrap-styles .gm-blocos__processo li:hover{background:var(--accent)}.bootstrap-styles .gm-blocos__processo label{margin:0;font-size:.92rem}.bootstrap-styles .gm-blocos__processo .placeholder span{height:1.38rem;animation:pulse 1s ease-in-out infinite alternate;border-radius:4px}.bootstrap-styles .gm-blocos__processo .placeholder span:first-of-type,.bootstrap-styles .gm-blocos__processo .placeholder span:last-of-type{width:1.38rem}@keyframes pulse{0%{background-color:var(--disabled)}to{background-color:var(--bg)}}.bootstrap-styles .gm-blocos__processo .error{margin:10px 5%;padding:4px 5%;border-radius:4px;font-weight:500;background:white;color:red} '
 );
@@ -96,7 +98,8 @@
       subscribe,
     };
     function onMessage(evt) {
-      if (validate(evt.data)) for (const listener of listeners) listener(evt.data);
+      if (validate(evt.data))
+        for (const listener of listeners) listener(evt.data);
     }
     function destroy() {
       bc.removeEventListener('message', onMessage);
@@ -165,7 +168,10 @@
   }
   function matchBy(tagName) {
     return (obj, matchers, otherwise) => {
-      if ((typeof obj !== 'object' && typeof obj !== 'function') || obj === null)
+      if (
+        (typeof obj !== 'object' && typeof obj !== 'function') ||
+        obj === null
+      )
         throw new Error(
           `${Object.prototype.toString
             .call(obj)
@@ -174,7 +180,9 @@
         );
       const tag = obj[tagName];
       if (tag === void 0)
-        throw new Error(`Object does not have a valid "${String(tagName)}" property.`);
+        throw new Error(
+          `Object does not have a valid "${String(tagName)}" property.`
+        );
       const fn = matchers[tag] ?? otherwise ?? matchNotFound;
       return fn(obj);
     };
@@ -213,7 +221,10 @@
   const isInteger = /* @__PURE__ */ refine(isNumber, x => Number.isInteger(x));
   const isNatural = /* @__PURE__ */ refine(isInteger, x => x > 0);
   const isNonNegativeInteger = /* @__PURE__ */ isAnyOf(isLiteral(0), isNatural);
-  const isNonEmptyString = /* @__PURE__ */ refine(isString, x => x.trim().length > 0);
+  const isNonEmptyString = /* @__PURE__ */ refine(
+    isString,
+    x => x.trim().length > 0
+  );
   function isAnyOf(...predicates) {
     return value => predicates.some(p => p(value));
   }
@@ -310,7 +321,9 @@
     await promisifyRequest(indexedDB.deleteDatabase('gm-blocos'));
   }
   async function getBlocos() {
-    const [blocos] = await makeTransaction('readonly', store => [store.getAll()]);
+    const [blocos] = await makeTransaction('readonly', store => [
+      store.getAll(),
+    ]);
     return validarBlocos(blocos);
   }
   function validarBlocos(blocos) {
@@ -323,7 +336,9 @@
       compareUsing(x => x.toLowerCase()),
       compareDefault,
       nome => {
-        throw new Error(`Há dois blocos com o mesmo nome: ${JSON.stringify(nome)}.`);
+        throw new Error(
+          `Há dois blocos com o mesmo nome: ${JSON.stringify(nome)}.`
+        );
       }
     )
   );
@@ -425,9 +440,15 @@
         return Left(new Error(`Link do processo não encontrado: linha ${i}.`));
       const numproc = new URL(endereco).searchParams.get('num_processo');
       if (isNullish(numproc))
-        return Left(new Error(`Número do processo não encontrado: linha ${i}.`));
+        return Left(
+          new Error(`Número do processo não encontrado: linha ${i}.`)
+        );
       if (!isNumProc(numproc))
-        return Left(new Error(`Número de processo desconhecido: ${JSON.stringify(numproc)}.`));
+        return Left(
+          new Error(
+            `Número de processo desconhecido: ${JSON.stringify(numproc)}.`
+          )
+        );
       const checkbox = linha.cells[0]?.querySelector('input[type=checkbox]');
       if (isNullish(checkbox))
         return Left(new Error(`Caixa de seleção não encontrada: linha ${i}.`));
@@ -456,9 +477,13 @@
     let acoes = document.getElementById('fldAcoes');
     if (isNullish(acoes)) {
       acoes = document.getElementById('divInfraAreaTabela');
-      if (isNullish(acoes)) return Left(new Error('Não foi possível inserir os blocos na página.'));
+      if (isNullish(acoes))
+        return Left(new Error('Não foi possível inserir os blocos na página.'));
     }
-    const div = acoes.insertAdjacentElement('beforebegin', document.createElement('div'));
+    const div = acoes.insertAdjacentElement(
+      'beforebegin',
+      document.createElement('div')
+    );
     div.className = 'gm-blocos__lista';
     document.body.insertAdjacentHTML(
       'beforeend',
@@ -577,7 +602,9 @@
               () => {
                 const info = blocos.map(bloco => ({
                   ...bloco,
-                  nestaPagina: bloco.processos.filter(numproc => mapa.has(numproc)).length,
+                  nestaPagina: bloco.processos.filter(numproc =>
+                    mapa.has(numproc)
+                  ).length,
                   total: bloco.processos.length,
                 }));
                 return Model.loaded(info);
@@ -673,8 +700,10 @@
                 await deleteBlocos();
                 return Action2.obterBlocos;
               },
-              excluirBloco: async ({ id }) => Action2.blocosModificados(await deleteBloco(id)),
-              obterBlocos: async () => Action2.blocosModificados(await getBlocos()),
+              excluirBloco: async ({ id }) =>
+                Action2.blocosModificados(await deleteBloco(id)),
+              obterBlocos: async () =>
+                Action2.blocosModificados(await getBlocos()),
               removerProcessosAusentes: async ({ id }) => {
                 const bloco = await getBloco(id);
                 if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
@@ -724,7 +753,8 @@
                 });
                 return Action2.blocosObtidos(blocos);
               },
-              mensagemRecebida: ({ msg: { blocos } }) => Action2.blocosObtidos(blocos),
+              mensagemRecebida: ({ msg: { blocos } }) =>
+                Action2.blocosObtidos(blocos),
             },
             s => s
           );
@@ -785,7 +815,10 @@
         e => {
           e.preventDefault();
           if (isNonEmptyString(nome)) store.dispatch(Action2.criarBloco(nome));
-          else store.dispatch(Action2.erroCapturado('Nome do bloco não pode estar em branco.'));
+          else
+            store.dispatch(
+              Action2.erroCapturado('Nome do bloco não pode estar em branco.')
+            );
           setNome('');
         },
         [nome]
@@ -796,10 +829,14 @@
           })
         : null;
       const processosComBlocoNestaPagina = new Set(
-        state.blocos.flatMap(({ processos }) => processos.filter(p2 => mapa.has(p2)))
+        state.blocos.flatMap(({ processos }) =>
+          processos.filter(p2 => mapa.has(p2))
+        )
       );
       const processosSemBloco = new Map(
-        Array.from(mapa).filter(([numproc]) => !processosComBlocoNestaPagina.has(numproc))
+        Array.from(mapa).filter(
+          ([numproc]) => !processosComBlocoNestaPagina.has(numproc)
+        )
       );
       const semBloco = (() => {
         if (processosSemBloco.size === 0) return 'disabled';
@@ -838,12 +875,18 @@
                         children: o('input', {
                           type: 'radio',
                           checked: semBloco === 'checked',
-                          onClick: () => store.dispatch(Action2.checkboxClicado(-1, semBloco)),
+                          onClick: () =>
+                            store.dispatch(
+                              Action2.checkboxClicado(-1, semBloco)
+                            ),
                         }),
                       }),
                       o('td', {
                         children: o('label', {
-                          onClick: () => store.dispatch(Action2.checkboxClicado(-1, semBloco)),
+                          onClick: () =>
+                            store.dispatch(
+                              Action2.checkboxClicado(-1, semBloco)
+                            ),
                           children: '(processos sem bloco)',
                         }),
                       }),
@@ -851,7 +894,9 @@
                         children: o('small', {
                           children: [
                             '(',
-                            (s => `${s} processo${s > 1 ? 's' : ''}`)(processosSemBloco.size),
+                            (s => `${s} processo${s > 1 ? 's' : ''}`)(
+                              processosSemBloco.size
+                            ),
                             ')',
                           ],
                         }),
@@ -881,7 +926,9 @@
       if (isNonEmptyString(nome)) {
         store.dispatch(Action2.criarBloco(nome));
       } else {
-        store.dispatch(Action2.erroCapturado('Nome do bloco não pode estar em branco.'));
+        store.dispatch(
+          Action2.erroCapturado('Nome do bloco não pode estar em branco.')
+        );
       }
     }
     function Aviso(props) {
@@ -917,7 +964,8 @@
       let removerAusentes = o(BotaoAcao, {
         src: 'imagens/minuta_transferir.png',
         label: 'Remover processos ausentes',
-        onClick: () => store.dispatch(Action2.removerProcessosAusentes(props.id)),
+        onClick: () =>
+          store.dispatch(Action2.removerProcessosAusentes(props.id)),
       });
       if (editing) {
         displayNome = o(preact.Fragment, {
@@ -945,7 +993,9 @@
         removerAusentes = null;
       }
       const chkState = (() => {
-        const meusProcessosNestaPagina = new Set(props.processos.filter(n => mapa.has(n)));
+        const meusProcessosNestaPagina = new Set(
+          props.processos.filter(n => mapa.has(n))
+        );
         if (meusProcessosNestaPagina.size === 0) return 'disabled';
         for (const numproc of processosMarcados) {
           if (!meusProcessosNestaPagina.has(numproc)) return 'unchecked';
@@ -968,12 +1018,14 @@
               style: {
                 cursor: chkState === 'disabled' ? 'not-allowed' : 'auto',
               },
-              onClick: () => store.dispatch(Action2.checkboxClicado(props.id, chkState)),
+              onClick: () =>
+                store.dispatch(Action2.checkboxClicado(props.id, chkState)),
             }),
           }),
           o('td', {
             children: o('label', {
-              onClick: () => store.dispatch(Action2.checkboxClicado(props.id, chkState)),
+              onClick: () =>
+                store.dispatch(Action2.checkboxClicado(props.id, chkState)),
               children: displayNome,
             }),
           }),
@@ -988,7 +1040,10 @@
                       console.log(dialogProcessos);
                       dialogProcessos.innerHTML = props.processos.join('<br>');
                       dialog.showModal();
-                      window.getSelection()?.getRangeAt(0)?.selectNodeContents(dialogProcessos);
+                      window
+                        .getSelection()
+                        ?.getRangeAt(0)
+                        ?.selectNodeContents(dialogProcessos);
                     },
                     children: qtdProcessos,
                   })
@@ -1010,10 +1065,15 @@
         ],
       });
       function createAbbr(nestaPagina, total) {
-        if (nestaPagina === total) return `${total} processo${total > 1 ? 's' : ''}`;
+        if (nestaPagina === total)
+          return `${total} processo${total > 1 ? 's' : ''}`;
         const textoTotal = `${total} processo${total > 1 ? 's' : ''} no bloco`;
-        const textoPagina = `${nestaPagina === 0 ? 'nenhum' : nestaPagina} nesta página`;
-        const textoResumido = `${nestaPagina}/${total} processo${total > 1 ? 's' : ''}`;
+        const textoPagina = `${
+          nestaPagina === 0 ? 'nenhum' : nestaPagina
+        } nesta página`;
+        const textoResumido = `${nestaPagina}/${total} processo${
+          total > 1 ? 's' : ''
+        }`;
         return o('abbr', {
           title: `${textoTotal}, ${textoPagina}.`,
           children: textoResumido,
@@ -1027,7 +1087,9 @@
           if (isNonEmptyString(nome)) {
             store.dispatch(Action2.renomearBloco(props.id, nome));
           } else {
-            store.dispatch(Action2.erroCapturado('Nome do bloco não pode estar em branco.'));
+            store.dispatch(
+              Action2.erroCapturado('Nome do bloco não pode estar em branco.')
+            );
           }
         }
       }
@@ -1039,7 +1101,9 @@
         const len = props.total;
         if (len > 0)
           confirmed = window.confirm(
-            `Este bloco possui ${len} processo${len > 1 ? 's' : ''}. Deseja excluí-lo?`
+            `Este bloco possui ${len} processo${
+              len > 1 ? 's' : ''
+            }. Deseja excluí-lo?`
           );
         if (confirmed) store.dispatch(Action2.excluirBloco(props.id));
       }
@@ -1103,7 +1167,10 @@
   function ProcessoSelecionar(numproc) {
     const mainMenu = document.getElementById('main-menu');
     if (isNull(mainMenu)) return Left(new Error('Menu não encontrado'));
-    const div = mainMenu.insertAdjacentElement('beforebegin', document.createElement('div'));
+    const div = mainMenu.insertAdjacentElement(
+      'beforebegin',
+      document.createElement('div')
+    );
     div.className = 'gm-blocos__processo';
     preact.render(
       o(Main, {
@@ -1148,7 +1215,9 @@
           asyncAction(state, async () => {
             const blocos = await getBlocos();
             if (blocos.some(x => x.nome === nome))
-              return Action.erro(`Já existe um bloco com o nome ${JSON.stringify(nome)}.`);
+              return Action.erro(
+                `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
+              );
             const bloco = {
               id: Math.max(-1, ...blocos.map(x => x.id)) + 1,
               nome,
@@ -1167,7 +1236,9 @@
           }),
         mensagemRecebida: ({ msg: { blocos } }) => State.Success(blocos),
         obterBlocos: () =>
-          asyncAction(state, async () => Action.blocosModificados(await getBlocos())),
+          asyncAction(state, async () =>
+            Action.blocosModificados(await getBlocos())
+          ),
         remover: ({ id }) =>
           modificarProcessos(state, {
             id,
@@ -1205,7 +1276,10 @@
     hooks.useEffect(() => {
       dispatch(Action.obterBlocos);
     }, []);
-    const criarBloco = hooks.useCallback(nome => dispatch(Action.criarBloco(nome)), []);
+    const criarBloco = hooks.useCallback(
+      nome => dispatch(Action.criarBloco(nome)),
+      []
+    );
     const toggleBloco = hooks.useCallback((id, operacao, fecharJanela) => {
       if (operacao === 'inserir') {
         dispatch(
@@ -1222,7 +1296,8 @@
         reason: state.reason,
         onRecarregarClick: () => dispatch(Action.obterBlocos),
       });
-    if (state.status === 'Loading' && state.blocos.length === 0) return o(Placeholder, {});
+    if (state.status === 'Loading' && state.blocos.length === 0)
+      return o(Placeholder, {});
     return o(Blocos, {
       state,
       numproc,
@@ -1280,7 +1355,10 @@
     });
   }
   function Blocos(props) {
-    const disabled = hooks.useMemo(() => props.state.status === 'Loading', [props.state.status]);
+    const disabled = hooks.useMemo(
+      () => props.state.status === 'Loading',
+      [props.state.status]
+    );
     const infoBlocos = hooks.useMemo(
       () =>
         props.state.blocos.map(({ id, nome, processos }) => ({
@@ -1348,7 +1426,10 @@
           o('input', {
             type: 'image',
             src: 'infra_css/imagens/transportar.gif',
-            onMouseOver: () => infraTooltipMostrar('Inserir processo no bloco e fechar a janela.'),
+            onMouseOver: () =>
+              infraTooltipMostrar(
+                'Inserir processo no bloco e fechar a janela.'
+              ),
             onMouseOut: () => infraTooltipOcultar(),
             onClick: onTransportarClick,
             disabled: props.disabled,
@@ -1385,10 +1466,15 @@
         return LocalizadorProcessoLista();
       case 'processo_selecionar': {
         const numproc = params.get('num_processo');
-        if (!numproc) return Left(new Error('Número do processo não encontrado.'));
+        if (!numproc)
+          return Left(new Error('Número do processo não encontrado.'));
         if (!isNumProc(numproc))
           return Left(
-            new Error(`Não foi possível analisar o número do proceso: ${JSON.stringify(numproc)}.`)
+            new Error(
+              `Não foi possível analisar o número do proceso: ${JSON.stringify(
+                numproc
+              )}.`
+            )
           );
         return ProcessoSelecionar(numproc);
       }

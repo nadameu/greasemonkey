@@ -25,7 +25,8 @@
   };
   async function getDominio(doc) {
     const value = doc.querySelector('input[name="local"]:checked')?.value;
-    if (!value || !(value in dominios)) throw new Error('Não foi possível verificar o domínio.');
+    if (!value || !(value in dominios))
+      throw new Error('Não foi possível verificar o domínio.');
     return dominios[value];
   }
   async function getFormulario(doc) {
@@ -36,7 +37,9 @@
   function flattenTabela(node) {
     const nodes = [node];
     if (node instanceof HTMLTableElement)
-      return Array.from(node.querySelector('td:nth-child(2)')?.childNodes ?? []).concat(nodes);
+      return Array.from(
+        node.querySelector('td:nth-child(2)')?.childNodes ?? []
+      ).concat(nodes);
     return nodes;
   }
   const reSigla = /^\s*Sigla:\s*(\S+)\s*(\(antiga:\s*\S+\s*\))?\s*$/;
@@ -86,11 +89,13 @@
     const s = qtd > 1 ? 's' : '';
     log(`${qtd} link${s} criado${s}`);
   }
-  main({ doc: document, log: console.log.bind(console, '[achei]') }).catch(err => {
-    if (err && err instanceof Error) {
-      console.error(err);
-    } else {
-      console.error(String(err));
+  main({ doc: document, log: console.log.bind(console, '[achei]') }).catch(
+    err => {
+      if (err && err instanceof Error) {
+        console.error(err);
+      } else {
+        console.error(String(err));
+      }
     }
-  });
+  );
 })();

@@ -21,17 +21,25 @@ try {
 }
 
 function main() {
-  const referencia = document.querySelector('[name="selInfraUnidades"]')?.parentNode?.parentNode;
-  if (!referencia) throw new Error('Não foi possível encontrar um local para inserir o botão.');
+  const referencia = document.querySelector('[name="selInfraUnidades"]')
+    ?.parentNode?.parentNode;
+  if (!referencia)
+    throw new Error(
+      'Não foi possível encontrar um local para inserir o botão.'
+    );
 
   const tabela = document.querySelector('#tblEventos');
-  if (!tabela) throw new Error('Não foi possível encontrar a tabela de eventos.');
+  if (!tabela)
+    throw new Error('Não foi possível encontrar a tabela de eventos.');
 
   adicionarEstilos();
 
   tabela.addEventListener('click', onTabelaClick);
 
-  button = referencia.insertAdjacentElement('afterend', document.createElement('button'));
+  button = referencia.insertAdjacentElement(
+    'afterend',
+    document.createElement('button')
+  );
   button.type = 'button';
   button.id = 'gm-fechar-janelas';
   button.hidden = true;

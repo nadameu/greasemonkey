@@ -29,9 +29,13 @@ async function obterBotao() {
 async function obterEhLote() {
   const headings = document.querySelectorAll('#divInfraBarraLocalizacao h4');
   assert(headings.length === 1, 'Mais de um título encontrado.');
-  const minuta = headings[0].textContent?.match(/^Agendamento da Minuta .*(\d+)$/)?.[1];
+  const minuta = headings[0].textContent?.match(
+    /^Agendamento da Minuta .*(\d+)$/
+  )?.[1];
   assert(minuta != null, 'Número da minuta não encontrado.');
-  const linhas = Array.from(window.top?.document.body.querySelectorAll('#fldMinutas tr') ?? [])
+  const linhas = Array.from(
+    window.top?.document.body.querySelectorAll('#fldMinutas tr') ?? []
+  )
     .filter(row => row.cells.length >= 2)
     .filter(row => RegExp(minuta).test(row.cells[1].textContent ?? ''));
   assert(linhas.length === 1, 'Quantidade inesperada de linhas encontradas.');
@@ -50,7 +54,9 @@ function validate(promises) {
     if (results.every(x => x.status === 'fulfilled')) {
       return results.map(x => x.value);
     } else {
-      throw new AggregateError(results.filter(x => x.status === 'rejected').map(x => x.reason));
+      throw new AggregateError(
+        results.filter(x => x.status === 'rejected').map(x => x.reason)
+      );
     }
   });
 }

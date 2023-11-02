@@ -3,5 +3,7 @@ export function main() {
     '[id="divInfraBarraComandosSuperior"]'
   );
   if (divInfraBarraComandosSuperior.length !== 1)
-    throw new Error(`Erro ao obter elemento \`#divInfraBarraComandosSuperior\`.`);
+    throw new Error(
+      `Erro ao obter elemento \`#divInfraBarraComandosSuperior\`.`
+    );
 }

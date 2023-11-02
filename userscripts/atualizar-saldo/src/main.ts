@@ -1,5 +1,14 @@
 import * as p from '@nadameu/predicates';
-import { A, E, Either, Left, O, Right, applicativeEither, pipeValue as pipe } from 'adt-ts';
+import {
+  A,
+  E,
+  Either,
+  Left,
+  O,
+  Right,
+  applicativeEither,
+  pipeValue as pipe,
+} from 'adt-ts';
 import { isNumproc } from './NumProc';
 import './main.scss';
 import { paginaContas } from './paginaContas';
@@ -13,7 +22,9 @@ const paginas = {
 };
 
 const isAcaoReconhecida = p.isAnyOf(
-  ...(Object.keys(paginas) as Array<keyof typeof paginas>).map(k => p.isLiteral(k))
+  ...(Object.keys(paginas) as Array<keyof typeof paginas>).map(k =>
+    p.isLiteral(k)
+  )
 );
 type AcaoReconhecida = p.Static<typeof isAcaoReconhecida>;
 

@@ -14,23 +14,39 @@ import {
 } from '.';
 
 test('Maybe', () => {
-  type Internal<a> = TaggedWithUnion<'__my_custom_tag', { Just: { value: a }; Nothing: {} }>;
-  interface Just<a> extends MemberWith<Internal<a>, '__my_custom_tag', 'Just'> {}
-  interface Nothing extends MemberWith<Internal<never>, '__my_custom_tag', 'Nothing'> {}
+  type Internal<a> = TaggedWithUnion<
+    '__my_custom_tag',
+    { Just: { value: a }; Nothing: {} }
+  >;
+  interface Just<a>
+    extends MemberWith<Internal<a>, '__my_custom_tag', 'Just'> {}
+  interface Nothing
+    extends MemberWith<Internal<never>, '__my_custom_tag', 'Nothing'> {}
   const tag = tagWith('__my_custom_tag');
   const Just = <a>(value: a): Just<a> => tag('Just')({ value });
   const Nothing: Nothing = tag('Nothing')();
   type Maybe<a> = Just<a> | Nothing;
 
-  expect<Maybe<number>>(Just(42)).toEqual({ __my_custom_tag: 'Just', value: 42 });
+  expect<Maybe<number>>(Just(42)).toEqual({
+    __my_custom_tag: 'Just',
+    value: 42,
+  });
   expect<Maybe<number>>(Nothing).toEqual({ __my_custom_tag: 'Nothing' });
 });
 
 describe('FingerTree', () => {
-  interface Digit<a> extends Tagged<'Digit', { values: [a] | [a, a] | [a, a, a] | [a, a, a, a] }> {}
-  const Digit = <a>(...values: [a] | [a, a] | [a, a, a] | [a, a, a, a]): Digit<a> =>
-    tag('Digit')({ values });
-  type InternalNode<a> = TaggedUnion<{ Node2: { values: [a, a] }; Node3: { values: [a, a, a] } }>;
+  interface Digit<a>
+    extends Tagged<
+      'Digit',
+      { values: [a] | [a, a] | [a, a, a] | [a, a, a, a] }
+    > {}
+  const Digit = <a>(
+    ...values: [a] | [a, a] | [a, a, a] | [a, a, a, a]
+  ): Digit<a> => tag('Digit')({ values });
+  type InternalNode<a> = TaggedUnion<{
+    Node2: { values: [a, a] };
+    Node3: { values: [a, a, a] };
+  }>;
   interface Node2<a> extends MemberOf<InternalNode<a>, 'Node2'> {}
   const Node2 = <a>(...values: [a, a]): Node<a> => tag('Node2')({ values });
   interface Node3<a> extends MemberOf<InternalNode<a>, 'Node3'> {}
@@ -46,8 +62,11 @@ describe('FingerTree', () => {
   interface Single<a> extends MemberOf<InternalFingerTree<a>, 'Single'> {}
   const Single = <a>(value: a): Single<a> => tag('Single')({ value });
   interface Deep<a> extends MemberOf<InternalFingerTree<a>, 'Deep'> {}
-  const Deep = <a>(left: Digit<a>, middle: FingerTree<Node<a>>, right: Digit<a>): Deep<a> =>
-    tag('Deep')({ left, middle, right });
+  const Deep = <a>(
+    left: Digit<a>,
+    middle: FingerTree<Node<a>>,
+    right: Digit<a>
+  ): Deep<a> => tag('Deep')({ left, middle, right });
   type FingerTree<a> = Empty | Single<a> | Deep<a>;
 
   test('match', () => {
@@ -62,7 +81,9 @@ describe('FingerTree', () => {
         .case('Deep', ({ left, middle, right }) =>
           reduceDigit(
             right,
-            reduceFT(middle, reduceDigit(left, b, f), (acc, node) => reduceNode(node, acc, f)),
+            reduceFT(middle, reduceDigit(left, b, f), (acc, node) =>
+              reduceNode(node, acc, f)
+            ),
             f
           )
         )
@@ -73,7 +94,11 @@ describe('FingerTree', () => {
 
     const ft: FingerTree<number> = Deep(
       Digit(0, 1),
-      Deep(Digit(Node2(2, 3), Node3(4, 5, 6)), Empty, Digit(Node2(7, 8), Node3(9, 10, 11))),
+      Deep(
+        Digit(Node2(2, 3), Node3(4, 5, 6)),
+        Empty,
+        Digit(Node2(7, 8), Node3(9, 10, 11))
+      ),
       Digit(12, 13, 14, 15)
     );
     expect(toArray(ft)).toEqual(Array.from({ length: 16 }, (_, i) => i));
@@ -127,32 +152,77 @@ describe('Types of tagName and tag', () => {
   type props = { a: number; b: boolean };
   test('string tagName', () => {
     const _tag = '__tag__';
-    type MyType = TaggedWithUnion<typeof _tag, { variant: props; [sym]: props; 8: props }>;
+    type MyType = TaggedWithUnion<
+      typeof _tag,
+      { variant: props; [sym]: props; 8: props }
+    >;
     const tag = tagWith(_tag);
-    expect<MyType>(tag('variant')({ a: 1, b: true })).toEqual({ [_tag]: 'variant', a: 1, b: true });
+    expect<MyType>(tag('variant')({ a: 1, b: true })).toEqual({
+      [_tag]: 'variant',
+      a: 1,
+      b: true,
+    });
     const sym = Symbol();
-    expect<MyType>(tag(sym)({ a: 1, b: true })).toEqual({ [_tag]: sym, a: 1, b: true });
-    expect<MyType>(tag(8)({ a: 1, b: true })).toEqual({ [_tag]: 8, a: 1, b: true });
+    expect<MyType>(tag(sym)({ a: 1, b: true })).toEqual({
+      [_tag]: sym,
+      a: 1,
+      b: true,
+    });
+    expect<MyType>(tag(8)({ a: 1, b: true })).toEqual({
+      [_tag]: 8,
+      a: 1,
+      b: true,
+    });
   });
 
   test('symbol tagName', () => {
     const _tag = Symbol();
-    type MyType = TaggedWithUnion<typeof _tag, { variant: props; [sym]: props; 8: props }>;
+    type MyType = TaggedWithUnion<
+      typeof _tag,
+      { variant: props; [sym]: props; 8: props }
+    >;
     const tag = tagWith(_tag);
-    expect<MyType>(tag('variant')({ a: 1, b: true })).toEqual({ [_tag]: 'variant', a: 1, b: true });
+    expect<MyType>(tag('variant')({ a: 1, b: true })).toEqual({
+      [_tag]: 'variant',
+      a: 1,
+      b: true,
+    });
     const sym = Symbol();
-    expect<MyType>(tag(sym)({ a: 1, b: true })).toEqual({ [_tag]: sym, a: 1, b: true });
-    expect<MyType>(tag(8)({ a: 1, b: true })).toEqual({ [_tag]: 8, a: 1, b: true });
+    expect<MyType>(tag(sym)({ a: 1, b: true })).toEqual({
+      [_tag]: sym,
+      a: 1,
+      b: true,
+    });
+    expect<MyType>(tag(8)({ a: 1, b: true })).toEqual({
+      [_tag]: 8,
+      a: 1,
+      b: true,
+    });
   });
 
   test('number tagName', () => {
     const _tag = 42;
-    type MyType = TaggedWithUnion<typeof _tag, { variant: props; [sym]: props; 8: props }>;
+    type MyType = TaggedWithUnion<
+      typeof _tag,
+      { variant: props; [sym]: props; 8: props }
+    >;
     const tag = tagWith(_tag);
-    expect<MyType>(tag('variant')({ a: 1, b: true })).toEqual({ [_tag]: 'variant', a: 1, b: true });
+    expect<MyType>(tag('variant')({ a: 1, b: true })).toEqual({
+      [_tag]: 'variant',
+      a: 1,
+      b: true,
+    });
     const sym = Symbol();
-    expect<MyType>(tag(sym)({ a: 1, b: true })).toEqual({ [_tag]: sym, a: 1, b: true });
-    expect<MyType>(tag(8)({ a: 1, b: true })).toEqual({ [_tag]: 8, a: 1, b: true });
+    expect<MyType>(tag(sym)({ a: 1, b: true })).toEqual({
+      [_tag]: sym,
+      a: 1,
+      b: true,
+    });
+    expect<MyType>(tag(8)({ a: 1, b: true })).toEqual({
+      [_tag]: 8,
+      a: 1,
+      b: true,
+    });
   });
 });
 

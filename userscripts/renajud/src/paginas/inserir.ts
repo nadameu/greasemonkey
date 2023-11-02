@@ -14,7 +14,10 @@ export function inserir() {
       .slice(8)
       .map(linha => linha.split(/\t/g));
     assert(
-      linhas.every((x): x is [string, string, string, string, string, string] => x.length === 6),
+      linhas.every(
+        (x): x is [string, string, string, string, string, string] =>
+          x.length === 6
+      ),
       'Formato dos dados copiados não reconhecido.'
     );
     type DadosPessoa = {
@@ -33,7 +36,9 @@ export function inserir() {
         } else if (docAutor === '') {
           if (nomeAutor) autores.push({ nome: nomeAutor, doc: null });
         } else {
-          throw new Error('Formato dos dados copiados não reconhecido (CPF/CNPJ).');
+          throw new Error(
+            'Formato dos dados copiados não reconhecido (CPF/CNPJ).'
+          );
         }
 
         const matchReu = docReu.match(/^="(\d+)"$/);
@@ -42,7 +47,9 @@ export function inserir() {
         } else if (docReu === '') {
           if (nomeReu) reus.push({ nome: nomeReu, doc: null });
         } else {
-          throw new Error('Formato dos dados copiados não reconhecido (CPF/CNPJ).');
+          throw new Error(
+            'Formato dos dados copiados não reconhecido (CPF/CNPJ).'
+          );
         }
 
         return { autores, reus };
@@ -185,7 +192,10 @@ export function inserir() {
       Pagina.obterOrgao() !== PreferenciasUsuario.orgao
     ) {
       try {
-        preencherSelectOneMenu('form-incluir-restricao:campo-orgao', PreferenciasUsuario.orgao);
+        preencherSelectOneMenu(
+          'form-incluir-restricao:campo-orgao',
+          PreferenciasUsuario.orgao
+        );
       } catch (err) {
         PreferenciasUsuario.orgao = '';
       }
@@ -199,7 +209,8 @@ export function inserir() {
         PreferenciasUsuario.magistrado
       );
     } else if (Pagina.obterMagistrado() !== '') {
-      obterPorId('form-incluir-restricao:campo-numero-processo').value = GUI.numproc;
+      obterPorId('form-incluir-restricao:campo-numero-processo').value =
+        GUI.numproc;
     } else {
       console.info('Tudo preenchido.');
     }
@@ -208,11 +219,16 @@ export function inserir() {
   const id = document.querySelector('[id="form-incluir-restricao"] div')?.id;
   assert(isNotNullish(id), `Não encontrado: Id.`);
   AjaxListener.listen(id, ext => {
-    assert(hasShape({ currentStep: isString })(ext), 'Informação não encontrada: currentStep.');
+    assert(
+      hasShape({ currentStep: isString })(ext),
+      'Informação não encontrada: currentStep.'
+    );
     if (ext.currentStep === 'inclui-restricao') {
       GUI.hide();
       GUI.areaImpressao.limpar();
-      obterPorId('form-incluir-restricao:campo-magistrado_input').childNodes[0].value = '';
+      obterPorId(
+        'form-incluir-restricao:campo-magistrado_input'
+      ).childNodes[0].value = '';
       GUI.criarOpcaoPreencherMagistrado();
       AjaxListener.listen('form-incluir-restricao:campo-municipio', () => {
         PreferenciasUsuario.municipio = Pagina.obterMunicipio();

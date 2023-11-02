@@ -27,7 +27,10 @@ function main() {
   </div>
 </div>`;
 
-  unsafeWindow.infraAviso = function (botaoCancelar = true, texto = 'Processando...') {
+  unsafeWindow.infraAviso = function (
+    botaoCancelar = true,
+    texto = 'Processando...'
+  ) {
     const fundoAntigo = document.getElementById('divInfraAvisoFundo');
     if (!fundoAntigo) {
       document.body.appendChild(template.content.cloneNode(true));

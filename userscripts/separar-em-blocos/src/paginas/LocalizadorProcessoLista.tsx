@@ -9,7 +9,10 @@ import { createRef, JSX, render } from 'preact';
 import { useCallback, useEffect, useState } from 'preact/hooks';
 import * as Database from '../database';
 import { Bloco } from '../types/Bloco';
-import { BroadcastMessage, isBroadcastMessage } from '../types/BroadcastMessage';
+import {
+  BroadcastMessage,
+  isBroadcastMessage,
+} from '../types/BroadcastMessage';
 import { isNumProc, NumProc } from '../types/NumProc';
 
 interface InfoLinha {
@@ -26,13 +29,22 @@ interface InfoBloco extends Bloco {
 }
 
 export function LocalizadorProcessoLista(): Either<Error, void> {
-  const tabela = document.querySelector<HTMLTableElement>('table#tabelaLocalizadores');
+  const tabela = document.querySelector<HTMLTableElement>(
+    'table#tabelaLocalizadores'
+  );
   const { desmarcarTodosProcessos, marcarTodosProcessos } = (() => {
-    const ret = { desmarcarTodosProcessos: () => {}, marcarTodosProcessos: () => {} };
+    const ret = {
+      desmarcarTodosProcessos: () => {},
+      marcarTodosProcessos: () => {},
+    };
     if (!tabela) return ret;
-    const imgInfraCheck = document.getElementById('imgInfraCheck') as HTMLImageElement | null;
+    const imgInfraCheck = document.getElementById(
+      'imgInfraCheck'
+    ) as HTMLImageElement | null;
     if (!imgInfraCheck) return ret;
-    const lnkInfraCheck = document.getElementById('lnkInfraCheck') as HTMLAnchorElement | null;
+    const lnkInfraCheck = document.getElementById(
+      'lnkInfraCheck'
+    ) as HTMLAnchorElement | null;
     if (!lnkInfraCheck) return ret;
 
     ret.desmarcarTodosProcessos = () => {
@@ -47,19 +59,35 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
 
   const linhas = tabela?.rows ?? [];
 
-  const eitherMapa: Either<Error, MapaProcessos> = traverse(linhas, (linha, i) => {
-    if (i === 0) return Right([]);
-    const endereco = linha.cells[1]?.querySelector<HTMLAnchorElement>('a[href]')?.href;
-    if (p.isUndefined(endereco))
-      return Left(new Error(`Link do processo não encontrado: linha ${i}.`));
-    const numproc = new URL(endereco).searchParams.get('num_processo');
-    if (p.isNull(numproc)) return Left(new Error(`Número do processo não encontrado: linha ${i}.`));
-    if (!isNumProc(numproc))
-      return Left(new Error(`Número de processo desconhecido: ${JSON.stringify(numproc)}.`));
-    const checkbox = linha.cells[0]?.querySelector<HTMLInputElement>('input[type=checkbox]');
-    if (p.isNull(checkbox)) return Left(new Error(`Caixa de seleção não encontrada: linha ${i}.`));
-    return Right([[numproc, { linha, checkbox, checked: checkbox.checked }] as const]);
-  }).map(entriess => new Map(entriess.flat(1)));
+  const eitherMapa: Either<Error, MapaProcessos> = traverse(
+    linhas,
+    (linha, i) => {
+      if (i === 0) return Right([]);
+      const endereco =
+        linha.cells[1]?.querySelector<HTMLAnchorElement>('a[href]')?.href;
+      if (p.isUndefined(endereco))
+        return Left(new Error(`Link do processo não encontrado: linha ${i}.`));
+      const numproc = new URL(endereco).searchParams.get('num_processo');
+      if (p.isNull(numproc))
+        return Left(
+          new Error(`Número do processo não encontrado: linha ${i}.`)
+        );
+      if (!isNumProc(numproc))
+        return Left(
+          new Error(
+            `Número de processo desconhecido: ${JSON.stringify(numproc)}.`
+          )
+        );
+      const checkbox = linha.cells[0]?.querySelector<HTMLInputElement>(
+        'input[type=checkbox]'
+      );
+      if (p.isNull(checkbox))
+        return Left(new Error(`Caixa de seleção não encontrada: linha ${i}.`));
+      return Right([
+        [numproc, { linha, checkbox, checked: checkbox.checked }] as const,
+      ]);
+    }
+  ).map(entriess => new Map(entriess.flat(1)));
   if (eitherMapa.isLeft) return eitherMapa as Left<Error>;
   const mapa = eitherMapa.rightValue;
   const processosMarcados = new Set<NumProc>();
@@ -73,8 +101,10 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   }
 
   const acoes =
-    document.getElementById('fldAcoes') ?? document.getElementById('divInfraAreaTabela');
-  if (p.isNull(acoes)) return Left(new Error('Não foi possível inserir os blocos na página.'));
+    document.getElementById('fldAcoes') ??
+    document.getElementById('divInfraAreaTabela');
+  if (p.isNull(acoes))
+    return Left(new Error('Não foi possível inserir os blocos na página.'));
 
   const div = acoes.insertAdjacentElement(
     'beforebegin',
@@ -144,8 +174,12 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
 
   const Action = createTaggedUnion(
     {
-      blocosModificados: (blocos: Bloco[]): Omit<BlocosModificadosAction, 'type'> => ({ blocos }),
-      blocosObtidos: (blocos: Bloco[]): Omit<BlocosObtidosAction, 'type'> => ({ blocos }),
+      blocosModificados: (
+        blocos: Bloco[]
+      ): Omit<BlocosModificadosAction, 'type'> => ({ blocos }),
+      blocosObtidos: (blocos: Bloco[]): Omit<BlocosObtidosAction, 'type'> => ({
+        blocos,
+      }),
       checkboxClicado: (
         id: Bloco['id'] | -1,
         estadoAnterior: CheckboxState
@@ -153,17 +187,30 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
         id,
         estadoAnterior,
       }),
-      criarBloco: (nome: Bloco['nome']): Omit<CriarBlocoAction, 'type'> => ({ nome }),
-      erroCapturado: (aviso: string): Omit<ErroCapturadoAction, 'type'> => ({ aviso }),
-      erroDesconhecido: (erro: unknown): Omit<ErroDesconhecidoAction, 'type'> => ({ erro }),
+      criarBloco: (nome: Bloco['nome']): Omit<CriarBlocoAction, 'type'> => ({
+        nome,
+      }),
+      erroCapturado: (aviso: string): Omit<ErroCapturadoAction, 'type'> => ({
+        aviso,
+      }),
+      erroDesconhecido: (
+        erro: unknown
+      ): Omit<ErroDesconhecidoAction, 'type'> => ({ erro }),
       excluirBD: null,
-      excluirBloco: (id: Bloco['id']): Omit<ExcluirBlocoAction, 'type'> => ({ id }),
-      mensagemRecebida: (msg: BroadcastMessage): Omit<MensagemRecebidaAction, 'type'> => ({ msg }),
+      excluirBloco: (id: Bloco['id']): Omit<ExcluirBlocoAction, 'type'> => ({
+        id,
+      }),
+      mensagemRecebida: (
+        msg: BroadcastMessage
+      ): Omit<MensagemRecebidaAction, 'type'> => ({ msg }),
       obterBlocos: null,
       removerProcessosAusentes: (
         id: Bloco['id']
       ): Omit<RemoverProcessosAusentesAction, 'type'> => ({ id }),
-      renomearBloco: (id: Bloco['id'], nome: Bloco['nome']): Omit<RenomearBlocoAction, 'type'> => ({
+      renomearBloco: (
+        id: Bloco['id'],
+        nome: Bloco['nome']
+      ): Omit<RenomearBlocoAction, 'type'> => ({
         id,
         nome,
       }),
@@ -292,7 +339,9 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
               const info = blocos.map(
                 (bloco): InfoBloco => ({
                   ...bloco,
-                  nestaPagina: bloco.processos.filter(numproc => mapa.has(numproc)).length,
+                  nestaPagina: bloco.processos.filter(numproc =>
+                    mapa.has(numproc)
+                  ).length,
                   total: bloco.processos.length,
                 })
               );
@@ -310,7 +359,9 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
                   if (id === -1) {
                     const processosComBloco = new Set(
                       Array.from(
-                        state.blocos.flatMap(({ processos }) => processos.filter(p => mapa.has(p)))
+                        state.blocos.flatMap(({ processos }) =>
+                          processos.filter(p => mapa.has(p))
+                        )
                       )
                     );
                     return new Set(
@@ -347,14 +398,18 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
             loaded: state => ({ ...state, aviso }),
           }),
         erroDesconhecido: ({ erro }) =>
-          Model.match(state, { error: state => state }, () => Model.error(erro)),
+          Model.match(state, { error: state => state }, () =>
+            Model.error(erro)
+          ),
         reset: () => Model.init,
       },
       other => other
     );
   }
 
-  function handleAsyncAction(store: Pick<Store<Model, Action>, 'getState' | 'dispatch'>) {
+  function handleAsyncAction(
+    store: Pick<Store<Model, Action>, 'getState' | 'dispatch'>
+  ) {
     return (next: Store<Model, Exclude<Action, AsyncAction>>['dispatch']) => {
       return (action: Action): void => {
         const promise = Action.match<
@@ -371,11 +426,14 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
                   `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
                 );
               const bloco: Bloco = {
-                id: (Math.max(-1, ...blocos.map(x => x.id)) + 1) as p.NonNegativeInteger,
+                id: (Math.max(-1, ...blocos.map(x => x.id)) +
+                  1) as p.NonNegativeInteger,
                 nome,
                 processos: [],
               };
-              return Action.blocosModificados(await Database.createBloco(bloco));
+              return Action.blocosModificados(
+                await Database.createBloco(bloco)
+              );
             },
             excluirBD: async () => {
               await Database.deleteBlocos();
@@ -383,12 +441,15 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
             },
             excluirBloco: async ({ id }) =>
               Action.blocosModificados(await Database.deleteBloco(id)),
-            obterBlocos: async () => Action.blocosModificados(await Database.getBlocos()),
+            obterBlocos: async () =>
+              Action.blocosModificados(await Database.getBlocos()),
             removerProcessosAusentes: async ({ id }) => {
               const bloco = await Database.getBloco(id);
               if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
               const processos = bloco.processos.filter(x => mapa.has(x));
-              return Action.blocosModificados(await Database.updateBloco({ ...bloco, processos }));
+              return Action.blocosModificados(
+                await Database.updateBloco({ ...bloco, processos })
+              );
             },
             renomearBloco: async ({ id, nome }) => {
               const blocos = await Database.getBlocos();
@@ -399,7 +460,9 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
                 return Action.erroCapturado(
                   `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
                 );
-              return Action.blocosModificados(await Database.updateBloco({ ...bloco, nome }));
+              return Action.blocosModificados(
+                await Database.updateBloco({ ...bloco, nome })
+              );
             },
           },
           a => a
@@ -411,7 +474,9 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     };
   }
 
-  function handleAliasAction(store: Pick<Store<Model, Action>, 'dispatch' | 'getState'>) {
+  function handleAliasAction(
+    store: Pick<Store<Model, Action>, 'dispatch' | 'getState'>
+  ) {
     return (next: Store<Model, SyncAction>['dispatch']) => {
       return (action: SyncAction | AliasAction): void => {
         const replaced = Action.match(
@@ -421,7 +486,8 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
               bc.publish({ type: 'Blocos', blocos });
               return Action.blocosObtidos(blocos);
             },
-            mensagemRecebida: ({ msg: { blocos } }) => Action.blocosObtidos(blocos),
+            mensagemRecebida: ({ msg: { blocos } }) =>
+              Action.blocosObtidos(blocos),
           },
           s => s
         );
@@ -451,7 +517,9 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
         <button onClick={() => store.dispatch(Action.obterBlocos)}>
           Tentar carregar dados salvos
         </button>{' '}
-        <button onClick={() => store.dispatch(Action.excluirBD)}>Apagar os dados locais</button>
+        <button onClick={() => store.dispatch(Action.excluirBD)}>
+          Apagar os dados locais
+        </button>
       </>
     );
   }
@@ -473,19 +541,28 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
       (e: Event) => {
         e.preventDefault();
         if (p.isNonEmptyString(nome)) store.dispatch(Action.criarBloco(nome));
-        else store.dispatch(Action.erroCapturado('Nome do bloco não pode estar em branco.'));
+        else
+          store.dispatch(
+            Action.erroCapturado('Nome do bloco não pode estar em branco.')
+          );
         setNome('');
       },
       [nome]
     );
 
-    let aviso: JSX.Element | null = state.aviso ? <Aviso>{state.aviso}</Aviso> : null;
+    let aviso: JSX.Element | null = state.aviso ? (
+      <Aviso>{state.aviso}</Aviso>
+    ) : null;
 
     const processosComBlocoNestaPagina = new Set(
-      state.blocos.flatMap(({ processos }) => processos.filter(p => mapa.has(p)))
+      state.blocos.flatMap(({ processos }) =>
+        processos.filter(p => mapa.has(p))
+      )
     );
     const processosSemBloco = new Map(
-      Array.from(mapa).filter(([numproc]) => !processosComBlocoNestaPagina.has(numproc))
+      Array.from(mapa).filter(
+        ([numproc]) => !processosComBlocoNestaPagina.has(numproc)
+      )
     );
     const semBloco = ((): CheckboxState => {
       if (processosSemBloco.size === 0) return 'disabled';
@@ -515,19 +592,26 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
                     <input
                       type="radio"
                       checked={semBloco === 'checked'}
-                      onClick={() => store.dispatch(Action.checkboxClicado(-1, semBloco))}
+                      onClick={() =>
+                        store.dispatch(Action.checkboxClicado(-1, semBloco))
+                      }
                     />
                   }
                 </td>
                 <td>
-                  <label onClick={() => store.dispatch(Action.checkboxClicado(-1, semBloco))}>
+                  <label
+                    onClick={() =>
+                      store.dispatch(Action.checkboxClicado(-1, semBloco))
+                    }
+                  >
                     (processos sem bloco)
                   </label>
                 </td>
                 <td>
                   <small>
                     (
-                    {((s: number): string => `${s} processo${s > 1 ? 's' : ''}`)(
+                    {((s: number): string =>
+                      `${s} processo${s > 1 ? 's' : ''}`)(
                       processosSemBloco.size
                     )}
                     )
@@ -555,7 +639,9 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     if (p.isNonEmptyString(nome)) {
       store.dispatch(Action.criarBloco(nome));
     } else {
-      store.dispatch(Action.erroCapturado('Nome do bloco não pode estar em branco.'));
+      store.dispatch(
+        Action.erroCapturado('Nome do bloco não pode estar em branco.')
+      );
     }
   }
 
@@ -563,7 +649,10 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     return (
       <>
         <div class="gm-aviso">{props.children}</div>
-        <button type="button" onClick={() => store.dispatch(Action.obterBlocos)}>
+        <button
+          type="button"
+          onClick={() => store.dispatch(Action.obterBlocos)}
+        >
           Recarregar dados
         </button>
       </>
@@ -583,13 +672,19 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     let displayNome: JSX.Element | string = props.nome;
 
     let botaoRenomear: JSX.Element | null = (
-      <BotaoAcao src="imagens/minuta_editar.gif" label="Renomear" onClick={onRenomearClicked} />
+      <BotaoAcao
+        src="imagens/minuta_editar.gif"
+        label="Renomear"
+        onClick={onRenomearClicked}
+      />
     );
     let removerAusentes: JSX.Element | null = (
       <BotaoAcao
         src="imagens/minuta_transferir.png"
         label="Remover processos ausentes"
-        onClick={() => store.dispatch(Action.removerProcessosAusentes(props.id))}
+        onClick={() =>
+          store.dispatch(Action.removerProcessosAusentes(props.id))
+        }
       />
     );
 
@@ -618,7 +713,9 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     }
 
     const chkState = ((): CheckboxState => {
-      const meusProcessosNestaPagina = new Set(props.processos.filter(n => mapa.has(n)));
+      const meusProcessosNestaPagina = new Set(
+        props.processos.filter(n => mapa.has(n))
+      );
       if (meusProcessosNestaPagina.size === 0) return 'disabled';
       for (const numproc of processosMarcados) {
         if (!meusProcessosNestaPagina.has(numproc)) return 'unchecked';
@@ -628,7 +725,9 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
       }
       return 'checked';
     })();
-    const qtdProcessos = <small>({createAbbr(props.nestaPagina, props.total)})</small>;
+    const qtdProcessos = (
+      <small>({createAbbr(props.nestaPagina, props.total)})</small>
+    );
     return (
       <tr>
         <td>
@@ -637,11 +736,17 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
             checked={chkState === 'checked'}
             disabled={chkState === 'disabled'}
             style={{ cursor: chkState === 'disabled' ? 'not-allowed' : 'auto' }}
-            onClick={() => store.dispatch(Action.checkboxClicado(props.id, chkState))}
+            onClick={() =>
+              store.dispatch(Action.checkboxClicado(props.id, chkState))
+            }
           />
         </td>
         <td>
-          <label onClick={() => store.dispatch(Action.checkboxClicado(props.id, chkState))}>
+          <label
+            onClick={() =>
+              store.dispatch(Action.checkboxClicado(props.id, chkState))
+            }
+          >
             {displayNome}
           </label>
         </td>
@@ -655,7 +760,10 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
                 console.log(dialogProcessos);
                 dialogProcessos.innerHTML = props.processos.join('<br>');
                 dialog.showModal();
-                window.getSelection()?.getRangeAt(0)?.selectNodeContents(dialogProcessos);
+                window
+                  .getSelection()
+                  ?.getRangeAt(0)
+                  ?.selectNodeContents(dialogProcessos);
               }}
             >
               {qtdProcessos}
@@ -666,21 +774,37 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
         </td>
         <td>{botaoRenomear}</td>
         <td>
-          <BotaoAcao src="imagens/minuta_excluir.gif" label="Excluir" onClick={onExcluirClicked} />
+          <BotaoAcao
+            src="imagens/minuta_excluir.gif"
+            label="Excluir"
+            onClick={onExcluirClicked}
+          />
         </td>
         <td>{removerAusentes}</td>
       </tr>
     );
 
-    function createAbbr(nestaPagina: number, total: number): JSX.Element | string {
-      if (nestaPagina === total) return `${total} processo${total > 1 ? 's' : ''}`;
+    function createAbbr(
+      nestaPagina: number,
+      total: number
+    ): JSX.Element | string {
+      if (nestaPagina === total)
+        return `${total} processo${total > 1 ? 's' : ''}`;
       const textoTotal = `${total} processo${total > 1 ? 's' : ''} no bloco`;
-      const textoPagina = `${nestaPagina === 0 ? 'nenhum' : nestaPagina} nesta página`;
-      const textoResumido = `${nestaPagina}/${total} processo${total > 1 ? 's' : ''}`;
-      return <abbr title={`${textoTotal}, ${textoPagina}.`}>{textoResumido}</abbr>;
+      const textoPagina = `${
+        nestaPagina === 0 ? 'nenhum' : nestaPagina
+      } nesta página`;
+      const textoResumido = `${nestaPagina}/${total} processo${
+        total > 1 ? 's' : ''
+      }`;
+      return (
+        <abbr title={`${textoTotal}, ${textoPagina}.`}>{textoResumido}</abbr>
+      );
     }
 
-    function onKeyPress(evt: JSX.TargetedEvent<HTMLInputElement, KeyboardEvent>) {
+    function onKeyPress(
+      evt: JSX.TargetedEvent<HTMLInputElement, KeyboardEvent>
+    ) {
       if (evt.key === 'Enter') {
         evt.preventDefault();
         const nome = evt.currentTarget.value;
@@ -688,7 +812,9 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
         if (p.isNonEmptyString(nome)) {
           store.dispatch(Action.renomearBloco(props.id, nome));
         } else {
-          store.dispatch(Action.erroCapturado('Nome do bloco não pode estar em branco.'));
+          store.dispatch(
+            Action.erroCapturado('Nome do bloco não pode estar em branco.')
+          );
         }
       }
     }
@@ -701,7 +827,9 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
       const len = props.total;
       if (len > 0)
         confirmed = window.confirm(
-          `Este bloco possui ${len} processo${len > 1 ? 's' : ''}. Deseja excluí-lo?`
+          `Este bloco possui ${len} processo${
+            len > 1 ? 's' : ''
+          }. Deseja excluí-lo?`
         );
       if (confirmed) store.dispatch(Action.excluirBloco(props.id));
     }

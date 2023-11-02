@@ -25,7 +25,9 @@ export function validarFormularioExterno(form: HTMLFormElement) {
     for (const [i, nomeEsperado] of camposEsperados.entries()) {
       const elt = form.elements[i];
       const nome =
-        (elt && ('name' in elt ? (elt.name as string | undefined) : null)) || elt?.id || '';
+        (elt && ('name' in elt ? (elt.name as string | undefined) : null)) ||
+        elt?.id ||
+        '';
       if (nome !== nomeEsperado) throw new Error();
     }
   } catch (_) {

@@ -23,7 +23,9 @@ export function recursively<a, b>(
   recursiveFunction: (_: a) => Iterator<a, b, b>,
   getCache: () => Cache<a, b>
 ): (_: a) => b;
-export function recursively<a, b>(recursiveFunction: (_: a) => Iterator<a, b, b>): (_: a) => b;
+export function recursively<a, b>(
+  recursiveFunction: (_: a) => Iterator<a, b, b>
+): (_: a) => b;
 export function recursively<a, b>(
   recursiveFunction: (_: a) => Iterator<a, b, b>,
   getCache: () => Cache<a, b> = noop

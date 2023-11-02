@@ -10,7 +10,9 @@ class Dispatcher<T> {
   }
 
   private _addPending() {
-    const promise = new Promise<IteratorResult<T>>(res => this._resolves.push(res));
+    const promise = new Promise<IteratorResult<T>>(res =>
+      this._resolves.push(res)
+    );
     this._promises.push(promise);
     return promise;
   }

@@ -6,7 +6,9 @@ type State =
   | { status: 'RESOLVED'; value: number }
   | { status: 'REJECTED'; error: Error }
   | { status: 'TRANSITION_ERROR'; previousState: State; action: Action };
-type Action = { type: 'LOADED'; value: number } | { type: 'ERROR'; error: Error };
+type Action =
+  | { type: 'LOADED'; value: number }
+  | { type: 'ERROR'; error: Error };
 let fsm: FiniteStateMachine<State, Action>;
 
 beforeEach(() => {
@@ -25,7 +27,11 @@ beforeEach(() => {
       REJECTED: {},
       TRANSITION_ERROR: {},
     },
-    (state, action) => ({ status: 'TRANSITION_ERROR', previousState: state, action })
+    (state, action) => ({
+      status: 'TRANSITION_ERROR',
+      previousState: state,
+      action,
+    })
   );
 });
 
@@ -40,7 +46,10 @@ test('Transition', () => {
 
 test('Regular error', () => {
   fsm.dispatch({ type: 'ERROR', error: new Error('Hello') });
-  expect(fsm.getState()).toEqual({ status: 'REJECTED', error: new Error('Hello') });
+  expect(fsm.getState()).toEqual({
+    status: 'REJECTED',
+    error: new Error('Hello'),
+  });
 });
 
 test('Transition error', () => {

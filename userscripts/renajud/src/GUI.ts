@@ -47,8 +47,12 @@ painel.insertAdjacentHTML(
 );
 const alteracoesGreasemonkey = obterPorId('gm-formulario');
 
-document.body.insertAdjacentHTML('beforeend', /* html */ `<div id="gm-impressao"></div>`);
-const impressaoGreasemonkey = painel.parentNode!.querySelector<HTMLDivElement>('#gm-impressao')!;
+document.body.insertAdjacentHTML(
+  'beforeend',
+  /* html */ `<div id="gm-impressao"></div>`
+);
+const impressaoGreasemonkey =
+  painel.parentNode!.querySelector<HTMLDivElement>('#gm-impressao')!;
 
 const listeners: Array<(_: string) => void> = [];
 const dadosProcesso = alteracoesGreasemonkey.querySelector('textarea')!;
@@ -60,8 +64,10 @@ dadosProcesso.addEventListener(
   false
 );
 
-const logElement = alteracoesGreasemonkey.querySelector<HTMLDivElement>('#gm-saida')!;
-const divEntrada = alteracoesGreasemonkey.querySelector<HTMLDivElement>('#gm-entrada')!;
+const logElement =
+  alteracoesGreasemonkey.querySelector<HTMLDivElement>('#gm-saida')!;
+const divEntrada =
+  alteracoesGreasemonkey.querySelector<HTMLDivElement>('#gm-entrada')!;
 
 export const GUI = {
   addOnDadosInputListener(fn: (numproc: string) => void) {
@@ -84,15 +90,22 @@ export const GUI = {
     checkbox.addEventListener(
       'change',
       evt => {
-        PreferenciasUsuario.preencherMagistrado = (evt.target as HTMLInputElement).checked;
+        PreferenciasUsuario.preencherMagistrado = (
+          evt.target as HTMLInputElement
+        ).checked;
       },
       false
     );
   },
   definirRestricoesVeiculo(ord: number, restricoes: string[]) {
-    console.debug('GUI.definirRestricoeVeiculo(ord, restricoes)', ord, restricoes);
+    console.debug(
+      'GUI.definirRestricoeVeiculo(ord, restricoes)',
+      ord,
+      restricoes
+    );
     const celulaRestricao = Pagina.obterCelulaRestricaoVeiculo(ord);
-    celulaRestricao.innerHTML = '<div class="noscreen">' + celulaRestricao.innerHTML + '</div>\n';
+    celulaRestricao.innerHTML =
+      '<div class="noscreen">' + celulaRestricao.innerHTML + '</div>\n';
     celulaRestricao.insertAdjacentHTML(
       'beforeend',
       restricoes.map(texto => `<div class="noprint">${texto}</div>`).join('\n')
@@ -124,7 +137,9 @@ export const GUI = {
   salvarTabelaVeiculos() {
     console.debug('GUI.salvarTabelaVeiculos()');
     const fragmento = document.createDocumentFragment();
-    const linhas = [...obterPorId('form-incluir-restricao:lista-veiculo_data').rows];
+    const linhas = [
+      ...obterPorId('form-incluir-restricao:lista-veiculo_data').rows,
+    ];
     linhas.forEach(linha => fragmento.appendChild(linha));
     return fragmento;
   },

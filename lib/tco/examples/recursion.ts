@@ -11,7 +11,9 @@ const memoize = <K, T>(f: (_: K) => T): ((_: K) => T) => {
     return value;
   };
 };
-export const fib = memoize((x: number): number => (x <= 1 ? x : fib(x - 2) + fib(x - 1)));
+export const fib = memoize((x: number): number =>
+  x <= 1 ? x : fib(x - 2) + fib(x - 1)
+);
 export const collatz = (x: number) => {
   const set = new Set<number>();
   const rec = (n: number): number => {
@@ -21,4 +23,5 @@ export const collatz = (x: number) => {
   };
   return rec(x);
 };
-export const sum = (xs: List<number>): number => (xs.empty ? 0 : xs.first + sum(xs.rest));
+export const sum = (xs: List<number>): number =>
+  xs.empty ? 0 : xs.first + sum(xs.rest);

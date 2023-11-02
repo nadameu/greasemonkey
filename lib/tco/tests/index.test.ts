@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import { generate } from '../examples/List';
-import { Limitation, StrategyFunctions, strategies } from '../examples/strategies';
+import {
+  Limitation,
+  StrategyFunctions,
+  strategies,
+} from '../examples/strategies';
 
 describe.each(strategies.map(x => [x.name, x.fns, x]))(
   '%s',
@@ -9,7 +13,10 @@ describe.each(strategies.map(x => [x.name, x.fns, x]))(
       test('small', test_count_small(fns.count));
       // #region large
       if (limitation === Limitation.Stack) {
-        test.skip('large values overflow the stack', test_count_large(fns.count));
+        test.skip(
+          'large values overflow the stack',
+          test_count_large(fns.count)
+        );
       } else {
         test('large', test_count_large(fns.count));
       }
@@ -18,9 +25,15 @@ describe.each(strategies.map(x => [x.name, x.fns, x]))(
       if (limitation === Limitation.Stack) {
         test.skip('very large (skip)', test_count_very_large(fns.count));
       } else if (limitation === Limitation.Heap) {
-        test.skip('very large values consume all heap space', test_count_very_large(fns.count));
+        test.skip(
+          'very large values consume all heap space',
+          test_count_very_large(fns.count)
+        );
       } else if (limitation === Limitation.Performance) {
-        test.skip('very large values make it slow', test_count_very_large(fns.count));
+        test.skip(
+          'very large values make it slow',
+          test_count_very_large(fns.count)
+        );
       } else {
         test('very large', test_count_very_large(fns.count));
       }
@@ -29,12 +42,18 @@ describe.each(strategies.map(x => [x.name, x.fns, x]))(
     describe('factorial', () => {
       test('small', test_factorial_small(fns.fac));
       if (limitation === Limitation.Stack) {
-        test.skip('large values overflow the stack', test_factorial_large(fns.fac));
+        test.skip(
+          'large values overflow the stack',
+          test_factorial_large(fns.fac)
+        );
       } else {
         test('large', test_factorial_large(fns.fac));
       }
     });
-    test(`fibonacci${needsCaching ? ' (cached)' : ''}`, test_fibonacci(fns.fib));
+    test(
+      `fibonacci${needsCaching ? ' (cached)' : ''}`,
+      test_fibonacci(fns.fib)
+    );
     test('collatz', test_collatz(fns.collatz));
     describe('folding a list', () => {
       test('small', test_sum_small(fns.sum));

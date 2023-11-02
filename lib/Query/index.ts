@@ -17,7 +17,10 @@ interface QueryMaybeBase<T> extends QueryBase<T> {
   chain<U>(f: (_: T) => QueryMaybe<U>): QueryMaybe<U>;
   chain<U>(f: (_: T) => Query<U>): Query<U>;
   map<U>(f: (_: T) => U): QueryMaybe<U>;
-  query<T extends Element>(this: QueryMaybe<ParentNode>, selector: string): Query<T>;
+  query<T extends Element>(
+    this: QueryMaybe<ParentNode>,
+    selector: string
+  ): Query<T>;
   safeMap<U>(f: (_: T) => U | null | undefined): QueryMaybe<U>;
   tap(f: (_: T) => void): QueryMaybe<T>;
 }
@@ -67,7 +70,9 @@ export function One<T>(value: T, history: string[]): One<T> {
     one: () => One(value, [...history, 'one()']),
     query: <U extends Element>(selector: string): Query<U> => {
       const newHistory = [...history, `query(\`${selector}\`)`];
-      const result = (value as unknown as ParentNode).querySelectorAll<U>(selector);
+      const result = (value as unknown as ParentNode).querySelectorAll<U>(
+        selector
+      );
       if (result.length === 0) return Fail(newHistory);
       if (result.length === 1) return One(result[0]!, newHistory);
       return Many(Array.from(result), newHistory);
@@ -171,12 +176,23 @@ export function lift2<T, U, V>(
   fy: QueryMaybe<U>,
   f: (x: T, y: U) => V
 ): QueryMaybe<V>;
-export function lift2<T, U, V>(fx: Query<T>, fy: Query<U>, f: (x: T, y: U) => V): Query<V>;
-export function lift2<T, U, V>(fx: Query<T>, fy: Query<U>, f: (x: T, y: U) => V): any {
+export function lift2<T, U, V>(
+  fx: Query<T>,
+  fy: Query<U>,
+  f: (x: T, y: U) => V
+): Query<V>;
+export function lift2<T, U, V>(
+  fx: Query<T>,
+  fy: Query<U>,
+  f: (x: T, y: U) => V
+): any {
   if (fx.tag === 'Fail') return fx as Fail;
   if (fy.tag === 'Fail') return fy as Fail;
-  const newHistory = [`lift2(${fx.history.join('.')}, ${fy.history.join('.')}, f)`];
-  if (fx.tag === 'One' && fy.tag === 'One') return One(f(fx.value, fy.value), newHistory);
+  const newHistory = [
+    `lift2(${fx.history.join('.')}, ${fy.history.join('.')}, f)`,
+  ];
+  if (fx.tag === 'One' && fy.tag === 'One')
+    return One(f(fx.value, fy.value), newHistory);
   const xs = fx.tag === 'One' ? [fx.value] : fx.values;
   const ys = fy.tag === 'One' ? [fy.value] : fy.values;
   return Many(
@@ -185,7 +201,10 @@ export function lift2<T, U, V>(fx: Query<T>, fy: Query<U>, f: (x: T, y: U) => V)
   );
 }
 
-export function unfold<T, U>(seed: U, f: (seed: U) => [value: T, nextSeed: U] | null): Query<T> {
+export function unfold<T, U>(
+  seed: U,
+  f: (seed: U) => [value: T, nextSeed: U] | null
+): Query<T> {
   return _mapHistory(
     fromIterable(
       (function* () {
@@ -210,14 +229,19 @@ export const fromIterable = <T>(iterable: Iterable<T>): Query<T> => {
 };
 
 export const concat = <T>(fx: Query<T>, fy: Query<T>): Query<T> => {
-  const newHistory = [`concat(${fx.history.join('.')}, ${fy.history.join('.')})`];
+  const newHistory = [
+    `concat(${fx.history.join('.')}, ${fy.history.join('.')})`,
+  ];
   const k = () => newHistory;
   if (fy.tag === 'Fail') return _mapHistory(fx, k);
   if (fx.tag === 'Fail') return _mapHistory(fy, k);
   return _mapHistory(fromIterable(Array.from(fx).concat(Array.from(fy))), k);
 };
 
-function _mapHistory<T>(fx: Query<T>, f: (history: string[]) => string[]): Query<T> {
+function _mapHistory<T>(
+  fx: Query<T>,
+  f: (history: string[]) => string[]
+): Query<T> {
   const newHistory = f(fx.history);
   if (fx.tag === 'Fail') return Fail(newHistory);
   if (fx.tag === 'One') return One(fx.value, newHistory);

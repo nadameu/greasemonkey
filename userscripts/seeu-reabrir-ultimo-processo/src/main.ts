@@ -52,15 +52,19 @@ function main() {
     }
     return Resultado.SemLink;
   }
-  if (!unsafeWindow.openDialogHistoricoProcessosRecursos) return Resultado.SemLink;
-  if (!URL_RE.test(unsafeWindow.openDialogHistoricoProcessosRecursos.toString()))
+  if (!unsafeWindow.openDialogHistoricoProcessosRecursos)
+    return Resultado.SemLink;
+  if (
+    !URL_RE.test(unsafeWindow.openDialogHistoricoProcessosRecursos.toString())
+  )
     return Resultado.UrlAlterado;
   const link = document.querySelector<HTMLAnchorElement>(
     '#userinfo #shortcuts > a#history.shortcuts'
   );
   if (
     link &&
-    link.getAttribute('href') === "javascript: openDialogHistoricoProcessosRecursos('');"
+    link.getAttribute('href') ===
+      "javascript: openDialogHistoricoProcessosRecursos('');"
   ) {
     const botao = h(
       'button',

@@ -53,7 +53,10 @@
   }
   function matchBy(tagName) {
     return (obj, matchers, otherwise) => {
-      if ((typeof obj !== 'object' && typeof obj !== 'function') || obj === null)
+      if (
+        (typeof obj !== 'object' && typeof obj !== 'function') ||
+        obj === null
+      )
         throw new Error(
           `${Object.prototype.toString
             .call(obj)
@@ -62,7 +65,9 @@
         );
       const tag = obj[tagName];
       if (tag === void 0)
-        throw new Error(`Object does not have a valid "${String(tagName)}" property.`);
+        throw new Error(
+          `Object does not have a valid "${String(tagName)}" property.`
+        );
       const fn = matchers[tag] ?? otherwise ?? matchNotFound;
       return fn(obj);
     };
@@ -119,13 +124,19 @@
       }
       return Resultado.SemLink;
     }
-    if (!unsafeWindow.openDialogHistoricoProcessosRecursos) return Resultado.SemLink;
-    if (!URL_RE.test(unsafeWindow.openDialogHistoricoProcessosRecursos.toString()))
+    if (!unsafeWindow.openDialogHistoricoProcessosRecursos)
+      return Resultado.SemLink;
+    if (
+      !URL_RE.test(unsafeWindow.openDialogHistoricoProcessosRecursos.toString())
+    )
       return Resultado.UrlAlterado;
-    const link = document.querySelector('#userinfo #shortcuts > a#history.shortcuts');
+    const link = document.querySelector(
+      '#userinfo #shortcuts > a#history.shortcuts'
+    );
     if (
       link &&
-      link.getAttribute('href') === "javascript: openDialogHistoricoProcessosRecursos('');"
+      link.getAttribute('href') ===
+        "javascript: openDialogHistoricoProcessosRecursos('');"
     ) {
       const botao2 = createElement(
         'button',

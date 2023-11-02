@@ -27,7 +27,11 @@ const Moeda = (function () {
     parse(texto) {
       if (!validacao.test(texto)) return NaN;
       const textoSemSeparadorMilhar = texto.replace(/\./g, '');
-      return Math.round(parseFloat(`${textoSemSeparadorMilhar.replace(',', '.')}`) * 100) / 100;
+      return (
+        Math.round(
+          parseFloat(`${textoSemSeparadorMilhar.replace(',', '.')}`) * 100
+        ) / 100
+      );
     },
   };
 })();
@@ -35,7 +39,14 @@ const Moeda = (function () {
 const Propriedades = (function () {
   const camposBoolean = ['haCorrente', 'haAnterior'];
   const camposInteiro = ['honorarios'];
-  const camposMoeda = ['principal', 'total', 'corrente', 'anterior', 'sucumbencia', 'outros'];
+  const camposMoeda = [
+    'principal',
+    'total',
+    'corrente',
+    'anterior',
+    'sucumbencia',
+    'outros',
+  ];
 
   const valores = {};
   function definirValoresPadrao() {
@@ -53,7 +64,10 @@ const Propriedades = (function () {
     restaurar(key) {
       if (typeof key !== 'undefined') Propriedades.definirChave(key);
       if (sessionStorage.hasOwnProperty(chaveSalvamento)) {
-        Object.assign(valores, JSON.parse(sessionStorage.getItem(chaveSalvamento)));
+        Object.assign(
+          valores,
+          JSON.parse(sessionStorage.getItem(chaveSalvamento))
+        );
         console.log(JSON.parse(sessionStorage.getItem(chaveSalvamento)));
       } else {
         definirValoresPadrao();
@@ -87,7 +101,8 @@ const Propriedades = (function () {
     Object.defineProperty(Propriedades, campo, {
       enumerable: true,
       get: () => valores[campo] / 100,
-      set: valor => (valores[campo] = Math.round(converterParaNumero(valor) * 100)),
+      set: valor =>
+        (valores[campo] = Math.round(converterParaNumero(valor) * 100)),
     });
   });
 
@@ -113,7 +128,9 @@ function main() {
 
 function adicionarAlteracoesBeneficiario() {
   adicionarAlteracoesComuns();
-  const valorPrincipalComJuros = document.getElementById('divValorPrincipalComJuros');
+  const valorPrincipalComJuros = document.getElementById(
+    'divValorPrincipalComJuros'
+  );
   const resultado = criarResultadoAntesDe(valorPrincipalComJuros);
   atualizarResultadoBeneficiario().then(valoresCalculados => {
     criarBotaoApos(resultado, 'Usar valores calculados', evt => {
@@ -152,7 +169,9 @@ function adicionarAlteracoesComuns() {
 
 function adicionarAlteracoesHonorario() {
   adicionarAlteracoesComuns();
-  const valorPrincipalComJuros = document.getElementById('divValorPrincipalComJuros');
+  const valorPrincipalComJuros = document.getElementById(
+    'divValorPrincipalComJuros'
+  );
   const resultado = criarResultadoAntesDe(valorPrincipalComJuros);
   const tipo = document.querySelector('[name="tipo_honorario"]');
 
@@ -190,7 +209,9 @@ function adicionarAlteracoesHonorario() {
     botao.style.display = 'none';
   }
   function atualizarResultado() {
-    return atualizarResultadoHonorario().then(onValoresAtualizados).catch(onValoresZerados);
+    return atualizarResultadoHonorario()
+      .then(onValoresAtualizados)
+      .catch(onValoresZerados);
   }
 
   atualizarResultado();
@@ -252,7 +273,9 @@ function adicionarAlteracoesRequisicao() {
   }
 
   const tipo = document.getElementById('sin_precat_rpv');
-  const containerCorrente = document.querySelector('.gm-rpv__corrente__container');
+  const containerCorrente = document.querySelector(
+    '.gm-rpv__corrente__container'
+  );
   const haCorrente = document.querySelector('#gm-rpv__corrente');
   const corrente = document.querySelector('.gm-rpv__corrente__valor');
   function verificarTipo() {
@@ -333,7 +356,11 @@ function adicionarAlteracoesRequisicao() {
   adicionarEventoCheckbox('corrente');
   adicionarEventoCheckbox('anterior');
 
-  function atualizarESalvar(propriedade, valor, conversor = obj => obj.toString()) {
+  function atualizarESalvar(
+    propriedade,
+    valor,
+    conversor = obj => obj.toString()
+  ) {
     Propriedades[propriedade] = valor;
     Propriedades.salvar();
     elementos[propriedade].value = conversor(valor);
@@ -346,7 +373,9 @@ function adicionarAlteracoesRequisicao() {
     }
   });
   function onEventoAtualizarAtributo(elemento, evento) {
-    elemento.addEventListener(evento, () => elemento.setAttribute('value', elemento.value));
+    elemento.addEventListener(evento, () =>
+      elemento.setAttribute('value', elemento.value)
+    );
   }
   onEventoAtualizarAtributo(elementos.total, 'focus');
   onEventoAtualizarAtributo(elementos.total, 'change');
@@ -483,7 +512,9 @@ function calcularValores() {
       inicio = `O valor do exercício ${haCorrente ? 'corrente' : 'anterior'}`;
     }
     erros.push(
-      `${inicio} (${Moeda.formatar(somaIRPF)}) não corresponde ao total (${Moeda.formatar(total)}).`
+      `${inicio} (${Moeda.formatar(
+        somaIRPF
+      )}) não corresponde ao total (${Moeda.formatar(total)}).`
     );
   }
   if (erros.length > 0) {
@@ -539,17 +570,24 @@ function criarResultadoAntesDe(elemento) {
 }
 
 window.formatarCampoMoeda = function formatarCampoMoeda(input) {
-  input.value = Moeda.formatar(Moeda.parse(input.value.replace(/\D/g, '')) / 100);
+  input.value = Moeda.formatar(
+    Moeda.parse(input.value.replace(/\D/g, '')) / 100
+  );
 };
 
 function gerarHTMLBeneficiario(valoresCalculados, ocultarVazios = false) {
   const { haCorrente, haAnterior } = Propriedades;
-  const { principalAutor, jurosAutor, totalAutor, correnteAutor, anteriorAutor } =
-    valoresCalculados;
+  const {
+    principalAutor,
+    jurosAutor,
+    totalAutor,
+    correnteAutor,
+    anteriorAutor,
+  } = valoresCalculados;
   if (ocultarVazios && totalAutor === 0) return '';
-  let resultado = `Beneficiário: ${Moeda.formatar(totalAutor)} (${Moeda.formatar(
-    principalAutor
-  )} + ${Moeda.formatar(jurosAutor)})<br>`;
+  let resultado = `Beneficiário: ${Moeda.formatar(
+    totalAutor
+  )} (${Moeda.formatar(principalAutor)} + ${Moeda.formatar(jurosAutor)})<br>`;
   if (haCorrente || haAnterior) {
     resultado += `
 &nbsp;&nbsp;&nbsp;Exercício corrente: ${Moeda.formatar(correnteAutor)}<br>

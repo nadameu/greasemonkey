@@ -30,7 +30,11 @@ class DocumentoInvalido extends Error {
 main();
 
 async function main() {
-  if (/^(eproc|homologa-1g1)\.(jf(pr|rs|sc)|trf4)\.jus\.br$/.test(document.location.hostname)) {
+  if (
+    /^(eproc|homologa-1g1)\.(jf(pr|rs|sc)|trf4)\.jus\.br$/.test(
+      document.location.hostname
+    )
+  ) {
     try {
       const iframe = document.getElementById('conteudoIframe');
       if (!iframe) return;
@@ -53,7 +57,10 @@ button {
       button.addEventListener('click', async () => {
         try {
           await GM.setValue('customPDF', url.href);
-          await GM.setValue('customPDFName', document.title.replace(/\W+/g, '_') + '.pdf');
+          await GM.setValue(
+            'customPDFName',
+            document.title.replace(/\W+/g, '_') + '.pdf'
+          );
           window.open('https://validar.iti.gov.br/');
         } catch (err) {
           console.error(err);
@@ -69,7 +76,8 @@ button {
       const url = await GM.getValue('customPDF', undefined);
       if (!url) return;
       await GM.deleteValue('customPDF');
-      const filename = (await GM.getValue('customPDFName')) || 'documento_userscript.pdf';
+      const filename =
+        (await GM.getValue('customPDFName')) || 'documento_userscript.pdf';
       await GM.deleteValue('customPDFName');
       const blob = await new Promise(async (resolve, reject) => {
         GM.xmlHttpRequest({
@@ -80,7 +88,9 @@ button {
         });
       });
       if (!/^application\/pdf;?$/.test(blob.type)) {
-        throw new DocumentoInvalido(`Erro no formado do arquivo: ${blob.type}.`);
+        throw new DocumentoInvalido(
+          `Erro no formado do arquivo: ${blob.type}.`
+        );
       }
       console.log('url', url);
       console.log('blob', blob);

@@ -10,7 +10,9 @@
 // ==/UserScript==
 
 (function () {
-  const abaCorreta = document.querySelector('li[name="tabMovimentacoesProcesso"].currentTab');
+  const abaCorreta = document.querySelector(
+    'li[name="tabMovimentacoesProcesso"].currentTab'
+  );
   if (!abaCorreta) return;
 
   const links = document.querySelectorAll('img[id^=iconmovimentacoes]');

@@ -36,7 +36,8 @@ const animateScroll = (target, duration) =>
     });
   });
 
-const getOffsetTop = el => (el === null ? 0 : el.offsetTop + getOffsetTop(el.offsetParent));
+const getOffsetTop = el =>
+  el === null ? 0 : el.offsetTop + getOffsetTop(el.offsetParent);
 
 const waitForElement = (selector, { ms = 100, attempts = 15 } = {}) =>
   new Promise((res, rej) => {
@@ -56,7 +57,10 @@ waitForElement('.titulo')
   .then(el => el || Promise.reject('Dispositivo não encontrado!'))
   .then(getOffsetTop)
   .then(offset =>
-    animateScroll(Math.min(offset, document.body.clientHeight - window.innerHeight), 600)
+    animateScroll(
+      Math.min(offset, document.body.clientHeight - window.innerHeight),
+      600
+    )
   )
   .then(() => console.log('done'))
   .catch(e => console.error(e));

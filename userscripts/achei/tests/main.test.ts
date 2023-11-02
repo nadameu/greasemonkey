@@ -15,7 +15,9 @@ function createTest(
 `;
     const after = fn();
     const log = vitest.fn();
-    return Promise.allSettled([main({ doc: document, log })]).then(([x]) => after(x, log));
+    return Promise.allSettled([main({ doc: document, log })]).then(([x]) =>
+      after(x, log)
+    );
   });
 }
 
@@ -140,9 +142,13 @@ nonononon<br></td></tr></table>
     createDominioTest('JFSC', '3');
     function createDominioTest(name: string, value: string) {
       createTest(name, () => {
-        const local = document.getElementsByName('local')[0] as HTMLInputElement;
+        const local = document.getElementsByName(
+          'local'
+        )[0] as HTMLInputElement;
         local.value = value;
-        const form = document.getElementsByName('formulario')[0] as HTMLFormElement;
+        const form = document.getElementsByName(
+          'formulario'
+        )[0] as HTMLFormElement;
         form.insertAdjacentHTML(
           'afterend',
           /* html */ `<table><tr><td><br></td><td>

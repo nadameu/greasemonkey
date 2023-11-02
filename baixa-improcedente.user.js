@@ -13,11 +13,15 @@ if (localizadores.length !== 1) return log('Mais de um localizador.');
 const peritos = queryAll('a[data-parte="PERITO"]').map(textContent);
 if (peritos.length < 1) return log('Não há peritos.');
 
-const eventos = queryAll('td.infraEventoDescricao').map(celula => celula.closest('tr'));
+const eventos = queryAll('td.infraEventoDescricao').map(celula =>
+  celula.closest('tr')
+);
 
 if (
   !eventos.some(linha =>
-    textContent(linha.cells[3]).match(/Trânsito em Julgado|Transitado em Julgado/)
+    textContent(linha.cells[3]).match(
+      /Trânsito em Julgado|Transitado em Julgado/
+    )
   )
 )
   return log('Não há trânsito em julgado.');
@@ -27,7 +31,8 @@ const sentencaImprocedencia = eventos.filter(linha =>
     /Sentença com Resolução de Mérito - Pedido Improcedente|Julgado improcedente o pedido/
   )
 );
-if (sentencaImprocedencia.length !== 1) return log('Não há sentença de improcedência.');
+if (sentencaImprocedencia.length !== 1)
+  return log('Não há sentença de improcedência.');
 
 let condenacaoAutora = sentencaImprocedencia.some(linha =>
   textContent(linha.cells[5]).match(
@@ -60,7 +65,9 @@ for (const perito of peritos) {
         ) &&
         textContent(linha.cells[5]).match(/PGTOPERITO\d/) &&
         textContent(linha.cells[5]).match(
-          new RegExp(`Perito:\\s*${perito}\\s*. Documento gerado pelo sistema AJG`)
+          new RegExp(
+            `Perito:\\s*${perito}\\s*. Documento gerado pelo sistema AJG`
+          )
         )
     )
   )

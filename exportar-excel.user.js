@@ -60,7 +60,11 @@ function onclick(eventos) {
 
     XLSX.utils.book_append_sheet(wb, ws, 'dados');
 
-    const array = XLSX.write(wb, { type: 'array', bookType: 'xlsx', compression: true });
+    const array = XLSX.write(wb, {
+      type: 'array',
+      bookType: 'xlsx',
+      compression: true,
+    });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(
       new Blob([array], {
@@ -78,17 +82,21 @@ function obterDados(eventos) {
     x => x.textContent
   );
 
-  const numProcesso = safePipe(numProcessoFormatado, x => x.replace(/[.-]/g, ''));
-
-  const autores = Array.from(document.querySelectorAll('.infraNomeParte[data-parte="AUTOR"]')).map(
-    x => x.textContent
+  const numProcesso = safePipe(numProcessoFormatado, x =>
+    x.replace(/[.-]/g, '')
   );
 
-  const reus = Array.from(document.querySelectorAll('.infraNomeParte[data-parte="REU"]')).map(
-    x => x.textContent
-  );
+  const autores = Array.from(
+    document.querySelectorAll('.infraNomeParte[data-parte="AUTOR"]')
+  ).map(x => x.textContent);
 
-  const sentencas = eventos.filter(({ ehSentenca }) => ehSentenca).map(({ data }) => data);
+  const reus = Array.from(
+    document.querySelectorAll('.infraNomeParte[data-parte="REU"]')
+  ).map(x => x.textContent);
+
+  const sentencas = eventos
+    .filter(({ ehSentenca }) => ehSentenca)
+    .map(({ data }) => data);
 
   const citacoes = new Map(
     eventos
@@ -114,7 +122,11 @@ function obterDados(eventos) {
     [],
     ['', 'Nome', 'Data da citação'],
     ...autores.map((autor, i) => [i === 0 ? 'Autor(es):' : '', autor]),
-    ...reus.map((reu, i) => [i === 0 ? 'Réu(s)' : '', reu, citacoes.get(reu) || '']),
+    ...reus.map((reu, i) => [
+      i === 0 ? 'Réu(s)' : '',
+      reu,
+      citacoes.get(reu) || '',
+    ]),
   ];
 }
 
@@ -159,7 +171,12 @@ function obterDadosCitacao({ data, linha }) {
 function calcularLarguraColunas(xss) {
   const length = Math.max(0, ...xss.map(xs => xs.length));
   const widths = Array.from({ length }, (_, c) =>
-    Math.max(0, ...xss.map(xs => (xs[c] instanceof Date ? 10 : String(xs[c] || '').length)))
+    Math.max(
+      0,
+      ...xss.map(xs =>
+        xs[c] instanceof Date ? 10 : String(xs[c] || '').length
+      )
+    )
   );
   return widths.map(wch => ({ wch }));
 }
