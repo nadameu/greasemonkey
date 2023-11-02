@@ -77,6 +77,11 @@ export const isOfTypeObject = /* @__PURE__ */ isOfType('object');
 export const isString = /* @__PURE__ */ isOfType('string');
 export const isSymbol = /* @__PURE__ */ isOfType('symbol');
 
+export const isInstanceOf =
+  <T extends abstract new (...args: any) => any>(Constructor: T) =>
+  <U>(obj: U): obj is InstanceType<T> =>
+    obj instanceof Constructor;
+
 export function isLiteral<
   T extends string | number | bigint | boolean | symbol | null | undefined,
 >(literal: T): Predicate<T> {
