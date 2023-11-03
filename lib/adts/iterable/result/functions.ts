@@ -1,17 +1,13 @@
-import { isDone } from './definitions';
+import { T } from '../../typeclasses';
+import { IteratorYieldResult, isIteratorReturnResult } from './definitions';
+import { IteratorResultF } from './internal';
 
+export const of: <a, b = never>(value: a) => IteratorResult<a, b> =
+  IteratorYieldResult;
 export const flatMap =
-  <a, b, r>(f: (_: a) => IteratorResult<b, r>) =>
-  (fa: IteratorResult<a, r>): IteratorResult<b, r> =>
-    isDone(fa) ? fa : f(fa.value);
-
-export const of = <a, r = never>(value: a): IteratorResult<a, r> => ({ done: false, value });
-
-export const map = <a, b>(
-  f: (_: a) => b
-): (<r>(fa: IteratorResult<a, r>) => IteratorResult<b, r>) => flatMap<a, b, any>(x => of(f(x)));
-
-export const zip = <a, b, r>(
-  fa: IteratorResult<a, r>,
-  fb: IteratorResult<b, r>
-): IteratorResult<[a, b], r> => (isDone(fa) ? fa : isDone(fb) ? fb : of([fa.value, fb.value]));
+  <a, b, e2>(f: (a: a) => IteratorResult<b, e2>) =>
+  <e>(fa: IteratorResult<a, e>): IteratorResult<b, e2 | e> =>
+    isIteratorReturnResult(fa) ? fa : f(fa.value);
+export const map = T.deriveMap<IteratorResultF>({ of, flatMap });
+export const ap = T.deriveAp<IteratorResultF>({ of, flatMap });
+export const liftN = T.deriveLiftN<IteratorResultF>({ ap, map, of });

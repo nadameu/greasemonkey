@@ -1,3 +1,4 @@
+import { Either, Left, Right } from '../either';
 import { Just, Maybe, Nothing, isJust, isNothing } from './definitions';
 
 export const flatMap =
@@ -18,7 +19,8 @@ export const orElse =
     isNothing(fa) ? ifNothing() : fa;
 
 export const zero = <a = never>(): Maybe<a> => Nothing;
-export const alt = <a>(fa: Maybe<a>, fb: Maybe<a>): Maybe<a> => (isNothing(fa) ? fb : fa);
+export const alt = <a>(fa: Maybe<a>, fb: Maybe<a>): Maybe<a> =>
+  isNothing(fa) ? fb : fa;
 
 export const or = <a>(alternative: Maybe<a>) => orElse(() => alternative);
 
@@ -30,9 +32,11 @@ export const mapNullable = <a, b>(f: (_: a) => b | null | undefined) =>
 
 export const getOr = <a>(defaultValue: a) => getOrElse(() => defaultValue);
 
-export const getOrElse =
+export const getOrElse: <a>(
+  getDefault: () => a
+) => <b>(fa: Maybe<b>) => a extends b ? b : a | b =
   <a>(getDefault: () => a) =>
-  (fa: Maybe<a>): a =>
+  <b>(fa: Maybe<b>): any =>
     isNothing(fa) ? getDefault() : fa.value;
 
 export const maybeBool: {
@@ -47,3 +51,13 @@ export const filter: {
   <a, b extends a>(pred: (a: a) => a is b): (fa: Maybe<a>) => Maybe<b>;
   <a>(pred: (_: a) => boolean): (fa: Maybe<a>) => Maybe<a>;
 } = <a>(pred: (_: a) => boolean) => flatMap(maybeBool(pred));
+
+export const mapProp = <T, K extends keyof T>(
+  prop: K
+): ((fa: Maybe<T>) => Maybe<NonNullable<T[K]>>) =>
+  mapNullable<T, any>(obj => obj[prop]);
+
+export const toEither =
+  <a>(whenLeft: () => a) =>
+  <b>(fb: Maybe<b>): Either<a, b> =>
+    isNothing(fb) ? Left(whenLeft()) : Right(fb.value);
