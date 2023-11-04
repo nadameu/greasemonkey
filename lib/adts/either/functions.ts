@@ -45,3 +45,31 @@ export const or =
   <c, d>(alternative: Either<c, d>) =>
   <a, b>(fa: Either<a, b>): Either<a | c, b | d> =>
     isRight(fa) ? fa : alternative;
+
+const yieldedEither: unique symbol = Symbol();
+interface YieldedEither<a> {
+  [yieldedEither]: a;
+}
+interface EitherYielder {
+  <e = never, a = never>(
+    fa: Either<e, a>
+  ): Generator<YieldedEither<Left<e>>, a, YieldedEither<never>>;
+}
+function* eitherYielder(fa: any): any {
+  yield fa;
+  return fa?.right;
+}
+interface EitherGen<e, a, w> extends Generator<YieldedEither<Left<e>>, a, w> {}
+export const gen: {
+  <e, a, w>(
+    f: (_: EitherYielder) => EitherGen<e, a, w>
+  ): [YieldedEither<never>] extends [w] ? Either<e, a> : never;
+} = (<e, a, w>(f: (_: EitherYielder) => EitherGen<e, a, w>): Either<e, a> => {
+  const it: Iterator<any, any, any> = f(eitherYielder);
+  let result = it.next();
+  while (true) {
+    if (result.done) return Right(result.value);
+    if (isLeft(result.value)) return result.value as any;
+    result = it.next(result.value);
+  }
+}) as any;
