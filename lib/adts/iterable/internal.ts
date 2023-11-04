@@ -1,5 +1,4 @@
-import { Cons, L, List, Nil, isCons } from '../list';
-import { Just } from '../maybe';
+import { Cons, List, Nil, isCons } from '../list';
 import { Kind } from '../typeclasses/definitions';
 
 export interface IterableF extends Kind {
