@@ -4,7 +4,7 @@ import { Applicative, Kind, Type, derive } from '../typeclasses';
 import { Seq } from './definitions';
 import { Concat, SeqF } from './internal';
 
-const fromGen =
+export const fromGen =
   <A extends unknown[], a>(gen: (...args: A) => Generator<a>) =>
   (...args: A): Seq<a> => [...gen(...args)];
 export const fromArray = <a>(arrayLike: ArrayLike<a>): Seq<a> =>
