@@ -13,9 +13,9 @@ export const flatten: <a>(ffa: Maybe<Maybe<a>>) => Maybe<a> =
 
 export const of: <a>(value: a) => Maybe<a> = Just;
 
-export const map = derive.map<MaybeF>({ of, flatMap });
-export const ap = derive.ap<MaybeF>({ of, flatMap });
-export const lift2 = derive.lift2<MaybeF>({ map, ap });
+export const map = /* #__PURE__ */ derive.map<MaybeF>({ of, flatMap });
+export const ap = /* #__PURE__ */ derive.ap<MaybeF>({ of, flatMap });
+export const lift2 = /* #__PURE__ */ derive.lift2<MaybeF>({ map, ap });
 
 export const zip = <a, b>(fa: Maybe<a>, fb: Maybe<b>): Maybe<[a, b]> =>
   isJust(fa) && isJust(fb) ? Just([fa.value, fb.value]) : Nothing;

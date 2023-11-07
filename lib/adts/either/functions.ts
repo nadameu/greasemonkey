@@ -8,9 +8,9 @@ export const flatMap =
   <a, b, e>(f: (a: a) => Either<e, b>) =>
   (fa: Either<e, a>): Either<e, b> =>
     isLeft(fa) ? fa : f(fa.right);
-export const map = derive.map<EitherF>({ of, flatMap });
-export const ap = derive.ap<EitherF>({ of, flatMap });
-export const lift2 = derive.lift2<EitherF>({ ap, map });
+export const map = /* #__PURE__ */ derive.map<EitherF>({ of, flatMap });
+export const ap = /* #__PURE__ */ derive.ap<EitherF>({ of, flatMap });
+export const lift2 = /* #__PURE__ */ derive.lift2<EitherF>({ ap, map });
 export const mapLeft = <e, e2>(
   f: (_: e) => e2
 ): (<a>(fa: Either<e, a>) => Either<e2, a>) =>

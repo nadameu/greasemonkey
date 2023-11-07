@@ -32,8 +32,8 @@ export const map = <a, b>(f: (a: a, i: number) => b) =>
   fromGen<[fa: Seq<a>], b>(function* (fa, i = 0) {
     for (const a of fa) yield f(a, i++);
   });
-export const ap = derive.ap<SeqF>({ of, flatMap });
-export const lift2 = derive.lift2<SeqF>({ map, ap });
+export const ap = /* #__PURE__ */ derive.ap<SeqF>({ of, flatMap });
+export const lift2 = /* #__PURE__ */ derive.lift2<SeqF>({ map, ap });
 export const foldLeft =
   <a, b>(seed: b, f: (acc: b, a: a, i: number) => b) =>
   (fa: Seq<a>): b => {
