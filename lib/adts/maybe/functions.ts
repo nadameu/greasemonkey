@@ -1,14 +1,21 @@
 import { Either, Left, Right } from '../either';
+import { derive } from '../typeclasses';
 import { Just, Maybe, Nothing, isJust, isNothing } from './definitions';
+import { MaybeF } from './internal';
 
 export const flatMap =
   <a, b>(f: (_: a) => Maybe<b>) =>
   (fa: Maybe<a>): Maybe<b> =>
     isNothing(fa) ? Nothing : f(fa.value);
 
+export const flatten: <a>(ffa: Maybe<Maybe<a>>) => Maybe<a> =
+  /* #__PURE__*/ flatMap(x => x);
+
 export const of: <a>(value: a) => Maybe<a> = Just;
 
-export const map = <a, b>(f: (_: a) => b) => flatMap<a, b>(x => of(f(x)));
+export const map = derive.map<MaybeF>({ of, flatMap });
+export const ap = derive.ap<MaybeF>({ of, flatMap });
+export const lift2 = derive.lift2<MaybeF>({ map, ap });
 
 export const zip = <a, b>(fa: Maybe<a>, fb: Maybe<b>): Maybe<[a, b]> =>
   isJust(fa) && isJust(fb) ? Just([fa.value, fb.value]) : Nothing;
