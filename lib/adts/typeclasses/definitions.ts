@@ -18,7 +18,7 @@ export interface Monoid<a> extends Semigroup<a> {
   empty(): a;
 }
 
-export interface SemigroupK<F extends Kind> {
+export interface SemigroupK<F extends Kind> extends Typeclass<F> {
   concat<a, e>(left: Type<F, e, a>, right: Type<F, e, a>): Type<F, e, a>;
 }
 
