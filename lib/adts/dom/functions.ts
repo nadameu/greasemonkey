@@ -8,6 +8,4 @@ export const queryAll =
   <T extends Element>(selector: string) =>
   (parentNode: ParentNode): ArrayLike<T> =>
     parentNode.querySelectorAll<T>(selector);
-export const text = (node: Node) => {
-  return M.fromNullable(node.textContent);
-};
+export const text = (node: Node) => M.fromNullable(node.textContent);
