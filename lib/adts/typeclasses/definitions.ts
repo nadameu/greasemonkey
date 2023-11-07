@@ -30,9 +30,9 @@ export interface Functor<F extends Kind> extends Typeclass<F> {
   map<a, b>(f: (_: a) => b): <e>(fa: Type<F, e, a>) => Type<F, e, b>;
 }
 export interface Ap<F extends Kind> extends Typeclass<F> {
-  ap<a, e>(
-    fa: Type<F, e, a>
-  ): <b>(ff: Type<F, e, (_: a) => b>) => Type<F, e, b>;
+  ap<a, e2>(
+    fa: Type<F, e2, a>
+  ): <b, e>(ff: Type<F, e, (_: a) => b>) => Type<F, e | e2, b>;
 }
 export interface Apply<F extends Kind> extends Functor<F>, Ap<F> {}
 export interface Of<F extends Kind> extends Typeclass<F> {
@@ -40,9 +40,9 @@ export interface Of<F extends Kind> extends Typeclass<F> {
 }
 export interface Applicative<F extends Kind> extends Apply<F>, Of<F> {}
 export interface FlatMap<F extends Kind> extends Typeclass<F> {
-  flatMap<a, b, e>(
-    f: (_: a) => Type<F, e, b>
-  ): (fa: Type<F, e, a>) => Type<F, e, b>;
+  flatMap<a, b, e2>(
+    f: (_: a) => Type<F, e2, b>
+  ): <e>(fa: Type<F, e, a>) => Type<F, e | e2, b>;
 }
 export interface Monad<F extends Kind> extends Applicative<F>, FlatMap<F> {}
 

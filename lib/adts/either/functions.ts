@@ -5,8 +5,8 @@ import { EitherF } from './internal';
 
 export const of: <a, e = never>(value: a) => Either<e, a> = Right;
 export const flatMap =
-  <a, b, e>(f: (a: a) => Either<e, b>) =>
-  (fa: Either<e, a>): Either<e, b> =>
+  <a, b, e2>(f: (a: a) => Either<e2, b>) =>
+  <e>(fa: Either<e, a>): Either<e | e2, b> =>
     isLeft(fa) ? fa : f(fa.right);
 export const map = /* #__PURE__ */ derive.map<EitherF>({ of, flatMap });
 export const ap = /* #__PURE__ */ derive.ap<EitherF>({ of, flatMap });
