@@ -1,4 +1,5 @@
 import { identity } from '../function';
+import { Maybe, isJust } from '../maybe';
 import { Applicative, Kind, Type, derive } from '../typeclasses';
 import { Seq } from './definitions';
 import { Concat, SeqF } from './internal';
@@ -56,3 +57,10 @@ export const sequence = <F extends Kind>(
   M: Applicative<F>
 ): (<a, e>(tfa: Seq<Type<F, e, a>>) => Type<F, e, Seq<a>>) =>
   traverse(M)(identity);
+export const filterMap = <a, b>(f: (a: a, i: number) => Maybe<b>) =>
+  fromGen<[fa: Seq<a>], b>(function* (fa: Seq<a>, i = 0) {
+    for (const a of fa) {
+      const maybe = f(a, i++);
+      if (isJust(maybe)) yield maybe.value;
+    }
+  });
