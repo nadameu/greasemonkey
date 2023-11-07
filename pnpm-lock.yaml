@@ -90,11 +90,7 @@ importers:
         specifier: workspace:^
         version: link:../expect-unreachable
 
-  lib/adts:
-    dependencies:
-      '@nadameu/pipe':
-        specifier: ^2.1.2
-        version: 2.1.2
+  lib/adts: {}
 
   lib/create-broadcast-service:
     dependencies:
@@ -238,6 +234,12 @@ importers:
 
   userscripts/seeu-movimentacoes:
     dependencies:
+      '@nadameu/adts':
+        specifier: workspace:^
+        version: link:../../lib/adts
+      '@nadameu/handler':
+        specifier: workspace:^
+        version: link:../../lib/handler
       '@nadameu/pipe':
         specifier: ^2.1.2
         version: 2.1.2
