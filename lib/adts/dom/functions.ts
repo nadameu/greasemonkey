@@ -1,4 +1,5 @@
-import { Maybe, M } from '../maybe';
+import { M, Maybe } from '../maybe';
+import { Seq } from '../seq';
 
 export const query =
   <T extends Element>(selector: string) =>
@@ -6,6 +7,6 @@ export const query =
     M.fromNullable<T>(parentNode.querySelector<T>(selector));
 export const queryAll =
   <T extends Element>(selector: string) =>
-  (parentNode: ParentNode): ArrayLike<T> =>
+  (parentNode: ParentNode): Seq<T> =>
     parentNode.querySelectorAll<T>(selector);
 export const text = (node: Node) => M.fromNullable(node.textContent);
