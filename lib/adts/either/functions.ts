@@ -1,16 +1,16 @@
 import { Just, Maybe, Nothing } from '../maybe';
-import { T } from '../typeclasses';
+import { derive } from '../typeclasses';
 import { Either, Left, Right, isLeft, isRight } from './definitions';
 import { EitherF } from './internal';
 
 export const of: <a, e = never>(value: a) => Either<e, a> = Right;
 export const flatMap =
-  <a, b, e2>(f: (a: a) => Either<e2, b>) =>
-  <e>(fa: Either<e, a>): Either<e | e2, b> =>
+  <a, b, e>(f: (a: a) => Either<e, b>) =>
+  (fa: Either<e, a>): Either<e, b> =>
     isLeft(fa) ? fa : f(fa.right);
-export const map = T.deriveMap<EitherF>({ of, flatMap });
-export const ap = T.deriveAp<EitherF>({ of, flatMap });
-export const liftN = T.deriveLiftN<EitherF>({ ap, map, of });
+export const map = derive.map<EitherF>({ of, flatMap });
+export const ap = derive.ap<EitherF>({ of, flatMap });
+export const lift2 = derive.lift2<EitherF>({ ap, map });
 export const mapLeft = <e, e2>(
   f: (_: e) => e2
 ): (<a>(fa: Either<e, a>) => Either<e2, a>) =>

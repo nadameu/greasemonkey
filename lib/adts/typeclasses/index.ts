@@ -1,2 +1,2 @@
 export * from './definitions';
-export * as T from './functions';
+export * as derive from './functions';

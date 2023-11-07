@@ -5,6 +5,11 @@ export const monoidSum: Monoid<number> = {
   concat: (x, y) => x + y,
 };
 
+export const monoidProduct: Monoid<number> = {
+  empty: () => 1,
+  concat: (x, y) => x * y,
+};
+
 export const monoidMin: Monoid<number> = {
   empty: () => Infinity,
   concat: (x, y) => (x > y ? y : x),
