@@ -1,8 +1,6 @@
 export type List<a> = Cons<a> | Nil;
-interface ListImpl<a> {
+export interface Cons<a> {
   _type: 'List';
-}
-export interface Cons<a> extends ListImpl<a> {
   _tag: 'Cons';
   head: a;
   tail: List<a>;
@@ -15,7 +13,8 @@ export const Cons = <a>(head: a, tail: List<a>): Cons<a> => ({
 });
 export const isCons = <a>(list: List<a>): list is Cons<a> =>
   list._tag === 'Cons';
-export interface Nil extends ListImpl<never> {
+export interface Nil {
+  _type: 'List';
   _tag: 'Nil';
 }
 export const Nil: Nil = { _type: 'List', _tag: 'Nil' };
