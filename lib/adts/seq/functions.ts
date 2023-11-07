@@ -1,5 +1,5 @@
 import { identity } from '../function';
-import { Maybe, isJust } from '../maybe';
+import { Just, Maybe, Nothing, isJust } from '../maybe';
 import { Applicative, Kind, Type, derive } from '../typeclasses';
 import { Seq } from './definitions';
 import { Concat, SeqF } from './internal';
@@ -64,3 +64,8 @@ export const filterMap = <a, b>(f: (a: a, i: number) => Maybe<b>) =>
       if (isJust(maybe)) yield maybe.value;
     }
   });
+export const filter: {
+  <a, b extends a>(pred: (a: a, i: number) => a is b): (fa: Seq<a>) => Seq<b>;
+  <a>(pred: (a: a, i: number) => boolean): (fa: Seq<a>) => Seq<a>;
+} = <a>(pred: (a: a, i: number) => boolean) =>
+  filterMap<a, a>((a, i) => (pred(a, i) ? Just(a) : Nothing));
