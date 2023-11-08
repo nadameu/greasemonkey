@@ -6,7 +6,7 @@ import { Concat, SeqF } from './internal';
 
 export const fromGen =
   <A extends unknown[], a>(gen: (...args: A) => Generator<a>) =>
-  (...args: A): Seq<a> => [...gen(...args)];
+  (...args: A): a[] => [...gen(...args)];
 export const fromArray = <a>(arrayLike: ArrayLike<a>): Seq<a> =>
   fromGen(function* () {
     for (let i = 0, len = arrayLike.length; i < len; i += 1)
