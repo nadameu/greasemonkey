@@ -65,6 +65,42 @@ export const main = () =>
               if (!win.closed) win.close();
             }
           });
+          pipe(
+            document,
+            D.queryAll<HTMLTableRowElement>('table.resultTable > tbody > tr'),
+            S.map(row => {
+              if (row.cells.length === 1) {
+                const previousRow = row.previousElementSibling;
+                if (previousRow instanceof HTMLTableRowElement) {
+                  row.insertCell(0).colSpan = previousRow.cells.length - 1;
+                  row.cells[1]!.colSpan = 1;
+                }
+              } else {
+                const len = row.cells.length;
+                const colunaDataHora = len - 3;
+                pipe(
+                  row.cells,
+                  S.map((cell, i) => {
+                    if (i !== colunaDataHora) {
+                      cell.removeAttribute('nowrap');
+                    }
+                  })
+                );
+              }
+            })
+          );
+          pipe(
+            document,
+            D.query('table.resultTable > colgroup'),
+            M.map(g => {
+              pipe(g.children, c => {
+                pipe(
+                  c,
+                  S.map(c => c.removeAttribute('width'))
+                );
+              });
+            })
+          );
         })
       );
     })
@@ -168,8 +204,8 @@ const createMutationObserver = () => {
   };
 };
 
-const onTabelaAdicionada = (table: HTMLTableElement) => {
-  const linhas = pipe(
+const onTabelaAdicionada = (table: HTMLTableElement) =>
+  pipe(
     table.rows,
     S.traverse(applicativeEither)((linha, l) => {
       if (linha.cells.length !== 7)
@@ -215,27 +251,14 @@ const onTabelaAdicionada = (table: HTMLTableElement) => {
         T.sequence(applicativeEither),
         E.map(
           ([{ sequencial, nome }, { assinatura }, { menu, popup, link }]) => {
-            // link.classList.remove('link');
-            link.textContent = nome;
+            link.textContent = nome.replace(/_/g, ' ');
             const frag = document.createDocumentFragment();
-            frag.append(menu, popup, link);
+            frag.append(menu, popup);
             const url = new URL(link.href);
-            const sp = url.searchParams.get('_tj')!;
-            const id = pipe(
-              tailRec({ acc: [] as string[], curr: sp }, ({ acc, curr }) =>
-                curr.length > 0
-                  ? Left({
-                      acc: [...acc, curr.slice(0, 8)],
-                      curr: curr.slice(8),
-                    })
-                  : Right(acc)
-              ),
-              x => x.slice(6, 8),
-              S.map(x => parseInt(x, 16)),
-              S.foldLeft(0n, (acc, x) => acc * 4294967296n + BigInt(x))
-            );
+            const tjParam = url.searchParams.get('_tj')!;
+            const id = getId(tjParam);
             link.dataset.gmDocLink = id.toString();
-            return [sequencial, frag];
+            return [sequencial, frag, link];
           }
         )
       );
@@ -262,4 +285,19 @@ const onTabelaAdicionada = (table: HTMLTableElement) => {
       );
     })
   );
-};
+
+function getId(sp: string) {
+  return pipe(
+    tailRec({ acc: [] as string[], curr: sp }, ({ acc, curr }) =>
+      curr.length > 0
+        ? Left({
+            acc: [...acc, curr.slice(0, 8)],
+            curr: curr.slice(8),
+          })
+        : Right(acc)
+    ),
+    x => x.slice(6, 8),
+    S.map(x => parseInt(x, 16)),
+    S.foldLeft(0n, (acc, x) => acc * 4294967296n + BigInt(x))
+  );
+}

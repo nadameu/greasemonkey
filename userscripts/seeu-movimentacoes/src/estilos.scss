@@ -1,8 +1,9 @@
-table.resultTable {
-  :scope > colgroup > col:nth-child(2) {
-    visibility: collapse;
-  }
+div#content {
+  margin: 0 auto;
+  max-width: 1280px;
+}
 
+table.resultTable {
   tr div.extendedinfo {
     border: none;
     margin: 0;
@@ -12,17 +13,28 @@ table.resultTable {
   table.form {
     margin: 15px;
     margin-left: auto;
-    width: 40%;
     border-collapse: collapse;
     border: 1px solid;
 
     td {
       width: auto;
-      padding: 0 6px;
+      padding: 0;
+      vertical-align: top !important;
     }
 
     td:nth-child(1) {
-      width: 10%;
+      width: 36px;
+      text-align: center;
+      padding-left: 6px;
+      padding-right: 2px;
+    }
+    td:nth-child(2) {
+      width: 16px;
+      text-align: center;
+      padding: 5px 0 4px;
+    }
+    td:nth-child(3) {
+      width: 89%;
     }
 
     tr.odd {
@@ -31,6 +43,11 @@ table.resultTable {
 
     tr.even {
       background: hsl(266, 35%, 97%);
+    }
+
+    a.link {
+      display: inline-block;
+      background-position-y: 0.5em;
     }
   }
 }
