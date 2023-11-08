@@ -7,7 +7,6 @@ import {
   S,
   T,
   applicativeEither,
-  isNothing,
   tailRec,
   tuple,
 } from '@nadameu/adts';
@@ -20,41 +19,59 @@ interface Noop {
   (): void;
 }
 
-export const main = () => {
-  const abaCorreta = pipe(
+export const main = () =>
+  pipe(
     document,
-    D.query('li[name="tabMovimentacoesProcesso"].currentTab')
-  );
-  if (isNothing(abaCorreta)) return;
-  const links = pipe(
-    document,
-    D.queryAll<HTMLImageElement>('img[id^=iconmovimentacoes]')
-  );
-  const obs = createIntersectionObserver();
-  const mut = createMutationObserver();
-  for (const link of links) {
-    const nextRow = link.closest('tr')?.nextElementSibling;
-    if (nextRow) {
-      const target = nextRow.querySelector('.extendedinfo');
-      if (target) {
-        mut.observe(target, node => {
-          if (!(node instanceof HTMLTableElement)) return;
-          onTabelaAdicionada(node);
-        });
-      }
-    }
+    D.query('li[name="tabMovimentacoesProcesso"].currentTab'),
+    M.map(() => {
+      return pipe(
+        document,
+        D.queryAll<HTMLImageElement>('img[id^=iconmovimentacoes]'),
+        S.map((link, i) =>
+          pipe(
+            link.closest('tr'),
+            M.fromNullable,
+            M.mapNullable(x => x.nextElementSibling),
+            M.filter(x => x.matches('tr')),
+            M.flatMap(D.query('.extendedinfo')),
+            M.map(mutationTarget => ({ link, mutationTarget })),
+            M.toEither(() => `Lista de eventos não reconhecida: ${i}.`)
+          )
+        ),
+        S.sequence(applicativeEither),
+        E.map(links => {
+          const obs = createIntersectionObserver();
+          const mut = createMutationObserver();
+          for (const { link, mutationTarget } of links) {
+            mut.observe(mutationTarget, node => {
+              if (!(node instanceof HTMLTableElement)) return;
+              onTabelaAdicionada(node);
+            });
 
-    console.log('next row', nextRow);
+            const { unobserve } = obs.observe(link, () => {
+              unobserve();
+              link.click();
+            });
+          }
+          const style = document.head.appendChild(
+            document.createElement('style')
+          );
+          style.textContent = css;
+          const janelasAbertas = new Map<string, Window>();
+          const onDocumentClick = createOnDocumentClick(janelasAbertas);
+          document.addEventListener('click', onDocumentClick);
+          window.addEventListener('beforeunload', () => {
+            for (const win of janelasAbertas.values()) {
+              if (!win.closed) win.close();
+            }
+          });
+        })
+      );
+    })
+  );
 
-    const { unobserve } = obs.observe(link, () => {
-      unobserve();
-      link.click();
-    });
-  }
-  const style = document.head.appendChild(document.createElement('style'));
-  style.textContent = css;
-  const janelasAbertas = new Map<string, Window>();
-  document.addEventListener('click', evt => {
+function createOnDocumentClick(janelasAbertas: Map<string, Window>) {
+  return function onDocumentClick(evt: Event) {
     if (
       evt.target instanceof HTMLElement &&
       evt.target.matches('a[href][data-gm-doc-link]')
@@ -78,14 +95,8 @@ export const main = () => {
       );
       janelasAbertas.set(id, win!);
     }
-  });
-  window.addEventListener('beforeunload', () => {
-    for (const win of janelasAbertas.values()) {
-      if (!win.closed) win.close();
-    }
-  });
-};
-
+  };
+}
 const createIntersectionObserver = () => {
   const callbacks = new Map<Element, Set<Noop>>();
   const observer = new IntersectionObserver(entries => {
