@@ -73,3 +73,13 @@ export const gen: {
     result = it.next(result.value);
   }
 }) as any;
+export const tryCatch = <e, a>(
+  tryFn: () => a,
+  catchFn: (err: unknown) => e
+): Either<e, a> => {
+  try {
+    return Right(tryFn());
+  } catch (err) {
+    return Left(catchFn(err));
+  }
+};
