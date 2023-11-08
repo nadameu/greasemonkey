@@ -243,6 +243,9 @@ importers:
       '@nadameu/pipe':
         specifier: ^2.1.2
         version: 2.1.2
+      '@nadameu/predicates':
+        specifier: workspace:^
+        version: link:../../lib/predicates
 
   userscripts/seeu-reabrir-ultimo-processo:
     dependencies:

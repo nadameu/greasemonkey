@@ -13,17 +13,33 @@ table.resultTable {
   }
 
   tr div.extendedinfo {
-    width: fit-content;
     border: none;
+    margin: 0;
+    width: auto;
   }
 
   table.form {
-    width: auto;
+    margin: 15px;
+    margin-left: auto;
+    width: 40%;
+    border-collapse: collapse;
+    border: 1px solid;
 
     td {
       width: auto;
-      border: 1px solid red;
-      padding: 0 4px;
+      padding: 0 6px;
+    }
+
+    td:nth-child(1) {
+      width: 10%;
+    }
+
+    tr.odd {
+      background: hsl(266, 25%, 86%);
+    }
+
+    tr.even {
+      background: hsl(266, 35%, 97%);
     }
   }
 }

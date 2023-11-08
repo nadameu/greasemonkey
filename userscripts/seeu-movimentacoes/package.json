@@ -14,6 +14,7 @@
   "dependencies": {
     "@nadameu/adts": "workspace:^",
     "@nadameu/handler": "workspace:^",
-    "@nadameu/pipe": "^2.1.2"
+    "@nadameu/pipe": "^2.1.2",
+    "@nadameu/predicates": "workspace:^"
   }
 }
