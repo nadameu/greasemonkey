@@ -1,3 +1,5 @@
+import { Either, isLeft } from '../either';
+
 export const thrush =
   <a>(a: a) =>
   <b>(f: (_: a) => b): b =>
@@ -13,3 +15,9 @@ export function assert(condition: any, msg?: string): asserts condition {
 }
 
 export const identity = <a>(x: a): a => x;
+
+export const tailRec = <a, b>(seed: a, f: (_: a) => Either<a, b>): b => {
+  let result = f(seed);
+  while (isLeft(result)) result = f(result.left);
+  return result.right;
+};
