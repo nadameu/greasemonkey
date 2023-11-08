@@ -39,7 +39,7 @@ export const foldLeft =
   (fa: Seq<a>): b => {
     let acc = seed,
       i = 0;
-    for (const a of fa) acc = f(acc, a, i);
+    for (const a of fa) acc = f(acc, a, i++);
     return acc;
   };
 export const traverse =
@@ -69,3 +69,4 @@ export const filter: {
   <a>(pred: (a: a, i: number) => boolean): (fa: Seq<a>) => Seq<a>;
 } = <a>(pred: (a: a, i: number) => boolean) =>
   filterMap<a, a>((a, i) => (pred(a, i) ? Just(a) : Nothing));
+export const reverse = <a>(fa: Seq<a>): Seq<a> => [...fa].reverse();
