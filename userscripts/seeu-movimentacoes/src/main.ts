@@ -13,7 +13,8 @@ import {
 import { Handler } from '@nadameu/handler';
 import { pipe } from '@nadameu/pipe';
 import * as P from '@nadameu/predicates';
-import css from './estilos.scss?inline';
+import css from './estilos-seeu.scss?inline';
+import classNames from './estilos-gm.module.scss';
 
 interface Noop {
   (): void;
@@ -63,6 +64,24 @@ export const main = () =>
           window.addEventListener('beforeunload', () => {
             for (const win of janelasAbertas.values()) {
               if (!win.closed) win.close();
+            }
+          });
+          let currentDica: HTMLElement | null = null;
+          document.addEventListener('mouseover', e => {
+            if (
+              e.target instanceof HTMLElement &&
+              e.target.matches('[data-gm-dica]')
+            ) {
+              currentDica = e.target;
+              mostrarDica(currentDica.dataset.gmDica!);
+              currentDica.addEventListener('mousemove', moverDica);
+            }
+          });
+          document.addEventListener('mouseout', e => {
+            if (currentDica && e.target === currentDica) {
+              currentDica.removeEventListener('mousemove', moverDica);
+              esconderDica();
+              currentDica = null;
             }
           });
           pipe(
@@ -251,6 +270,13 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
         T.sequence(applicativeEither),
         E.map(
           ([{ sequencial, nome }, { assinatura }, { menu, popup, link }]) => {
+            const p = document.createElement('p');
+            p.append(
+              link.textContent ?? '',
+              document.createElement('br'),
+              `Ass.: ${assinatura}`
+            );
+            link.dataset.gmDica = p.innerHTML;
             link.textContent = nome.replace(/_/g, ' ');
             const frag = document.createDocumentFragment();
             frag.append(menu, popup);
@@ -300,4 +326,60 @@ function getId(sp: string) {
     S.map(x => parseInt(x, 16)),
     S.foldLeft(0n, (acc, x) => acc * 4294967296n + BigInt(x))
   );
+}
+
+let dica: HTMLDivElement | null = null;
+function criarDica() {
+  const dica = document.createElement('div');
+  dica.hidden = true;
+  dica.className = classNames.dica!;
+  document.body.appendChild(dica);
+  return dica;
+}
+function mostrarDica(html: string) {
+  if (!dica) {
+    dica = criarDica();
+  }
+  dica.innerHTML = html;
+  dica.hidden = false;
+}
+const distanciaDoMouse = 16;
+const margemBorda = 2 * distanciaDoMouse;
+const intervalMs = 16;
+let lastTime = Date.now();
+let lastE: MouseEvent;
+let timer: number | null = null;
+function moverDica(e: MouseEvent) {
+  lastE = e;
+  const curTime = Date.now();
+  if (curTime < lastTime + intervalMs) {
+    if (timer === null) {
+      timer = window.setTimeout(() => {
+        timer = null;
+        moverDica(lastE);
+      }, intervalMs);
+    }
+    return;
+  }
+  lastTime = curTime;
+  let x = e.clientX;
+  let y = e.clientY;
+  const { width, height } = dica!.getBoundingClientRect();
+  const { width: docWidth, height: docHeight } =
+    document.documentElement.getBoundingClientRect();
+  if (x + distanciaDoMouse + width > docWidth - margemBorda) {
+    x -= distanciaDoMouse + width - window.scrollX;
+  } else {
+    x += distanciaDoMouse + window.scrollX;
+  }
+  if (y + distanciaDoMouse + height > docHeight - margemBorda) {
+    y -= distanciaDoMouse + height - window.scrollY;
+  } else {
+    y += distanciaDoMouse + window.scrollY;
+  }
+  dica!.style.left = `${x}px`;
+  dica!.style.top = `${y}px`;
+}
+function esconderDica() {
+  dica!.hidden = true;
 }
