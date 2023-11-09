@@ -1,8 +1,13 @@
+import { GM_addStyle } from '$';
 import {
   D,
   E,
+  Either,
+  Just,
   Left,
   M,
+  Maybe,
+  Nothing,
   Right,
   S,
   T,
@@ -13,14 +18,46 @@ import {
 import { Handler } from '@nadameu/handler';
 import { pipe } from '@nadameu/pipe';
 import * as P from '@nadameu/predicates';
-import css from './estilos-seeu.scss?inline';
 import classNames from './estilos-gm.module.scss';
+import cssHeader from './estilos-header.scss?inline';
+import css from './estilos-seeu.scss?inline';
 
 interface Noop {
   (): void;
 }
 
-export const main = () =>
+const alterarTamanhoCabecalho = () =>
+  pipe(
+    document,
+    D.query<HTMLFrameSetElement>('frameset'),
+    M.map(f => {
+      f.rows = '22,*';
+      return Right(void 0);
+    })
+  );
+export const main = (): Maybe<Either<string, void>> => {
+  const url = new URL(document.location.href);
+  switch (url.pathname) {
+    case '/seeu/visualizacaoProcesso.do':
+    case '/seeu/processo.do':
+    case '/seeu/processo/buscaProcesso.do':
+      return analisarTelaMovimentacoes();
+
+    case '/seeu/':
+      return alterarTamanhoCabecalho();
+
+    case '/seeu/cabecalho.jsp': {
+      GM_addStyle(cssHeader);
+      return Just(Right(void 0));
+    }
+
+    default:
+      console.debug('<SEEU - Movimentações>', 'path', url.pathname);
+      return Nothing;
+  }
+};
+
+export const analisarTelaMovimentacoes = () =>
   pipe(
     document,
     D.query('li[name="tabMovimentacoesProcesso"].currentTab'),
@@ -46,7 +83,17 @@ export const main = () =>
           for (const { link, mutationTarget } of links) {
             mut.observe(mutationTarget, node => {
               if (!(node instanceof HTMLTableElement)) return;
-              onTabelaAdicionada(node);
+              pipe(
+                onTabelaAdicionada(node),
+                E.mapLeft(err => {
+                  console.log(
+                    '<SEEU - Movimentações>',
+                    'Erro encontrado:',
+                    err
+                  );
+                }),
+                E.merge
+              );
             });
 
             const { unobserve } = obs.observe(link, () => {
@@ -54,10 +101,7 @@ export const main = () =>
               link.click();
             });
           }
-          const style = document.head.appendChild(
-            document.createElement('style')
-          );
-          style.textContent = css;
+
           const janelasAbertas = new Map<string, Window>();
           const onDocumentClick = createOnDocumentClick(janelasAbertas);
           document.addEventListener('click', onDocumentClick);
@@ -105,6 +149,7 @@ export const main = () =>
                     }
                   })
                 );
+                row.insertCell();
               }
             })
           );
@@ -112,16 +157,40 @@ export const main = () =>
             document,
             D.query('table.resultTable > colgroup'),
             M.map(g => {
-              pipe(g.children, c => {
+              g.insertAdjacentHTML('beforeend', '<col>');
+              return g;
+            }),
+            M.map(g => {
+              pipe(g.children, cols => {
                 pipe(
-                  c,
-                  S.map(c => c.removeAttribute('width'))
+                  cols,
+                  S.map((col, i) => {
+                    switch (i) {
+                      case cols.length - 3:
+                        col.setAttribute('width', '40%');
+                        break;
+                      case cols.length - 2:
+                        col.setAttribute('width', '15%');
+                        break;
+                      case cols.length - 1:
+                        col.setAttribute('width', '30%');
+                        break;
+                      default:
+                        col.removeAttribute('width');
+                        break;
+                    }
+                  })
                 );
               });
             })
           );
         })
       );
+    }),
+    M.orElse(() => Just(E.of<void, string>(void 0))),
+    M.map(either => {
+      GM_addStyle(css);
+      return either;
     })
   );
 
@@ -245,45 +314,60 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
         M.map(([, assinatura]) => ({ assinatura })),
         M.toEither(() => `Assinatura não reconhecida: ${l}.`)
       );
-      const link = pipe(
-        linha.cells[4]!.childNodes,
-        S.filter(x => !(x instanceof Text && /^\s*$/.test(x.nodeValue ?? ''))),
-        childNodes => {
-          return E.tryCatch(
-            () => {
-              P.assert(
-                P.isTuple(
-                  P.isInstanceOf(HTMLImageElement),
-                  P.isInstanceOf(HTMLDivElement),
-                  P.isInstanceOf(HTMLAnchorElement)
-                )(childNodes)
-              );
-              const [menu, popup, link] = childNodes;
-              return { menu, popup, link };
-            },
-            () => `Link para documento não reconhecido: ${l}.`
-          );
-        }
+      const link = pipe(linha.cells[4]!, celula =>
+        pipe(
+          celula,
+          c => c.childNodes,
+          S.filter(
+            x => !(x instanceof Text && /^\s*$/.test(x.nodeValue ?? ''))
+          ),
+          E.eitherBool(
+            P.isTuple(
+              P.isInstanceOf(HTMLImageElement),
+              P.isInstanceOf(HTMLDivElement),
+              P.isInstanceOf(HTMLAnchorElement)
+            )
+          ),
+          E.map(childNodes => {
+            const [menu, popup, link] = childNodes;
+            return { menu, popup, link };
+          }),
+          E.orElse(() =>
+            pipe(
+              celula,
+              D.query('strike'),
+              M.flatMap(D.query<HTMLAnchorElement>('a[href]')),
+              M.map(link => {
+                link.classList.add(classNames.struck!);
+                return link;
+              }),
+              M.map(link => ({ menu: '', popup: '', link })),
+              M.toEither(() => null)
+            )
+          ),
+          E.mapLeft(() => `Link para documento não reconhecido: ${l}.`)
+        )
       );
       const result = pipe(
         tuple(sequencialNome, assinatura, link),
         T.sequence(applicativeEither),
         E.map(
           ([{ sequencial, nome }, { assinatura }, { menu, popup, link }]) => {
-            const p = document.createElement('p');
-            p.append(
-              link.textContent ?? '',
-              document.createElement('br'),
-              `Ass.: ${assinatura}`
-            );
-            link.dataset.gmDica = p.innerHTML;
+            link.title = `${link.title?.trim() ?? ''}\n\n${
+              link.textContent?.trim() ?? ''
+            }\nAss.: ${assinatura}`;
             link.textContent = nome.replace(/_/g, ' ');
             const frag = document.createDocumentFragment();
             frag.append(menu, popup);
-            const url = new URL(link.href);
-            const tjParam = url.searchParams.get('_tj')!;
-            const id = getId(tjParam);
-            link.dataset.gmDocLink = id.toString();
+            pipe(
+              link.href,
+              href => new URL(href),
+              u => M.fromNullable(u.searchParams.get('_tj')),
+              M.map(getId),
+              M.map(id => {
+                link.dataset.gmDocLink = id.toString();
+              })
+            );
             return [sequencial, frag, link];
           }
         )

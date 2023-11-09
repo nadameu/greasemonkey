@@ -1,6 +1,13 @@
+/*
 div#content {
   margin: 0 auto;
   max-width: 1280px;
+}
+*/
+
+td a.link {
+  display: inline-block;
+  background-position-y: 0.5em;
 }
 
 table.resultTable {
@@ -11,8 +18,8 @@ table.resultTable {
   }
 
   table.form {
-    margin: 15px;
-    margin-left: auto;
+    margin: 0 0 4px;
+    width: calc(100% - 4px);
     border-collapse: collapse;
     border: 1px solid;
 
@@ -43,11 +50,6 @@ table.resultTable {
 
     tr.even {
       background: hsl(266, 35%, 97%);
-    }
-
-    a.link {
-      display: inline-block;
-      background-position-y: 0.5em;
     }
   }
 }

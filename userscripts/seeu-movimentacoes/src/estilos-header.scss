@@ -1,0 +1,21 @@
+html > body {
+  div,
+  a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 !important;
+    float: none !important;
+  }
+  div#headerContainer {
+    height: 22px;
+
+    img {
+      height: 20px;
+    }
+
+    .btnAltoContraste img {
+      height: 16px;
+    }
+  }
+}
