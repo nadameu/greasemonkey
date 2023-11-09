@@ -13,8 +13,7 @@ export const ap = /* #__PURE__ */ derive.ap<EitherF>({ of, flatMap });
 export const lift2 = /* #__PURE__ */ derive.lift2<EitherF>({ ap, map });
 export const mapLeft = <e, e2>(
   f: (_: e) => e2
-): (<a>(fa: Either<e, a>) => Either<e2, a>) =>
-  orElse<e2, e, never>(x => Left(f(x)));
+): (<a = never>(fa: Either<e, a>) => Either<e2, a>) => orElse(x => Left(f(x)));
 export const toMaybe = <e, a>(either: Either<e, a>): Maybe<a> =>
   isLeft(either) ? Nothing : Just(either.right);
 
@@ -30,19 +29,20 @@ export const merge = <e, a>(fa: Either<e, a>): e | a =>
   isLeft(fa) ? fa.left : fa.right;
 
 export const getOrElse =
-  <e, b>(whenLeft: (left: e) => b) =>
-  <a>(fa: Either<e, a>): a | b =>
+  <e, b = never>(whenLeft: (left: e) => b) =>
+  <a = never>(fa: Either<e, a>): a | b =>
     isLeft(fa) ? whenLeft(fa.left) : fa.right;
 
-export const getOr = <b>(defaultValue: b) => getOrElse(() => defaultValue);
+export const getOr = <a = never, b = a>(defaultValue: b) =>
+  getOrElse(() => defaultValue);
 
 export const orElse =
-  <e2, e, b>(f: (_: e) => Either<e2, b>) =>
+  <e, e2 = never, b = never>(f: (_: e) => Either<e2, b>) =>
   <a>(fa: Either<e, a>): Either<e2, a | b> =>
     isRight(fa) ? fa : f(fa.left);
 
 export const or =
-  <c, d>(alternative: Either<c, d>) =>
+  <c = never, d = never>(alternative: Either<c, d>) =>
   <a, b>(fa: Either<a, b>): Either<a | c, b | d> =>
     isRight(fa) ? fa : alternative;
 
