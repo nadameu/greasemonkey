@@ -4,6 +4,7 @@ import * as pkg from './package.json';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  build: { outDir: '../..', emptyOutDir: false },
   plugins: [
     monkey({
       entry: 'src/index.ts',
