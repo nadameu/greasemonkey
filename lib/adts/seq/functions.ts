@@ -1,6 +1,13 @@
 import { identity } from '../function';
 import { Just, Maybe, Nothing, isJust } from '../maybe';
-import { Applicative, Kind, Type, derive } from '../typeclasses';
+import {
+  Applicative,
+  Kind,
+  Monoid,
+  MonoidK,
+  Type,
+  derive,
+} from '../typeclasses';
 import { Seq } from './definitions';
 import { Concat, SeqF } from './internal';
 
@@ -42,6 +49,17 @@ export const foldLeft =
     for (const a of fa) acc = f(acc, a, i++);
     return acc;
   };
+export const foldMap: {
+  <F extends Kind>(
+    M: MonoidK<F>
+  ): <a, b, e = never>(
+    f: (a: a, i: number) => Type<F, e, b>
+  ) => (fa: Seq<a>) => Type<F, e, b>;
+  <b>(M: Monoid<b>): <a>(f: (a: a, i: number) => b) => (fa: Seq<a>) => b;
+} =
+  <b>(M: Monoid<b>) =>
+  <a>(f: (a: a, i: number) => b) =>
+    foldLeft<a, b>(M.empty(), (bs, a, i) => M.concat(bs, f(a, i)));
 export const traverse =
   <F extends Kind>(M: Applicative<F>) =>
   <a, b, e>(f: (a: a, i: number) => Type<F, e, b>) =>
