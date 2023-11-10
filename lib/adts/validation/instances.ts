@@ -1,12 +1,11 @@
-import { E, Left, Right, isLeft } from '../either';
+import { E, Either, Left, Right, isLeft } from '../either';
 import { Applicative, Kind, Semigroup, SemigroupK, Type } from '../typeclasses';
-import { Validation } from './definitions';
 
 interface ValidationF<e> extends Kind {
-  type: Validation<e, this['a']>;
+  type: Either<e, this['a']>;
 }
 interface ValidationKF<F extends Kind> extends Kind {
-  type: Validation<Type<F, never, this['e']>, this['a']>;
+  type: Either<Type<F, never, this['e']>, this['a']>;
 }
 
 export const makeApplicativeValidation: {
