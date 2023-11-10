@@ -157,31 +157,42 @@ export const analisarTelaMovimentacoes = () =>
             document,
             D.query('table.resultTable > colgroup'),
             M.map(g => {
-              g.insertAdjacentHTML('beforeend', '<col>');
+              g.appendChild(document.createElement('col'));
               return g;
             }),
             M.map(g => {
               pipe(g.children, cols => {
                 pipe(
                   cols,
+                  S.filter(P.isInstanceOf(HTMLElement)),
                   S.map((col, i) => {
+                    col.removeAttribute('width');
                     switch (i) {
                       case cols.length - 3:
-                        col.setAttribute('width', '40%');
+                        col.style.width = '40%';
                         break;
                       case cols.length - 2:
-                        col.setAttribute('width', '15%');
+                        col.style.width = '15%';
                         break;
                       case cols.length - 1:
-                        col.setAttribute('width', '30%');
-                        break;
-                      default:
-                        col.removeAttribute('width');
+                        col.style.width = '30%';
                         break;
                     }
                   })
                 );
               });
+            })
+          );
+          pipe(
+            document,
+            D.query<HTMLTableRowElement>('table.resultTable > thead > tr'),
+            M.map(row => {
+              const th = document.createElement('th');
+              th.textContent = 'Documentos';
+              row.appendChild(th);
+              for (const th of row.cells) {
+                th.removeAttribute('style');
+              }
             })
           );
         })

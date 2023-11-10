@@ -5,16 +5,66 @@ div#content {
 }
 */
 
+table.resultTable tr {
+  &[id*=',JUIZ,'] {
+    a.link {
+      padding: 0 5px;
+      border-radius: 5px;
+      background-color: #252;
+      color: #fff;
+    }
+    td {
+      color: #252;
+    }
+  }
+  &[id*=',SERVIDOR,'] {
+    a.link,
+    td {
+      color: #252;
+    }
+  }
+  &[id*=',PROMOTOR,'] {
+    a.link,
+    td {
+      color: #337;
+    }
+  }
+  &[id*=',ADVOGADO,'] {
+    a.link,
+    td {
+      color: #622;
+    }
+  }
+  &[id*=',OUTROS,'] {
+    a.link,
+    td {
+      color: hsl(266, 25%, 30%);
+    }
+  }
+}
+
 td a.link {
   display: inline-block;
   background-position-y: 0.5em;
 }
 
 table.resultTable {
+  thead > tr > th {
+    padding: 0 5px;
+  }
+
   tr div.extendedinfo {
     border: none;
     margin: 0;
     width: auto;
+  }
+
+  tr.odd {
+    background-color: #e0e6f0;
+  }
+
+  tr.even {
+    background-color: #f5f7fa;
   }
 
   table.form {
@@ -45,11 +95,11 @@ table.resultTable {
     }
 
     tr.odd {
-      background: hsl(266, 25%, 86%);
+      background: hsl(266, 25%, 87%);
     }
 
     tr.even {
-      background: hsl(266, 35%, 97%);
+      background: hsl(266, 35%, 94%);
     }
   }
 }
