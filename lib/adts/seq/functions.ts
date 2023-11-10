@@ -60,6 +60,12 @@ export const foldMap: {
   <b>(M: Monoid<b>) =>
   <a>(f: (a: a, i: number) => b) =>
     foldLeft<a, b>(M.empty(), (bs, a, i) => M.concat(bs, f(a, i)));
+export const fold: {
+  <F extends Kind>(
+    M: MonoidK<F>
+  ): <a, e = never>(fa: Seq<Type<F, e, a>>) => Type<F, e, a>;
+  <a>(M: Monoid<a>): (fa: Seq<a>) => a;
+} = <a>(M: Monoid<a>) => foldMap(M)<a>(identity);
 export const traverse =
   <F extends Kind>(M: Applicative<F>) =>
   <a, b, e>(f: (a: a, i: number) => Type<F, e, b>) =>
