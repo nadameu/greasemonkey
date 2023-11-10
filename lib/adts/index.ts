@@ -5,6 +5,7 @@ export * from './maybe';
 export * from './number';
 export * from './object';
 export * from './seq';
+export * from './string';
 export * from './tuple';
 export * from './typeclasses';
 export * from './validation';
