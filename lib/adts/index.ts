@@ -7,3 +7,4 @@ export * from './object';
 export * from './seq';
 export * from './tuple';
 export * from './typeclasses';
+export * from './validation';
