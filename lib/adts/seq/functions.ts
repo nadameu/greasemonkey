@@ -88,3 +88,5 @@ export const filter: {
 } = <a>(pred: (a: a, i: number) => boolean) =>
   filterMap<a, a>((a, i) => (pred(a, i) ? Just(a) : Nothing));
 export const reverse = <a>(fa: Seq<a>): Seq<a> => [...fa].reverse();
+export const toNonEmptyArray = <a>(seq: Seq<a>): Maybe<[a, ...a[]]> =>
+  seq.length === 0 ? Nothing : Just([...seq] as [a, ...a[]]);
