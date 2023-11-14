@@ -1,19 +1,34 @@
+import { constant, identity } from '../function';
 import { Just, Maybe, Nothing } from '../maybe';
 import { derive } from '../typeclasses';
 import { Either, Left, Right, isLeft, isRight } from './definitions';
 import { EitherF } from './internal';
 
 export const of: <a, e = never>(value: a) => Either<e, a> = Right;
+export const match =
+  <e, b, a, b2>(f: (_: e) => b, g: (_: a) => b2) =>
+  (fa: Either<e, a>): b | b2 =>
+    isLeft(fa) ? f(fa.left) : g(fa.right);
+export const flatMapBoth: <e, e2, a, b>(
+  f: (_: e) => Either<e2, b>,
+  g: (_: a) => Either<e2, b>
+) => (fa: Either<e, a>) => Either<e2, b> = match;
 export const flatMap =
   <a, b, e2>(f: (a: a) => Either<e2, b>) =>
-  <e>(fa: Either<e, a>): Either<e | e2, b> =>
-    isLeft(fa) ? fa : f(fa.right);
+  <e>(fa: Either<e, a>) =>
+    isRight(fa) ? f(fa.right) : fa;
+export const mapBoth = <e, e2, a, b>(f: (_: e) => e2, g: (_: a) => b) =>
+  flatMapBoth(
+    (e: e) => Left(f(e)),
+    (a: a) => Right(g(a))
+  );
 export const map = /* #__PURE__ */ derive.map<EitherF>({ of, flatMap });
 export const ap = /* #__PURE__ */ derive.ap<EitherF>({ of, flatMap });
 export const lift2 = /* #__PURE__ */ derive.lift2<EitherF>({ ap, map });
-export const mapLeft = <e, e2>(
-  f: (_: e) => e2
-): (<a = never>(fa: Either<e, a>) => Either<e2, a>) => orElse(x => Left(f(x)));
+export const mapLeft =
+  <e, e2>(f: (_: e) => e2) =>
+  <a = never>(fa: Either<e, a>): Either<e2, a> =>
+    isLeft(fa) ? Left(f(fa.left)) : fa;
 export const toMaybe = <e, a>(either: Either<e, a>): Maybe<a> =>
   isLeft(either) ? Nothing : Just(either.right);
 
