@@ -21,3 +21,12 @@ export const tailRec = <a, b>(seed: a, f: (_: a) => Either<a, b>): b => {
   while (isLeft(result)) result = f(result.left);
   return result.right;
 };
+
+export const constant =
+  <a>(
+    a: a
+  ): {
+    (...args: any[]): a;
+  } =>
+  <b>(b: b): a =>
+    a;
