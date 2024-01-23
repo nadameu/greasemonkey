@@ -2,7 +2,7 @@
 // @name         seeu-switch
 // @name:pt-BR   SEEU - Alterar atuação
 // @namespace    nadameu.com.br
-// @version      1.1.0
+// @version      1.2.0
 // @author       nadameu
 // @description  SEEU - Alterar a área de atuação no SEEU a partir da aba "Informações Gerais" de um processo
 // @match        https://seeu.pje.jus.br/seeu/visualizacaoProcesso.do?*
@@ -33,7 +33,7 @@
     });
   }
   const css =
-    '#gm-seeu-switch-button{background:hsl(266,25%,90%);padding:2px 1ex;border:1px solid #204;border-radius:4px;box-shadow:0 2px 4px #00000040;transform:translateY(-2px);transition:transform 60ms}#gm-seeu-switch-button:active,#gm-seeu-switch-button:disabled{box-shadow:0 0 #00000040;transform:translateY(0)}#gm-seeu-switch-button:disabled{background:hsl(266,5%,90%);color:#666;border-color:#666}\n';
+    '#gm-seeu-switch-button{background:hsl(266,25%,35%);margin:0}#gm-seeu-switch-button:disabled{background:hsl(266,5%,35%);color:#bbb}\n';
   const STYLE_ID = 'gm-seeu-switch-style';
   function adicionarEstilos() {
     const style =
