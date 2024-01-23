@@ -85,11 +85,6 @@ interface MatchTagged<T extends Tag<typeof _tag, ValidTag>, R>
   ): MatchResult<Exclude<T, Tag<typeof _tag, K>>, R | R2>;
 }
 
-const enum Matching {
-  NOT_FOUND = 'MatchNotFound',
-  FOUND = 'MatchFound',
-}
-
 export const match = <T>(obj: T): MatchResult<T, never> => {
   let status: TaggedWithUnion<
     'tag',
