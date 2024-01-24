@@ -19,7 +19,7 @@ importers:
         version: link:lib/userscript
       '@preact/preset-vite':
         specifier: ^2.6.0
-        version: 2.6.0(@babel/core@7.23.2)(preact@10.18.1)(vite@4.5.1)
+        version: 2.6.0(@babel/core@7.23.2)(preact@10.18.1)(vite@4.5.2)
       '@rollup/plugin-babel':
         specifier: ^6.0.4
         version: 6.0.4(@babel/core@7.23.2)(@types/babel__core@7.20.3)(rollup@4.1.4)
@@ -75,11 +75,11 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2
       vite:
-        specifier: ^4.5.1
-        version: 4.5.1(@types/node@20.8.9)(sass@1.69.5)
+        specifier: ^4.5.2
+        version: 4.5.2(@types/node@20.8.9)(sass@1.69.5)
       vite-plugin-monkey:
         specifier: ^3.5.0
-        version: 3.5.0(vite@4.5.1)
+        version: 3.5.0(vite@4.5.2)
       vitest:
         specifier: ^0.34.6
         version: 0.34.6(@vitest/ui@0.34.6)(sass@1.69.5)
@@ -252,9 +252,6 @@ importers:
       '@nadameu/create-element':
         specifier: workspace:^
         version: link:../../lib/create-element
-      '@nadameu/match':
-        specifier: workspace:^
-        version: link:../../lib/match
 
   userscripts/seeu-switch:
     dependencies:
@@ -1746,7 +1743,7 @@ packages:
     resolution: {integrity: sha512-C16M+IYz0rgRhWZdCmK+h58JMv8vijAA61gmz2rspCSwKwzBebpdcsiUmwrtJRdphuY30i6BSLEOP8ppbNLyLg==}
     dev: true
 
-  /@preact/preset-vite@2.6.0(@babel/core@7.23.2)(preact@10.18.1)(vite@4.5.1):
+  /@preact/preset-vite@2.6.0(@babel/core@7.23.2)(preact@10.18.1)(vite@4.5.2):
     resolution: {integrity: sha512-5nztNzXbCpqyVum/K94nB2YQ5PTnvWdz4u7/X0jc8+kLyskSSpkNUxLQJeI90zfGSFIX1Ibj2G2JIS/mySHWYQ==}
     peerDependencies:
       '@babel/core': 7.x
@@ -1755,13 +1752,13 @@ packages:
       '@babel/core': 7.23.2
       '@babel/plugin-transform-react-jsx': 7.22.15(@babel/core@7.23.2)
       '@babel/plugin-transform-react-jsx-development': 7.22.5(@babel/core@7.23.2)
-      '@prefresh/vite': 2.4.1(preact@10.18.1)(vite@4.5.1)
+      '@prefresh/vite': 2.4.1(preact@10.18.1)(vite@4.5.2)
       '@rollup/pluginutils': 4.2.1
       babel-plugin-transform-hook-names: 1.0.2(@babel/core@7.23.2)
       debug: 4.3.4
       kolorist: 1.8.0
       resolve: 1.22.8
-      vite: 4.5.1(@types/node@20.8.9)(sass@1.69.5)
+      vite: 4.5.2(@types/node@20.8.9)(sass@1.69.5)
     transitivePeerDependencies:
       - preact
       - supports-color
@@ -1783,7 +1780,7 @@ packages:
     resolution: {integrity: sha512-KtC/fZw+oqtwOLUFM9UtiitB0JsVX0zLKNyRTA332sqREqSALIIQQxdUCS1P3xR/jT1e2e8/5rwH6gdcMLEmsQ==}
     dev: true
 
-  /@prefresh/vite@2.4.1(preact@10.18.1)(vite@4.5.1):
+  /@prefresh/vite@2.4.1(preact@10.18.1)(vite@4.5.2):
     resolution: {integrity: sha512-vthWmEqu8TZFeyrBNc9YE5SiC3DVSzPgsOCp/WQ7FqdHpOIJi7Z8XvCK06rBPOtG4914S52MjG9Ls22eVAiuqQ==}
     peerDependencies:
       preact: ^10.4.0
@@ -1795,7 +1792,7 @@ packages:
       '@prefresh/utils': 1.2.0
       '@rollup/pluginutils': 4.2.1
       preact: 10.18.1
-      vite: 4.5.1(@types/node@20.8.9)(sass@1.69.5)
+      vite: 4.5.2(@types/node@20.8.9)(sass@1.69.5)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -4529,7 +4526,7 @@ packages:
       mlly: 1.4.2
       pathe: 1.1.1
       picocolors: 1.0.0
-      vite: 4.5.1(@types/node@20.8.9)(sass@1.69.5)
+      vite: 4.5.2(@types/node@20.8.9)(sass@1.69.5)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -4541,7 +4538,7 @@ packages:
       - terser
     dev: true
 
-  /vite-plugin-monkey@3.5.0(vite@4.5.1):
+  /vite-plugin-monkey@3.5.0(vite@4.5.2):
     resolution: {integrity: sha512-NS3qiLvnzyRPsbfanbnzMGk33rCmN1iGs2RkGykl7H5aCwZhpb7nyUSOy3CD8haP8rqTQ9BS23BLprV5MRIy/Q==}
     engines: {node: ^14.18 || >= 16, pnpm: '>=6'}
     peerDependencies:
@@ -4559,13 +4556,13 @@ packages:
       open: 9.1.0
       picocolors: 1.0.0
       systemjs: 6.14.2
-      vite: 4.5.1(@types/node@20.8.9)(sass@1.69.5)
+      vite: 4.5.2(@types/node@20.8.9)(sass@1.69.5)
     transitivePeerDependencies:
       - supports-color
     dev: true
 
-  /vite@4.5.1(@types/node@20.8.9)(sass@1.69.5):
-    resolution: {integrity: sha512-AXXFaAJ8yebyqzoNB9fu2pHoo/nWX+xZlaRwoeYUxEqBO+Zj4msE5G+BhGBll9lYEKv9Hfks52PAF2X7qDYXQA==}
+  /vite@4.5.2(@types/node@20.8.9)(sass@1.69.5):
+    resolution: {integrity: sha512-tBCZBNSBbHQkaGyhGCDUGqeo2ph8Fstyp6FMSvTtsXeZSPpSMGlviAOav2hxVTqFcx8Hj/twtWKsMJXNY0xI8w==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
     peerDependencies:
@@ -4654,7 +4651,7 @@ packages:
       strip-literal: 1.3.0
       tinybench: 2.5.1
       tinypool: 0.7.0
-      vite: 4.5.1(@types/node@20.8.9)(sass@1.69.5)
+      vite: 4.5.2(@types/node@20.8.9)(sass@1.69.5)
       vite-node: 0.34.6(@types/node@20.8.9)(sass@1.69.5)
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
