@@ -3,7 +3,7 @@
   "gm_name": "SEEU - Reabrir último processo",
   "author": "nadameu",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,6 @@
     "format": "prettier --write ../../seeu-reabrir-ultimo-processo.user.js"
   },
   "dependencies": {
-    "@nadameu/create-element": "workspace:^",
-    "@nadameu/match": "workspace:^"
+    "@nadameu/create-element": "workspace:^"
   }
 }

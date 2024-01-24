@@ -261,6 +261,9 @@ importers:
       '@nadameu/create-element':
         specifier: workspace:^
         version: link:../../lib/create-element
+      '@nadameu/expect-unreachable':
+        specifier: workspace:^
+        version: link:../../lib/expect-unreachable
 
   userscripts/separar-em-blocos:
     dependencies:

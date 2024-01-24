@@ -13,6 +13,7 @@
     "format": "prettier --write ../../seeu-switch.user.js"
   },
   "dependencies": {
-    "@nadameu/create-element": "workspace:^"
+    "@nadameu/create-element": "workspace:^",
+    "@nadameu/expect-unreachable": "workspace:^"
   }
 }

@@ -6,14 +6,29 @@
 // @author       nadameu
 // @description  SEEU - Alterar a área de atuação no SEEU a partir da aba "Informações Gerais" de um processo
 // @match        https://seeu.pje.jus.br/seeu/visualizacaoProcesso.do?*
+// @grant        GM_addStyle
 // ==/UserScript==
+
+(t => {
+  if (typeof GM_addStyle == 'function') {
+    GM_addStyle(t);
+    return;
+  }
+  const o = document.createElement('style');
+  (o.textContent = t), document.head.append(o);
+})(
+  ' ._btn_x8tis_1{background:hsl(266,25%,90%);padding:2px 1ex;border:1px solid #204;border-radius:4px;box-shadow:0 2px 4px #00000040;transform:translateY(-2px);transition:transform 60ms}._btn_x8tis_1:active,._btn_x8tis_1:disabled{box-shadow:0 0 #00000040;transform:translateY(0)}._btn_x8tis_1:disabled{background:hsl(266,5%,90%);color:#666;border-color:#666} '
+);
 
 (function () {
   'use strict';
 
-  const ABA_DIVERSA = 1;
-  const MESMO_JUIZO = 2;
-  const BOTAO_ADICIONADO = 3;
+  const gm_name = 'SEEU - Alterar atuação';
+  class Info {
+    constructor(message) {
+      this.message = message;
+    }
+  }
   function createElement(tag, props = null, ...children) {
     const element = document.createElement(tag);
     for (const [key, value] of Object.entries(props ?? {})) {
@@ -32,15 +47,6 @@
       xhr.send(null);
     });
   }
-  const css =
-    '#gm-seeu-switch-button{background:hsl(266,25%,35%);margin:0}#gm-seeu-switch-button:disabled{background:hsl(266,5%,35%);color:#bbb}\n';
-  const STYLE_ID = 'gm-seeu-switch-style';
-  function adicionarEstilos() {
-    const style =
-      document.getElementById(STYLE_ID) ??
-      document.head.appendChild(createElement('style', { id: STYLE_ID }));
-    style.textContent = css;
-  }
   class AssertionError extends Error {
     name = 'AssertionError';
     constructor(message) {
@@ -52,11 +58,15 @@
     if (typeof message === 'string') throw new AssertionError(message);
     throw message();
   }
+  const btn = '_btn_x8tis_1';
+  const classes = {
+    btn,
+  };
   function main() {
     const aba = document.querySelector(
       'li[name="tabDadosProcesso"].currentTab'
     );
-    if (!aba) return ABA_DIVERSA;
+    if (!aba) return;
     const labels = Array.from(
       document.querySelectorAll('#includeContent td.labelRadio > label')
     ).filter(x => x.textContent === 'Juízo:');
@@ -74,7 +84,8 @@
     assert(juizoProcesso !== '', 'Juízo do processo desconhecido.');
     const areaAtual = document.querySelector('#areaatuacao')?.textContent ?? '';
     assert(areaAtual !== '', 'Área de atuação atual desconhecida.');
-    if (areaAtual === juizoProcesso) return MESMO_JUIZO;
+    if (areaAtual === juizoProcesso)
+      return new Info('Botão não adicionado - mesmo juízo');
     const linkAlterar = document.querySelector('#alterarAreaAtuacao');
     assert(
       linkAlterar instanceof HTMLAnchorElement,
@@ -88,9 +99,8 @@
       'Link para alteração da área de atuação não reconhecido.'
     );
     const urlAlterar = match[1];
-    adicionarEstilos();
     const button = createElement('input', {
-      id: 'gm-seeu-switch-button',
+      className: classes.btn,
       type: 'button',
       value: 'Alternar para esta área de atuação',
     });
@@ -115,7 +125,6 @@
         });
     });
     td.append(' ', button);
-    return BOTAO_ADICIONADO;
   }
   async function alternar(url, area) {
     const doc = await XHR(url);
@@ -130,31 +139,13 @@
     document.body.appendChild(link);
     link.click();
   }
-  const gm_name = 'SEEU - Alterar atuação';
   const HEADER = `<${gm_name}>`;
-  const MENSAGENS = {
-    [ABA_DIVERSA]: 'Aba diversa.',
-    [MESMO_JUIZO]: 'Mesmo juízo.',
-    [BOTAO_ADICIONADO]: 'Botão adicionado.',
-  };
   try {
-    const result = main();
-    switch (result) {
-      case ABA_DIVERSA:
-      case MESMO_JUIZO:
-      case BOTAO_ADICIONADO:
-        console.info(HEADER, MENSAGENS[result]);
-        break;
-      default:
-        logarErro(
-          new Error(`Resultado inesperado: ${JSON.stringify(result)}.`)
-        );
-        break;
+    const resultado = main();
+    if (resultado instanceof Info) {
+      console.info(HEADER, resultado.message);
     }
   } catch (err) {
-    logarErro(err);
-  }
-  function logarErro(err) {
     console.group(HEADER);
     console.error(err);
     console.groupEnd();

@@ -4,21 +4,9 @@
 // @namespace   nadameu.com.br
 // @version     1.0.0
 // @author      nadameu
-// @match       https://seeu.pje.jus.br/seeu/*
-// @grant       GM_addStyle
-// @grant       unsafeWindow
+// @match       https://seeu.pje.jus.br/seeu/usuario/areaAtuacao.do?*
+// @match       https://seeu.pje.jus.br/seeu/historicoProcessosRecursos.do?actionType=listar
 // ==/UserScript==
-
-(o => {
-  if (typeof GM_addStyle == 'function') {
-    GM_addStyle(o);
-    return;
-  }
-  const t = document.createElement('style');
-  (t.textContent = o), document.head.append(t);
-})(
-  ' ._botao_ko9cf_1{background:hsl(266,25%,90%);padding:1px 1ex;margin-right:4ch;font-size:.9em;border:1px solid #204;border-radius:4px;box-shadow:0 2px 4px #00000040;transform:translateY(0);transition:transform 60ms}._botao_ko9cf_1:active,._botao_ko9cf_1:disabled{box-shadow:0 0 #00000040;transform:translateY(2px)}._botao_ko9cf_1:disabled{background:hsl(266,5%,90%);color:#666;border-color:#666} '
-);
 
 (function () {
   'use strict';
@@ -31,82 +19,17 @@
     element.append(...children);
     return element;
   }
-  function createTaggedUnion(definitions, tagName = 'tag') {
-    const ctors = {};
-    for (const tag of Object.getOwnPropertyNames(definitions).concat(
-      Object.getOwnPropertySymbols(definitions)
-    )) {
-      if (tag === 'match') throw new Error('Invalid tag: "match".');
-      const f = definitions[tag];
-      if (f === null) {
-        ctors[tag] = { [tagName]: tag };
-      } else {
-        ctors[tag] = (...args) => {
-          const obj = f(...args);
-          obj[tagName] = tag;
-          return obj;
-        };
-      }
-    }
-    ctors.match = matchBy(tagName);
-    return ctors;
-  }
-  function matchBy(tagName) {
-    return (obj, matchers, otherwise) => {
-      if (
-        (typeof obj !== 'object' && typeof obj !== 'function') ||
-        obj === null
-      )
-        throw new Error(
-          `${Object.prototype.toString
-            .call(obj)
-            .slice('[object '.length, -1)
-            .toLowerCase()} is not a valid object.`
-        );
-      const tag = obj[tagName];
-      if (tag === void 0)
-        throw new Error(
-          `Object does not have a valid "${String(tagName)}" property.`
-        );
-      const fn = matchers[tag] ?? otherwise ?? matchNotFound;
-      return fn(obj);
-    };
-    function matchNotFound(obj) {
-      throw new Error(`Not matched: "${obj[tagName]}".`);
-    }
-  }
   const name = 'seeu-reabrir-ultimo-processo';
   const gm_name = 'SEEU - Reabrir último processo';
-  const botao = '_botao_ko9cf_1';
-  const styles = {
-    botao,
-  };
-  const Resultado = createTaggedUnion({
-    SemLink: null,
-    UrlAlterado: null,
-    ErroDeRede: erro => ({ erro }),
-    Ok: null,
-  });
-  const PREFIX = `<${gm_name}>`;
-  const logInfo = (...args) => console.info(PREFIX, ...args);
-  const logErro = (...args) => console.error(PREFIX, ...args);
-  const URL_RE = /'\/seeu\/historicoProcessosRecursos\.do\?actionType=listar'/;
-  handleResultado(main());
-  function handleResultado(resultado) {
-    Resultado.match(resultado, {
-      SemLink: () => {
-        logInfo('Sem link.');
-      },
-      UrlAlterado: () => {
-        logErro('URL alterado.');
-      },
-      ErroDeRede: erro => {
-        logErro(erro);
-      },
-      Ok: () => {
-        logInfo('Botão adicionado.');
-      },
-    });
+  const styles =
+    '#gm-seeu-reabrir__button{background:hsl(266,25%,35%);border-radius:50%;padding:.4rem;margin:auto 8px}\n';
+  const LOG_PREFIX = `<${gm_name}>`;
+  const LOCAL_STORAGE_VALUE = 'REABRIR_ULTIMO';
+  const resultado = main();
+  if (resultado && resultado instanceof Error) {
+    console.group(LOG_PREFIX);
+    console.error(resultado);
+    console.groupEnd();
   }
   function main() {
     if (
@@ -114,44 +37,34 @@
         /^https:\/\/seeu\.pje\.jus\.br\/seeu\/historicoProcessosRecursos\.do\?actionType=listar$/
       )
     ) {
-      if (window.localStorage.getItem(name) === 'REABRIR_ULTIMO') {
+      if (window.localStorage.getItem(name) === LOCAL_STORAGE_VALUE) {
         window.localStorage.removeItem(name);
         const links = document.querySelectorAll(
           'table.resultTable a.link[href^="/seeu/historicoProcessosRecursos.do?"]'
         );
-        if (links.length === 0) return Resultado.SemLink;
+        if (links.length === 0)
+          return new Error('Não há processos no histórico.');
         links[0].click();
       }
-      return Resultado.SemLink;
+      return;
     }
-    if (!unsafeWindow.openDialogHistoricoProcessosRecursos)
-      return Resultado.SemLink;
-    if (
-      !URL_RE.test(unsafeWindow.openDialogHistoricoProcessosRecursos.toString())
-    )
-      return Resultado.UrlAlterado;
-    const link = document.querySelector(
-      '#userinfo #shortcuts > a#history.shortcuts'
+    const header = document.querySelector('seeu-header');
+    if (!header || !header.shadowRoot)
+      return new Error('Cabeçalho não encontrado.');
+    header.shadowRoot.appendChild(createElement('style', {}, styles));
+    const link = header.shadowRoot.querySelector(
+      'seeu-icon[name="mdi:history"]'
     );
-    if (
-      link &&
-      link.getAttribute('href') ===
-        "javascript: openDialogHistoricoProcessosRecursos('');"
-    ) {
-      const botao2 = createElement(
-        'button',
-        { type: 'button', className: styles.botao },
-        'Reabrir último processo'
-      );
-      botao2.addEventListener('click', evt => {
-        evt.preventDefault();
-        window.localStorage.setItem(name, 'REABRIR_ULTIMO');
-        link.click();
-      });
-      link.parentElement.insertAdjacentElement('afterbegin', botao2);
-      return Resultado.Ok;
-    } else {
-      return Resultado.SemLink;
-    }
+    if (!link) return new Error('Link não encontrado.');
+    const botao = link.cloneNode(true);
+    botao.id = 'gm-seeu-reabrir__button';
+    botao.setAttribute('name', 'mdi:reload');
+    botao.dataset.tooltip = 'Reabrir último processo';
+    botao.addEventListener('click', evt => {
+      evt.preventDefault();
+      window.localStorage.setItem(name, LOCAL_STORAGE_VALUE);
+      link.click();
+    });
+    link.parentElement.insertBefore(botao, link);
   }
 })();

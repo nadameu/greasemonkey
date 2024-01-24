@@ -1,17 +1,12 @@
 import { h } from '@nadameu/create-element';
-import {
-  ABA_DIVERSA,
-  BOTAO_ADICIONADO,
-  MESMO_JUIZO,
-  ResultType,
-} from './ResultType';
+import { Info } from './Info';
 import { XHR } from './XHR';
-import { adicionarEstilos } from './adicionarEstilos';
 import { assert } from './assert';
+import classes from './estilos.module.scss';
 
-export function main(): ResultType {
+export function main(): Error | Info | void {
   const aba = document.querySelector('li[name="tabDadosProcesso"].currentTab');
-  if (!aba) return ABA_DIVERSA;
+  if (!aba) return;
   const labels = Array.from(
     document.querySelectorAll('#includeContent td.labelRadio > label')
   ).filter(x => x.textContent === 'Juízo:');
@@ -29,7 +24,8 @@ export function main(): ResultType {
   assert(juizoProcesso !== '', 'Juízo do processo desconhecido.');
   const areaAtual = document.querySelector('#areaatuacao')?.textContent ?? '';
   assert(areaAtual !== '', 'Área de atuação atual desconhecida.');
-  if (areaAtual === juizoProcesso) return MESMO_JUIZO;
+  if (areaAtual === juizoProcesso)
+    return new Info('Botão não adicionado - mesmo juízo');
   const linkAlterar = document.querySelector('#alterarAreaAtuacao');
   assert(
     linkAlterar instanceof HTMLAnchorElement,
@@ -45,9 +41,8 @@ export function main(): ResultType {
   const urlAlterar = match[1]!;
 
   // Todos os elementos presentes
-  adicionarEstilos();
   const button = h('input', {
-    id: 'gm-seeu-switch-button',
+    className: classes.btn,
     type: 'button',
     value: 'Alternar para esta área de atuação',
   });
@@ -72,7 +67,6 @@ export function main(): ResultType {
       });
   });
   td.append(' ', button);
-  return BOTAO_ADICIONADO;
 }
 
 async function alternar(url: string, area: string) {

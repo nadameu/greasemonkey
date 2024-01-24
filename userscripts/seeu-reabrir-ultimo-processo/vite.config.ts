@@ -11,9 +11,13 @@ export default defineConfig({
       build: { fileName: `${pkg.name}.user.js` },
       entry: 'src/main.ts',
       userscript: {
+        noframes: false,
         name: { 'pt-BR': pkg.gm_name },
         namespace: 'nadameu.com.br',
-        match: ['https://seeu.pje.jus.br/seeu/*'],
+        match: [
+          'https://seeu.pje.jus.br/seeu/usuario/areaAtuacao.do?*',
+          'https://seeu.pje.jus.br/seeu/historicoProcessosRecursos.do?actionType=listar',
+        ],
       },
     }),
   ],

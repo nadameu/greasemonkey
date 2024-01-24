@@ -1,23 +1,20 @@
-.botao {
+.btn {
   background: hsl(266, 25%, 90%);
-  padding: 1px 1ex;
-  margin-right: 4ch;
-  font-size: 0.9em;
+  padding: 2px 1ex;
   border: 1px solid #204;
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
-  transform: translateY(0);
+  transform: translateY(-2px);
   transition: transform 60ms;
 
   &:active,
   &:disabled {
     box-shadow: 0 0 0 rgba(0, 0, 0, 0.25);
-    transform: translateY(2px);
+    transform: translateY(0);
   }
 
   &:disabled {
-    background: hsl(266, 5%, 90%);
-    color: #666;
-    border-color: #666;
+    background: hsl(266, 5%, 35%);
+    color: #bbb;
   }
 }
