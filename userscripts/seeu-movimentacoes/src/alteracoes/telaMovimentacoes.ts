@@ -5,10 +5,12 @@ import {
   Just,
   Left,
   M,
+  Nothing,
   Right,
   S,
   T,
   applicativeEither,
+  isJust,
   tailRec,
   tuple,
 } from '@nadameu/adts';
@@ -16,8 +18,8 @@ import { pipe } from '@nadameu/pipe';
 import * as P from '@nadameu/predicates';
 import { createIntersectionObserver } from '../createIntersectionObserver';
 import { createMutationObserver } from '../createMutationObserver';
-import { esconderDica, mostrarDica, moverDica } from './mostrarDica';
 import css from './estilos-seeu.scss?inline';
+import { esconderDica, mostrarDica, moverDica } from './mostrarDica';
 import classNames from './telaMovimentacoes.module.scss';
 
 export const telaMovimentacoes = (url: URL) =>
@@ -216,13 +218,35 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
         return Left(`Formato de linha desconhecido: ${l}.`);
       const sequencialNome = pipe(
         linha.cells[0]!,
-        D.text,
-        M.mapNullable(x => x.match(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/)),
-        M.filter((x): x is [string, string, string] => x.length === 3),
-        M.map(([, sequencial, nome]) => ({
-          sequencial,
-          nome: nome || 'Outros',
-        })),
+        x => x.childNodes,
+        S.filter(x => !(x instanceof Text) || x.nodeValue?.trim() !== ''),
+        M.maybeBool(
+          P.isAnyOf(
+            P.isTuple(P.isInstanceOf(Text)),
+            P.isTuple(
+              P.isInstanceOf(Text),
+              P.isInstanceOf(HTMLAnchorElement),
+              P.isInstanceOf(HTMLElement)
+            )
+          )
+        ),
+        M.map(([texto, ...obs]) =>
+          tuple(texto, obs.length === 2 ? Just(obs) : Nothing)
+        ),
+        M.flatMap(([texto, observacao]) =>
+          pipe(
+            texto,
+            x => x.nodeValue?.trim()!,
+            x =>
+              M.fromNullable(x.match(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/)),
+            M.filter((x): x is [string, string, string] => x.length === 3),
+            M.map(([, sequencial, nome]) => ({
+              sequencial,
+              nome: nome || 'Outros',
+              observacao,
+            }))
+          )
+        ),
         M.toEither(() => `Sequencial e nome não reconhecidos: ${l}.`)
       );
       const assinatura = pipe(
@@ -280,14 +304,11 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
         T.sequence(applicativeEither),
         E.map(
           ([
-            { sequencial, nome },
+            { sequencial, nome, observacao },
             { assinatura },
             { menu, popup, link, play },
           ]) => {
-            link.title = `${link.title?.trim() ?? ''}\n\n${
-              link.textContent?.trim() ?? ''
-            }\nAss.: ${assinatura}`;
-            link.textContent = nome.replace(/_/g, ' ');
+            link.title = `${link.title?.trim() ?? ''}\n\nAss.: ${assinatura}`;
             const frag = document.createDocumentFragment();
             frag.append(menu, popup);
             pipe(
@@ -299,13 +320,19 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
                 link.dataset.gmDocLink = id.toString(36);
               })
             );
+            const file = document.createDocumentFragment();
+            const span = document.createElement('span');
+            span.style.fontWeight = 'bold';
+            span.textContent = nome.replace(/_/g, ' ');
+            file.append(span, document.createElement('br'));
             if (play) {
-              const file = document.createDocumentFragment();
-              file.append(play, link);
-              return [sequencial, frag, file];
-            } else {
-              return [sequencial, frag, link];
+              file.append(play);
             }
+            file.append(link);
+            if (isJust(observacao)) {
+              file.append(document.createElement('br'), ...observacao.value);
+            }
+            return [sequencial, frag, file];
           }
         )
       );
