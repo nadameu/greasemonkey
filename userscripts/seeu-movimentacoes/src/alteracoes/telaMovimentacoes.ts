@@ -219,7 +219,10 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
         D.text,
         M.mapNullable(x => x.match(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/)),
         M.filter((x): x is [string, string, string] => x.length === 3),
-        M.map(([, sequencial, nome]) => ({ sequencial, nome })),
+        M.map(([, sequencial, nome]) => ({
+          sequencial,
+          nome: nome || 'Outros',
+        })),
         M.toEither(() => `Sequencial e nome não reconhecidos: ${l}.`)
       );
       const assinatura = pipe(
