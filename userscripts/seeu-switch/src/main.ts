@@ -4,7 +4,7 @@ import { XHR } from './XHR';
 import { assert } from './assert';
 import classes from './estilos.module.scss';
 
-export function main(): Error | Info | void {
+export function main(): Info | void {
   const aba = document.querySelector('li[name="tabDadosProcesso"].currentTab');
   if (!aba) return;
   const labels = Array.from(

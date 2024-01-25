@@ -2,7 +2,7 @@
 // @name         seeu-switch
 // @name:pt-BR   SEEU - Alterar atuação
 // @namespace    nadameu.com.br
-// @version      1.2.0
+// @version      1.3.0
 // @author       nadameu
 // @description  SEEU - Alterar a área de atuação no SEEU a partir da aba "Informações Gerais" de um processo
 // @match        https://seeu.pje.jus.br/seeu/visualizacaoProcesso.do?*
@@ -14,10 +14,10 @@
     GM_addStyle(t);
     return;
   }
-  const o = document.createElement('style');
-  (o.textContent = t), document.head.append(o);
+  const n = document.createElement('style');
+  (n.textContent = t), document.head.append(n);
 })(
-  ' ._btn_x8tis_1{background:hsl(266,25%,90%);padding:2px 1ex;border:1px solid #204;border-radius:4px;box-shadow:0 2px 4px #00000040;transform:translateY(-2px);transition:transform 60ms}._btn_x8tis_1:active,._btn_x8tis_1:disabled{box-shadow:0 0 #00000040;transform:translateY(0)}._btn_x8tis_1:disabled{background:hsl(266,5%,90%);color:#666;border-color:#666} '
+  ' html input[type=button]._btn_p9gx3_1{background:hsl(266,15%,35%);box-shadow:0 2px 4px #00000040;transform:translateY(-2px);transition:transform 60ms;margin:0}html input[type=button]._btn_p9gx3_1:hover{background:hsl(266,25%,35%)}html input[type=button]._btn_p9gx3_1:active,html input[type=button]._btn_p9gx3_1:disabled{box-shadow:0 0 #00000040;transform:translateY(0)}html input[type=button]._btn_p9gx3_1:disabled{background:hsl(266,5%,35%);color:#bbb} '
 );
 
 (function () {
@@ -29,7 +29,7 @@
       this.message = message;
     }
   }
-  function createElement(tag, props = null, ...children) {
+  function h(tag, props = null, ...children) {
     const element = document.createElement(tag);
     for (const [key, value] of Object.entries(props ?? {})) {
       element[key] = value;
@@ -58,7 +58,7 @@
     if (typeof message === 'string') throw new AssertionError(message);
     throw message();
   }
-  const btn = '_btn_x8tis_1';
+  const btn = '_btn_p9gx3_1';
   const classes = {
     btn,
   };
@@ -99,7 +99,7 @@
       'Link para alteração da área de atuação não reconhecido.'
     );
     const urlAlterar = match[1];
-    const button = createElement('input', {
+    const button = h('input', {
       className: classes.btn,
       type: 'button',
       value: 'Alternar para esta área de atuação',
