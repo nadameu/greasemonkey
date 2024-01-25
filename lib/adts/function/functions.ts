@@ -28,5 +28,5 @@ export const constant =
   ): {
     (...args: any[]): a;
   } =>
-  <b>(b: b): a =>
+  <b>(_: b): a =>
     a;
