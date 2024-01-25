@@ -241,15 +241,23 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
             x => !(x instanceof Text && /^\s*$/.test(x.nodeValue ?? ''))
           ),
           E.eitherBool(
-            P.isTuple(
-              P.isInstanceOf(HTMLImageElement),
-              P.isInstanceOf(HTMLDivElement),
-              P.isInstanceOf(HTMLAnchorElement)
+            P.isAnyOf(
+              P.isTuple(
+                P.isInstanceOf(HTMLImageElement),
+                P.isInstanceOf(HTMLDivElement),
+                P.isInstanceOf(HTMLAnchorElement)
+              ),
+              P.isTuple(
+                P.isInstanceOf(HTMLImageElement),
+                P.isInstanceOf(HTMLDivElement),
+                P.isInstanceOf(HTMLAnchorElement),
+                P.isInstanceOf(HTMLAnchorElement)
+              )
             )
           ),
           E.map(childNodes => {
-            const [menu, popup, link] = childNodes;
-            return { menu, popup, link };
+            const [menu, popup, link, play] = childNodes;
+            return { menu, popup, link, play };
           }),
           E.orElse(() =>
             pipe(
@@ -260,7 +268,7 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
                 link.classList.add(classNames.struck!);
                 return link;
               }),
-              M.map(link => ({ menu: '', popup: '', link })),
+              M.map(link => ({ menu: '', popup: '', link, play: undefined })),
               M.toEither(() => null)
             )
           ),
@@ -271,7 +279,11 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
         tuple(sequencialNome, assinatura, link),
         T.sequence(applicativeEither),
         E.map(
-          ([{ sequencial, nome }, { assinatura }, { menu, popup, link }]) => {
+          ([
+            { sequencial, nome },
+            { assinatura },
+            { menu, popup, link, play },
+          ]) => {
             link.title = `${link.title?.trim() ?? ''}\n\n${
               link.textContent?.trim() ?? ''
             }\nAss.: ${assinatura}`;
@@ -287,7 +299,13 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
                 link.dataset.gmDocLink = id.toString(36);
               })
             );
-            return [sequencial, frag, link];
+            if (play) {
+              const file = document.createDocumentFragment();
+              file.append(play, link);
+              return [sequencial, frag, file];
+            } else {
+              return [sequencial, frag, link];
+            }
           }
         )
       );
