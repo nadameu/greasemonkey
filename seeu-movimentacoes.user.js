@@ -2,7 +2,7 @@
 // @name         seeu-movimentacoes
 // @name:pt-BR   SEEU - Movimentações
 // @namespace    nadameu.com.br
-// @version      2.0.0
+// @version      2.1.0
 // @author       nadameu
 // @description  Melhoria na apresentação das movimentações do processo
 // @match        https://seeu.pje.jus.br/*
@@ -574,10 +574,7 @@
           flatMap(([texto, observacao]) =>
             pipe(
               texto,
-              x => {
-                var _a;
-                return (_a = x.nodeValue) == null ? void 0 : _a.trim();
-              },
+              x => x.nodeValue,
               x =>
                 fromNullable(x.match(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/)),
               filter$1(x => x.length === 3),

@@ -236,7 +236,7 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
         M.flatMap(([texto, observacao]) =>
           pipe(
             texto,
-            x => x.nodeValue?.trim()!,
+            x => x.nodeValue!,
             x =>
               M.fromNullable(x.match(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/)),
             M.filter((x): x is [string, string, string] => x.length === 3),
