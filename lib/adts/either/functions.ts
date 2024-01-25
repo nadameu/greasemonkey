@@ -1,4 +1,3 @@
-import { constant, identity } from '../function';
 import { Just, Maybe, Nothing } from '../maybe';
 import { derive } from '../typeclasses';
 import { Either, Left, Right, isLeft, isRight } from './definitions';
