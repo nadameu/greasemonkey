@@ -2,7 +2,7 @@
 // @name         seeu-movimentacoes
 // @name:pt-BR   SEEU - Movimentações
 // @namespace    nadameu.com.br
-// @version      2.2.0
+// @version      2.3.0
 // @author       nadameu
 // @description  Melhoria na apresentação das movimentações do processo
 // @match        https://seeu.pje.jus.br/*
@@ -183,38 +183,6 @@
   }
   var _GM_addStyle = /* @__PURE__ */ (() =>
     typeof GM_addStyle != 'undefined' ? GM_addStyle : void 0)();
-  const css$1 =
-    'html>body div,html>body a{display:flex;align-items:center;justify-content:space-between;margin:0!important;float:none!important}html>body div#headerContainer{height:22px}html>body div#headerContainer img{height:20px}html>body div#headerContainer .btnAltoContraste img{height:16px}\n';
-  const tamanhoCabecalho = url => {
-    return pipe(
-      pipe(
-        url,
-        maybeBool(u => u.pathname === '/seeu/'),
-        map$1(alterarFrameset)
-      ),
-      orElse(() =>
-        pipe(
-          url,
-          maybeBool(u => u.pathname === '/seeu/cabecalho.jsp'),
-          map$1(alterarEstilosCabecalho)
-        )
-      )
-    );
-  };
-  function alterarFrameset() {
-    return pipe(
-      document,
-      query('frameset'),
-      map$1(f => {
-        f.rows = '22,*';
-      }),
-      toEither(() => `Elemento <frameset> não encontrado.`)
-    );
-  }
-  function alterarEstilosCabecalho() {
-    _GM_addStyle(css$1);
-    return Right(void 0);
-  }
   const isInstanceOf = Constructor => obj => obj instanceof Constructor;
   function refine(...predicates) {
     return value => predicates.every(p => p(value));
@@ -723,7 +691,6 @@ Ass.: ${assinatura2}`;
     /* @__PURE__ */ Object.defineProperty(
       {
         __proto__: null,
-        tamanhoCabecalho,
         telaMovimentacoes,
       },
       Symbol.toStringTag,
