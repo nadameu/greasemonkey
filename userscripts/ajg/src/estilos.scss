@@ -1,9 +1,9 @@
 .bootstrap-styles {
   .gm-ajg__aviso {
     width: 100%;
-    background: hsl(266, 35%, 85%);
+    background: hsl(333, 35%, 85%);
     padding: 0.5em;
-    border-color: hsl(266, 100%, 15%);
+    border-color: hsl(333, 100%, 15%);
     border-style: solid;
     border-width: 1px 0;
   }
@@ -30,14 +30,14 @@
   .gm-ajg__div {
     fieldset {
       width: max-content;
-      background: hsl(266deg, 30%, 90%) !important;
+      background: hsl(333, 30%, 90%) !important;
       border-radius: 0.5em;
 
       legend {
-        background: hsl(266, 35%, 85%);
+        background: hsl(333, 35%, 85%);
         padding: 0.2em;
         border-radius: 0.5em;
-        border: 1px solid hsl(266deg, 40%, 50%);
+        border: 1px solid hsl(333, 40%, 50%);
       }
     }
   }

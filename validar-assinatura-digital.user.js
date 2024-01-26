@@ -12,7 +12,7 @@
 // @connect     eproc.jfrs.jus.br
 // @connect     eproc.jfsc.jus.br
 // @connect     eproc.trf4.jus.br
-// @version     3.0.0
+// @version     3.1.0
 // @author      nadameu
 // @grant       GM.getValue
 // @grant       GM.deleteValue
@@ -47,8 +47,8 @@ body {
   height: 100%;
 }
 button {
-  background-color: hsl(266, 23%, 78%);
-  color: hsl(266, 50%, 8%);
+  background-color: hsl(333, 23%, 78%);
+  color: hsl(333, 50%, 8%);
 }
 `;
       const url = new URL(iframe.src);

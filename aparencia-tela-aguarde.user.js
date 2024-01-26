@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php
 // @grant       none
-// @version     1.2.0
+// @version     1.3.0
 // @author      nadameu
 // @description Muda a aparência da tela "Aguarde..."
 // ==/UserScript==
@@ -50,9 +50,9 @@ function adicionarEstilos() {
   const style = document.head.appendChild(document.createElement('style'));
   style.textContent = /*css*/ `
 body > div.infraFundoTransparente {
-  --bg: hsla(266, 25%, 5%, 0.75);
+  --bg: hsla(333, 25%, 5%, 0.75);
   --aviso: #dfdfdf;
-  --spinner: hsl(266, 20%, 40%);
+  --spinner: hsl(333, 20%, 40%);
   background: var(--bg);
   inset: 0 !important;
   width: inherit !important;

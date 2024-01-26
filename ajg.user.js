@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Solicitações de pagamento em bloco
 // @namespace    http://nadameu.com.br/ajg
-// @version      4.0.0
+// @version      4.1.0
 // @author       nadameu
 // @description  Permite a criação de solicitações de pagamento em bloco
 // @include      /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=nomeacoes_ajg_listar&/
@@ -16,7 +16,7 @@
       super('Link para criar solicitação de pagamentos não existe!');
     }
   }
-  function createElement(tag, props = null, ...children) {
+  function h(tag, props = null, ...children) {
     const element = document.createElement(tag);
     for (const [key, value] of Object.entries(props ?? {})) {
       element[key] = value;
@@ -25,7 +25,7 @@
     return element;
   }
   function adicionarAvisoCarregando({ tabela }) {
-    const aviso = createElement('label', { className: 'gm-ajg__aviso' });
+    const aviso = h('label', { className: 'gm-ajg__aviso' });
     tabela.insertAdjacentElement('beforebegin', aviso);
     let qtdPontinhos = 2;
     function update() {
@@ -49,75 +49,88 @@
     };
   }
   const css =
-    '.bootstrap-styles .gm-ajg__aviso{width:100%;background:hsl(266,35%,85%);padding:.5em;border-color:#21004d;border-style:solid;border-width:1px 0}.bootstrap-styles .gm-ajg__aviso--nao-carregado{display:none}.bootstrap-styles .gm-ajg__lista{font-size:1.2em}.bootstrap-styles .gm-ajg__lista__processo{float:left;margin-right:3ex}.bootstrap-styles .gm-ajg__lista__resultado--ok{color:green}.bootstrap-styles .gm-ajg__lista__resultado--erro{color:red}.bootstrap-styles .gm-ajg__div fieldset{width:max-content;background:hsl(266,30%,90%)!important;border-radius:.5em}.bootstrap-styles .gm-ajg__div fieldset legend{background:hsl(266,35%,85%);padding:.2em;border-radius:.5em;border:1px solid hsl(266,40%,50%)}\n';
+    '.bootstrap-styles .gm-ajg__aviso{width:100%;background:hsl(333,35%,85%);padding:.5em;border-color:#4d0022;border-style:solid;border-width:1px 0}.bootstrap-styles .gm-ajg__aviso--nao-carregado{display:none}.bootstrap-styles .gm-ajg__lista{font-size:1.2em}.bootstrap-styles .gm-ajg__lista__processo{float:left;margin-right:3ex}.bootstrap-styles .gm-ajg__lista__resultado--ok{color:green}.bootstrap-styles .gm-ajg__lista__resultado--erro{color:red}.bootstrap-styles .gm-ajg__div fieldset{width:max-content;background:hsl(333,30%,90%)!important;border-radius:.5em}.bootstrap-styles .gm-ajg__div fieldset legend{background:hsl(333,35%,85%);padding:.2em;border-radius:.5em;border:1px solid hsl(333,40%,50%)}\n';
   function adicionarEstilos() {
-    document.head.appendChild(createElement('style', null, css));
+    document.head.appendChild(h('style', null, css));
   }
-  const html = `<fieldset class="infraFieldset">
-  <legend class="infraLegend">Criar solicitações de pagamento em bloco</legend>
-  <form class="gm-ajg__formulario">
-    <label
-      >Valor da solicitação (R$):
-      <input
-        name="txtValorSolicitacao"
-        onpaste="return false;"
-        onkeypress="return infraMascaraDinheiro(this, event, 2, 18);" /></label
-    ><br />
-    <br />
-    <label
-      >Data da prestação do serviço:
-      <input
-        id="gm-ajg__formulario__data"
-        name="txtDataPrestacao"
-        onpaste="return false;"
-        onkeypress="return infraMascaraData(this, event);" /></label
-    ><img
-      title="Selecionar data"
-      alt="Selecionar data"
-      src="infra_css/imagens/calendario.gif"
-      class="infraImg"
-      onclick="infraCalendario('gm-ajg__formulario__data', this);"
-    /><br />
-    <br />
-    <label class="infraLabel">Motivo:</label><br />
-    <label
-      ><input type="checkbox" name="chkMotivo[]" value="0" /> Nível de especialização e complexidade
-      do trabalho</label
-    ><br />
-    <label
-      ><input type="checkbox" name="chkMotivo[]" value="1" /> Natureza e importância da causa</label
-    ><br />
-    <label
-      ><input type="checkbox" name="chkMotivo[]" value="6" /> Lugar da prestação do serviço</label
-    ><br />
-    <label
-      ><input type="checkbox" name="chkMotivo[]" value="3" /> Tempo de tramitação do processo</label
-    ><br />
-    <label><input type="checkbox" name="chkMotivo[]" value="2" /> Grau de zelo profissional</label
-    ><br />
-    <label
-      ><input type="checkbox" name="chkMotivo[]" value="4" /> Trabalho realizado pelo
-      profissional</label
-    ><br />
-    <br />
-    <label
-      >Observação:<br /><textarea
-        name="selTxtObservacao"
-        cols="55"
-        rows="4"
-        maxlength="500"
-      ></textarea></label
-    ><br />
-    <br />
-    <label
-      >Decisão fundamentada <small><em>(Obrigatório quando o valor extrapolar o máximo)</em></small
-      >:<br /><textarea name="selTxtDecisao" cols="55" rows="4" maxlength="2000"></textarea></label
-    ><br />
-  </form>
-  <br />
-  <button class="gm-ajg__formulario__enviar">Criar solicitações em bloco</button>
-</fieldset>
-<div class="gm-ajg__resultado"></div>
+  const html = `<fieldset class="infraFieldset">\r
+  <legend class="infraLegend">Criar solicitações de pagamento em bloco</legend>\r
+  <form class="gm-ajg__formulario">\r
+    <label\r
+      >Valor da solicitação (R$):\r
+      <input\r
+        name="txtValorSolicitacao"\r
+        onpaste="return false;"\r
+        onkeypress="return infraMascaraDinheiro(this, event, 2, 18);" /></label\r
+    ><br />\r
+    <br />\r
+    <label\r
+      >Data da prestação do serviço:\r
+      <input\r
+        id="gm-ajg__formulario__data"\r
+        name="txtDataPrestacao"\r
+        onpaste="return false;"\r
+        onkeypress="return infraMascaraData(this, event);" /></label\r
+    ><img\r
+      title="Selecionar data"\r
+      alt="Selecionar data"\r
+      src="infra_css/imagens/calendario.gif"\r
+      class="infraImg"\r
+      onclick="infraCalendario('gm-ajg__formulario__data', this);"\r
+    /><br />\r
+    <br />\r
+    <label class="infraLabel">Motivo:</label><br />\r
+    <label\r
+      ><input type="checkbox" name="chkMotivo[]" value="0" /> Nível de\r
+      especialização e complexidade do trabalho</label\r
+    ><br />\r
+    <label\r
+      ><input type="checkbox" name="chkMotivo[]" value="1" /> Natureza e\r
+      importância da causa</label\r
+    ><br />\r
+    <label\r
+      ><input type="checkbox" name="chkMotivo[]" value="6" /> Lugar da prestação\r
+      do serviço</label\r
+    ><br />\r
+    <label\r
+      ><input type="checkbox" name="chkMotivo[]" value="3" /> Tempo de\r
+      tramitação do processo</label\r
+    ><br />\r
+    <label\r
+      ><input type="checkbox" name="chkMotivo[]" value="2" /> Grau de zelo\r
+      profissional</label\r
+    ><br />\r
+    <label\r
+      ><input type="checkbox" name="chkMotivo[]" value="4" /> Trabalho realizado\r
+      pelo profissional</label\r
+    ><br />\r
+    <br />\r
+    <label\r
+      >Observação:<br /><textarea\r
+        name="selTxtObservacao"\r
+        cols="55"\r
+        rows="4"\r
+        maxlength="500"\r
+      ></textarea></label\r
+    ><br />\r
+    <br />\r
+    <label\r
+      >Decisão fundamentada\r
+      <small><em>(Obrigatório quando o valor extrapolar o máximo)</em></small\r
+      >:<br /><textarea\r
+        name="selTxtDecisao"\r
+        cols="55"\r
+        rows="4"\r
+        maxlength="2000"\r
+      ></textarea></label\r
+    ><br />\r
+  </form>\r
+  <br />\r
+  <button class="gm-ajg__formulario__enviar">\r
+    Criar solicitações em bloco\r
+  </button>\r
+</fieldset>\r
+<div class="gm-ajg__resultado"></div>\r
 `;
   function buscarDocumento(url, method = 'GET', data = null) {
     return new Promise((resolve, reject) => {
@@ -239,12 +252,12 @@
         data.set('id_unica', nomeacao.idUnica);
         data.set('num_processo', nomeacao.numProcesso);
         data.set('numeroNomeacao', nomeacao.numeroNomeacao);
-        const termo = createElement(
+        const termo = h(
           'dt',
           { className: 'gm-ajg__lista__processo' },
           nomeacao.numProcesso
         );
-        const definicao = createElement(
+        const definicao = h(
           'dd',
           { className: 'gm-ajg__lista__resultado' },
           'Na fila'
@@ -343,10 +356,10 @@
   }
   async function adicionarFormulario({ areaTelaD, linkCriar }) {
     const div = areaTelaD.appendChild(
-      createElement(
+      h(
         'div',
         { className: 'gm-ajg__div' },
-        createElement('label', null, 'Aguarde, carregando formulário...')
+        h('label', null, 'Aguarde, carregando formulário...')
       )
     );
     await new Promise(res => {

@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=relatorio_geral_listar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=relatorio_geral_listar&*
 // @grant       none
-// @version     3.0.1
+// @version     3.1.1
 // @author      nadameu
 // @description Aguardar o carregamento completo do formulário do relatório geral antes de poder clicar em "Consultar"
 // ==/UserScript==
@@ -61,7 +61,7 @@ function adicionarEstilos() {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: hsla(266, 25%, 5%, 0.75);
+  background: hsla(333, 25%, 5%, 0.75);
   font-family: Arial, Verdana, Helvetica, sans-serif;
   font-size: 2.2rem;
   color: white;

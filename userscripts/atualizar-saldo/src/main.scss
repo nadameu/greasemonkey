@@ -1,21 +1,21 @@
 .gm-atualizar-saldo__contas,
 .gm-atualizar-saldo__processo {
-  --button-bg: hsl(266deg, 25%, 40%);
-  --fg-color: hsl(266deg, 80%, 15%);
-  // --border-color: hsl(266deg, 75%, 25%);
-  --border-color: hsl(266deg, 10%, 40%);
+  --button-bg: hsl(333, 25%, 40%);
+  --fg-color: hsl(333, 80%, 15%);
+  // --border-color: hsl(333, 75%, 25%);
+  --border-color: hsl(333, 10%, 40%);
   span {
     line-height: 2em;
     color: var(--fg-color);
 
     &.zerado {
-      --fg-color: hsl(266, 10%, 40%);
+      --fg-color: hsl(333, 10%, 40%);
     }
     &.erro {
       --fg-color: hsl(0, 85%, 40%);
     }
     &.saldo {
-      --fg-color: hsl(266, 75%, 25%);
+      --fg-color: hsl(333, 75%, 25%);
     }
   }
   button {
@@ -27,11 +27,11 @@
     box-shadow: 0 2px 4px hsla(0, 0%, 0%, 0.5);
     background: var(--button-bg);
     &.zerado {
-      --button-bg: hsl(266deg, 5%, 50%);
+      --button-bg: hsl(333, 5%, 50%);
     }
     &:hover,
     &:focus {
-      --button-bg: hsl(266deg, 40%, 45%);
+      --button-bg: hsl(333, 40%, 45%);
     }
     &:active {
       box-shadow: none;

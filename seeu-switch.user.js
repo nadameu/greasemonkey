@@ -2,7 +2,7 @@
 // @name         seeu-switch
 // @name:pt-BR   SEEU - Alterar atuação
 // @namespace    nadameu.com.br
-// @version      1.3.0
+// @version      1.4.0
 // @author       nadameu
 // @description  SEEU - Alterar a área de atuação no SEEU a partir da aba "Informações Gerais" de um processo
 // @match        https://seeu.pje.jus.br/seeu/visualizacaoProcesso.do?*
@@ -17,7 +17,7 @@
   const n = document.createElement('style');
   (n.textContent = t), document.head.append(n);
 })(
-  ' html input[type=button]._btn_p9gx3_1{background:hsl(266,15%,35%);box-shadow:0 2px 4px #00000040;transform:translateY(-2px);transition:transform 60ms;margin:0}html input[type=button]._btn_p9gx3_1:hover{background:hsl(266,25%,35%)}html input[type=button]._btn_p9gx3_1:active,html input[type=button]._btn_p9gx3_1:disabled{box-shadow:0 0 #00000040;transform:translateY(0)}html input[type=button]._btn_p9gx3_1:disabled{background:hsl(266,5%,35%);color:#bbb} '
+  ' html input[type=button]._btn_v82dh_1{background:hsl(333,15%,35%);box-shadow:0 2px 4px #00000040;transform:translateY(-2px);transition:transform 60ms;margin:0}html input[type=button]._btn_v82dh_1:hover{background:hsl(333,25%,35%)}html input[type=button]._btn_v82dh_1:active,html input[type=button]._btn_v82dh_1:disabled{box-shadow:0 0 #00000040;transform:translateY(0)}html input[type=button]._btn_v82dh_1:disabled{background:hsl(333,5%,35%);color:#bbb} '
 );
 
 (function () {
@@ -58,7 +58,7 @@
     if (typeof message === 'string') throw new AssertionError(message);
     throw message();
   }
-  const btn = '_btn_p9gx3_1';
+  const btn = '_btn_v82dh_1';
   const classes = {
     btn,
   };

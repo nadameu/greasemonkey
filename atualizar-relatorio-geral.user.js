@@ -4,7 +4,7 @@
 // @namespace   http://nadameu.com.br
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=relatorio_geral_consultar&*
 // @grant       none
-// @version     1.0.0
+// @version     1.1.0
 // @author      nadameu
 // @description Cria um botão para atualizar os dados do relatório geral
 // ==/UserScript==
@@ -30,9 +30,9 @@ function inserirEstilos() {
   const style = document.head.appendChild(document.createElement('style'));
   style.textContent = /*css*/ `
 .gm-atualizar-relatorio-geral {
-  --bg: hsl(266, 25%, 50%);
-  --dk: hsl(266, 35%, 40%);
-  --hl: hsl(266, 35%, 60%);
+  --bg: hsl(333, 25%, 50%);
+  --dk: hsl(333, 35%, 40%);
+  --hl: hsl(333, 35%, 60%);
 }
 .infra-styles button.infraButton.gm-atualizar-relatorio-geral {
   background-color: var(--bg);

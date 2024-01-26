@@ -1,14 +1,14 @@
 .gm-blocos__lista,
 .gm-blocos__dialog,
 .gm-blocos__processo {
-  --accent: hsl(266, 40%, 25%);
-  --bg: hsl(266, 10%, 30%);
-  --border: hsl(266, 15%, 60%);
-  --disabled: hsl(266, 5%, 37.5%);
-  --disabled-text: hsl(266, 0%, 80%);
-  --shadow: hsl(266, 12.5%, 17.5%);
-  --muted-accent: hsl(266, 25%, 25%);
-  --text: hsl(266, 0%, 100%);
+  --accent: hsl(333, 40%, 25%);
+  --bg: hsl(333, 10%, 30%);
+  --border: hsl(333, 15%, 60%);
+  --disabled: hsl(333, 5%, 37.5%);
+  --disabled-text: hsl(333, 0%, 80%);
+  --shadow: hsl(333, 12.5%, 17.5%);
+  --muted-accent: hsl(333, 25%, 25%);
+  --text: hsl(333, 0%, 100%);
 }
 .bootstrap-styles {
   .gm-blocos__lista {
@@ -106,11 +106,11 @@
     font-size: 1rem;
     min-width: 25vw;
     border: 3px ridge var(--border);
-    box-shadow: 0 4px 8px 4px hsla(266, 25%, 5%, 0.5);
+    box-shadow: 0 4px 8px 4px hsla(333, 25%, 5%, 0.5);
     border-radius: 12px;
 
     &::backdrop {
-      background: hsla(266, 25%, 5%, 0.75);
+      background: hsla(333, 25%, 5%, 0.75);
     }
 
     form {

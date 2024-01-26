@@ -7,7 +7,7 @@ const style = document.createElement('style');
 style.innerHTML = /* css */ `
   @media print { #gm-formulario, .noprint { display: none; } }
   @media screen { #gm-impressao, .noscreen { display: none; } }
-  #gm-formulario { background: hsl(266, 50%, 95.1%); box-sizing: border-box; margin-top: 2%; margin-left: 2%; padding: 10px 3%; width: 90%; font-size: 14px; color: #333; }
+  #gm-formulario { background: hsl(333, 50%, 95.1%); box-sizing: border-box; margin-top: 2%; margin-left: 2%; padding: 10px 3%; width: 90%; font-size: 14px; color: #333; }
   #gm-entrada p { margin: 0 0 1em; color: inherit; font-size: 1em; }
   #gm-explicacao { font-size: 0.94em; color: #444; }
   #gm-explicacao h4 { font-size: 1.05em; font-weight: 600; }

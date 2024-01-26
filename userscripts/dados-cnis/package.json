@@ -2,7 +2,7 @@
   "name": "dados-cnis",
   "description": "Analisa dados do CNIS obtidos através das consultas integradas CNJ",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "nadameu",
   "type": "module",
   "scripts": {
