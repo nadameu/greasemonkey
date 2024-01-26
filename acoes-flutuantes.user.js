@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
 // @grant       GM_addStyle
-// @version     5.1.0
+// @version     5.2.0
 // @author      nadameu
 // ==/UserScript==
 
@@ -42,10 +42,10 @@ function adicionarEstilos() {
   width: 50px;
   height: 50px;
   padding: 0;
-  background: #eae8ee;
-  border: 1px solid #bdafcf;
+  background: hsl(333, 15%, 92.5%);
+  border: 1px solid hsl(333, 25%, 75%);
   border-radius: 50px;
-  color: #3c2060;
+  color: hsl(333, 50%, 25%);
 }
   `);
 }
