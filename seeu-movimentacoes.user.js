@@ -2,7 +2,7 @@
 // @name         seeu-movimentacoes
 // @name:pt-BR   SEEU - Movimentações
 // @namespace    nadameu.com.br
-// @version      2.3.0
+// @version      2.3.1
 // @author       nadameu
 // @description  Melhoria na apresentação das movimentações do processo
 // @match        https://seeu.pje.jus.br/*
@@ -263,7 +263,7 @@
       };
     });
   const css =
-    'table.resultTable>tbody>tr{--cor-pessoa: #444}table.resultTable>tbody>tr:not([id^=rowmovimentacoes])>td:nth-last-child(3){background:linear-gradient(to bottom right,var(--cor-pessoa) 50%,transparent 50%) top left/12px 12px no-repeat}table.resultTable>tbody>tr[id*=",JUIZ,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",JUIZ,"]>td:nth-last-child(3){border:1px solid var(--cor-pessoa)}table.resultTable>tbody>tr[id*=",SERVIDOR,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",PROMOTOR,"]{--cor-pessoa: #236e8e}table.resultTable>tbody>tr[id*=",ADVOGADO,"]{--cor-pessoa: #8e3523}table.resultTable>tbody>tr[id*=",OUTROS,"]{--cor-pessoa: #595959}td a.link{display:inline-block;background-position-y:.5em}table.resultTable thead>tr>th{padding:0 5px}table.resultTable tr div.extendedinfo{border:none;margin:0;width:auto}table.resultTable tr.odd{background-color:#e0e6f0}table.resultTable tr.even{background-color:#f5f7fa}table.resultTable table.form{margin:0 0 4px;width:calc(100% - 4px);border-collapse:collapse;border:1px solid}table.resultTable table.form td{width:auto;padding:0;vertical-align:top!important}table.resultTable table.form td:nth-child(1){width:36px;text-align:center;padding-left:6px;padding-right:2px}table.resultTable table.form td:nth-child(2){width:16px;text-align:center;padding:5px 0 4px}table.resultTable table.form td:nth-child(3){width:89%}table.resultTable table.form tr.odd{background:hsl(333,34.8%,91%)}table.resultTable table.form tr.even{background:hsl(333,33.3%,97.1%)}table.resultTable table.form .ajaxCalloutGenericoHelp{display:inline;margin-right:4px}\n';
+    'table.resultTable>tbody>tr{--cor-pessoa: #444}table.resultTable>tbody>tr:not([id^=rowmovimentacoes])>td:nth-last-child(3){background:linear-gradient(to bottom right,var(--cor-pessoa) 50%,transparent 50%) top left/12px 12px no-repeat}table.resultTable>tbody>tr[id*=",JUIZ,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",JUIZ,"]>td:nth-last-child(3){border:1px solid var(--cor-pessoa)}table.resultTable>tbody>tr[id*=",SERVIDOR,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",PROMOTOR,"]{--cor-pessoa: #236e8e}table.resultTable>tbody>tr[id*=",ADVOGADO,"]{--cor-pessoa: #8e3523}table.resultTable>tbody>tr[id*=",OUTROS,"]{--cor-pessoa: #595959}td a.link{display:inline-block;background-position-y:.5em}table.resultTable thead>tr>th{padding:0 5px}table.resultTable tr div.extendedinfo{border:none;margin:0;width:auto}table.resultTable table.form{margin:0 0 4px;width:calc(100% - 4px);border-collapse:collapse;border:1px solid}table.resultTable table.form td{width:auto;padding:0;vertical-align:top!important}table.resultTable table.form td:nth-child(1){width:36px;text-align:center;padding-left:6px;padding-right:2px}table.resultTable table.form td:nth-child(2){width:16px;text-align:center;padding:5px 0 4px}table.resultTable table.form td:nth-child(3){width:89%}table.resultTable table.form tr.odd{background:hsl(333,34.8%,91%)}table.resultTable table.form tr.even{background:hsl(333,33.3%,97.1%)}table.resultTable table.form .ajaxCalloutGenericoHelp{display:inline;margin-right:4px}\n';
   const dica$1 = '_dica_1a6d3_1';
   const struck = '_struck_1a6d3_8';
   const classNames = {
