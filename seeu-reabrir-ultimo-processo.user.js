@@ -2,7 +2,7 @@
 // @name        seeu-reabrir-ultimo-processo
 // @name:pt-BR  SEEU - Reabrir último processo
 // @namespace   nadameu.com.br
-// @version     1.2.0
+// @version     1.2.1
 // @author      nadameu
 // @match       https://seeu.pje.jus.br/seeu/usuario/areaAtuacao.do?*
 // @match       https://seeu.pje.jus.br/seeu/historicoProcessosRecursos.do?actionType=listar
@@ -22,7 +22,7 @@
   const name = 'seeu-reabrir-ultimo-processo';
   const gm_name = 'SEEU - Reabrir último processo';
   const styles =
-    '#gm-seeu-reabrir__button{background:hsl(333,25%,35%);border-radius:50%;padding:.4rem;margin:auto 8px}\n';
+    '#gm-seeu-reabrir__button{background:hsl(333,30%,60%);border-radius:50%;padding:.4rem;margin:auto 8px}\n';
   const LOG_PREFIX = `<${gm_name}>`;
   const LOCAL_STORAGE_VALUE = 'REABRIR_ULTIMO';
   const resultado = main();
