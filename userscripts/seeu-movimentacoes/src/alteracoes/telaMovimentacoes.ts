@@ -56,8 +56,19 @@ export const telaMovimentacoes = (url: URL) =>
               const obs = createIntersectionObserver();
               const mut = createMutationObserver();
               for (const { link, mutationTarget } of links) {
+                const aviso = document.createElement('div');
+                aviso.className = classNames.avisoCarregando!;
+                aviso.textContent = 'Carregando lista de documentos...';
                 mut.observe(mutationTarget, node => {
                   if (!(node instanceof HTMLTableElement)) return;
+                  if (link.src.match(/iPlus/)) {
+                    node.style.display = 'none';
+                    return;
+                  }
+                  if (aviso.parentNode) {
+                    aviso.remove();
+                  }
+                  aviso.textContent = 'Atualizando lista de documentos...';
                   pipe(
                     onTabelaAdicionada(node),
                     E.mapLeft(err => {
@@ -74,6 +85,23 @@ export const telaMovimentacoes = (url: URL) =>
                 const { unobserve } = obs.observe(link, () => {
                   unobserve();
                   link.click();
+                });
+
+                link.addEventListener('click', () => {
+                  if (link.src.match(/iPlus/)) {
+                    if (aviso.parentNode) {
+                      aviso.remove();
+                    }
+                    const tabela = mutationTarget.querySelector('table');
+                    if (tabela) {
+                      tabela.style.display = 'none';
+                    }
+                  } else {
+                    mutationTarget.parentNode!.insertBefore(
+                      aviso,
+                      mutationTarget
+                    );
+                  }
                 });
               }
 
