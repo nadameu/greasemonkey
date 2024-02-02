@@ -1,5 +1,4 @@
-import { GM_addStyle } from '$';
-import { h } from '@nadameu/create-element';
+import { GM_addStyle, GM_getValue, GM_info, GM_setValue } from '$';
 import {
   D,
   E,
@@ -15,6 +14,7 @@ import {
   tailRec,
   tuple,
 } from '@nadameu/adts';
+import { h } from '@nadameu/create-element';
 import { pipe } from '@nadameu/pipe';
 import * as P from '@nadameu/predicates';
 import { createIntersectionObserver } from '../createIntersectionObserver';
@@ -193,10 +193,28 @@ export const telaMovimentacoes = (url: URL) =>
               );
               pipe(
                 document,
-                D.query<HTMLTableRowElement>('table.resultTable > thead > tr'),
+                D.query<HTMLTableElement>('table.resultTable'),
+                M.map(tabela => {
+                  const botao = h(
+                    'button',
+                    { type: 'button' },
+                    'Configurar abertura de documentos'
+                  );
+                  const div = h(
+                    'div',
+                    { className: classNames.divConfigurarAbertura },
+                    botao
+                  );
+                  botao.addEventListener('click', e => {
+                    e.preventDefault();
+                    onConfigurarClick();
+                  });
+                  tabela.insertAdjacentElement('beforebegin', div);
+                  return tabela;
+                }),
+                M.flatMap(D.query<HTMLTableRowElement>(':scope > thead > tr')),
                 M.map(row => {
-                  const th = document.createElement('th');
-                  th.textContent = 'Documentos';
+                  const th = h('th', {}, 'Documentos');
                   row.appendChild(th);
                   for (const th of row.cells) {
                     th.removeAttribute('style');
@@ -399,4 +417,88 @@ function getId(sp: string) {
     S.map(x => parseInt(x, 16)),
     S.foldLeft(0n, (acc, x) => acc * 4294967296n + BigInt(x))
   );
+}
+function onConfigurarClick() {
+  const win = window.open(
+    'about:blank',
+    '_blank',
+    'top=0,left=0,width=800,height=450'
+  );
+  if (!win) {
+    window.alert(
+      [
+        'Ocorreu um erro ao tentar configurar a abertura de documentos.',
+        'Verifique se há permissão para abertura de janelas "pop-up".',
+      ].join('\n')
+    );
+    return;
+  }
+  win.addEventListener('load', () => {
+    win.document.title = 'Configurar abertura de documentos';
+    const saida = document.createDocumentFragment();
+    let padrao: HTMLInputElement,
+      janela: HTMLInputElement,
+      salvar: HTMLButtonElement,
+      cancelar: HTMLButtonElement;
+    let valor = GM_getValue<'padrao' | 'janela'>(GM_info.script.name, 'padrao');
+    saida.append(
+      h('h1', {}, 'Configurar abertura de documentos'),
+      h('p', {}, 'Selecione a forma de abertura de documentos:'),
+      h(
+        'p',
+        {},
+        h(
+          'label',
+          {},
+          (padrao = h('input', {
+            type: 'radio',
+            name: 'tipo',
+            value: 'padrao',
+            checked: valor === 'padrao',
+          })),
+          ' ',
+          'Padrão do SEEU (abrir em abas)'
+        )
+      ),
+      h(
+        'p',
+        {},
+        h(
+          'label',
+          {},
+          (janela = h('input', {
+            type: 'radio',
+            name: 'tipo',
+            value: 'janela',
+            checked: valor === 'janela',
+          })),
+          ' ',
+          'Abrir em janelas separadas'
+        )
+      ),
+      h(
+        'p',
+        {},
+        (salvar = h('button', { type: 'button' }, 'Salvar')),
+        ' ',
+        (cancelar = h('button', { type: 'button' }, 'Cancelar'))
+      )
+    );
+    padrao.addEventListener('click', () => {
+      valor = 'padrao';
+    });
+    janela.addEventListener('click', () => {
+      valor = 'janela';
+    });
+    salvar.addEventListener('click', e => {
+      e.preventDefault();
+      GM_setValue(GM_info.script.name, valor);
+      win.close();
+    });
+    cancelar.addEventListener('click', e => {
+      e.preventDefault();
+      win.close();
+    });
+    win.document.body.append(saida);
+  });
 }
