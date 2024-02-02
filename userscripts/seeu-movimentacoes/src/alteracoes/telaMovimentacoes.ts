@@ -1,4 +1,5 @@
 import { GM_addStyle } from '$';
+import { h } from '@nadameu/create-element';
 import {
   D,
   E,
@@ -56,9 +57,11 @@ export const telaMovimentacoes = (url: URL) =>
               const obs = createIntersectionObserver();
               const mut = createMutationObserver();
               for (const { link, mutationTarget } of links) {
-                const aviso = document.createElement('div');
-                aviso.className = classNames.avisoCarregando!;
-                aviso.textContent = 'Carregando lista de documentos...';
+                const aviso = h(
+                  'div',
+                  { className: classNames.avisoCarregando },
+                  'Carregando lista de documentos...'
+                );
                 mut.observe(mutationTarget, node => {
                   if (!(node instanceof HTMLTableElement)) return;
                   if (link.src.match(/iPlus/)) {
@@ -162,7 +165,7 @@ export const telaMovimentacoes = (url: URL) =>
                 document,
                 D.query('table.resultTable > colgroup'),
                 M.map(g => {
-                  g.appendChild(document.createElement('col'));
+                  g.appendChild(h('col'));
                   return g;
                 }),
                 M.map(g => {
@@ -349,16 +352,15 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
               })
             );
             const file = document.createDocumentFragment();
-            const span = document.createElement('span');
+            const span = h('span', {}, nome.replace(/_/g, ' '));
             span.style.fontWeight = 'bold';
-            span.textContent = nome.replace(/_/g, ' ');
-            file.append(span, document.createElement('br'));
+            file.append(span, h('br'));
             if (play) {
               file.append(play);
             }
             file.append(link);
             if (isJust(observacao)) {
-              file.append(document.createElement('br'), ...observacao.value);
+              file.append(h('br'), ...observacao.value);
             }
             return [sequencial, frag, file];
           }
@@ -370,19 +372,15 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
       table.replaceChildren(
         ...pipe(
           linhas,
-          S.map((linha, r) => {
-            const tr = document.createElement('tr');
-            tr.classList.add(r % 2 === 0 ? 'even' : 'odd');
-            return S.foldLeft<string | Node, HTMLTableRowElement>(
-              tr,
+          S.map((linha, r) =>
+            S.foldLeft<string | Node, HTMLTableRowElement>(
+              h('tr', { className: r % 2 === 0 ? 'even' : 'odd' }),
               (tr, i) => {
-                const td = document.createElement('td');
-                td.append(i);
-                tr.append(td);
+                tr.append(h('td', {}, i as string));
                 return tr;
               }
-            )(linha);
-          })
+            )(linha)
+          )
         )
       );
     })
