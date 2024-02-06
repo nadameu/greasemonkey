@@ -1,4 +1,4 @@
-import { GM_addStyle, GM_getValue, GM_info, GM_setValue } from '$';
+import { GM_addStyle, GM_deleteValue, GM_getValue, GM_setValue } from '$';
 import {
   D,
   E,
@@ -19,9 +19,11 @@ import { pipe } from '@nadameu/pipe';
 import * as P from '@nadameu/predicates';
 import { createIntersectionObserver } from '../createIntersectionObserver';
 import { createMutationObserver } from '../createMutationObserver';
+import { configurarAbertura } from './configurarAbertura';
 import css from './estilos-seeu.scss?inline';
 import { esconderDica, mostrarDica, moverDica } from './mostrarDica';
 import classNames from './telaMovimentacoes.module.scss';
+import { PARAMETROS_JANELA, TIPO_ABERTURA } from './parametros';
 
 export const telaMovimentacoes = (url: URL) =>
   pipe(
@@ -200,16 +202,18 @@ export const telaMovimentacoes = (url: URL) =>
                     { type: 'button' },
                     'Configurar abertura de documentos'
                   );
-                  const div = h(
-                    'div',
-                    { className: classNames.divConfigurarAbertura },
-                    botao
-                  );
                   botao.addEventListener('click', e => {
                     e.preventDefault();
-                    onConfigurarClick();
+                    configurarAbertura();
                   });
-                  tabela.insertAdjacentElement('beforebegin', div);
+                  tabela.insertAdjacentElement(
+                    'beforebegin',
+                    h(
+                      'div',
+                      { className: classNames.divConfigurarAbertura },
+                      botao
+                    )
+                  );
                   return tabela;
                 }),
                 M.flatMap(D.query<HTMLTableRowElement>(':scope > thead > tr')),
@@ -239,6 +243,12 @@ function createOnDocumentClick(janelasAbertas: Map<string, Window>) {
       evt.target.matches('a[href][data-gm-doc-link]')
     ) {
       const link = evt.target as HTMLAnchorElement;
+      pipe(
+        document,
+        D.queryAll(`.${classNames.ultimoClicado}`),
+        S.map(x => x.classList.remove(classNames.ultimoClicado!))
+      );
+      link.classList.add(classNames.ultimoClicado!);
       evt.preventDefault();
       const id = link.dataset.gmDocLink!;
       if (janelasAbertas.has(id)) {
@@ -248,13 +258,30 @@ function createOnDocumentClick(janelasAbertas: Map<string, Window>) {
           return;
         }
       }
-      const win = window.open(
-        link.href,
-        `doc${id}`,
-        `top=0,left=${(window.screen.width / 6) | 0},width=${
-          ((window.screen.width * 2) / 3) | 0
-        },height=${window.screen.availHeight}`
-      );
+      const features =
+        ((): string | null => {
+          const tipo = GM_getValue(TIPO_ABERTURA);
+          if (P.isAnyOf(P.isLiteral('padrao'), P.isLiteral('janela'))(tipo)) {
+            if (tipo === 'padrao') return null;
+            const parametros = GM_getValue(PARAMETROS_JANELA);
+            if (
+              P.hasShape({
+                top: P.isInteger,
+                left: P.isInteger,
+                width: P.isNonNegativeInteger,
+                height: P.isNonNegativeInteger,
+              })(parametros)
+            ) {
+              return Object.entries(parametros)
+                .map(([key, value]) => `${key}=${value}`)
+                .join(',');
+            }
+          }
+          GM_setValue(TIPO_ABERTURA, 'padrao');
+          GM_deleteValue(PARAMETROS_JANELA);
+          return null;
+        })() ?? undefined;
+      const win = window.open(link.href, `doc${id}`, features);
       janelasAbertas.set(id, win!);
     }
   };
@@ -376,6 +403,7 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
             if (play) {
               file.append(play);
             }
+            link.textContent = link.textContent!.trim();
             file.append(link);
             if (isJust(observacao)) {
               file.append(h('br'), ...observacao.value);
@@ -417,88 +445,4 @@ function getId(sp: string) {
     S.map(x => parseInt(x, 16)),
     S.foldLeft(0n, (acc, x) => acc * 4294967296n + BigInt(x))
   );
-}
-function onConfigurarClick() {
-  const win = window.open(
-    'about:blank',
-    '_blank',
-    'top=0,left=0,width=800,height=450'
-  );
-  if (!win) {
-    window.alert(
-      [
-        'Ocorreu um erro ao tentar configurar a abertura de documentos.',
-        'Verifique se há permissão para abertura de janelas "pop-up".',
-      ].join('\n')
-    );
-    return;
-  }
-  win.addEventListener('load', () => {
-    win.document.title = 'Configurar abertura de documentos';
-    const saida = document.createDocumentFragment();
-    let padrao: HTMLInputElement,
-      janela: HTMLInputElement,
-      salvar: HTMLButtonElement,
-      cancelar: HTMLButtonElement;
-    let valor = GM_getValue<'padrao' | 'janela'>(GM_info.script.name, 'padrao');
-    saida.append(
-      h('h1', {}, 'Configurar abertura de documentos'),
-      h('p', {}, 'Selecione a forma de abertura de documentos:'),
-      h(
-        'p',
-        {},
-        h(
-          'label',
-          {},
-          (padrao = h('input', {
-            type: 'radio',
-            name: 'tipo',
-            value: 'padrao',
-            checked: valor === 'padrao',
-          })),
-          ' ',
-          'Padrão do SEEU (abrir em abas)'
-        )
-      ),
-      h(
-        'p',
-        {},
-        h(
-          'label',
-          {},
-          (janela = h('input', {
-            type: 'radio',
-            name: 'tipo',
-            value: 'janela',
-            checked: valor === 'janela',
-          })),
-          ' ',
-          'Abrir em janelas separadas'
-        )
-      ),
-      h(
-        'p',
-        {},
-        (salvar = h('button', { type: 'button' }, 'Salvar')),
-        ' ',
-        (cancelar = h('button', { type: 'button' }, 'Cancelar'))
-      )
-    );
-    padrao.addEventListener('click', () => {
-      valor = 'padrao';
-    });
-    janela.addEventListener('click', () => {
-      valor = 'janela';
-    });
-    salvar.addEventListener('click', e => {
-      e.preventDefault();
-      GM_setValue(GM_info.script.name, valor);
-      win.close();
-    });
-    cancelar.addEventListener('click', e => {
-      e.preventDefault();
-      win.close();
-    });
-    win.document.body.append(saida);
-  });
 }

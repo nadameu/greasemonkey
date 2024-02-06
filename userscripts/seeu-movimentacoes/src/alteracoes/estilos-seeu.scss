@@ -63,6 +63,11 @@ table.resultTable {
       width: auto;
       padding: 0;
       vertical-align: top !important;
+
+      a.link {
+        padding: initial !important;
+        border: 1px solid transparent;
+      }
     }
 
     td:nth-child(1) {

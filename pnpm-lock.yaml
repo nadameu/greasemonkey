@@ -240,9 +240,15 @@ importers:
       '@nadameu/create-element':
         specifier: workspace:^
         version: link:../../lib/create-element
+      '@nadameu/finite-state-machine':
+        specifier: workspace:^
+        version: link:../../lib/finite-state-machine
       '@nadameu/handler':
         specifier: workspace:^
         version: link:../../lib/handler
+      '@nadameu/match':
+        specifier: workspace:^
+        version: link:../../lib/match
       '@nadameu/pipe':
         specifier: ^2.1.2
         version: 2.1.2

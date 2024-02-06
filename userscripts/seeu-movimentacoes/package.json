@@ -16,7 +16,9 @@
   "dependencies": {
     "@nadameu/adts": "workspace:^",
     "@nadameu/create-element": "workspace:^",
+    "@nadameu/finite-state-machine": "workspace:^",
     "@nadameu/handler": "workspace:^",
+    "@nadameu/match": "workspace:^",
     "@nadameu/pipe": "^2.1.2",
     "@nadameu/predicates": "workspace:^"
   }

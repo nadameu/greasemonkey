@@ -20,3 +20,7 @@ td a.struck {
   text-align: right;
   --cor-secundaria: hsl(333, 20%, 35%);
 }
+:global(html #container .extendedinfo td a.link).ultimoClicado {
+  background: hsl(333, 75%, 91%) !important;
+  border: 1px dashed hsl(333, 75%, 8%);
+}
