@@ -62,7 +62,7 @@ export function configurarAbertura() {
     return;
   }
 
-  win.addEventListener('load', () => onJanelaAberta(win));
+  aoAbrirJanelaExecutar(win, () => onJanelaAberta(win));
 }
 
 function onJanelaAberta(win: Window) {
@@ -186,7 +186,11 @@ function onJanelaAberta(win: Window) {
           .map(([key, value]) => `${key}=${value}`)
           .join(',');
         try {
-          const newWin = win.open('about:blank', NOME_JANELA, parametros);
+          const newWin = win.open(
+            'about:blank',
+            `${NOME_JANELA}_2`,
+            parametros
+          );
           if (!newWin) throw new Error('Não foi possível abrir a janela.');
           win = newWin;
         } catch (e) {
@@ -198,7 +202,7 @@ function onJanelaAberta(win: Window) {
           );
           return;
         }
-        win.addEventListener('load', () => {
+        aoAbrirJanelaExecutar(win, () => {
           win.document.title = 'Configurar abertura de documentos';
           win.document.body.append(frag);
           div.textContent = '';
@@ -228,4 +232,11 @@ function onJanelaAberta(win: Window) {
 
 function p(...children: Array<string | HTMLElement>): HTMLParagraphElement {
   return h('p', {}, ...children);
+}
+function aoAbrirJanelaExecutar(win: Window, callback: () => void) {
+  if (win.document.readyState === 'complete') {
+    callback();
+  } else {
+    win.addEventListener('load', () => callback());
+  }
 }
