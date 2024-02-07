@@ -111,7 +111,12 @@ export const telaMovimentacoes = (url: URL) =>
               }
 
               const janelasAbertas = new Map<string, Window>();
-              const onDocumentClick = createOnDocumentClick(janelasAbertas);
+              const { exibirBotaoFechar } =
+                criarBotaoJanelasAbertas(janelasAbertas);
+              const onDocumentClick = createOnDocumentClick({
+                janelasAbertas,
+                exibirBotaoFechar,
+              });
               document.addEventListener('click', onDocumentClick);
               window.addEventListener('beforeunload', () => {
                 for (const win of janelasAbertas.values()) {
@@ -236,12 +241,19 @@ export const telaMovimentacoes = (url: URL) =>
       )
     )
   );
-function createOnDocumentClick(janelasAbertas: Map<string, Window>) {
+function createOnDocumentClick({
+  janelasAbertas,
+  exibirBotaoFechar,
+}: {
+  janelasAbertas: Map<string, Window>;
+  exibirBotaoFechar: () => void;
+}) {
   return function onDocumentClick(evt: Event) {
     if (
       evt.target instanceof HTMLElement &&
       evt.target.matches('a[href][data-gm-doc-link]')
     ) {
+      evt.preventDefault();
       const link = evt.target as HTMLAnchorElement;
       pipe(
         document,
@@ -249,7 +261,7 @@ function createOnDocumentClick(janelasAbertas: Map<string, Window>) {
         S.map(x => x.classList.remove(classNames.ultimoClicado!))
       );
       link.classList.add(classNames.ultimoClicado!);
-      evt.preventDefault();
+      exibirBotaoFechar();
       const id = link.dataset.gmDocLink!;
       if (janelasAbertas.has(id)) {
         const win = janelasAbertas.get(id)!;
@@ -285,6 +297,45 @@ function createOnDocumentClick(janelasAbertas: Map<string, Window>) {
       janelasAbertas.set(id, win!);
     }
   };
+}
+function criarBotaoJanelasAbertas(janelasAbertas: Map<string, Window>) {
+  const menu = window.parent?.document.querySelector('ul#main-menu');
+  if (!menu) {
+    console.log('Não encontrado.');
+    return {
+      exibirBotaoFechar() {},
+    };
+  }
+  const doc = menu.ownerDocument;
+  const fechar = doc.createElement('li');
+  fechar.className = 'gm-seeu-movimentacoes__fechar-janelas-abertas';
+  fechar.style.display = 'none';
+  const link = doc.createElement('a');
+  link.href = '#';
+  link.textContent = 'Fechar janelas abertas';
+  link.addEventListener('click', onClick);
+  fechar.appendChild(link);
+  menu.appendChild(fechar);
+  window.addEventListener('beforeunload', () => {
+    link.removeEventListener('click', onClick);
+    menu.removeChild(fechar);
+  });
+  return {
+    exibirBotaoFechar() {
+      fechar.style.display = '';
+    },
+  };
+
+  function onClick(evt: Event) {
+    evt.preventDefault();
+    for (const janela of janelasAbertas.values()) {
+      if (!janela.closed) {
+        janela.close();
+      }
+    }
+    janelasAbertas.clear();
+    fechar.style.display = 'none';
+  }
 }
 const onTabelaAdicionada = (table: HTMLTableElement) =>
   pipe(
