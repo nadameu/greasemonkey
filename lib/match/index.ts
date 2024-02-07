@@ -84,7 +84,7 @@ interface MatchTagged<T extends Tag<typeof _tag, ValidTag>, R>
     action: (obj: Extract<T, Tag<typeof _tag, K>>) => R2
   ): MatchResult<Exclude<T, Tag<typeof _tag, K>>, R | R2>;
 }
-
+const Matching = { NOT_FOUND: 'NOT_FOUND', FOUND: 'FOUND' } as const;
 export const match = <T>(obj: T): MatchResult<T, never> => {
   let status: TaggedWithUnion<
     'tag',
