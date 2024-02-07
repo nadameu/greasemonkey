@@ -2,11 +2,15 @@
 // @name         seeu-movimentacoes
 // @name:pt-BR   SEEU - Movimentações
 // @namespace    nadameu.com.br
-// @version      2.3.1
+// @version      2.4.0
 // @author       nadameu
 // @description  Melhoria na apresentação das movimentações do processo
 // @match        https://seeu.pje.jus.br/*
 // @grant        GM_addStyle
+// @grant        GM_deleteValue
+// @grant        GM_getValue
+// @grant        GM_info
+// @grant        GM_setValue
 // ==/UserScript==
 
 (t => {
@@ -14,10 +18,10 @@
     GM_addStyle(t);
     return;
   }
-  const d = document.createElement('style');
-  (d.textContent = t), document.head.append(d);
+  const o = document.createElement('style');
+  (o.textContent = t), document.head.append(o);
 })(
-  ' ._dica_1a6d3_1{position:absolute;border:1px solid #408;background:hsl(66,25%,93%);max-width:25%}td a._struck_1a6d3_8{cursor:not-allowed}td a._struck_1a6d3_8,td a._struck_1a6d3_8:hover{text-decoration:line-through} '
+  ' ._dica_25o7b_1{position:absolute;border:1px solid #408;background:hsl(66,25%,93%);max-width:25%}td a._struck_25o7b_8{cursor:not-allowed}td a._struck_25o7b_8,td a._struck_25o7b_8:hover{text-decoration:line-through}._avisoCarregando_25o7b_15{font-size:1.2em;font-style:italic}._divConfigurarAbertura_25o7b_20{text-align:right;--cor-secundaria: hsl(333, 20%, 35%)}html #container .extendedinfo td a.link{padding:0 1px!important;border:1px solid transparent}html #container .extendedinfo td a.link._ultimoClicado_25o7b_29{background:hsl(333,35%,91%)!important;border:1px dotted hsl(333,75%,8%)} '
 );
 
 (function () {
@@ -183,14 +187,52 @@
   }
   var _GM_addStyle = /* @__PURE__ */ (() =>
     typeof GM_addStyle != 'undefined' ? GM_addStyle : void 0)();
-  const isInstanceOf = Constructor => obj => obj instanceof Constructor;
-  function refine(...predicates) {
-    return value => predicates.every(p => p(value));
+  var _GM_deleteValue = /* @__PURE__ */ (() =>
+    typeof GM_deleteValue != 'undefined' ? GM_deleteValue : void 0)();
+  var _GM_getValue = /* @__PURE__ */ (() =>
+    typeof GM_getValue != 'undefined' ? GM_getValue : void 0)();
+  var _GM_info = /* @__PURE__ */ (() =>
+    typeof GM_info != 'undefined' ? GM_info : void 0)();
+  var _GM_setValue = /* @__PURE__ */ (() =>
+    typeof GM_setValue != 'undefined' ? GM_setValue : void 0)();
+  function h(tag2, props = null, ...children) {
+    const element = document.createElement(tag2);
+    for (const [key, value] of Object.entries(props ?? {})) {
+      element[key] = value;
+    }
+    element.append(...children);
+    return element;
   }
+  function isOfType(typeRepresentation) {
+    return value => typeof value === typeRepresentation;
+  }
+  const isOfTypeObject = /* @__PURE__ */ isOfType('object');
+  const isInstanceOf = Constructor => obj => obj instanceof Constructor;
+  function isLiteral(literal) {
+    return value => value === literal;
+  }
+  const isNull = /* @__PURE__ */ isLiteral(null);
+  function negate(predicate) {
+    return value => !predicate(value);
+  }
+  const isNotNull = /* @__PURE__ */ negate(isNull);
+  function refine(...predicates) {
+    return value => predicates.every(p2 => p2(value));
+  }
+  const isObject = /* @__PURE__ */ refine(isOfTypeObject, isNotNull);
+  const isInteger = x => Number.isInteger(x);
+  const isNonNegativeInteger = /* @__PURE__ */ refine(isInteger, x => x > -1);
   function isAnyOf(...predicates) {
-    return value => predicates.some(p => p(value));
+    return value => predicates.some(p2 => p2(value));
   }
   const isArray = x => Array.isArray(x);
+  function hasShape(predicates) {
+    return refine(isObject, obj =>
+      Object.entries(predicates).every(([key, predicate]) =>
+        key in obj ? predicate(obj[key]) : predicate.optional === true
+      )
+    );
+  }
   const isTuple = (...predicates) =>
     refine(isArray, xs => {
       if (xs.length !== predicates.length) return false;
@@ -262,13 +304,240 @@
         },
       };
     });
-  const css =
-    'table.resultTable>tbody>tr{--cor-pessoa: #444}table.resultTable>tbody>tr:not([id^=rowmovimentacoes])>td:nth-last-child(3){background:linear-gradient(to bottom right,var(--cor-pessoa) 50%,transparent 50%) top left/12px 12px no-repeat}table.resultTable>tbody>tr[id*=",JUIZ,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",JUIZ,"]>td:nth-last-child(3){border:1px solid var(--cor-pessoa)}table.resultTable>tbody>tr[id*=",SERVIDOR,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",PROMOTOR,"]{--cor-pessoa: #236e8e}table.resultTable>tbody>tr[id*=",ADVOGADO,"]{--cor-pessoa: #8e3523}table.resultTable>tbody>tr[id*=",OUTROS,"]{--cor-pessoa: #595959}td a.link{display:inline-block;background-position-y:.5em}table.resultTable thead>tr>th{padding:0 5px}table.resultTable tr div.extendedinfo{border:none;margin:0;width:auto}table.resultTable table.form{margin:0 0 4px;width:calc(100% - 4px);border-collapse:collapse;border:1px solid}table.resultTable table.form td{width:auto;padding:0;vertical-align:top!important}table.resultTable table.form td:nth-child(1){width:36px;text-align:center;padding-left:6px;padding-right:2px}table.resultTable table.form td:nth-child(2){width:16px;text-align:center;padding:5px 0 4px}table.resultTable table.form td:nth-child(3){width:89%}table.resultTable table.form tr.odd{background:hsl(333,34.8%,91%)}table.resultTable table.form tr.even{background:hsl(333,33.3%,97.1%)}table.resultTable table.form .ajaxCalloutGenericoHelp{display:inline;margin-right:4px}\n';
-  const dica$1 = '_dica_1a6d3_1';
-  const struck = '_struck_1a6d3_8';
+  function createFiniteStateMachine(
+    initialState,
+    transitions,
+    onInvalidTransition
+  ) {
+    let state = initialState;
+    let subscribers = [];
+    return { getState, dispatch, subscribe };
+    function getState() {
+      return state;
+    }
+    function dispatch(action) {
+      const transition = transitions[state.status][action.type];
+      if (transition) {
+        state = transition(action, state);
+      } else {
+        state = onInvalidTransition(state, action);
+      }
+      for (const subscriber of subscribers) {
+        subscriber(state);
+      }
+    }
+    function subscribe(subscriber) {
+      subscribers.push(subscriber);
+      subscriber(state);
+      return {
+        unsubscribe() {
+          subscribers = subscribers.filter(s => s !== subscriber);
+        },
+      };
+    }
+  }
+  const TIPO_ABERTURA = 'tipo_abertura';
+  const PARAMETROS_JANELA = 'parametros_janela';
+  const NOME_JANELA = `gm-${_GM_info}__configurar-abertura`;
+  const Action = {
+    OPCAO_SELECIONADA: opcao => ({
+      type: 'OPCAO_SELECIONADA',
+      opcao,
+    }),
+    SALVAR: { type: 'SALVAR' },
+  };
+  function configurarAbertura() {
+    const antiga = window.open('about:blank', NOME_JANELA);
+    antiga == null ? void 0 : antiga.close();
+    const win = window.open(
+      'about:blank',
+      NOME_JANELA,
+      'top=0,left=0,width=800,height=450'
+    );
+    if (!win) {
+      window.alert(
+        [
+          'Ocorreu um erro ao tentar configurar a abertura de documentos.',
+          'Verifique se há permissão para abertura de janelas "pop-up".',
+        ].join('\n')
+      );
+      return;
+    }
+    win.addEventListener('load', () => onJanelaAberta(win));
+  }
+  function onJanelaAberta(win) {
+    const fsm = createFiniteStateMachine(
+      {
+        status: 'INICIO',
+        current: _GM_getValue(TIPO_ABERTURA, 'padrao'),
+      },
+      {
+        INICIO: {
+          OPCAO_SELECIONADA({ opcao }) {
+            return { status: 'INICIO', current: opcao };
+          },
+          SALVAR(_, state) {
+            if (state.current === 'padrao') return { status: 'SALVO_PADRAO' };
+            return {
+              status: 'JANELA_POSICAO',
+            };
+          },
+        },
+        SALVO_PADRAO: {},
+        JANELA_POSICAO: {
+          SALVAR() {
+            return {
+              status: 'JANELA_CONFIRMAR',
+              posicao: {
+                top: win.screenY,
+                left: win.screenX,
+                width: win.innerWidth,
+                height: win.innerHeight,
+              },
+            };
+          },
+        },
+        JANELA_CONFIRMAR: {
+          SALVAR(_, { posicao }) {
+            return { status: 'SALVO_JANELA', posicao };
+          },
+        },
+        SALVO_JANELA: {},
+      },
+      state => state
+    );
+    win.document.title = 'Configurar abertura de documentos';
+    const inputPadrao = h('input', {
+      type: 'radio',
+      name: 'tipo',
+      value: 'padrao',
+      checked: (state =>
+        state.status === 'INICIO' && state.current === 'padrao')(
+        fsm.getState()
+      ),
+      onclick: () => fsm.dispatch(Action.OPCAO_SELECIONADA('padrao')),
+    });
+    const inputJanela = h('input', {
+      type: 'radio',
+      name: 'tipo',
+      value: 'janela',
+      checked: (state =>
+        state.status !== 'INICIO' || state.current === 'janela')(
+        fsm.getState()
+      ),
+      onclick: () => fsm.dispatch(Action.OPCAO_SELECIONADA('janela')),
+    });
+    const botaoCancelar = h(
+      'button',
+      {
+        type: 'button',
+        onclick: () => win.close(),
+      },
+      'Cancelar'
+    );
+    const botaoSalvar = h('button', { type: 'button' });
+    botaoSalvar.addEventListener('click', () => fsm.dispatch(Action.SALVAR));
+    const div = h(
+      'div',
+      {},
+      p('Selecione a forma de abertura de documentos:'),
+      p(h('label', {}, inputPadrao, ' ', 'Padrão do SEEU (abrir em abas)')),
+      p(h('label', {}, inputJanela, ' ', 'Abrir em janelas separadas'))
+    );
+    win.document.body.append(
+      h('h1', {}, 'Configurar abertura de documentos'),
+      div,
+      p(botaoCancelar, ' ', botaoSalvar)
+    );
+    fsm.subscribe(() => {
+      const estado = fsm.getState();
+      switch (estado.status) {
+        case 'INICIO': {
+          if (estado.current === 'padrao') {
+            botaoSalvar.textContent = 'Salvar';
+          } else {
+            botaoSalvar.textContent = 'Próximo >';
+          }
+          break;
+        }
+        case 'SALVO_PADRAO': {
+          _GM_setValue(TIPO_ABERTURA, 'padrao');
+          _GM_deleteValue(PARAMETROS_JANELA);
+          win.close();
+          break;
+        }
+        case 'JANELA_POSICAO': {
+          div.textContent = '';
+          div.append(
+            p(
+              'Mova esta janela para o local em que deseja que os documentos sejam abertos.'
+            ),
+            p('Depois, clique no botão "Próximo >".')
+          );
+          break;
+        }
+        case 'JANELA_CONFIRMAR': {
+          const frag = document.createDocumentFragment();
+          frag.append(...win.document.body.childNodes);
+          win.close();
+          const parametros = Object.entries(estado.posicao)
+            .map(([key, value]) => `${key}=${value}`)
+            .join(',');
+          try {
+            const newWin = win.open('about:blank', NOME_JANELA, parametros);
+            if (!newWin) throw new Error('Não foi possível abrir a janela.');
+            win = newWin;
+          } catch (e) {
+            window.alert(
+              [
+                'Ocorreu um erro ao tentar configurar a abertura de documentos.',
+                'Verifique se há permissão para abertura de janelas "pop-up".',
+              ].join('\n')
+            );
+            return;
+          }
+          win.addEventListener('load', () => {
+            win.document.title = 'Configurar abertura de documentos';
+            win.document.body.append(frag);
+            div.textContent = '';
+            botaoSalvar.textContent = 'Salvar';
+            div.append(
+              p('Esta janela foi aberta no local correto?'),
+              p('Em caso positivo, clique em "Salvar".'),
+              p('Do contrário, clique em "Cancelar" e configure novamente.'),
+              p(
+                'Obs.: alguns navegadores não permitem a abertura de janelas em ',
+                'monitor diverso daquele em que se encontra a janela principal.'
+              )
+            );
+          });
+          break;
+        }
+        case 'SALVO_JANELA': {
+          _GM_setValue(TIPO_ABERTURA, 'janela');
+          _GM_setValue(PARAMETROS_JANELA, estado.posicao);
+          win.close();
+          break;
+        }
+      }
+    });
+  }
+  function p(...children) {
+    return h('p', {}, ...children);
+  }
+  const css$1 =
+    'table.resultTable>tbody>tr{--cor-pessoa: #444}table.resultTable>tbody>tr:not([id^=rowmovimentacoes])>td:nth-last-child(3){background:linear-gradient(to bottom right,var(--cor-pessoa) 50%,transparent 50%) top left/12px 12px no-repeat}table.resultTable>tbody>tr[id*=",JUIZ,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",JUIZ,"]>td:nth-last-child(3){border:1px solid var(--cor-pessoa)}table.resultTable>tbody>tr[id*=",SERVIDOR,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",PROMOTOR,"]{--cor-pessoa: #236e8e}table.resultTable>tbody>tr[id*=",ADVOGADO,"]{--cor-pessoa: #8e3523}table.resultTable>tbody>tr[id*=",OUTROS,"]{--cor-pessoa: #595959}table.resultTable thead>tr>th{padding:0 5px}table.resultTable tr div.extendedinfo{border:none;margin:0;width:auto}table.resultTable table.form{margin:0 0 4px;width:calc(100% - 4px);border-collapse:collapse;border:1px solid}table.resultTable table.form td{width:auto;padding:0;vertical-align:top!important}table.resultTable table.form td:nth-child(1){width:36px;text-align:center;padding-left:6px;padding-right:2px}table.resultTable table.form td:nth-child(2){width:16px;text-align:center;padding:5px 0 4px}table.resultTable table.form td:nth-child(3){width:89%}table.resultTable table.form tr.odd{background:hsl(333,34.8%,91%)}table.resultTable table.form tr.even{background:hsl(333,33.3%,97.1%)}table.resultTable table.form .ajaxCalloutGenericoHelp{display:inline;margin-right:4px}\n';
+  const dica$1 = '_dica_25o7b_1';
+  const struck = '_struck_25o7b_8';
+  const avisoCarregando = '_avisoCarregando_25o7b_15';
+  const divConfigurarAbertura = '_divConfigurarAbertura_25o7b_20';
+  const ultimoClicado = '_ultimoClicado_25o7b_29';
   const classNames = {
     dica: dica$1,
     struck,
+    avisoCarregando,
+    divConfigurarAbertura,
+    ultimoClicado,
   };
   let dica = null;
   function criarDica() {
@@ -359,8 +628,21 @@
                 const obs = createIntersectionObserver();
                 const mut = createMutationObserver();
                 for (const { link, mutationTarget } of links) {
+                  const aviso = h(
+                    'div',
+                    { className: classNames.avisoCarregando },
+                    'Carregando lista de documentos...'
+                  );
                   mut.observe(mutationTarget, node => {
                     if (!(node instanceof HTMLTableElement)) return;
+                    if (link.src.match(/iPlus/)) {
+                      node.style.display = 'none';
+                      return;
+                    }
+                    if (aviso.parentNode) {
+                      aviso.remove();
+                    }
+                    aviso.textContent = 'Atualizando lista de documentos...';
                     pipe(
                       onTabelaAdicionada(node),
                       mapLeft(err => {
@@ -377,9 +659,30 @@
                     unobserve();
                     link.click();
                   });
+                  link.addEventListener('click', () => {
+                    if (link.src.match(/iPlus/)) {
+                      if (aviso.parentNode) {
+                        aviso.remove();
+                      }
+                      const tabela = mutationTarget.querySelector('table');
+                      if (tabela) {
+                        tabela.style.display = 'none';
+                      }
+                    } else {
+                      mutationTarget.parentNode.insertBefore(
+                        aviso,
+                        mutationTarget
+                      );
+                    }
+                  });
                 }
                 const janelasAbertas = /* @__PURE__ */ new Map();
-                const onDocumentClick = createOnDocumentClick(janelasAbertas);
+                const { exibirBotaoFechar } =
+                  criarBotaoJanelasAbertas(janelasAbertas);
+                const onDocumentClick = createOnDocumentClick({
+                  janelasAbertas,
+                  exibirBotaoFechar,
+                });
                 document.addEventListener('click', onDocumentClick);
                 window.addEventListener('beforeunload', () => {
                   for (const win of janelasAbertas.values()) {
@@ -434,7 +737,7 @@
                   document,
                   query('table.resultTable > colgroup'),
                   map$1(g => {
-                    g.appendChild(document.createElement('col'));
+                    g.appendChild(h('col'));
                     return g;
                   }),
                   map$1(g => {
@@ -462,10 +765,30 @@
                 );
                 pipe(
                   document,
-                  query('table.resultTable > thead > tr'),
+                  query('table.resultTable'),
+                  map$1(tabela => {
+                    const botao = h(
+                      'button',
+                      { type: 'button' },
+                      'Configurar abertura de documentos'
+                    );
+                    botao.addEventListener('click', e => {
+                      e.preventDefault();
+                      configurarAbertura();
+                    });
+                    tabela.insertAdjacentElement(
+                      'beforebegin',
+                      h(
+                        'div',
+                        { className: classNames.divConfigurarAbertura },
+                        botao
+                      )
+                    );
+                    return tabela;
+                  }),
+                  flatMap(query(':scope > thead > tr')),
                   map$1(row => {
-                    const th = document.createElement('th');
-                    th.textContent = 'Documentos';
+                    const th = h('th', {}, 'Documentos');
                     row.appendChild(th);
                     for (const th2 of row.cells) {
                       th2.removeAttribute('style');
@@ -477,20 +800,27 @@
           }),
           orElse(() => Just(of$1(void 0))),
           map$1(either => {
-            _GM_addStyle(css);
+            _GM_addStyle(css$1);
             return either;
           })
         )
       )
     );
-  function createOnDocumentClick(janelasAbertas) {
+  function createOnDocumentClick({ janelasAbertas, exibirBotaoFechar }) {
     return function onDocumentClick(evt) {
       if (
         evt.target instanceof HTMLElement &&
         evt.target.matches('a[href][data-gm-doc-link]')
       ) {
-        const link = evt.target;
         evt.preventDefault();
+        const link = evt.target;
+        pipe(
+          document,
+          queryAll(`.${classNames.ultimoClicado}`),
+          map(x => x.classList.remove(classNames.ultimoClicado))
+        );
+        link.classList.add(classNames.ultimoClicado);
+        exibirBotaoFechar();
         const id = link.dataset.gmDocLink;
         if (janelasAbertas.has(id)) {
           const win2 = janelasAbertas.get(id);
@@ -499,16 +829,75 @@
             return;
           }
         }
-        const win = window.open(
-          link.href,
-          `doc${id}`,
-          `top=0,left=${(window.screen.width / 6) | 0},width=${
-            ((window.screen.width * 2) / 3) | 0
-          },height=${window.screen.availHeight}`
-        );
+        const features =
+          (() => {
+            const tipo = _GM_getValue(TIPO_ABERTURA);
+            if (isAnyOf(isLiteral('padrao'), isLiteral('janela'))(tipo)) {
+              if (tipo === 'padrao') return null;
+              const parametros = _GM_getValue(PARAMETROS_JANELA);
+              if (
+                hasShape({
+                  top: isInteger,
+                  left: isInteger,
+                  width: isNonNegativeInteger,
+                  height: isNonNegativeInteger,
+                })(parametros)
+              ) {
+                return Object.entries(parametros)
+                  .map(([key, value]) => `${key}=${value}`)
+                  .join(',');
+              }
+            }
+            _GM_setValue(TIPO_ABERTURA, 'padrao');
+            _GM_deleteValue(PARAMETROS_JANELA);
+            return null;
+          })() ?? void 0;
+        const win = window.open(link.href, `doc${id}`, features);
         janelasAbertas.set(id, win);
       }
     };
+  }
+  function criarBotaoJanelasAbertas(janelasAbertas) {
+    var _a;
+    const menu =
+      (_a = window.parent) == null
+        ? void 0
+        : _a.document.querySelector('ul#main-menu');
+    if (!menu) {
+      console.log('Não encontrado.');
+      return {
+        exibirBotaoFechar() {},
+      };
+    }
+    const doc = menu.ownerDocument;
+    const fechar = doc.createElement('li');
+    fechar.className = 'gm-seeu-movimentacoes__fechar-janelas-abertas';
+    fechar.style.display = 'none';
+    const link = doc.createElement('a');
+    link.href = '#';
+    link.textContent = 'Fechar janelas abertas';
+    link.addEventListener('click', onClick);
+    fechar.appendChild(link);
+    menu.appendChild(fechar);
+    window.addEventListener('beforeunload', () => {
+      link.removeEventListener('click', onClick);
+      menu.removeChild(fechar);
+    });
+    return {
+      exibirBotaoFechar() {
+        fechar.style.display = '';
+      },
+    };
+    function onClick(evt) {
+      evt.preventDefault();
+      for (const janela of janelasAbertas.values()) {
+        if (!janela.closed) {
+          janela.close();
+        }
+      }
+      janelasAbertas.clear();
+      fechar.style.display = 'none';
+    }
   }
   const onTabelaAdicionada = table =>
     pipe(
@@ -637,16 +1026,16 @@ Ass.: ${assinatura2}`;
                 })
               );
               const file = document.createDocumentFragment();
-              const span = document.createElement('span');
+              const span = h('span', {}, nome.replace(/_/g, ' '));
               span.style.fontWeight = 'bold';
-              span.textContent = nome.replace(/_/g, ' ');
-              file.append(span, document.createElement('br'));
+              file.append(span, h('br'));
               if (play) {
                 file.append(play);
               }
+              link2.textContent = link2.textContent.trim();
               file.append(link2);
               if (isJust(observacao)) {
-                file.append(document.createElement('br'), ...observacao.value);
+                file.append(h('br'), ...observacao.value);
               }
               return [sequencial, frag, file];
             }
@@ -658,16 +1047,15 @@ Ass.: ${assinatura2}`;
         table.replaceChildren(
           ...pipe(
             linhas,
-            map((linha, r) => {
-              const tr = document.createElement('tr');
-              tr.classList.add(r % 2 === 0 ? 'even' : 'odd');
-              return foldLeft(tr, (tr2, i) => {
-                const td = document.createElement('td');
-                td.append(i);
-                tr2.append(td);
-                return tr2;
-              })(linha);
-            })
+            map((linha, r) =>
+              foldLeft(
+                h('tr', { className: r % 2 === 0 ? 'even' : 'odd' }),
+                (tr, i) => {
+                  tr.append(h('td', {}, i));
+                  return tr;
+                }
+              )(linha)
+            )
           )
         );
       })
@@ -687,10 +1075,22 @@ Ass.: ${assinatura2}`;
       foldLeft(0n, (acc, x) => acc * 4294967296n + BigInt(x))
     );
   }
+  const css =
+    '.sm .gm-seeu-movimentacoes__fechar-janelas-abertas{background:hsla(333,35%,50%,.5);margin-left:3ch}\n';
+  const barraSuperior = url =>
+    pipe(
+      url.pathname,
+      maybeBool(x => x === '/seeu/usuario/areaAtuacao.do'),
+      map$1(() => {
+        _GM_addStyle(css);
+        return Right(void 0);
+      })
+    );
   const alteracoes = /* @__PURE__ */ Object.freeze(
     /* @__PURE__ */ Object.defineProperty(
       {
         __proto__: null,
+        barraSuperior,
         telaMovimentacoes,
       },
       Symbol.toStringTag,
