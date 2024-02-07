@@ -3,7 +3,7 @@
   "gm_name": "SEEU - Alterar atuação",
   "description": "SEEU - Alterar a área de atuação no SEEU a partir da aba \"Informações Gerais\" de um processo",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.4.1",
   "author": "nadameu",
   "type": "module",
   "scripts": {

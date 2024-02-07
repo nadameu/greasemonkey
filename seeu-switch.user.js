@@ -2,7 +2,7 @@
 // @name         seeu-switch
 // @name:pt-BR   SEEU - Alterar atuação
 // @namespace    nadameu.com.br
-// @version      1.4.0
+// @version      1.4.1
 // @author       nadameu
 // @description  SEEU - Alterar a área de atuação no SEEU a partir da aba "Informações Gerais" de um processo
 // @match        https://seeu.pje.jus.br/seeu/visualizacaoProcesso.do?*
@@ -91,7 +91,7 @@
       linkAlterar instanceof HTMLAnchorElement,
       'Elemento não encontrado: `#alterarAreaAtuacao`.'
     );
-    const match = linkAlterar.href.match(
+    const match = decodeURI(linkAlterar.href).match(
       /^javascript:openSubmitDialog\('(\/seeu\/usuario\/areaAtuacao\.do\?_tj=[0-9a-f]+)', 'Alterar Atua[^']+o', 0, 0\);/
     );
     assert(
