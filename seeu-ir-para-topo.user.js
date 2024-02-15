@@ -2,9 +2,9 @@
 // @name         seeu-ir-para-topo
 // @name:pt-BR   SEEU - Ir para o topo
 // @namespace    nadameu.com.br
-// @version      1.1.0
+// @version      1.2.0
 // @author       nadameu
-// @description  Acrescenta botões para facilitar ir para o início e o fim da página
+// @description  Acrescenta botão para facilitar ir para o início da página
 // @match        https://seeu.pje.jus.br/*
 // @grant        GM_addStyle
 // ==/UserScript==
