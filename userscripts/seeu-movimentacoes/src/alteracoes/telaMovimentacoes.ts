@@ -22,8 +22,12 @@ import { createMutationObserver } from '../createMutationObserver';
 import { configurarAbertura } from './configurarAbertura';
 import css from './estilos-seeu.scss?inline';
 import { esconderDica, mostrarDica, moverDica } from './mostrarDica';
+import {
+  FECHAR_AUTOMATICAMENTE,
+  PARAMETROS_JANELA,
+  TIPO_ABERTURA,
+} from './parametros';
 import classNames from './telaMovimentacoes.module.scss';
-import { PARAMETROS_JANELA, TIPO_ABERTURA } from './parametros';
 
 export const telaMovimentacoes = (url: URL) =>
   pipe(
@@ -118,8 +122,10 @@ export const telaMovimentacoes = (url: URL) =>
               });
               document.addEventListener('click', onDocumentClick);
               window.addEventListener('beforeunload', () => {
-                for (const win of janelasAbertas.values()) {
-                  if (!win.closed) win.close();
+                if (GM_getValue(FECHAR_AUTOMATICAMENTE, true)) {
+                  for (const win of janelasAbertas.values()) {
+                    if (!win.closed) win.close();
+                  }
                 }
               });
               let currentDica: HTMLElement | null = null;
@@ -201,21 +207,36 @@ export const telaMovimentacoes = (url: URL) =>
                 document,
                 D.query<HTMLTableElement>('table.resultTable'),
                 M.map(tabela => {
-                  const botao = h(
+                  const configurar = h(
                     'button',
                     { type: 'button' },
                     'Configurar abertura de documentos'
                   );
-                  botao.addEventListener('click', e => {
+                  configurar.addEventListener('click', e => {
                     e.preventDefault();
                     configurarAbertura();
+                  });
+                  const fechar = h('input', {
+                    type: 'checkbox',
+                    checked: GM_getValue<boolean>(FECHAR_AUTOMATICAMENTE, true),
+                  });
+                  fechar.addEventListener('click', () => {
+                    GM_setValue(FECHAR_AUTOMATICAMENTE, fechar.checked);
                   });
                   tabela.insertAdjacentElement(
                     'beforebegin',
                     h(
                       'div',
                       { className: classNames.divConfigurarAbertura },
-                      botao
+                      configurar,
+                      h('br'),
+                      h(
+                        'label',
+                        {},
+                        fechar,
+                        ' ',
+                        'Fechar automaticamente documentos abertos ao sair'
+                      )
                     )
                   );
                   return tabela;
