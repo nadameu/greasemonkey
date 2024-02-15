@@ -2,7 +2,7 @@
 // @name         seeu-movimentacoes
 // @name:pt-BR   SEEU - Movimentações
 // @namespace    nadameu.com.br
-// @version      2.4.1
+// @version      2.5.0
 // @author       nadameu
 // @description  Melhoria na apresentação das movimentações do processo
 // @match        https://seeu.pje.jus.br/*
@@ -338,6 +338,7 @@
   }
   const TIPO_ABERTURA = 'tipo_abertura';
   const PARAMETROS_JANELA = 'parametros_janela';
+  const FECHAR_AUTOMATICAMENTE = 'fechar_automaticamente';
   const NOME_JANELA = `gm-${_GM_info}__configurar-abertura`;
   const Action = {
     OPCAO_SELECIONADA: opcao => ({
@@ -537,7 +538,7 @@
     }
   }
   const css$1 =
-    'table.resultTable>tbody>tr{--cor-pessoa: #444}table.resultTable>tbody>tr:not([id^=rowmovimentacoes])>td:nth-last-child(3){background:linear-gradient(to bottom right,var(--cor-pessoa) 50%,transparent 50%) top left/12px 12px no-repeat}table.resultTable>tbody>tr[id*=",JUIZ,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",JUIZ,"]>td:nth-last-child(3){border:1px solid var(--cor-pessoa)}table.resultTable>tbody>tr[id*=",SERVIDOR,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",PROMOTOR,"]{--cor-pessoa: #236e8e}table.resultTable>tbody>tr[id*=",ADVOGADO,"]{--cor-pessoa: #8e3523}table.resultTable>tbody>tr[id*=",OUTROS,"]{--cor-pessoa: #595959}table.resultTable thead>tr>th{padding:0 5px}table.resultTable tr div.extendedinfo{border:none;margin:0;width:auto}table.resultTable table.form{margin:0 0 4px;width:calc(100% - 4px);border-collapse:collapse;border:1px solid}table.resultTable table.form td{width:auto;padding:0;vertical-align:top!important}table.resultTable table.form td:nth-child(1){width:36px;text-align:center;padding-left:6px;padding-right:2px}table.resultTable table.form td:nth-child(2){width:16px;text-align:center;padding:5px 0 4px}table.resultTable table.form td:nth-child(3){width:89%}table.resultTable table.form tr.odd{background:hsl(333,34.8%,91%)}table.resultTable table.form tr.even{background:hsl(333,33.3%,97.1%)}table.resultTable table.form .ajaxCalloutGenericoHelp{display:inline;margin-right:4px}\n';
+    'table.resultTable>tbody>tr{--cor-pessoa: #444}div>table.resultTable>tbody>tr>td:nth-last-child(3){background:linear-gradient(to bottom right,var(--cor-pessoa) 50%,transparent 50%) top left/12px 12px no-repeat}table.resultTable>tbody>tr[id*=",JUIZ,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",JUIZ,"]>td:nth-last-child(3){border:1px solid var(--cor-pessoa)}table.resultTable>tbody>tr[id*=",SERVIDOR,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",PROMOTOR,"]{--cor-pessoa: #236e8e}table.resultTable>tbody>tr[id*=",ADVOGADO,"]{--cor-pessoa: #8e3523}table.resultTable>tbody>tr[id*=",OUTROS,"]{--cor-pessoa: #595959}table.resultTable thead>tr>th{padding:0 5px}table.resultTable tr div.extendedinfo{border:none;margin:0;width:auto}table.resultTable table.form{margin:0 0 4px;width:calc(100% - 4px);border-collapse:collapse;border:1px solid}table.resultTable table.form td{width:auto;padding:0;vertical-align:top!important}table.resultTable table.form td:nth-child(1){width:36px;text-align:center;padding-left:6px;padding-right:2px}table.resultTable table.form td:nth-child(2){width:16px;text-align:center;padding:5px 0 4px}table.resultTable table.form td:nth-child(3){width:89%}table.resultTable table.form td:nth-child(4){width:16px}table.resultTable table.form tr.odd{background:hsl(333,34.8%,91%)}table.resultTable table.form tr.even,table.resultTable table.form tr.incidente{background:hsl(333,33.3%,97.1%)}table.resultTable table.form .ajaxCalloutGenericoHelp{display:inline;margin-right:4px}\n';
   const dica$1 = '_dica_25o7b_1';
   const struck = '_struck_25o7b_8';
   const avisoCarregando = '_avisoCarregando_25o7b_15';
@@ -653,7 +654,6 @@
                     if (aviso.parentNode) {
                       aviso.remove();
                     }
-                    aviso.textContent = 'Atualizando lista de documentos...';
                     pipe(
                       onTabelaAdicionada(node),
                       mapLeft(err => {
@@ -696,8 +696,10 @@
                 });
                 document.addEventListener('click', onDocumentClick);
                 window.addEventListener('beforeunload', () => {
-                  for (const win of janelasAbertas.values()) {
-                    if (!win.closed) win.close();
+                  if (_GM_getValue(FECHAR_AUTOMATICAMENTE, true)) {
+                    for (const win of janelasAbertas.values()) {
+                      if (!win.closed) win.close();
+                    }
                   }
                 });
                 let currentDica = null;
@@ -778,21 +780,36 @@
                   document,
                   query('table.resultTable'),
                   map$1(tabela => {
-                    const botao = h(
+                    const configurar = h(
                       'button',
                       { type: 'button' },
                       'Configurar abertura de documentos'
                     );
-                    botao.addEventListener('click', e => {
+                    configurar.addEventListener('click', e => {
                       e.preventDefault();
                       configurarAbertura();
+                    });
+                    const fechar = h('input', {
+                      type: 'checkbox',
+                      checked: _GM_getValue(FECHAR_AUTOMATICAMENTE, true),
+                    });
+                    fechar.addEventListener('click', () => {
+                      _GM_setValue(FECHAR_AUTOMATICAMENTE, fechar.checked);
                     });
                     tabela.insertAdjacentElement(
                       'beforebegin',
                       h(
                         'div',
                         { className: classNames.divConfigurarAbertura },
-                        botao
+                        configurar,
+                        h('br'),
+                        h(
+                          'label',
+                          {},
+                          fechar,
+                          ' ',
+                          'Fechar automaticamente documentos abertos ao sair'
+                        )
                       )
                     );
                     return tabela;
@@ -914,8 +931,18 @@
     pipe(
       table.rows,
       traverse(applicativeEither)((linha, l) => {
-        if (linha.cells.length !== 7)
+        if (linha.cells.length !== 7) {
+          if (
+            linha.classList.contains('linhaPeticao') &&
+            linha.cells.length === 1 &&
+            linha.cells[0].colSpan === 7
+          ) {
+            const frag = document.createDocumentFragment();
+            frag.append(...linha.cells[0].childNodes);
+            return Right([frag]);
+          }
           return Left(`Formato de linha desconhecido: ${l}.`);
+        }
         const sequencialNome = pipe(
           linha.cells[0],
           x => x.childNodes,
@@ -1010,21 +1037,32 @@
             mapLeft(() => `Link para documento não reconhecido: ${l}.`)
           )
         );
+        const sigilo = pipe(
+          linha.cells[6],
+          text,
+          map$1(x => x.trim()),
+          filter$1(x => x !== ''),
+          map$1(sigilo2 => ({ sigilo: sigilo2 })),
+          toEither(() => `Nível de sigilo não reconhecido: ${l}.`)
+        );
         const result = pipe(
-          tuple(sequencialNome, assinatura, link),
+          tuple(sequencialNome, assinatura, link, sigilo),
           sequence(applicativeEither),
           map$2(
             ([
               { sequencial, nome, observacao },
               { assinatura: assinatura2 },
               { menu, popup, link: link2, play },
+              { sigilo: sigilo2 },
             ]) => {
               var _a;
               link2.title = `${
                 ((_a = link2.title) == null ? void 0 : _a.trim()) ?? ''
               }
 
-Ass.: ${assinatura2}`;
+Ass.: ${assinatura2}
+
+${sigilo2}`;
               const frag = document.createDocumentFragment();
               frag.append(menu, popup);
               pipe(
@@ -1048,7 +1086,11 @@ Ass.: ${assinatura2}`;
               if (isJust(observacao)) {
                 file.append(h('br'), ...observacao.value);
               }
-              return [sequencial, frag, file];
+              const cadeado =
+                sigilo2 === 'Público'
+                  ? ''
+                  : h('i', { className: 'icon icon-mdi:lock', title: sigilo2 });
+              return [sequencial, frag, file, cadeado];
             }
           )
         );
@@ -1061,8 +1103,12 @@ Ass.: ${assinatura2}`;
             map((linha, r) =>
               foldLeft(
                 h('tr', { className: r % 2 === 0 ? 'even' : 'odd' }),
-                (tr, i) => {
-                  tr.append(h('td', {}, i));
+                (tr, node) => {
+                  tr.append(h('td', {}, node));
+                  if (linha.length === 1) {
+                    tr.className = 'incidente';
+                    tr.cells[0].colSpan = 4;
+                  }
                   return tr;
                 }
               )(linha)
