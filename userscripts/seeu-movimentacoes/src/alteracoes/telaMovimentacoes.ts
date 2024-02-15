@@ -73,7 +73,6 @@ export const telaMovimentacoes = (url: URL) =>
                   if (aviso.parentNode) {
                     aviso.remove();
                   }
-                  aviso.textContent = 'Atualizando lista de documentos...';
                   pipe(
                     onTabelaAdicionada(node),
                     E.mapLeft(err => {
@@ -341,8 +340,18 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
   pipe(
     table.rows,
     S.traverse(applicativeEither)((linha, l) => {
-      if (linha.cells.length !== 7)
+      if (linha.cells.length !== 7) {
+        if (
+          linha.classList.contains('linhaPeticao') &&
+          linha.cells.length === 1 &&
+          linha.cells[0]!.colSpan === 7
+        ) {
+          const frag = document.createDocumentFragment();
+          frag.append(...linha.cells[0]!.childNodes);
+          return Right([frag]);
+        }
         return Left(`Formato de linha desconhecido: ${l}.`);
+      }
       const sequencialNome = pipe(
         linha.cells[0]!,
         x => x.childNodes,
@@ -426,16 +435,27 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
           E.mapLeft(() => `Link para documento não reconhecido: ${l}.`)
         )
       );
+      const sigilo = pipe(
+        linha.cells[6]!,
+        D.text,
+        M.map(x => x.trim()),
+        M.filter(x => x !== ''),
+        M.map(sigilo => ({ sigilo })),
+        M.toEither(() => `Nível de sigilo não reconhecido: ${l}.`)
+      );
       const result = pipe(
-        tuple(sequencialNome, assinatura, link),
+        tuple(sequencialNome, assinatura, link, sigilo),
         T.sequence(applicativeEither),
         E.map(
           ([
             { sequencial, nome, observacao },
             { assinatura },
             { menu, popup, link, play },
+            { sigilo },
           ]) => {
-            link.title = `${link.title?.trim() ?? ''}\n\nAss.: ${assinatura}`;
+            link.title = `${
+              link.title?.trim() ?? ''
+            }\n\nAss.: ${assinatura}\n\n${sigilo}`;
             const frag = document.createDocumentFragment();
             frag.append(menu, popup);
             pipe(
@@ -459,7 +479,11 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
             if (isJust(observacao)) {
               file.append(h('br'), ...observacao.value);
             }
-            return [sequencial, frag, file];
+            const cadeado =
+              sigilo === 'Público'
+                ? ''
+                : h('i', { className: 'icon icon-mdi:lock', title: sigilo });
+            return [sequencial, frag, file, cadeado];
           }
         )
       );
@@ -472,8 +496,12 @@ const onTabelaAdicionada = (table: HTMLTableElement) =>
           S.map((linha, r) =>
             S.foldLeft<string | Node, HTMLTableRowElement>(
               h('tr', { className: r % 2 === 0 ? 'even' : 'odd' }),
-              (tr, i) => {
-                tr.append(h('td', {}, i as string));
+              (tr, node) => {
+                tr.append(h('td', {}, node as string | HTMLElement));
+                if (linha.length === 1) {
+                  tr.className = 'incidente';
+                  tr.cells[0]!.colSpan = 4;
+                }
                 return tr;
               }
             )(linha)

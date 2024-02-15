@@ -8,7 +8,7 @@ div#content {
 table.resultTable > tbody > tr {
   --cor-pessoa: #444;
 
-  &:not([id^='rowmovimentacoes']) > td:nth-last-child(3) {
+  div > & > td:nth-last-child(3) {
     background: linear-gradient(
         to bottom right,
         var(--cor-pessoa) 50%,
@@ -75,11 +75,16 @@ table.resultTable {
       width: 89%;
     }
 
+    td:nth-child(4) {
+      width: 16px;
+    }
+
     tr.odd {
       background: hsl(333, 34.8%, 91%);
     }
 
-    tr.even {
+    tr.even,
+    tr.incidente {
       background: hsl(333, 33.3%, 97.1%);
     }
 
