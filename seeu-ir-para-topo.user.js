@@ -2,7 +2,7 @@
 // @name         seeu-ir-para-topo
 // @name:pt-BR   SEEU - Ir para o topo
 // @namespace    nadameu.com.br
-// @version      1.2.0
+// @version      1.2.1
 // @author       nadameu
 // @description  Acrescenta botão para facilitar ir para o início da página
 // @match        https://seeu.pje.jus.br/*
@@ -12,7 +12,7 @@
 main();
 
 function main() {
-  if (window.name !== 'userMainFrame') return;
+  if (window.frameElement?.id !== 'userMainFrame') return;
   const button = h(
     'div',
     { id: `gm-${GM_info.script.name}` },
