@@ -2,9 +2,10 @@
 // @name         seeu-switch
 // @name:pt-BR   SEEU - Alterar atuação
 // @namespace    nadameu.com.br
-// @version      1.4.1
+// @version      2.0.0
 // @author       nadameu
 // @description  SEEU - Alterar a área de atuação no SEEU a partir da aba "Informações Gerais" de um processo
+// @match        https://seeu.pje.jus.br/seeu/processo.do
 // @match        https://seeu.pje.jus.br/seeu/visualizacaoProcesso.do?*
 // @grant        GM_addStyle
 // ==/UserScript==
@@ -63,6 +64,39 @@
     btn,
   };
   function main() {
+    const areaAtual = document.querySelector('#areaatuacao')?.textContent ?? '';
+    assert(areaAtual !== '', 'Área de atuação atual desconhecida.');
+    const linkAlterar = document.querySelector('#alterarAreaAtuacao');
+    assert(
+      linkAlterar instanceof HTMLAnchorElement,
+      'Elemento não encontrado: `#alterarAreaAtuacao`.'
+    );
+    const match = decodeURI(linkAlterar.href).match(
+      /^javascript:openSubmitDialog\('(\/seeu\/usuario\/areaAtuacao\.do\?_tj=[0-9a-f]+)', 'Alterar Atua[^']+o', 0, 0\);/
+    );
+    assert(
+      match !== null && match.length >= 2,
+      'Link para alteração da área de atuação não reconhecido.'
+    );
+    const urlAlterar = match[1];
+    const informacoesProcessuais = document.querySelector(
+      '#informacoesProcessuais'
+    );
+    assert(
+      informacoesProcessuais !== null,
+      `Informações processuais não encontradas.`
+    );
+    const linhaJuizo = Array.from(informacoesProcessuais.querySelectorAll('tr'))
+      .filter(x => x.cells.length === 2)
+      .filter(
+        x => (x.cells[0]?.textContent?.trim() ?? '').match(/^Juízo:$/) !== null
+      )[0];
+    assert(linhaJuizo !== void 0, `Informações de juízo não encontradas.`);
+    const juizo = linhaJuizo.cells[1]?.textContent?.trim() ?? '';
+    assert(juizo !== '', `Informações de juízo não encontradas.`);
+    if (areaAtual === juizo)
+      return new Info('Botão não adicionado - mesmo juízo');
+    linhaJuizo.cells[1]?.append(' ', criarBotao(urlAlterar, juizo));
     const aba = document.querySelector(
       'li[name="tabDadosProcesso"].currentTab'
     );
@@ -82,23 +116,12 @@
     );
     const juizoProcesso = td?.textContent?.trim() ?? '';
     assert(juizoProcesso !== '', 'Juízo do processo desconhecido.');
-    const areaAtual = document.querySelector('#areaatuacao')?.textContent ?? '';
-    assert(areaAtual !== '', 'Área de atuação atual desconhecida.');
     if (areaAtual === juizoProcesso)
       return new Info('Botão não adicionado - mesmo juízo');
-    const linkAlterar = document.querySelector('#alterarAreaAtuacao');
-    assert(
-      linkAlterar instanceof HTMLAnchorElement,
-      'Elemento não encontrado: `#alterarAreaAtuacao`.'
-    );
-    const match = decodeURI(linkAlterar.href).match(
-      /^javascript:openSubmitDialog\('(\/seeu\/usuario\/areaAtuacao\.do\?_tj=[0-9a-f]+)', 'Alterar Atua[^']+o', 0, 0\);/
-    );
-    assert(
-      match !== null && match.length >= 2,
-      'Link para alteração da área de atuação não reconhecido.'
-    );
-    const urlAlterar = match[1];
+    const button = criarBotao(urlAlterar, juizoProcesso);
+    td.append(' ', button);
+  }
+  function criarBotao(urlAlterar, juizoProcesso) {
     const button = h('input', {
       className: classes.btn,
       type: 'button',
@@ -124,7 +147,7 @@
           button.disabled = false;
         });
     });
-    td.append(' ', button);
+    return button;
   }
   async function alternar(url, area) {
     const doc = await XHR(url);
