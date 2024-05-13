@@ -10,7 +10,10 @@ export default defineConfig({
       userscript: {
         name: { 'pt-BR': pkg.gm_name },
         namespace: 'nadameu.com.br',
-        match: ['https://seeu.pje.jus.br/seeu/visualizacaoProcesso.do?*'],
+        match: [
+          'https://seeu.pje.jus.br/seeu/processo.do',
+          'https://seeu.pje.jus.br/seeu/visualizacaoProcesso.do?*',
+        ],
       },
       build: { fileName: 'seeu-switch.user.js' },
     }),
