@@ -5,7 +5,7 @@
 // @match       https://seeu.pje.jus.br/seeu/visualizacaoProcesso.do?*
 // @match       https://seeu.pje.jus.br/seeu/processo.do
 // @grant       GM_addStyle
-// @version     1.0.0
+// @version     2.0.0
 // @author      nadameu
 // @description Destaca a existência de advogado dativo
 // ==/UserScript==
@@ -23,7 +23,7 @@ async function main() {
     document.querySelectorAll(
       '[id="informacoesProcessuais-table"] table td > label'
     )
-  ).filter(x => (x.textContent?.trim() ?? '') === 'Advogado:');
+  ).filter(x => (x.textContent?.trim() ?? '') === 'Advogados/Defensoria:');
   if (advs.length === 0) return;
   if (advs.length > 1)
     throw new Error(
