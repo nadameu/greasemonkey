@@ -5,6 +5,41 @@ import { assert } from './assert';
 import classes from './estilos.module.scss';
 
 export function main(): Info | void {
+  const areaAtual = document.querySelector('#areaatuacao')?.textContent ?? '';
+  assert(areaAtual !== '', 'Área de atuação atual desconhecida.');
+  const linkAlterar = document.querySelector('#alterarAreaAtuacao');
+  assert(
+    linkAlterar instanceof HTMLAnchorElement,
+    'Elemento não encontrado: `#alterarAreaAtuacao`.'
+  );
+  const match = decodeURI(linkAlterar.href).match(
+    /^javascript:openSubmitDialog\('(\/seeu\/usuario\/areaAtuacao\.do\?_tj=[0-9a-f]+)', 'Alterar Atua[^']+o', 0, 0\);/
+  );
+  assert(
+    match !== null && match.length >= 2,
+    'Link para alteração da área de atuação não reconhecido.'
+  );
+  const urlAlterar = match[1]!;
+
+  const informacoesProcessuais = document.querySelector(
+    '#informacoesProcessuais'
+  );
+  assert(
+    informacoesProcessuais !== null,
+    `Informações processuais não encontradas.`
+  );
+  const linhaJuizo = Array.from(informacoesProcessuais.querySelectorAll('tr'))
+    .filter(x => x.cells.length === 2)
+    .filter(
+      x => (x.cells[0]?.textContent?.trim() ?? '').match(/^Juízo:$/) !== null
+    )[0];
+  assert(linhaJuizo !== undefined, `Informações de juízo não encontradas.`);
+  const juizo = linhaJuizo.cells[1]?.textContent?.trim() ?? '';
+  assert(juizo !== '', `Informações de juízo não encontradas.`);
+  if (areaAtual === juizo)
+    return new Info('Botão não adicionado - mesmo juízo');
+  linhaJuizo.cells[1]?.append(' ', criarBotao(urlAlterar, juizo));
+
   const aba = document.querySelector('li[name="tabDadosProcesso"].currentTab');
   if (!aba) return;
   const labels = Array.from(
@@ -22,25 +57,15 @@ export function main(): Info | void {
   );
   const juizoProcesso = td?.textContent?.trim() ?? '';
   assert(juizoProcesso !== '', 'Juízo do processo desconhecido.');
-  const areaAtual = document.querySelector('#areaatuacao')?.textContent ?? '';
-  assert(areaAtual !== '', 'Área de atuação atual desconhecida.');
   if (areaAtual === juizoProcesso)
     return new Info('Botão não adicionado - mesmo juízo');
-  const linkAlterar = document.querySelector('#alterarAreaAtuacao');
-  assert(
-    linkAlterar instanceof HTMLAnchorElement,
-    'Elemento não encontrado: `#alterarAreaAtuacao`.'
-  );
-  const match = decodeURI(linkAlterar.href).match(
-    /^javascript:openSubmitDialog\('(\/seeu\/usuario\/areaAtuacao\.do\?_tj=[0-9a-f]+)', 'Alterar Atua[^']+o', 0, 0\);/
-  );
-  assert(
-    match !== null && match.length >= 2,
-    'Link para alteração da área de atuação não reconhecido.'
-  );
-  const urlAlterar = match[1]!;
 
   // Todos os elementos presentes
+  const button = criarBotao(urlAlterar, juizoProcesso);
+  td.append(' ', button);
+}
+
+function criarBotao(urlAlterar: string, juizoProcesso: string) {
   const button = h('input', {
     className: classes.btn,
     type: 'button',
@@ -66,7 +91,7 @@ export function main(): Info | void {
         button.disabled = false;
       });
   });
-  td.append(' ', button);
+  return button;
 }
 
 async function alternar(url: string, area: string) {
