@@ -6,7 +6,7 @@
 // @grant       GM_addStyle
 // @grant       GM_getValue
 // @grant       GM_setValue
-// @version     1.0.0
+// @version     1.1.0
 // @author      nadameu
 // @description Permite ordenar os projetos assistenciais por antiguidade
 // ==/UserScript==
@@ -44,7 +44,10 @@ async function main() {
 
   function onClick() {
     (async () => {
-      const tbody = document.getElementById('tabela')?.tBodies[0];
+      const tabela = document.getElementById('tabela');
+      if (tabela === null) throw new Error(`Tabela não encontrada.`);
+      tabela.tHead.rows[0].cells[13].style.display = null;
+      const tbody = tabela.tBodies[0];
       if (tbody === null) throw new Error(`Tabela não encontrada.`);
       const rows = Array.from(tbody.rows);
       const map = new WeakMap(rows.map(row => {
@@ -68,6 +71,7 @@ async function main() {
             return;
           }
         }
+        row.cells[13].style.display = null;
         tbody.appendChild(row);
         let opposite = parity === 'odd' ? 'even' : 'odd';
         row.classList.remove(opposite);
