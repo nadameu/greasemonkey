@@ -4,7 +4,7 @@
   "author": "nadameu",
   "description": "Melhoria na apresentação das movimentações do processo",
   "private": true,
-  "version": "2.5.0",
+  "version": "2.5.1",
   "type": "module",
   "scripts": {
     "dev": "run-p watch preview",

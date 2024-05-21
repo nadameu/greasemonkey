@@ -2,7 +2,7 @@
 // @name         seeu-movimentacoes
 // @name:pt-BR   SEEU - Movimentações
 // @namespace    nadameu.com.br
-// @version      2.5.0
+// @version      2.5.1
 // @author       nadameu
 // @description  Melhoria na apresentação das movimentações do processo
 // @match        https://seeu.pje.jus.br/*
@@ -613,6 +613,7 @@
         [
           '/seeu/visualizacaoProcesso.do',
           '/seeu/processo.do',
+          '/seeu/processo/juntarDocumento.do',
           '/seeu/processo/buscaProcesso.do',
         ].includes(x)
       ),

@@ -36,6 +36,7 @@ export const telaMovimentacoes = (url: URL) =>
       [
         '/seeu/visualizacaoProcesso.do',
         '/seeu/processo.do',
+        '/seeu/processo/juntarDocumento.do',
         '/seeu/processo/buscaProcesso.do',
       ].includes(x)
     ),
