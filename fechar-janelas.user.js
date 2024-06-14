@@ -7,7 +7,7 @@
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
 // @grant       none
-// @version     4.1.0
+// @version     4.1.1
 // @author      nadameu
 // @description Fecha as janelas de documentos que tenham sido abertas no processo
 // ==/UserScript==
@@ -52,7 +52,7 @@ function main() {
 
 function onTabelaClick(evt) {
   if (
-    !evt.target?.matches?.('a.infraLinkDocumento, a.infraLinkDocumentoSigiloso')
+    !evt.target?.matches?.('a.infraLinkDocumento, a.infraLinkDocumentoSigiloso, a.infraLinkDocumentoSigilosoMaior')
   )
     return;
   show();
