@@ -7,7 +7,7 @@
 // @match       http://www.planalto.gov.br/CCIVIL_03/*
 // @match       https://www.planalto.gov.br/CCIVIL_03/*
 // @grant       GM_addStyle
-// @version     1.0.0
+// @version     1.1.0
 // @author      nadameu
 // @description Melhora a aparência da legislação disponível no site do Planalto
 // @run-at      document-start
@@ -15,22 +15,35 @@
 
 GM_addStyle(`
 :root > body {
-  margin: 0 auto;
+  margin: 2em auto;
   max-width: 90ch;
-  background: hsl(60, 25%, 96%);
-  color: #003;
+  background: hsl(333deg 8% 68%);
+  color: hsl(333deg 60% 13.8%);
+}
+body {
+  position: relative;
+  padding-top: 2em;
+}
+body::before {
+  content: "";
+  background: hsl(333deg 12% 96%);
+  position: absolute;
+  inset: 0 -2cm;
+  z-index: -1;
+  box-shadow: 2px 2px 4px #0008, 4px 4px 8px #0004, 8px 8px 16px #0002;
 }
 i.fas {
   text-indent: 0;
 }
-strike, [style*="line-through"] {
+strike,
+[style*="line-through"] {
   opacity: .5;
 }
 a:link {
-  color: hsl(213, 60%, 40%);
+  color: hsl(213deg 60% 40%);
 }
 a:visited {
-  color: hsl(273, 60%, 40%);
+  color: hsl(273deg 60% 40%);
 }
 `);
 
