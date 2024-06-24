@@ -1,0 +1,19 @@
+{
+  "name": "gerenciar-entidades",
+  "gm_name": "Gerenciar entidades",
+  "author": "nadameu",
+  "description": "Permite filtrar entidades assistenciais",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "run-p watch preview",
+    "build": "tsc && vite build",
+    "format": "prettier --write ../../gerenciar-entidades.user.js",
+    "preview": "vite preview",
+    "watch": "vite build --watch"
+  },
+  "dependencies": {
+    "@nadameu/create-element": "workspace:^"
+  }
+}
