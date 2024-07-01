@@ -7,6 +7,9 @@ type Tag<TN extends ValidTagName, T extends ValidTag> = { [K in TN]: T };
 type ObjectWithoutKey<TN extends ValidTagName> = object & {
   [K in TN]?: never;
 };
+export type ExtraProperties<T extends Tagged<ValidTag, object>> = {
+  [K in Exclude<keyof T, typeof _tag>]: T[K];
+};
 
 export type TaggedWith<
   TN extends ValidTagName,
