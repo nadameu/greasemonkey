@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@nadameu/create-element": "workspace:^"
+    "@nadameu/create-element": "workspace:^",
+    "@nadameu/enderecos-eproc": "workspace:^"
   }
 }

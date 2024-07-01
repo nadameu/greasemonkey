@@ -4,7 +4,10 @@
 // @version      4.1.0
 // @author       nadameu
 // @description  Permite a criação de solicitações de pagamento em bloco
-// @include      /^https:\/\/eproc\.(trf4|jf(pr|rs|sc))\.jus\.br\/eproc(2trf4|V2)\/controlador\.php\?acao=nomeacoes_ajg_listar&/
+// @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=nomeacoes_ajg_listar&*
+// @match        https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=nomeacoes_ajg_listar&*
+// @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=nomeacoes_ajg_listar&*
+// @match        https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=nomeacoes_ajg_listar&*
 // ==/UserScript==
 
 (function () {
@@ -49,7 +52,7 @@
     };
   }
   const css =
-    '.bootstrap-styles .gm-ajg__aviso{width:100%;background:hsl(333,35%,85%);padding:.5em;border-color:#4d0022;border-style:solid;border-width:1px 0}.bootstrap-styles .gm-ajg__aviso--nao-carregado{display:none}.bootstrap-styles .gm-ajg__lista{font-size:1.2em}.bootstrap-styles .gm-ajg__lista__processo{float:left;margin-right:3ex}.bootstrap-styles .gm-ajg__lista__resultado--ok{color:green}.bootstrap-styles .gm-ajg__lista__resultado--erro{color:red}.bootstrap-styles .gm-ajg__div fieldset{width:max-content;background:hsl(333,30%,90%)!important;border-radius:.5em}.bootstrap-styles .gm-ajg__div fieldset legend{background:hsl(333,35%,85%);padding:.2em;border-radius:.5em;border:1px solid hsl(333,40%,50%)}\n';
+    '.bootstrap-styles .gm-ajg__aviso{width:100%;background:#e6cbd7;padding:.5em;border-color:#4d0022;border-style:solid;border-width:1px 0}.bootstrap-styles .gm-ajg__aviso--nao-carregado{display:none}.bootstrap-styles .gm-ajg__lista{font-size:1.2em}.bootstrap-styles .gm-ajg__lista__processo{float:left;margin-right:3ex}.bootstrap-styles .gm-ajg__lista__resultado--ok{color:green}.bootstrap-styles .gm-ajg__lista__resultado--erro{color:red}.bootstrap-styles .gm-ajg__div fieldset{width:max-content;background:#eddee5!important;border-radius:.5em}.bootstrap-styles .gm-ajg__div fieldset legend{background:#e6cbd7;padding:.2em;border-radius:.5em;border:1px solid hsl(333,40%,50%)}';
   function adicionarEstilos() {
     document.head.appendChild(h('style', null, css));
   }
