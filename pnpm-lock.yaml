@@ -92,12 +92,6 @@ importers:
 
   lib/adts: {}
 
-  lib/btree:
-    dependencies:
-      '@nadameu/match':
-        specifier: workspace:^
-        version: link:../match
-
   lib/create-broadcast-service:
     dependencies:
       '@nadameu/handler':
@@ -115,6 +109,8 @@ importers:
         version: link:../handler
 
   lib/either: {}
+
+  lib/enderecos-eproc: {}
 
   lib/expect-unreachable: {}
 
