@@ -34,6 +34,7 @@ export type MemberOf<
   U extends Tag<typeof _tag, ValidTag>,
   T extends U[typeof _tag] = U[typeof _tag],
 > = MemberWith<U, typeof _tag, T>;
+export type MemberTag<U extends Tag<typeof _tag, ValidTag>> = U[typeof _tag];
 
 export const tagWith =
   <TN extends ValidTagName>(tagName: TN) =>
