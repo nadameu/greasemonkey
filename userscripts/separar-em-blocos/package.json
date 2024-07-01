@@ -21,5 +21,8 @@
     "@nadameu/match": "workspace:^",
     "@nadameu/opaque": "workspace:^",
     "@nadameu/predicates": "workspace:^"
+  },
+  "devDependencies": {
+    "@nadameu/enderecos-eproc": "workspace:^"
   }
 }

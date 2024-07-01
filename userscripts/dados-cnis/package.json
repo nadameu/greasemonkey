@@ -18,5 +18,8 @@
     "@nadameu/expect-unreachable": "workspace:^",
     "@nadameu/match": "workspace:^",
     "@nadameu/predicates": "workspace:^"
+  },
+  "devDependencies": {
+    "@nadameu/enderecos-eproc": "workspace:^"
   }
 }

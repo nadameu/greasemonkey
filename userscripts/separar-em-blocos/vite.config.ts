@@ -1,6 +1,7 @@
 import preact from '@preact/preset-vite';
 import { defineConfig } from 'vite';
 import monkey from 'vite-plugin-monkey';
+import { enderecosEproc } from '@nadameu/enderecos-eproc';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -14,10 +15,10 @@ export default defineConfig({
         name: { 'pt-BR': 'Separar em blocos' },
         namespace: 'http://nadameu.com.br',
         match: [
-          'https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*',
-          'https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=localizador_processos_lista&*',
-          'https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=relatorio_geral_consultar&*',
-        ],
+          'processo_selecionar',
+          'localizador_processos_lista',
+          'relatorio_geral_consultar',
+        ].flatMap(acao => enderecosEproc(`acao=${acao}&*`)),
         description:
           'Permite a separação de processos em blocos para movimentação separada',
       },

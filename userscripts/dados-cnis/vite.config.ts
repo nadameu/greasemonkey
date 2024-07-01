@@ -1,3 +1,4 @@
+import { enderecosEproc } from '@nadameu/enderecos-eproc';
 import { defineConfig } from 'vite';
 import monkey from 'vite-plugin-monkey';
 
@@ -13,8 +14,13 @@ export default defineConfig({
       entry: 'src/index.ts',
       userscript: {
         namespace: 'http://nadameu.com.br',
-        include:
-          /^https:\/\/eproc\.(?:jf(?:pr|rs|sc)|trf4)\.jus.br\/eproc(?:V2|2trf4)\/controlador\.php\?acao=(?:processo_selecionar|pessoa_consulta_integrada\/listar)&/,
+        match: [
+          ...[
+            'processo_selecionar',
+            'pessoa_consulta_integrada/listar',
+          ].flatMap(acao => enderecosEproc(`acao=${acao}&*`)),
+          /abcd/,
+        ],
       },
     }),
   ],

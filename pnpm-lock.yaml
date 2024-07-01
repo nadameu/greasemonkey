@@ -161,6 +161,9 @@ importers:
       '@nadameu/create-element':
         specifier: workspace:^
         version: link:../../lib/create-element
+      '@nadameu/enderecos-eproc':
+        specifier: workspace:^
+        version: link:../../lib/enderecos-eproc
 
   userscripts/atualizar-saldo:
     dependencies:
@@ -200,6 +203,10 @@ importers:
       '@nadameu/resolvable':
         specifier: workspace:^
         version: link:../../lib/resolvable
+    devDependencies:
+      '@nadameu/enderecos-eproc':
+        specifier: workspace:^
+        version: link:../../lib/enderecos-eproc
 
   userscripts/baixa-acordo-inss:
     dependencies:
@@ -227,12 +234,20 @@ importers:
       '@nadameu/predicates':
         specifier: workspace:^
         version: link:../../lib/predicates
+    devDependencies:
+      '@nadameu/enderecos-eproc':
+        specifier: workspace:^
+        version: link:../../lib/enderecos-eproc
 
   userscripts/gerenciar-entidades:
     dependencies:
       '@nadameu/create-element':
         specifier: workspace:^
         version: link:../../lib/create-element
+    devDependencies:
+      '@nadameu/enderecos-eproc':
+        specifier: workspace:^
+        version: link:../../lib/enderecos-eproc
 
   userscripts/renajud:
     dependencies:
@@ -314,6 +329,10 @@ importers:
       '@nadameu/predicates':
         specifier: workspace:^
         version: link:../../lib/predicates
+    devDependencies:
+      '@nadameu/enderecos-eproc':
+        specifier: workspace:^
+        version: link:../../lib/enderecos-eproc
 
   userscripts/tempo-minutas: {}
 

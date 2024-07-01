@@ -15,5 +15,8 @@
   },
   "dependencies": {
     "@nadameu/create-element": "workspace:^"
+  },
+  "devDependencies": {
+    "@nadameu/enderecos-eproc": "workspace:^"
   }
 }
