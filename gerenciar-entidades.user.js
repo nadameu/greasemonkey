@@ -2,7 +2,7 @@
 // @name         gerenciar-entidades
 // @name:pt-BR   Gerenciar entidades
 // @namespace    http://nadameu.com.br
-// @version      1.0.0
+// @version      1.1.0
 // @author       nadameu
 // @description  Permite filtrar entidades assistenciais
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=entidade_assistencial_listar&*
@@ -20,6 +20,18 @@
 (function () {
   'use strict';
 
+  var __defProp = Object.defineProperty;
+  var __defNormalProp = (obj, key, value) =>
+    key in obj
+      ? __defProp(obj, key, {
+          enumerable: true,
+          configurable: true,
+          writable: true,
+          value,
+        })
+      : (obj[key] = value);
+  var __publicField = (obj, key, value) =>
+    __defNormalProp(obj, key + '', value);
   var _GM_addStyle = /* @__PURE__ */ (() =>
     typeof GM_addStyle != 'undefined' ? GM_addStyle : void 0)();
   var _GM_info = /* @__PURE__ */ (() =>
@@ -42,6 +54,44 @@
   border-radius: 4px;
 }
     `);
+  }
+  const compare = new Intl.Collator('pt-BR', { sensitivity: 'base' }).compare;
+  class StringMap {
+    constructor(values = []) {
+      __publicField(this, '_internal', /* @__PURE__ */ new Map());
+      for (const [key, value] of values) {
+        this.set(key, value);
+      }
+    }
+    has(key) {
+      for (const k of this._internal.keys()) {
+        if (compare(key, k) === 0) return true;
+      }
+      return false;
+    }
+    set(key, value) {
+      let found = false;
+      for (const k of this._internal.keys()) {
+        if (compare(key, k) === 0) {
+          found = [k];
+        }
+      }
+      if (found) {
+        this._internal.delete(found[0]);
+      }
+      this._internal.set(key, value);
+    }
+    get(key) {
+      for (const [k, v] of this._internal) {
+        if (compare(key, k) === 0) {
+          return v;
+        }
+      }
+      return void 0;
+    }
+    keys() {
+      return this._internal.keys();
+    }
   }
   async function main() {
     const barra = await queryOne('#divInfraBarraComandosSuperior');
@@ -70,19 +120,26 @@
           throw new Error(
             `Informações de endereço não encontradas: linha ${index}.`
           );
-        return [partes[1], partes[2], index];
+        return [
+          partes[1]
+            .replace(/\/(PR|RS|SC)/, '')
+            .replace(/  +/g, ' ')
+            .trim(),
+          partes[2]
+            .replace(/\/(PR|RS|SC)/, '')
+            .replace(/  +/g, ' ')
+            .trim(),
+          index,
+        ];
       })
     );
-    const cidades = /* @__PURE__ */ new Map([
-      ['', /* @__PURE__ */ new Map([['', /* @__PURE__ */ new Set()]])],
+    const cidades = new StringMap([
+      ['', new StringMap([['', /* @__PURE__ */ new Set()]])],
     ]);
     for (const [cidade, bairro, linha] of info) {
       cidades.get('').get('').add(linha);
       if (!cidades.has(cidade)) {
-        cidades.set(
-          cidade,
-          /* @__PURE__ */ new Map([['', /* @__PURE__ */ new Set()]])
-        );
+        cidades.set(cidade, new StringMap([['', /* @__PURE__ */ new Set()]]));
       }
       const bairros = cidades.get(cidade);
       bairros.get('').add(linha);
@@ -92,6 +149,9 @@
       bairros.get(bairro).add(linha);
     }
     const div = h('div', { className: `${_GM_info.script.name}__div` });
+    const sortIgnoreCase = new Intl.Collator('pt-BR', {
+      sensitivity: 'base',
+    }).compare;
     const selCidade = h(
       'select',
       {},
@@ -136,11 +196,6 @@
         linha.hidden = !mostrar.has(index);
       });
     }
-  }
-  function sortIgnoreCase(a, b) {
-    if (a.toLowerCase() < b.toLowerCase()) return -1;
-    if (a.toLowerCase() > b.toLowerCase()) return 1;
-    return 0;
   }
   function queryOne(selector, context = document) {
     const elts = context.querySelectorAll(selector);

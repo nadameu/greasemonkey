@@ -1,6 +1,7 @@
 import { GM_info } from '$';
 import { h } from '@nadameu/create-element';
 import { adicionarEstilos } from './adicionarEstilos';
+import { StringMap } from './StringMap';
 
 export async function main() {
   const barra = await queryOne('#divInfraBarraComandosSuperior');
@@ -27,14 +28,26 @@ export async function main() {
         throw new Error(
           `Informações de endereço não encontradas: linha ${index}.`
         );
-      return [partes[1]!, partes[2]!, index] as const;
+      return [
+        partes[1]!
+          .replace(/\/(PR|RS|SC)/, '')
+          .replace(/  +/g, ' ')
+          .trim(),
+        partes[2]!
+          .replace(/\/(PR|RS|SC)/, '')
+          .replace(/  +/g, ' ')
+          .trim(),
+        index,
+      ] as const;
     })
   );
-  const cidades = new Map([['', new Map([['', new Set<number>()]])]]);
+  const cidades = new StringMap([
+    ['', new StringMap([['', new Set<number>()]])],
+  ]);
   for (const [cidade, bairro, linha] of info) {
     cidades.get('')!.get('')!.add(linha);
     if (!cidades.has(cidade)) {
-      cidades.set(cidade, new Map([['', new Set()]]));
+      cidades.set(cidade, new StringMap([['', new Set()]]));
     }
     const bairros = cidades.get(cidade)!;
     bairros.get('')!.add(linha);
@@ -44,6 +57,9 @@ export async function main() {
     bairros.get(bairro)!.add(linha);
   }
   const div = h('div', { className: `${GM_info.script.name}__div` });
+  const sortIgnoreCase = new Intl.Collator('pt-BR', {
+    sensitivity: 'base',
+  }).compare;
   const selCidade = h(
     'select',
     {},
@@ -91,12 +107,6 @@ export async function main() {
       linha.hidden = !mostrar.has(index);
     });
   }
-}
-
-export function sortIgnoreCase(a: string, b: string) {
-  if (a.toLowerCase() < b.toLowerCase()) return -1;
-  if (a.toLowerCase() > b.toLowerCase()) return +1;
-  return 0;
 }
 
 export function queryOne<T extends Element>(
