@@ -2,16 +2,25 @@
 // @name        legislacao-planalto
 // @name:pt-BR  Legislação Planalto
 // @namespace   http://nadameu.com.br
+// @match       https://www.trf4.jus.br/trf4/upload/legislacao/*
 // @match       http://www.planalto.gov.br/ccivil_03/*
 // @match       https://www.planalto.gov.br/ccivil_03/*
 // @match       http://www.planalto.gov.br/CCIVIL_03/*
 // @match       https://www.planalto.gov.br/CCIVIL_03/*
 // @grant       GM_addStyle
-// @version     1.1.0
+// @version     1.2.0
 // @author      nadameu
 // @description Melhora a aparência da legislação disponível no site do Planalto
 // @run-at      document-start
 // ==/UserScript==
+
+if (document.location.hostname.match(/trf4/)) {
+  GM_addStyle(`
+body {
+  font-size: 0.85em;
+}
+`);
+}
 
 GM_addStyle(`
 :root > body {
@@ -23,6 +32,8 @@ GM_addStyle(`
 body {
   position: relative;
   padding-top: 2em;
+  font-family: Arial, sans-serif;
+  line-height: 1.5em;
 }
 body::before {
   content: "";
