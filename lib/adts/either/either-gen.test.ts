@@ -69,4 +69,25 @@ describe('gen', () => {
     });
     expect(result).toEqual(Left('err'));
   });
+  test('try/catch', () => {
+    const result = E.gen(function* ($) {
+      try {
+        const fst = yield* $(Right('hey'));
+        const snd = yield* $(Left('err') as Either<string, number>);
+        const third = yield* $(Right(false));
+        return tuple(fst, snd, third);
+      } catch (err) {
+        const fourth = yield* $(Right(err + ' caught'));
+        return fourth;
+      }
+    });
+    expect(result).toEqual(Right('err caught'));
+  });
+  test('uncaught, unexpected error', () => {
+    const getResult = () =>
+      E.gen(function* () {
+        throw 'abcde';
+      });
+    expect(getResult).toThrow('abcde');
+  });
 });

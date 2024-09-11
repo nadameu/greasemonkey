@@ -83,7 +83,15 @@ export const gen: {
   let result = it.next();
   while (true) {
     if (result.done) return Right(result.value);
-    if (isLeft(result.value)) return result.value as any;
+    if (isLeft(result.value)) {
+      try {
+        result = it.throw!(result.value.left);
+      } catch (err) {
+        if (err === result.value.left) {
+          return result.value as any;
+        }
+      }
+    }
     result = it.next(result.value);
   }
 }) as any;
