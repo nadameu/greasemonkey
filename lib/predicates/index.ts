@@ -103,12 +103,12 @@ export const isDefined = /* @__PURE__ */ negate(isUndefined);
 type Refine<T, V = unknown> = T extends [Negate<infer Exc>, ...infer R]
   ? Refine<R, Exclude<V, Exc>>
   : T extends [Refinement<infer From, infer To>, ...infer R]
-  ? V extends From
-    ? Refine<R, To>
-    : unknown
-  : T extends []
-  ? Predicate<V>
-  : never;
+    ? V extends From
+      ? Refine<R, To>
+      : unknown
+    : T extends []
+      ? Predicate<V>
+      : never;
 
 export function refine<T, U extends T>(
   predicate: Predicate<T>,
@@ -242,11 +242,11 @@ type TuplePredicates<
 > = T extends []
   ? Result
   : T extends [
-      Predicate<infer Head>,
-      ...infer Tail extends Predicate<unknown>[],
-    ]
-  ? TuplePredicates<Tail, [...Result, Head]>
-  : never;
+        Predicate<infer Head>,
+        ...infer Tail extends Predicate<unknown>[],
+      ]
+    ? TuplePredicates<Tail, [...Result, Head]>
+    : never;
 export const isTuple = <P extends Predicate<unknown>[]>(
   ...predicates: P
 ): Predicate<TuplePredicates<P>> =>

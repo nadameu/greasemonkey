@@ -399,8 +399,8 @@
           !0 === e
             ? a.classList.add(n)
             : !1 === e
-            ? a.classList.add(r)
-            : void 0 === e && a.classList.add(o);
+              ? a.classList.add(r)
+              : void 0 === e && a.classList.add(o);
       }
     }
   },
@@ -594,8 +594,8 @@
                 ? t.compare(e.value, n.value)
                 : 1
               : n.isSome()
-              ? -1
-              : 0;
+                ? -1
+                : 0;
           },
         });
       });
@@ -632,8 +632,8 @@
             return n.isNone()
               ? r
               : r.isNone()
-              ? n
-              : e.some(t.concat(n.value, r.value));
+                ? n
+                : e.some(t.concat(n.value, r.value));
           },
           empty: e.none,
         };
@@ -2235,8 +2235,8 @@
         return 0 === t || r <= 1 || r === Math.abs(t)
           ? n
           : t < 0
-          ? e.rotate(r + t, n)
-          : n.slice(-t).concat(n.slice(0, r - t));
+            ? e.rotate(r + t, n)
+            : n.slice(-t).concat(n.slice(0, r - t));
       }),
       (e.member = function (t) {
         return function (e, n) {

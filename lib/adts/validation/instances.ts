@@ -20,6 +20,6 @@ export const makeApplicativeValidation: {
         ? Left(M.concat(ff.left, fa.left))
         : ff
       : isLeft(fa)
-      ? fa
-      : Right(ff.right(fa.right)),
+        ? fa
+        : Right(ff.right(fa.right)),
 });

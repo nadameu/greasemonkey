@@ -17,17 +17,37 @@ main().catch(err => {
 
 async function main() {
   const barra = document.getElementById('divInfraBarraComandosSuperior');
-  if (! barra) throw new Error(`Barra superior não encontrada.`);
-  const button = h('button', { type: 'button', className: 'btn btn-sm gm-projetos-btn' }, 'Ordenar por antiguidade');
+  if (!barra) throw new Error(`Barra superior não encontrada.`);
+  const button = h(
+    'button',
+    { type: 'button', className: 'btn btn-sm gm-projetos-btn' },
+    'Ordenar por antiguidade'
+  );
   const frag = document.createDocumentFragment();
-  const currentYear = (new Date()).getFullYear()
+  const currentYear = new Date().getFullYear();
   const anos = {
     start: { valid: true, value: GM_getValue('start', 1901) },
-    end: { valid: true, value: GM_getValue('end', currentYear) }
+    end: { valid: true, value: GM_getValue('end', currentYear) },
   };
-  const startInput = h('input', { maxLength: 4, size: 6, type: 'number', min: 1901, max: currentYear, value: anos.start.value, onChange: (_, elt) => save('start', elt) });
-  const endInput = h('input', { maxLength: 4, size: 6, type: 'number', min: 1901, max: currentYear, value: anos.end.value, onChange: (_, elt) => save('end', elt) });
-  frag.append(startInput,' \u00a0 ', endInput,' \u00a0 ', button, ' \u00a0 ')
+  const startInput = h('input', {
+    maxLength: 4,
+    size: 6,
+    type: 'number',
+    min: 1901,
+    max: currentYear,
+    value: anos.start.value,
+    onChange: (_, elt) => save('start', elt),
+  });
+  const endInput = h('input', {
+    maxLength: 4,
+    size: 6,
+    type: 'number',
+    min: 1901,
+    max: currentYear,
+    value: anos.end.value,
+    onChange: (_, elt) => save('end', elt),
+  });
+  frag.append(startInput, ' \u00a0 ', endInput, ' \u00a0 ', button, ' \u00a0 ');
   barra.insertBefore(frag, barra.firstChild);
   barra.addEventListener('click', onClick, false);
   adicionarEstilos();
@@ -50,11 +70,13 @@ async function main() {
       const tbody = tabela.tBodies[0];
       if (tbody === null) throw new Error(`Tabela não encontrada.`);
       const rows = Array.from(tbody.rows);
-      const map = new WeakMap(rows.map(row => {
-        const numproc = row.cells[3].textContent?.trim();
-        const hash = `${numproc.substr(11, 4)}${numproc.slice(0,7)}`;
-        return [row, hash];
-      }));
+      const map = new WeakMap(
+        rows.map(row => {
+          const numproc = row.cells[3].textContent?.trim();
+          const hash = `${numproc.substr(11, 4)}${numproc.slice(0, 7)}`;
+          return [row, hash];
+        })
+      );
 
       rows.sort((a, b) => {
         const na = map.get(a);

@@ -56,8 +56,8 @@ export function create<T, U, K>(
       typeof hashFn === 'function'
         ? getCache<T, U, K>(hashFn)
         : typeof hashFn === 'boolean' && hashFn
-        ? getCache<T, U, T>(x => x)
-        : false;
+          ? getCache<T, U, T>(x => x)
+          : false;
     type Prev = null | {
       prev: Prev;
       input: T;

@@ -44,9 +44,8 @@ fieldsets.forEach(fieldset => {
   });
 });
 
-document.head.appendChild(
-  document.createElement('style')
-).textContent = /* css */ `
+document.head.appendChild(document.createElement('style')).textContent =
+  /* css */ `
 #fldAcoes a.infraButton {
   cursor: alias;
 }

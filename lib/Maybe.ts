@@ -4,8 +4,8 @@ type AllMaybes<T, Acc extends any[] = []> = T extends [
 ]
   ? AllMaybes<Rest, [...Acc, U]>
   : T extends []
-  ? Maybe<Acc>
-  : never;
+    ? Maybe<Acc>
+    : never;
 
 export type Maybe<a> = Just<a> | Nothing<a>;
 abstract class _Maybe<a> {

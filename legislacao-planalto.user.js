@@ -58,12 +58,12 @@ a:visited {
 }
 `);
 
-document.addEventListener("readystatechange", checkComplete);
+document.addEventListener('readystatechange', checkComplete);
 checkComplete();
 
 function checkComplete() {
-  if (document.readyState === "complete") {
-    document.removeEventListener("readystatechange", checkComplete);
+  if (document.readyState === 'complete') {
+    document.removeEventListener('readystatechange', checkComplete);
     onload();
   }
 }
@@ -73,10 +73,10 @@ function onload() {
     '//sup[u/text()="o"]|//u[sup/text()="o"]|//sup[text()="o"]',
     document.body
   )) {
-    ordm.parentNode.replaceChild(new Text("º"), ordm);
+    ordm.parentNode.replaceChild(new Text('º'), ordm);
   }
-  for (const text of xQuery("//text()", document.body)) {
-    text.nodeValue = text.nodeValue.replace(/\s+/g, " ");
+  for (const text of xQuery('//text()', document.body)) {
+    text.nodeValue = text.nodeValue.replace(/\s+/g, ' ');
   }
 }
 

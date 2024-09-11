@@ -63,8 +63,8 @@ export const isTagged = isTaggedWith(_tag);
 type MatchResult<T, R> = [T] extends [never]
   ? MatchExhaustive<R>
   : [T] extends [Tag<typeof _tag, ValidTag>]
-  ? MatchTagged<T, R>
-  : MatchPending<T, R>;
+    ? MatchTagged<T, R>
+    : MatchPending<T, R>;
 
 interface MatchExhaustive<R> {
   get(): R;

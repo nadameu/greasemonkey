@@ -52,7 +52,9 @@ function main() {
 
 function onTabelaClick(evt) {
   if (
-    !evt.target?.matches?.('a.infraLinkDocumento, a.infraLinkDocumentoSigiloso, a.infraLinkDocumentoSigilosoMaior')
+    !evt.target?.matches?.(
+      'a.infraLinkDocumento, a.infraLinkDocumentoSigiloso, a.infraLinkDocumentoSigilosoMaior'
+    )
   )
     return;
   show();

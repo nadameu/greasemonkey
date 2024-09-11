@@ -58,10 +58,10 @@ export type SequenceTuple<
 > = T extends []
   ? Type<F, e, R>
   : T extends NETupleType<F, infer e2, infer a, infer rest>
-  ? SequenceTuple<F, rest, e | e2, [...R, a]>
-  : T extends Type<F, infer e2, infer a>[]
-  ? SequenceTuple<F, [], e | e2, [...R, ...a[]]>
-  : never;
+    ? SequenceTuple<F, rest, e | e2, [...R, a]>
+    : T extends Type<F, infer e2, infer a>[]
+      ? SequenceTuple<F, [], e | e2, [...R, ...a[]]>
+      : never;
 
 export type UnsequenceTuple<
   F extends Kind,
@@ -71,7 +71,7 @@ export type UnsequenceTuple<
 > = T extends []
   ? R
   : T extends [infer a, ...infer rest]
-  ? UnsequenceTuple<F, e, rest, [...R, Type<F, e, a>]>
-  : T extends Array<infer a>
-  ? UnsequenceTuple<F, e, [], [...R, ...Type<F, e, a>[]]>
-  : never;
+    ? UnsequenceTuple<F, e, rest, [...R, Type<F, e, a>]>
+    : T extends Array<infer a>
+      ? UnsequenceTuple<F, e, [], [...R, ...Type<F, e, a>[]]>
+      : never;

@@ -25,8 +25,8 @@ export const concat = <a>(left: Seq<a>, right: Seq<a>): Seq<a> =>
   left.length === 0
     ? right
     : right.length === 0
-    ? left
-    : new Concat(left, right);
+      ? left
+      : new Concat(left, right);
 export const append = <a>(xs: Seq<a>, x: a): Seq<a> =>
   xs.length === 0 ? [x] : new Concat(xs, [x]);
 export const prepend = <a>(x: a, xs: Seq<a>): Seq<a> =>

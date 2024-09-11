@@ -68,13 +68,13 @@ type Sequenced<
 > = es extends []
   ? Either<a, bs>
   : es extends [
-      Either<a, infer b>,
-      ...infer rest extends Array<Either<a, unknown>>,
-    ]
-  ? Sequenced<a, rest, [...bs, b]>
-  : es extends Array<Either<a, infer b>>
-  ? Sequenced<a, [], [...bs, ...b[]]>
-  : never;
+        Either<a, infer b>,
+        ...infer rest extends Array<Either<a, unknown>>,
+      ]
+    ? Sequenced<a, rest, [...bs, b]>
+    : es extends Array<Either<a, infer b>>
+      ? Sequenced<a, [], [...bs, ...b[]]>
+      : never;
 export function sequence<a, es extends Array<Either<a, unknown>>>(
   eithers: [...es]
 ): Sequenced<a, es>;
