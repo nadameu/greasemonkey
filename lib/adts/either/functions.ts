@@ -14,7 +14,7 @@ export const flatMapBoth: <e, e2, a, b>(
 ) => (fa: Either<e, a>) => Either<e2, b> = match;
 export const flatMap =
   <a, b, e2>(f: (a: a) => Either<e2, b>) =>
-  <e>(fa: Either<e, a>) =>
+  <e>(fa: Either<e, a>): Either<e | e2, b> =>
     isRight(fa) ? f(fa.right) : fa;
 export const mapBoth = <e, e2, a, b>(f: (_: e) => e2, g: (_: a) => b) =>
   flatMapBoth(
