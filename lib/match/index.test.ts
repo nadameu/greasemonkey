@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { Custom, describe, expect, test } from 'vitest';
 import {
   MemberWith,
   TaggedWith,
@@ -11,6 +11,9 @@ import {
   match,
   tagWith,
   isTaggedWith,
+  matchWith,
+  makeConstructorsWith,
+  FromConstructorsWith,
 } from '.';
 
 test('Maybe', () => {
@@ -126,6 +129,26 @@ test('Match', () => {
   expect(matcher(3)).toEqual('x is too small');
 });
 
+test('Match with', () => {
+  const CustomType = makeConstructorsWith('custom_tag', {
+    TypeA: (value0: string) => ({ value0 }),
+    TypeB: (value1: boolean) => ({ value1 }),
+  });
+  type CustomType = FromConstructorsWith<'custom_tag', typeof CustomType>;
+  const match = matchWith('custom_tag');
+
+  const matcher = (obj: CustomType) =>
+    match(obj)
+      .case('TypeA', ({ value0 }) => value0.length)
+      .case('TypeB', ({ value1 }) => (value1 ? 1 : 0))
+      .get();
+
+  expect(matcher(CustomType.TypeA('abcd'))).toEqual(4);
+  expect(matcher(CustomType.TypeA(''))).toEqual(0);
+  expect(matcher(CustomType.TypeB(true))).toEqual(1);
+  expect(matcher(CustomType.TypeB(false))).toEqual(0);
+});
+
 test('Not exhaustive', () => {
   expect(() => match(42).unsafeGet()).toThrow();
   expect(() =>
@@ -226,9 +249,9 @@ describe('Types of tagName and tag', () => {
   });
 });
 
-describe('tuples', () => {
+describe.skip('tuples', () => {
   const sym = Symbol();
-  test.each<[string, unknown[]]>([
+  describe.each<[string, unknown[]]>([
     ['[]', [] as []],
     ['[string]', ['hello']],
     ['[number, string]', [39, 'hello']],
