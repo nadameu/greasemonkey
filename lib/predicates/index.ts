@@ -225,6 +225,8 @@ export function isTaggedUnion<
   ) as TaggedUnion<T, P>;
 }
 
+export type Tagged<T extends string, Tag, Props> = { [K in T]: Tag } & Props;
+
 type TaggedUnion<
   T extends string,
   P extends Record<string, Record<string, Predicate<any>>>,
@@ -232,7 +234,7 @@ type TaggedUnion<
   ? never
   : Predicate<
       {
-        [Tag in keyof P]: Simplify<{ [TagName in T]: Tag } & Shape<P[Tag]>>;
+        [Tag in keyof P]: Tagged<T, Tag, Shape<P[Tag]>>;
       }[keyof P]
     >;
 
