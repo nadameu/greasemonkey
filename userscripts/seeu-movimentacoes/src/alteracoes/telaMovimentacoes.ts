@@ -11,6 +11,7 @@ import {
   T,
   applicativeEither,
   isJust,
+  monoidOr,
   tailRec,
   tuple,
 } from '@nadameu/adts';
@@ -33,19 +34,22 @@ export const telaMovimentacoes = (url: URL) =>
   pipe(
     url.pathname,
     M.maybeBool(x =>
-      [
-        '/seeu/visualizacaoProcesso.do',
-        '/seeu/processo.do',
-        '/seeu/processo/juntarDocumento.do',
-        '/seeu/processo/buscaProcesso.do',
-      ].includes(x)
+      pipe(
+        [
+          '/seeu/visualizacaoProcesso.do',
+          '/seeu/processo.do',
+          '/seeu/processo/juntarDocumento.do',
+          '/seeu/processo/buscaProcesso.do',
+        ],
+        S.foldMap(monoidOr)(z => x === z)
+      )
     ),
     M.flatMap(() =>
       pipe(
         document,
         D.query('li[name="tabMovimentacoesProcesso"].currentTab'),
-        M.map(() => {
-          return pipe(
+        M.map(() =>
+          pipe(
             document,
             D.queryAll<HTMLImageElement>('img[id^=iconmovimentacoes]'),
             S.map((link, i) =>
@@ -59,7 +63,7 @@ export const telaMovimentacoes = (url: URL) =>
                 M.toEither(() => `Lista de eventos não reconhecida: ${i}.`)
               )
             ),
-            S.sequence(applicativeEither),
+            T.sequence(applicativeEither),
             E.map(links => {
               const obs = createIntersectionObserver();
               const mut = createMutationObserver();
@@ -252,8 +256,8 @@ export const telaMovimentacoes = (url: URL) =>
                 })
               );
             })
-          );
-        }),
+          )
+        ),
         M.orElse(() => Just(E.of<void, string>(void 0))),
         M.map(either => {
           GM_addStyle(css);

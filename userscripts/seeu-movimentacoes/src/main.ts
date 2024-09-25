@@ -4,6 +4,7 @@ import {
   Left,
   M,
   S,
+  T,
   constant,
   makeApplicativeValidation,
   monoidString,
@@ -20,7 +21,7 @@ export const main = (): Either<string, void> => {
       pipe(f(url), M.map(E.mapLeft(err => [`[${name}]: ${err}`])))
     ),
     S.toNonEmptyArray,
-    M.map(S.sequence(makeApplicativeValidation(semigroupArray))),
+    M.map(T.sequence(makeApplicativeValidation(semigroupArray))),
     M.getOrElse(() => Left([`Página não reconhecida: ${url.pathname}.`])),
     E.mapBoth(S.fold(monoidString), constant(undefined))
   );
