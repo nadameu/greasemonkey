@@ -2,5 +2,6 @@
   "name": "@nadameu/enderecos-eproc",
   "version": "2.0.0",
   "type": "module",
-  "main": "./index.js"
+  "main": "./index.js",
+  "types": "./index.d.ts"
 }
