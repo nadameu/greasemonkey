@@ -1,0 +1,12 @@
+{
+  "name": "@nadameu/esbuild-target",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Auxilia na configuração do esbuild com base em browserslist.",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "module",
+  "dependencies": {
+    "browserslist": "^4.24.0"
+  }
+}
