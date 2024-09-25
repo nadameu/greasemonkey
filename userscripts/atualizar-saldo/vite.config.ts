@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
 import monkey, { cdn } from 'vite-plugin-monkey';
+import target from '@nadameu/esbuild-target';
 
 const urlInfo = ['pr', 'rs', 'sc']
   .map(uf => `eproc.jf${uf}.jus.br`)
@@ -19,7 +20,7 @@ export default defineConfig({
   build: {
     outDir: '../..',
     emptyOutDir: false,
-    target: 'firefox102',
+    target,
   },
   esbuild: { charset: 'utf8' },
   plugins: [

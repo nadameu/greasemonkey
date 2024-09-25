@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import monkey from 'vite-plugin-monkey';
+import target from '@nadameu/esbuild-target';
 
 const dominios = ['centralrh.trf4.gov.br', 'serh.trf4.jus.br'];
 const protocolos = ['http', 'https'];
@@ -7,7 +8,7 @@ const sufixos = ['', '&*'];
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  build: { target: 'firefox102', outDir: '../..', emptyOutDir: false },
+  build: { target, outDir: '../..', emptyOutDir: false },
   plugins: [
     monkey({
       entry: 'src/index.ts',

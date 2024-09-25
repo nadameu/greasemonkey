@@ -6,6 +6,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@babel/preset-env": "^7.25.4",
+"@nadameu/esbuild-target": "workspace:^",
     "@nadameu/userscript": "workspace:^",
     "@preact/preset-vite": "^2.9.0",
     "@rollup/plugin-babel": "^6.0.4",
