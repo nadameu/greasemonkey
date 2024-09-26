@@ -4,7 +4,7 @@ import { createFiniteStateMachine } from '@nadameu/finite-state-machine';
 import { TaggedWithUnion } from '@nadameu/match';
 import { TIPO_ABERTURA, PARAMETROS_JANELA } from './parametros';
 
-const NOME_JANELA = `gm-${GM_info}__configurar-abertura`;
+const NOME_JANELA = `gm-${GM_info.script.name}__configurar-abertura`;
 
 type TipoAbertura = 'padrao' | 'janela';
 
