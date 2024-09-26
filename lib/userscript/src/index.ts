@@ -4,6 +4,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as esbuild from 'esbuild';
 import * as p from '@nadameu/predicates';
+import target from '@nadameu/esbuild-target';
 
 main().catch(err => {
   console.error(err);
@@ -79,7 +80,7 @@ async function main() {
       entryPoints: [json.entry],
       format: 'esm',
       outfile: json.outfile,
-      target: 'firefox102',
+      target,
     });
     console.log('ok');
     process.exit(0);
@@ -108,7 +109,7 @@ async function main() {
       entryPoints: [json.entry],
       format: 'esm',
       outfile: json.outfile,
-      target: 'firefox102',
+      target,
     });
 
     const result = await ctx.serve({
