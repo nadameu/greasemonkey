@@ -158,7 +158,30 @@ export const isArray: Predicate<unknown[]> = (x): x is unknown[] =>
 export function isTypedArray<T>(predicate: Predicate<T>): Predicate<T[]> {
   return refine(isArray, (xs): xs is T[] => xs.every(predicate));
 }
-
+type ArrayWithLength<
+  Obj extends ArrayLike<T>,
+  T,
+  N extends number,
+> = number extends N ? Obj : Obj & ArrayWithLengthHelper<T, N>;
+type ArrayWithLengthHelper<
+  T,
+  N extends number,
+  Acc extends any[] = [],
+> = Acc['length'] extends N
+  ? Record<Exclude<keyof Acc, keyof []>, T>
+  : ArrayWithLengthHelper<T, N, [...Acc, any]>;
+export const arrayHasLength =
+  <N extends number>(num: N) =>
+  <T, Obj extends ArrayLike<T>>(
+    obj: Obj & ArrayLike<T>
+  ): obj is ArrayWithLength<Obj, T, N> =>
+    obj.length === num;
+export const arrayHasAtLeastLength =
+  <N extends number>(num: N) =>
+  <T, Obj extends ArrayLike<T>>(
+    array: Obj & ArrayLike<T>
+  ): array is Obj & ArrayWithLength<Obj, T, N> =>
+    array.length >= num;
 export function hasKeys<K extends string>(
   ...keys: K[]
 ): Predicate<Record<K, unknown>> {
