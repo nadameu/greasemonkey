@@ -1,28 +1,23 @@
-import {
-  E,
-  Either,
-  Left,
-  M,
-  S,
-  T,
-  constant,
-  makeApplicativeValidation,
-  monoidString,
-  semigroupArray,
-} from '@nadameu/adts';
+import { E, Just, M, Maybe, Nothing, S, isLeft } from '@nadameu/adts';
 import { pipe } from '@nadameu/pipe';
 import * as alteracoes from './alteracoes';
 
-export const main = (): Either<string, void> => {
+export const main = (): Maybe<{ erro: string }> => {
   const url = new URL(document.location.href);
-  return pipe(
+  const processadas = pipe(
     Object.entries(alteracoes),
     S.filterMap(([name, f]) =>
-      pipe(f(url), M.map(E.mapLeft(err => [`[${name}]: ${err}`])))
-    ),
-    S.toNonEmptyArray,
-    M.map(T.sequence(makeApplicativeValidation(semigroupArray))),
-    M.getOrElse(() => Left([`Página não reconhecida: ${url.pathname}.`])),
-    E.mapBoth(S.fold(monoidString), constant(undefined))
+      pipe(f(url), M.map(E.mapLeft(err => `[${name}]: ${err}`)))
+    )
   );
+  if (processadas.length === 0) {
+    return Just({ erro: `Página não reconhecida: ${url.pathname}.` });
+  }
+  const erros = processadas.flatMap(resultado =>
+    isLeft(resultado) ? [resultado.left] : []
+  );
+  if (erros.length > 0) {
+    return Just({ erro: erros.join('\n') });
+  }
+  return Nothing;
 };
