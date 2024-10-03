@@ -82,8 +82,8 @@ export function paginaDepositos(numproc: NumProc): Either<Error, void> {
           contasComSaldo === 0
             ? 'Sem saldo em conta(s).'
             : contasComSaldo === 1
-            ? 'Há 1 conta com saldo.'
-            : `Há ${contasComSaldo} contas com saldo.`;
+              ? 'Há 1 conta com saldo.'
+              : `Há ${contasComSaldo} contas com saldo.`;
         const botao =
           contasAtualizaveis === 0 ? null : (
             <button onClick={onClick}>Atualizar</button>
