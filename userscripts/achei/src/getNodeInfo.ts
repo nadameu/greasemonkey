@@ -1,10 +1,21 @@
-import { flattenTabela } from './flattenTabela';
-import { getNodeSigla } from './getNodeSigla';
-import { siblings } from './siblings';
+import { NodeSigla } from './NodeSigla';
+import { queryAllX } from './queryAllX';
+import { siglaFromText } from './siglaFromText';
 
-export function getNodeInfo(formulario: HTMLFormElement) {
-  return Array.from(siblings(formulario))
-    .flatMap(flattenTabela)
-    .map(getNodeSigla)
-    .filter(<T>(x: T | null): x is T => x !== null);
+export function* getNodeInfo(
+  formulario: HTMLFormElement
+): Generator<NodeSigla> {
+  for (const node of queryAllX<Text>(
+    [
+      'following-sibling::text()',
+      'following-sibling::table//td[2]/text()',
+    ].join('|'),
+    formulario
+  )) {
+    const text = node.nodeValue;
+    if (!text) continue;
+    const sigla = siglaFromText(text);
+    if (!sigla) continue;
+    yield { node, sigla };
+  }
 }

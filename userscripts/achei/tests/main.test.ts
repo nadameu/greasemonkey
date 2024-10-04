@@ -8,16 +8,20 @@ function createTest(
     log: MockedFunction<{ (...args: any[]): void }>
   ) => void
 ) {
-  return test(name, async () => {
+  return test(name, () => {
     document.body.innerHTML = /* html */ `
 <input type="radio" name="local" value="1" checked />
 <form name="formulario"></form>
 `;
     const after = fn();
     const log = vitest.fn();
-    return Promise.allSettled([main({ doc: document, log })]).then(([x]) =>
-      after(x, log)
-    );
+    let result: PromiseSettledResult<void>;
+    try {
+      result = { status: 'fulfilled', value: main({ doc: document, log }) };
+    } catch (reason) {
+      result = { status: 'rejected', reason };
+    }
+    return after(result, log);
   });
 }
 
@@ -30,6 +34,7 @@ describe('main', () => {
     };
   });
   createTest('sem local', () => {
+    document.body.append('Sigla: ABC00');
     document.getElementsByName('local')[0]?.remove();
 
     return (resultado, log) => {
@@ -38,6 +43,7 @@ describe('main', () => {
   });
 
   createTest('local com valor desconhecido', () => {
+    document.body.append('Sigla: ABC00');
     const input = document.getElementsByName('local')[0] as HTMLInputElement;
     input.value = '999';
 

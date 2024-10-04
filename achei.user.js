@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Achei
 // @namespace    http://nadameu.com.br/achei
-// @version      16.0.1
+// @version      17.0.0
 // @author       nadameu
 // @description  Link para informações da Intra na página do Achei!
 // @match        http://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar
@@ -23,24 +23,29 @@
     3: 'jfsc',
     4: 'jfpr',
   };
-  async function getDominio(doc) {
+  function getDominio(doc) {
     const value = doc.querySelector('input[name="local"]:checked')?.value;
-    if (!value || !(value in dominios))
+    if (!value || !(k => k in dominios)(value)) {
       throw new Error('Não foi possível verificar o domínio.');
+    }
     return dominios[value];
   }
-  async function getFormulario(doc) {
+  function getFormulario(doc) {
     const form = doc.querySelector('form[name="formulario"]');
     if (!form) throw new Error('Não foi possível obter o formulário.');
     return form;
   }
-  function flattenTabela(node) {
-    const nodes = [node];
-    if (node instanceof HTMLTableElement)
-      return Array.from(
-        node.querySelector('td:nth-child(2)')?.childNodes ?? []
-      ).concat(nodes);
-    return nodes;
+  const ITERATOR = XPathResult.ORDERED_NODE_ITERATOR_TYPE;
+  function* queryAllX(selector, context) {
+    const iter = context.ownerDocument.evaluate(
+      selector,
+      context,
+      null,
+      ITERATOR
+    );
+    for (let node = iter.iterateNext(); node; node = iter.iterateNext()) {
+      yield node;
+    }
   }
   const reSigla = /^\s*Sigla:\s*(\S+)\s*(\(antiga:\s*\S+\s*\))?\s*$/;
   function siglaFromText(text) {
@@ -52,21 +57,20 @@
       return match[1].toLowerCase();
     }
   }
-  function getNodeSigla(node) {
-    const text = node.textContent;
-    if (!text) return null;
-    const sigla = siglaFromText(text);
-    if (!sigla) return null;
-    return { node, sigla };
-  }
-  function* siblings(node) {
-    for (let s = node.nextSibling; s; s = s.nextSibling) yield s;
-  }
-  function getNodeInfo(formulario) {
-    return Array.from(siblings(formulario))
-      .flatMap(flattenTabela)
-      .map(getNodeSigla)
-      .filter(x => x !== null);
+  function* getNodeInfo(formulario) {
+    for (const node of queryAllX(
+      [
+        'following-sibling::text()',
+        'following-sibling::table//td[2]/text()',
+      ].join('|'),
+      formulario
+    )) {
+      const text = node.nodeValue;
+      if (!text) continue;
+      const sigla = siglaFromText(text);
+      if (!sigla) continue;
+      yield { node, sigla };
+    }
   }
   function makeCriarLinks(doc, dominio) {
     const template = doc.createElement('template');
@@ -79,23 +83,21 @@
       node.parentNode.insertBefore(fragment, node.nextSibling);
     };
   }
-  async function main({ doc, log }) {
-    const dominio = await getDominio(doc);
-    const criarLinks = makeCriarLinks(doc, dominio);
-    const formulario = await getFormulario(doc);
-    const nodeInfo = getNodeInfo(formulario);
-    nodeInfo.forEach(criarLinks);
+  function main({ doc, log }) {
+    const formulario = getFormulario(doc);
+    const nodeInfo = Array.from(getNodeInfo(formulario));
     const qtd = nodeInfo.length;
+    if (qtd > 0) {
+      const dominio = getDominio(doc);
+      const criarLinks = makeCriarLinks(doc, dominio);
+      nodeInfo.forEach(criarLinks);
+    }
     const s = qtd > 1 ? 's' : '';
     log(`${qtd} link${s} criado${s}`);
   }
-  main({ doc: document, log: console.log.bind(console, '[achei]') }).catch(
-    err => {
-      if (err && err instanceof Error) {
-        console.error(err);
-      } else {
-        console.error(String(err));
-      }
-    }
-  );
+  try {
+    main({ doc: document, log: console.log.bind(console, '[achei]') });
+  } catch (err) {
+    console.error(err);
+  }
 })();

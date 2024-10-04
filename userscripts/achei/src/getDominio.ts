@@ -3,13 +3,23 @@ const dominios = {
   '2': 'jfrs',
   '3': 'jfsc',
   '4': 'jfpr',
-} as const;
+} as Record<'1' | '2' | '3' | '4', Dominio>;
 
-export async function getDominio(doc: Document) {
+declare const OpaqueSymbol: unique symbol;
+declare class OpaqueClass<T> {
+  private [OpaqueSymbol]: T;
+}
+type Opaque<T, U> = T & OpaqueClass<U>;
+
+declare const DominioSymbol: unique symbol;
+export type Dominio = Opaque<string, { [DominioSymbol]: never }>;
+
+export function getDominio(doc: Document) {
   const value = doc.querySelector<HTMLInputElement>(
     'input[name="local"]:checked'
   )?.value;
-  if (!value || !(value in dominios))
+  if (!value || !((k): k is keyof typeof dominios => k in dominios)(value)) {
     throw new Error('Não foi possível verificar o domínio.');
-  return dominios[value as keyof typeof dominios];
+  }
+  return dominios[value];
 }
