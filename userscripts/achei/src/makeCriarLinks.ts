@@ -1,7 +1,7 @@
 import { Dominio } from './getDominio';
 import { NodeSigla } from './NodeSigla';
 
-export function makeCriarLinks(doc: Document, dominio: Dominio) {
+export function makeCriarLinks(doc: typeof document, dominio: Dominio) {
   const template = doc.createElement('template');
   template.innerHTML = ' [ <a href="" target="_blank">Abrir na Intra</a> ]';
   const content = template.content;

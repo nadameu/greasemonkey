@@ -160,6 +160,10 @@ importers:
         version: 3.6.0(esbuild@0.24.0)
 
   userscripts/achei:
+    dependencies:
+      '@nadameu/opaque':
+        specifier: workspace:^
+        version: link:../../lib/opaque
     devDependencies:
       jsdom:
         specifier: ^25.0.1

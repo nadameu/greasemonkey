@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Achei
 // @namespace    http://nadameu.com.br/achei
-// @version      17.0.0
+// @version      17.1.0
 // @author       nadameu
 // @description  Link para informações da Intra na página do Achei!
 // @match        http://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar
@@ -17,6 +17,9 @@
 (function () {
   'use strict';
 
+  function assert(condition, msg) {
+    if (!condition) throw new Error(msg);
+  }
   const dominios = {
     1: 'trf4',
     2: 'jfrs',
@@ -25,14 +28,18 @@
   };
   function getDominio(doc) {
     const value = doc.querySelector('input[name="local"]:checked')?.value;
-    if (!value || !(k => k in dominios)(value)) {
-      throw new Error('Não foi possível verificar o domínio.');
-    }
+    assert(
+      !!value && isInDominios(value),
+      'Não foi possível verificar o domínio.'
+    );
     return dominios[value];
+  }
+  function isInDominios(key) {
+    return key in dominios;
   }
   function getFormulario(doc) {
     const form = doc.querySelector('form[name="formulario"]');
-    if (!form) throw new Error('Não foi possível obter o formulário.');
+    assert(form !== null, 'Não foi possível obter o formulário.');
     return form;
   }
   const ITERATOR = XPathResult.ORDERED_NODE_ITERATOR_TYPE;
@@ -84,20 +91,38 @@
     };
   }
   function main({ doc, log }) {
-    const formulario = getFormulario(doc);
-    const nodeInfo = Array.from(getNodeInfo(formulario));
-    const qtd = nodeInfo.length;
-    if (qtd > 0) {
-      const dominio = getDominio(doc);
-      const criarLinks = makeCriarLinks(doc, dominio);
-      nodeInfo.forEach(criarLinks);
+    const resultado = parsePagina(doc);
+    let linksCriados = 0;
+    if (resultado !== 0) {
+      linksCriados = modificarPagina({ ...resultado, doc });
     }
-    const s = qtd > 1 ? 's' : '';
-    log(`${qtd} link${s} criado${s}`);
+    const s = linksCriados > 1 ? 's' : '';
+    log(`${linksCriados} link${s} criado${s}`);
+  }
+  function parsePagina(doc) {
+    const formulario = getFormulario(doc);
+    const nodeSiglas = Array.from(getNodeInfo(formulario));
+    if (isNonEmptyArray(nodeSiglas)) {
+      const dominio = getDominio(doc);
+      return { nodeSiglas, dominio };
+    }
+    return 0;
+  }
+  function modificarPagina({ doc, nodeSiglas, dominio }) {
+    const criarLink = makeCriarLinks(doc, dominio);
+    for (const nodeSigla of nodeSiglas) {
+      criarLink(nodeSigla);
+    }
+    return nodeSiglas.length;
+  }
+  function isNonEmptyArray(array) {
+    return array.length > 0;
   }
   try {
     main({ doc: document, log: console.log.bind(console, '[achei]') });
   } catch (err) {
+    console.group('[achei]');
     console.error(err);
+    console.groupEnd();
   }
 })();

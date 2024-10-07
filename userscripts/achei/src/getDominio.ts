@@ -1,3 +1,6 @@
+import { Opaque } from '@nadameu/opaque';
+import { assert } from './assert';
+
 const dominios = {
   '1': 'trf4',
   '2': 'jfrs',
@@ -5,21 +8,19 @@ const dominios = {
   '4': 'jfpr',
 } as Record<'1' | '2' | '3' | '4', Dominio>;
 
-declare const OpaqueSymbol: unique symbol;
-declare class OpaqueClass<T> {
-  private [OpaqueSymbol]: T;
-}
-type Opaque<T, U> = T & OpaqueClass<U>;
+export type Dominio = Opaque<string, { Dominio: Dominio }>;
 
-declare const DominioSymbol: unique symbol;
-export type Dominio = Opaque<string, { [DominioSymbol]: never }>;
-
-export function getDominio(doc: Document) {
+export function getDominio(doc: typeof document) {
   const value = doc.querySelector<HTMLInputElement>(
     'input[name="local"]:checked'
   )?.value;
-  if (!value || !((k): k is keyof typeof dominios => k in dominios)(value)) {
-    throw new Error('Não foi possível verificar o domínio.');
-  }
+  assert(
+    !!value && isInDominios(value),
+    'Não foi possível verificar o domínio.'
+  );
   return dominios[value];
+}
+
+function isInDominios(key: string): key is keyof typeof dominios {
+  return key in dominios;
 }

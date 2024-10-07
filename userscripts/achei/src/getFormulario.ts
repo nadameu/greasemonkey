@@ -1,5 +1,7 @@
-export function getFormulario(doc: Document) {
+import { assert } from './assert';
+
+export function getFormulario(doc: typeof document) {
   const form = doc.querySelector<HTMLFormElement>('form[name="formulario"]');
-  if (!form) throw new Error('Não foi possível obter o formulário.');
+  assert(form !== null, 'Não foi possível obter o formulário.');
   return form;
 }
