@@ -164,6 +164,9 @@ importers:
       '@nadameu/opaque':
         specifier: workspace:^
         version: link:../../lib/opaque
+      '@nadameu/predicates':
+        specifier: workspace:^
+        version: link:../../lib/predicates
     devDependencies:
       jsdom:
         specifier: ^25.0.1

@@ -1,3 +1,4 @@
+import { arrayHasAtLeastLength } from '@nadameu/predicates';
 import { Dominio, getDominio } from './getDominio';
 import { getFormulario } from './getFormulario';
 import { getNodeInfo } from './getNodeInfo';
@@ -20,12 +21,15 @@ export function main({
   log(`${linksCriados} link${s} criado${s}`);
 }
 
-function parsePagina(
-  doc: typeof document
-): 0 | { nodeSiglas: NonEmptyArray<NodeSigla>; dominio: Dominio } {
+function parsePagina(doc: typeof document):
+  | 0
+  | {
+      nodeSiglas: NonEmptyArray<NodeSigla>;
+      dominio: Dominio;
+    } {
   const formulario = getFormulario(doc);
   const nodeSiglas = Array.from(getNodeInfo(formulario));
-  if (isNonEmptyArray(nodeSiglas)) {
+  if (arrayHasAtLeastLength(1)(nodeSiglas)) {
     const dominio = getDominio(doc);
     return { nodeSiglas, dominio };
   }
@@ -48,7 +52,4 @@ function modificarPagina({
   return nodeSiglas.length;
 }
 
-type NonEmptyArray<T> = [T, ...Array<T>];
-function isNonEmptyArray<T>(array: Array<T>): array is NonEmptyArray<T> {
-  return array.length > 0;
-}
+type NonEmptyArray<T> = T[] & Record<'0', T>;

@@ -1,5 +1,5 @@
 import { Opaque } from '@nadameu/opaque';
-import { assert } from './assert';
+import { assert } from '@nadameu/predicates';
 
 const dominios = {
   '1': 'trf4',

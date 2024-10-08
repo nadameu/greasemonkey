@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Achei
 // @namespace    http://nadameu.com.br/achei
-// @version      17.1.0
+// @version      17.2.0
 // @author       nadameu
 // @description  Link para informações da Intra na página do Achei!
 // @match        http://centralrh.trf4.gov.br/achei/pesquisar.php?acao=pesquisar
@@ -17,9 +17,16 @@
 (function () {
   'use strict';
 
-  function assert(condition, msg) {
-    if (!condition) throw new Error(msg);
+  class AssertionError extends Error {
+    name = 'AssertionError';
+    constructor(message) {
+      super(message);
+    }
   }
+  function assert(condition, message) {
+    if (!condition) throw new AssertionError(message);
+  }
+  const arrayHasAtLeastLength = num => array => array.length >= num;
   const dominios = {
     1: 'trf4',
     2: 'jfrs',
@@ -102,7 +109,7 @@
   function parsePagina(doc) {
     const formulario = getFormulario(doc);
     const nodeSiglas = Array.from(getNodeInfo(formulario));
-    if (isNonEmptyArray(nodeSiglas)) {
+    if (arrayHasAtLeastLength(1)(nodeSiglas)) {
       const dominio = getDominio(doc);
       return { nodeSiglas, dominio };
     }
@@ -114,9 +121,6 @@
       criarLink(nodeSigla);
     }
     return nodeSiglas.length;
-  }
-  function isNonEmptyArray(array) {
-    return array.length > 0;
   }
   try {
     main({ doc: document, log: console.log.bind(console, '[achei]') });

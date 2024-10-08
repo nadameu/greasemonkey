@@ -3,7 +3,7 @@
   "description": "Link para informações da Intra na página do Achei!",
   "private": true,
   "author": "nadameu",
-  "version": "17.1.0",
+  "version": "17.2.0",
   "type": "module",
   "scripts": {
     "build": "tsc && vite build",
@@ -15,7 +15,8 @@
     "test:watch": "vitest watch"
   },
   "dependencies": {
-    "@nadameu/opaque": "workspace:^"
+    "@nadameu/opaque": "workspace:^",
+    "@nadameu/predicates": "workspace:^"
   },
   "devDependencies": {
     "jsdom": "^25.0.1"
