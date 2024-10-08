@@ -1,14 +1,8 @@
-import { Either, M, Maybe, Right } from '@nadameu/adts';
-import { pipe } from '@nadameu/pipe';
-import css from './barra-superior.scss?inline';
 import { GM_addStyle } from '$';
+import css from './barra-superior.scss?inline';
 
-export const barraSuperior = (url: URL): Maybe<Either<string, void>> =>
-  pipe(
-    url.pathname,
-    M.maybeBool(x => x === '/seeu/usuario/areaAtuacao.do'),
-    M.map(() => {
-      GM_addStyle(css);
-      return Right(undefined);
-    })
-  );
+export const barraSuperior = (url: URL): null => {
+  if (url.pathname !== '/seeu/usuario/areaAtuacao.do') return null;
+  GM_addStyle(css);
+  return null;
+};

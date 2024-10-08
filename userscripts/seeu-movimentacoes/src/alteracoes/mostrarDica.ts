@@ -1,12 +1,11 @@
+import { h } from '@nadameu/create-element';
 import classNames from './telaMovimentacoes.module.scss';
 
 let dica: HTMLDivElement | null = null;
 function criarDica() {
-  const dica = document.createElement('div');
-  dica.hidden = true;
-  dica.className = classNames.dica!;
-  document.body.appendChild(dica);
-  return dica;
+  return document.body.appendChild(
+    h('div', { hidden: true, className: classNames.dica! })
+  );
 }
 export function mostrarDica(html: string) {
   if (!dica) {
