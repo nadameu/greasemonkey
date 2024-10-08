@@ -41,7 +41,7 @@ export const getOr = <a>(defaultValue: a) => getOrElse(() => defaultValue);
 
 export const getOrElse: <a>(
   getDefault: () => a
-) => <b>(fa: Maybe<b>) => a extends b ? b : a | b =
+) => <b>(fa: Maybe<b>) => [a] extends [b] ? b : a | b =
   <a>(getDefault: () => a) =>
   <b>(fa: Maybe<b>): any =>
     isNothing(fa) ? getDefault() : fa.value;
