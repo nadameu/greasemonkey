@@ -1,17 +1,9 @@
-/*
-div#content {
-  margin: 0 auto;
-  max-width: 1280px;
-}
-*/
-
 table.resultTable > tbody > tr {
-  --cor-pessoa: #444;
-
   div > & > td:nth-last-child(3) {
+    --cor-pessoa: hsl(var(--hue-pessoa) 50% 50%);
     background: linear-gradient(
         to bottom right,
-        hsl(var(--hue-pessoa) 50% 50%) 50%,
+        var(--cor-pessoa) 50%,
         transparent 50%
       )
       top left / 12px 12px no-repeat;
@@ -50,6 +42,8 @@ table.resultTable > tbody > tr {
 }
 
 table.resultTable {
+  border-collapse: separate;
+
   thead > tr > th {
     padding: 0 5px;
   }
