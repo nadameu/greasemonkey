@@ -16,7 +16,6 @@ import * as P from '@nadameu/predicates';
 import { createIntersectionObserver } from '../createIntersectionObserver';
 import { configurarAbertura } from './configurarAbertura';
 import css from './estilos-seeu.scss?inline';
-import { esconderDica, mostrarDica, moverDica } from './mostrarDica';
 import * as Parametros from './parametros';
 import classNames from './telaMovimentacoes.module.scss';
 
@@ -157,21 +156,6 @@ export function telaMovimentacoes(url: URL): null {
       for (const win of janelasAbertas.values()) {
         if (!win.closed) win.close();
       }
-    }
-  });
-  let currentDica: HTMLElement | null = null;
-  document.addEventListener('mouseover', e => {
-    if (e.target instanceof HTMLElement && e.target.matches('[data-gm-dica]')) {
-      currentDica = e.target;
-      mostrarDica(currentDica.dataset.gmDica!);
-      currentDica.addEventListener('mousemove', moverDica);
-    }
-  });
-  document.addEventListener('mouseout', e => {
-    if (currentDica && e.target === currentDica) {
-      currentDica.removeEventListener('mousemove', moverDica);
-      esconderDica();
-      currentDica = null;
     }
   });
 
