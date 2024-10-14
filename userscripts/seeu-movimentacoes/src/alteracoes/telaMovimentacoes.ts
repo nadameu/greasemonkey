@@ -25,6 +25,7 @@ const caminhosValidos = [
   '/seeu/processo.do',
   '/seeu/processo/juntarDocumento.do',
   '/seeu/processo/buscaProcesso.do',
+  '/seeu/processo/criminal/execucao/buscaProcessoExecucao.do',
 ];
 
 export function telaMovimentacoes(url: URL): null {
