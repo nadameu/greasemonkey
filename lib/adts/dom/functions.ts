@@ -21,7 +21,7 @@ export const xquery =
 const ITER = XPathResult.ORDERED_NODE_ITERATOR_TYPE;
 export const xqueryAll = <T extends Node>(
   expression: string
-): ((contextNode: Node) => Seq<T>) =>
+): ((contextNode: Node) => T[]) =>
   S.fromGen(function* (contextNode: Node) {
     const result = document.evaluate(expression, contextNode, null, ITER);
     for (
