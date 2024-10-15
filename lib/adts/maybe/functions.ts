@@ -38,6 +38,10 @@ export const mapNullable = <a, b>(f: (_: a) => b | null | undefined) =>
   flatMap<a, b>(x => fromNullable(f(x)));
 
 export const getOr = <a>(defaultValue: a) => getOrElse(() => defaultValue);
+export const getOrThrow = (msg: string): (<a>(maybe: Maybe<a>) => a) =>
+  getOrElse(() => {
+    throw new Error(msg);
+  });
 
 export const getOrElse: <a>(
   getDefault: () => a
