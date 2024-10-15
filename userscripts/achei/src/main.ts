@@ -13,10 +13,10 @@ export function main({
   log: typeof console.log;
 }) {
   const resultado = parsePagina(doc);
-  let linksCriados = 0;
-  if (resultado !== 0) {
-    linksCriados = modificarPagina({ ...resultado, doc });
-  }
+  const { linksCriados } = (() => {
+    if (resultado === 0) return { linksCriados: 0 };
+    return modificarPagina({ ...resultado, doc });
+  })();
   const s = linksCriados > 1 ? 's' : '';
   log(`${linksCriados} link${s} criado${s}`);
 }
@@ -29,11 +29,9 @@ function parsePagina(doc: typeof document):
     } {
   const formulario = getFormulario(doc);
   const nodeSiglas = Array.from(getNodeInfo(formulario));
-  if (arrayHasAtLeastLength(1)(nodeSiglas)) {
-    const dominio = getDominio(doc);
-    return { nodeSiglas, dominio };
-  }
-  return 0;
+  if (!arrayHasAtLeastLength(1)(nodeSiglas)) return 0;
+  const dominio = getDominio(doc);
+  return { nodeSiglas, dominio };
 }
 
 function modificarPagina({
@@ -46,10 +44,12 @@ function modificarPagina({
   dominio: Dominio;
 }) {
   const criarLink = makeCriarLinks(doc, dominio);
+  let linksCriados = 0;
   for (const nodeSigla of nodeSiglas) {
     criarLink(nodeSigla);
+    linksCriados += 1;
   }
-  return nodeSiglas.length;
+  return { linksCriados };
 }
 
 type NonEmptyArray<T> = T[] & Record<'0', T>;
