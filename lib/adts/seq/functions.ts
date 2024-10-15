@@ -11,16 +11,18 @@ import {
 import { Seq } from './definitions';
 import { Concat, SeqF } from './internal';
 
-export const fromGen =
-  <A extends unknown[], a>(gen: (...args: A) => Generator<a>) =>
+export const fromGenFn =
+  <A extends unknown[], a>(gen: (...args: A) => Iterable<a>) =>
   (...args: A): a[] => [...gen(...args)];
-export const fromArray = <a>(arrayLike: ArrayLike<a>): Seq<a> =>
-  fromGen(function* () {
-    for (let i = 0, len = arrayLike.length; i < len; i += 1)
-      yield arrayLike[i]!;
-  })();
-export const empty = <a = never>(): Seq<a> => [];
-export const of = <a>(value: a): Seq<a> => [value];
+export const fromArray =
+  /* #__PURE__ */
+  fromGenFn(function* <a>(arrayLike: ArrayLike<a>) {
+    for (let i = 0, len = arrayLike.length; i < len; i += 1) {
+      yield arrayLike[i] as a;
+    }
+  });
+export const empty = <a = never>(): a[] => [];
+export const of = <a>(value: a): a[] => [value];
 export const concat = <a>(left: Seq<a>, right: Seq<a>): Seq<a> =>
   left.length === 0
     ? right
@@ -32,15 +34,23 @@ export const append = <a>(xs: Seq<a>, x: a): Seq<a> =>
 export const prepend = <a>(x: a, xs: Seq<a>): Seq<a> =>
   xs.length === 0 ? [x] : new Concat([x], xs);
 export const flatMap = <a, b>(f: (a: a, i: number) => Seq<b>) =>
-  fromGen<[fa: Seq<a>], b>(function* (fa: Seq<a>, i = 0) {
+  fromGenFn<[fa: Seq<a>], b>(function* (fa: Seq<a>, i = 0) {
     for (const a of fa) yield* f(a, i++);
   });
 export const map = <a, b>(f: (a: a, i: number) => b) =>
-  fromGen<[fa: Seq<a>], b>(function* (fa, i = 0) {
+  fromGenFn<[fa: Seq<a>], b>(function* (fa, i = 0) {
     for (const a of fa) yield f(a, i++);
   });
-export const ap = /* #__PURE__ */ derive.ap<SeqF>({ of, flatMap });
-export const lift2 = /* #__PURE__ */ derive.lift2<SeqF>({ map, ap });
+export const ap = /* #__PURE__ */ derive.ap<SeqF>({ of, flatMap }) as <a>(
+  fa: Seq<a>
+) => <b>(ff: Seq<(_: a) => b>) => b[];
+export const lift2 = /* #__PURE__ */ derive.lift2<SeqF>({ map, ap }) as <
+  a,
+  b,
+  c,
+>(
+  f: (a: a, b: b) => c
+) => (fa: Seq<a>, fb: Seq<b>) => c[];
 export const foldLeft =
   <a, b>(seed: b, f: (acc: b, a: a, i: number) => b) =>
   (fa: Seq<a>): b => {
@@ -79,20 +89,20 @@ export const traverse =
   };
 export const sequence = <F extends Kind>(
   M: Applicative<F>
-): (<a, e>(tfa: Seq<Type<F, e, a>>) => Type<F, e, Seq<a>>) =>
+): (<a, e>(tfa: Seq<Type<F, e, a>>) => Type<F, e, a[]>) =>
   traverse(M)(identity);
 export const filterMap = <a, b>(f: (a: a, i: number) => Maybe<b>) =>
-  fromGen<[fa: Seq<a>], b>(function* (fa: Seq<a>, i = 0) {
+  fromGenFn<[fa: Seq<a>], b>(function* (fa: Seq<a>, i = 0) {
     for (const a of fa) {
       const maybe = f(a, i++);
       if (isJust(maybe)) yield maybe.value;
     }
   });
 export const filter: {
-  <a, b extends a>(pred: (a: a, i: number) => a is b): (fa: Seq<a>) => Seq<b>;
-  <a>(pred: (a: a, i: number) => boolean): (fa: Seq<a>) => Seq<a>;
+  <a, b extends a>(pred: (a: a, i: number) => a is b): (fa: Seq<a>) => b[];
+  <a>(pred: (a: a, i: number) => boolean): (fa: Seq<a>) => a[];
 } = <a>(pred: (a: a, i: number) => boolean) =>
   filterMap<a, a>((a, i) => (pred(a, i) ? Just(a) : Nothing));
-export const reverse = <a>(fa: Seq<a>): Seq<a> => [...fa].reverse();
+export const reverse = <a>(fa: Seq<a>): a[] => [...fa].reverse();
 export const toNonEmptyArray = <a>(seq: Seq<a>): Maybe<[a, ...a[]]> =>
   seq.length === 0 ? Nothing : Just([...seq] as [a, ...a[]]);
