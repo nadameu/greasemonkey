@@ -10,10 +10,6 @@ export const apply: {
   <A extends unknown[], B>(f: (...args: A) => B, ...args: A): B;
 } = <A extends unknown[], B>(f: (...args: A) => B, ...args: A): B => f(...args);
 
-export function assert(condition: any, msg?: string): asserts condition {
-  if (!condition) throw new Error(msg);
-}
-
 export const identity = <a>(x: a): a => x;
 
 export const tailRec = <a, b>(seed: a, f: (_: a) => Either<a, b>): b => {
