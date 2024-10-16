@@ -8,8 +8,8 @@ type ListU<a> = TaggedUnion<
 const tagList = /* #__PURE__ */ tag<ListF>('List');
 
 export interface Cons<a> extends MemberOf<ListU<a>, 'Cons'> {}
-export const Cons = <a>(head: a, tail: List<a>) =>
-  tagList('Cons')({ head, tail });
+const tagCons = /* #__PURE__ */ tagList('Cons');
+export const Cons = <a>(head: a, tail: List<a>) => tagCons({ head, tail });
 export const isCons: <a>(list: List<a>) => list is Cons<a> =
   /* #__PURE__ */ isTagged<ListF, 'Cons'>('Cons');
 

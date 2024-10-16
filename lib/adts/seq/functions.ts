@@ -24,23 +24,33 @@ export const fromArray =
 export const empty = <a = never>(): a[] => [];
 export const of = <a>(value: a): a[] => [value];
 export const concat = <a>(left: Seq<a>, right: Seq<a>): Seq<a> =>
-  left.length === 0
-    ? right
-    : right.length === 0
-      ? left
-      : new Concat(left, right);
-export const append = <a>(xs: Seq<a>, x: a): Seq<a> =>
-  xs.length === 0 ? [x] : new Concat(xs, [x]);
-export const prepend = <a>(x: a, xs: Seq<a>): Seq<a> =>
-  xs.length === 0 ? [x] : new Concat([x], xs);
-export const flatMap = <a, b>(f: (a: a, i: number) => Seq<b>) =>
-  fromGenFn<[fa: Seq<a>], b>(function* (fa: Seq<a>, i = 0) {
-    for (const a of fa) yield* f(a, i++);
-  });
+  new Concat(left, right);
+export const append = <a>(xs: Seq<a>, x: a) => concat(xs, [x]);
+export const prepend = <a>(x: a, xs: Seq<a>) => concat([x], xs);
+export const foldMap: {
+  <F extends Kind>(
+    M: MonoidK<F>
+  ): <a, b, e = never>(
+    f: (a: a, i: number) => Type<F, e, b>
+  ) => (fa: Seq<a>) => Type<F, e, b>;
+  <b>(M: Monoid<b>): <a>(f: (a: a, i: number) => b) => (fa: Seq<a>) => b;
+} =
+  <b>(M: Monoid<b>) =>
+  <a>(f: (a: a, i: number) => b) =>
+  (xs: Seq<a>) => {
+    const go = (xs: a[], start: number, end: number): b => {
+      if (end < start) return M.empty();
+      if (end === start) return f(xs[start] as a, start);
+      const pivot = start + ((end - start) >> 1);
+      return M.concat(go(xs, start, pivot), go(xs, pivot + 1, end));
+    };
+    return go([...xs], 0, xs.length - 1);
+  };
+export const flatMap = /* #__PURE__ */ foldMap({ empty, concat }) as <a, b>(
+  f: (a: a, i: number) => Seq<b>
+) => (fa: Seq<a>) => b[];
 export const map = <a, b>(f: (a: a, i: number) => b) =>
-  fromGenFn<[fa: Seq<a>], b>(function* (fa, i = 0) {
-    for (const a of fa) yield f(a, i++);
-  });
+  flatMap((x: a, i) => [f(x, i)]);
 export const ap = /* #__PURE__ */ derive.ap<SeqF>({ of, flatMap }) as <a>(
   fa: Seq<a>
 ) => <b>(ff: Seq<(_: a) => b>) => b[];
@@ -59,17 +69,7 @@ export const foldLeft =
     for (const a of fa) acc = f(acc, a, i++);
     return acc;
   };
-export const foldMap: {
-  <F extends Kind>(
-    M: MonoidK<F>
-  ): <a, b, e = never>(
-    f: (a: a, i: number) => Type<F, e, b>
-  ) => (fa: Seq<a>) => Type<F, e, b>;
-  <b>(M: Monoid<b>): <a>(f: (a: a, i: number) => b) => (fa: Seq<a>) => b;
-} =
-  <b>(M: Monoid<b>) =>
-  <a>(f: (a: a, i: number) => b) =>
-    foldLeft<a, b>(M.empty(), (bs, a, i) => M.concat(bs, f(a, i)));
+
 export const fold: {
   <F extends Kind>(
     M: MonoidK<F>
@@ -78,14 +78,11 @@ export const fold: {
 } = <a>(M: Monoid<a>) => foldMap(M)<a>(identity);
 export const traverse =
   <F extends Kind>(M: Applicative<F>) =>
-  <a, b, e>(f: (a: a, i: number) => Type<F, e, b>) =>
-  (fa: Seq<a>): Type<F, e, b[]> => {
-    const lifted = derive.lift2(M)<Seq<b>, b, Seq<b>>(append);
-    return M.map<Seq<b>, b[]>(xs => [...xs])<e>(
-      foldLeft<a, Type<F, e, Seq<b>>>(M.of(empty()), (ftb, a, i) =>
-        lifted(ftb, f(a, i))
-      )(fa)
-    );
+  <a, b, e>(
+    f: (a: a, i: number) => Type<F, e, b>
+  ): ((fa: Seq<a>) => Type<F, e, b[]>) => {
+    const lifted = derive.lift2(M)<b[], b, b[]>((ys, y) => (ys.push(y), ys));
+    return foldLeft(M.of<b[], e>([]), (acc, x, i) => lifted(acc, f(x, i)));
   };
 export const sequence = <F extends Kind>(
   M: Applicative<F>
@@ -102,7 +99,9 @@ export const filter: {
   <a, b extends a>(pred: (a: a, i: number) => a is b): (fa: Seq<a>) => b[];
   <a>(pred: (a: a, i: number) => boolean): (fa: Seq<a>) => a[];
 } = <a>(pred: (a: a, i: number) => boolean) =>
-  filterMap<a, a>((a, i) => (pred(a, i) ? Just(a) : Nothing));
+  fromGenFn<[fa: Seq<a>], a>(function* (fa: Seq<a>, i = 0) {
+    for (const a of fa) if (pred(a, i++)) yield a;
+  });
 export const reverse = <a>(fa: Seq<a>): a[] => [...fa].reverse();
 export const toNonEmptyArray = <a>(seq: Seq<a>): Maybe<[a, ...a[]]> =>
   seq.length === 0 ? Nothing : Just([...seq] as [a, ...a[]]);
