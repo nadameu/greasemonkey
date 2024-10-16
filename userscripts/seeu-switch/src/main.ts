@@ -1,12 +1,20 @@
 import { h } from '@nadameu/create-element';
+import {
+  arrayHasAtLeastLength,
+  arrayHasLength,
+  assert,
+  isDefined,
+  isNonEmptyString,
+  isNotNull,
+  isNotNullish,
+} from '@nadameu/predicates';
+import classes from './estilos.module.scss';
 import { Info } from './Info';
 import { XHR } from './XHR';
-import { assert } from './assert';
-import classes from './estilos.module.scss';
 
 export function main(): Info | void {
-  const areaAtual = document.querySelector('#areaatuacao')?.textContent ?? '';
-  assert(areaAtual !== '', 'Área de atuação atual desconhecida.');
+  const areaAtual = document.querySelector('#areaatuacao')?.textContent;
+  assert(isNonEmptyString(areaAtual), 'Área de atuação atual desconhecida.');
   const linkAlterar = document.querySelector('#alterarAreaAtuacao');
   assert(
     linkAlterar instanceof HTMLAnchorElement,
@@ -16,29 +24,34 @@ export function main(): Info | void {
     /^javascript:openSubmitDialog\('(\/seeu\/usuario\/areaAtuacao\.do\?_tj=[0-9a-f]+)', 'Alterar Atua[^']+o', 0, 0\);/
   );
   assert(
-    match !== null && match.length >= 2,
+    isNotNull(match) && arrayHasAtLeastLength(2)(match),
     'Link para alteração da área de atuação não reconhecido.'
   );
-  const urlAlterar = match[1]!;
+  const urlAlterar = match[1];
 
   const informacoesProcessuais = document.querySelector(
     '#informacoesProcessuais'
   );
   assert(
-    informacoesProcessuais !== null,
+    isNotNull(informacoesProcessuais),
     `Informações processuais não encontradas.`
   );
   const linhaJuizo = Array.from(informacoesProcessuais.querySelectorAll('tr'))
-    .filter(x => x.cells.length === 2)
     .filter(
-      x => (x.cells[0]?.textContent?.trim() ?? '').match(/^Juízo:$/) !== null
-    )[0];
-  assert(linhaJuizo !== undefined, `Informações de juízo não encontradas.`);
-  const juizo = linhaJuizo.cells[1]?.textContent?.trim() ?? '';
-  assert(juizo !== '', `Informações de juízo não encontradas.`);
+      (
+        x: HTMLTableRowElement
+      ): x is HTMLTableRowElement & {
+        cells: Record<'0' | '1', HTMLTableCellElement>;
+      } => arrayHasLength(2)(x.cells)
+    )
+    .filter(x => (x.cells[0].textContent?.trim() ?? '') === 'Juízo:')
+    .at(0);
+  assert(isDefined(linhaJuizo), `Informações de juízo não encontradas.`);
+  const juizo = linhaJuizo.cells[1].textContent?.trim();
+  assert(isNonEmptyString(juizo), `Informações de juízo não encontradas.`);
   if (areaAtual === juizo)
     return new Info('Botão não adicionado - mesmo juízo');
-  linhaJuizo.cells[1]?.append(' ', criarBotao(urlAlterar, juizo));
+  linhaJuizo.cells[1].append(' ', criarBotao(urlAlterar, juizo));
 
   const aba = document.querySelector('li[name="tabDadosProcesso"].currentTab');
   if (!aba) return;
@@ -46,17 +59,17 @@ export function main(): Info | void {
     document.querySelectorAll('#includeContent td.labelRadio > label')
   ).filter(x => x.textContent === 'Juízo:');
   assert(
-    labels.length === 1,
+    arrayHasLength(1)(labels),
     `Encontrado(s) ${labels.length} elemento(s) com texto "Juízo:".`
   );
-  const label = labels[0]!;
+  const label = labels[0];
   const td = label.closest('td')?.nextElementSibling;
   assert(
-    td != null,
+    isNotNullish(td),
     'Não foi possível encontrar um local para adicionar o botão.'
   );
-  const juizoProcesso = td?.textContent?.trim() ?? '';
-  assert(juizoProcesso !== '', 'Juízo do processo desconhecido.');
+  const juizoProcesso = td.textContent?.trim();
+  assert(isNonEmptyString(juizoProcesso), 'Juízo do processo desconhecido.');
   if (areaAtual === juizoProcesso)
     return new Info('Botão não adicionado - mesmo juízo');
 
@@ -100,10 +113,10 @@ async function alternar(url: string, area: string) {
     doc.querySelectorAll<HTMLAnchorElement>('a[href][target="mainFrame"]')
   ).filter(x => x.textContent?.trim() === area);
   assert(
-    links.length === 1,
+    arrayHasLength(1)(links),
     `Encontrado(s) ${links.length} link(s) para a área selecionada.`
   );
-  const link = links[0]!;
+  const link = links[0];
   document.body.appendChild(link);
   link.click();
 }

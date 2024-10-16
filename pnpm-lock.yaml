@@ -305,6 +305,9 @@ importers:
       '@nadameu/expect-unreachable':
         specifier: workspace:^
         version: link:../../lib/expect-unreachable
+      '@nadameu/predicates':
+        specifier: workspace:^
+        version: link:../../lib/predicates
 
   userscripts/separar-em-blocos:
     dependencies:
