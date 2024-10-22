@@ -3,11 +3,11 @@ import { concat } from './functions';
 import { Seq } from './internal';
 
 test('left identity', () => {
-  expect(concat([], ['a'])).toEqual(['a']);
+  expect([...concat([], ['a'])]).toEqual(['a']);
 });
 
 test('right identity', () => {
-  expect(concat(['a'], [])).toEqual(['a']);
+  expect([...concat(['a'], [])]).toEqual(['a']);
 });
 
 describe('big sequences', () => {
