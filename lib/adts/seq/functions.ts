@@ -48,7 +48,7 @@ export const foldMap: {
   };
 export const flatMap = /* #__PURE__ */ foldMap({ empty, concat }) as <a, b>(
   f: (a: a, i: number) => Seq<b>
-) => (fa: Seq<a>) => b[];
+) => (fa: Seq<a>) => Seq<b>;
 export const map = <a, b>(f: (a: a, i: number) => b) =>
   flatMap((x: a, i) => [f(x, i)]);
 export const ap = /* #__PURE__ */ derive.ap<SeqF>({ of, flatMap }) as <a>(
