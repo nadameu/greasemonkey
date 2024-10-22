@@ -1,4 +1,7 @@
 import { describe, expect, test } from 'vitest';
+import { S } from '.';
+import { identity } from '../function';
+import { monoidSum } from '../number';
 import { concat } from './functions';
 import { Seq } from './internal';
 
