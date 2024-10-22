@@ -14,17 +14,16 @@ export class Concat<a> implements Seq<a> {
     this.length = left.length + right.length;
   }
   *[Symbol.iterator]() {
-    let left = this.left;
-    let rights: List<Seq<a>> = Cons(this.right, Nil);
+    let { head, tail }: Cons<Seq<a>> = Cons(this, Nil);
     while (true) {
-      while (left instanceof Concat) {
-        rights = Cons(left.right, rights);
-        left = left.left;
+      while (head instanceof Concat) {
+        tail = Cons(head.right, tail);
+        head = head.left;
       }
-      yield* left;
-      if (isNil(rights)) return;
-      left = rights.head;
-      rights = rights.tail;
+      yield* head;
+      if (isNil(tail)) return;
+      head = tail.head;
+      tail = tail.tail;
     }
   }
 }
