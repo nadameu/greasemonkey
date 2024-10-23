@@ -105,3 +105,8 @@ export const filter: {
 export const reverse = <a>(fa: Seq<a>): a[] => [...fa].reverse();
 export const toNonEmptyArray = <a>(seq: Seq<a>): Maybe<[a, ...a[]]> =>
   seq.length === 0 ? Nothing : Just([...seq] as [a, ...a[]]);
+export const first = <a>(seq: Seq<a>): Maybe<a> => {
+  if (seq.length === 0) return Nothing;
+  const [value] = seq;
+  return Just(value as a);
+};
