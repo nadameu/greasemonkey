@@ -2,7 +2,6 @@ import { describe, expect, test } from 'vitest';
 import { S } from '.';
 import { identity } from '../function';
 import { monoidSum } from '../number';
-import { monoidString } from '../string';
 
 test('map', () => {
   const expected = Array.from({ length: 1e3 }, (_, i) => i + 1);
@@ -29,20 +28,16 @@ describe('sum', () => {
 });
 
 test('shape', () => {
-  const toString = S.fold<string>({
+  const toString = S.foldMap<string>({
     concat: (l, r) => `[${l},${r}]`,
     empty: () => '',
-  });
-  expect(toString('a')).toMatchInlineSnapshot(`"a"`);
-  expect(toString('ab')).toMatchInlineSnapshot(`"[a,b]"`);
-  expect(toString('abc')).toMatchInlineSnapshot(`"[[a,b],c]"`);
-  expect(toString('abcd')).toMatchInlineSnapshot(`"[[a,b],[c,d]]"`);
-  expect(toString('abcde')).toMatchInlineSnapshot(`"[[[a,b],c],[d,e]]"`);
-  expect(toString('abcdef')).toMatchInlineSnapshot(`"[[[a,b],c],[[d,e],f]]"`);
-  expect(toString('abcdefg')).toMatchInlineSnapshot(
-    `"[[[a,b],[c,d]],[[e,f],g]]"`
-  );
-  expect(toString('abcdefgh')).toMatchInlineSnapshot(
-    `"[[[a,b],[c,d]],[[e,f],[g,h]]]"`
-  );
+  })(x => ``);
+  expect(toString('a')).toMatchInlineSnapshot(`""`);
+  expect(toString('ab')).toMatchInlineSnapshot(`"[,]"`);
+  expect(toString('abc')).toMatchInlineSnapshot(`"[[,],]"`);
+  expect(toString('abcd')).toMatchInlineSnapshot(`"[[,],[,]]"`);
+  expect(toString('abcde')).toMatchInlineSnapshot(`"[[[,],[,]],]"`);
+  expect(toString('abcdef')).toMatchInlineSnapshot(`"[[[,],[,]],[,]]"`);
+  expect(toString('abcdefg')).toMatchInlineSnapshot(`"[[[,],[,]],[[,],]]"`);
+  expect(toString('abcdefgh')).toMatchInlineSnapshot(`"[[[,],[,]],[[,],[,]]]"`);
 });

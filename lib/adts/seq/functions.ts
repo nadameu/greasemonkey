@@ -41,7 +41,8 @@ export const foldMap: {
     const go = (xs: a[], start: number, end: number): b => {
       if (end < start) return M.empty();
       if (end === start) return f(xs[start] as a, start);
-      const pivot = start + ((end - start) >> 1);
+      const bits = (end - start).toString(2).length;
+      const pivot = start + ((1 << (bits - 1)) - 1);
       return M.concat(go(xs, start, pivot), go(xs, pivot + 1, end));
     };
     return go([...xs], 0, xs.length - 1);
