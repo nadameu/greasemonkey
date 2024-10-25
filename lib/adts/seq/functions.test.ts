@@ -1,18 +1,24 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 import { S } from '.';
-import { identity } from '../function';
+import { thrush } from '../function';
 import { monoidSum } from '../number';
 
-test('map', () => {
-  const expected = Array.from({ length: 1e3 }, (_, i) => i + 1);
-  const seq = S.map(identity)(expected);
-  expect([...seq]).toEqual(expected);
+describe('map', () => {
+  it('iterates from left to right', () => {
+    const expected = Array.from({ length: 1e3 }, (_, i) => i + 1);
+    let i = 1;
+    const seq = S.map((x, j) => x === j + 1 && x === i && i++)(expected);
+    expect([...seq]).toEqual(expected);
+  });
 });
 
-test('flatMap', () => {
-  const expected = Array.from({ length: 1e3 }, (_, i) => i + 1);
-  const seq = S.flatMap(S.of)(expected);
-  expect([...seq]).toEqual(expected);
+describe('flatMap', () => {
+  it('iterates from left to right', () => {
+    const expected = Array.from({ length: 1e3 }, (_, i) => i + 1);
+    let i = 1;
+    const seq = S.flatMap((x, j) => [x === j + 1 && x === i && i++])(expected);
+    expect([...seq]).toEqual(expected);
+  });
 });
 
 describe('sum', () => {
@@ -40,4 +46,11 @@ test('shape', () => {
   expect(toString('abcdef')).toMatchInlineSnapshot(`"[[[,],[,]],[,]]"`);
   expect(toString('abcdefg')).toMatchInlineSnapshot(`"[[[,],[,]],[[,],]]"`);
   expect(toString('abcdefgh')).toMatchInlineSnapshot(`"[[[,],[,]],[[,],[,]]]"`);
+});
+
+test('foldLeft', () => {
+  const num = 1e3;
+  const array = Array.from({ length: num }, (_, i) => i);
+  const sum = thrush(array)(S.foldLeft(0, (a, b) => a + b));
+  expect(sum).toEqual((num * (num - 1)) / 2);
 });
