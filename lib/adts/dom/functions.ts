@@ -1,5 +1,5 @@
 import { M, Maybe } from '../maybe';
-import { S, Seq } from '../seq';
+import { Seq } from '../seq';
 
 export const query =
   <T extends Element>(selector: string) =>
@@ -18,17 +18,14 @@ export const xquery =
       document.evaluate(expression, contextNode, null, FIRST)
         .singleNodeValue as T | null
     );
-const ITER = XPathResult.ORDERED_NODE_ITERATOR_TYPE;
-export const xqueryAll = <T extends Node>(
-  expression: string
-): ((contextNode: Node) => T[]) =>
-  S.fromGenFn(function* (contextNode: Node) {
-    const result = document.evaluate(expression, contextNode, null, ITER);
-    for (
-      let node = result.iterateNext();
-      node !== null;
-      node = result.iterateNext()
-    ) {
-      yield node as T;
+const SNAP = XPathResult.ORDERED_NODE_SNAPSHOT_TYPE;
+export const xqueryAll =
+  <T extends Node>(expression: string) =>
+  (contextNode: Node): T[] => {
+    const array: T[] = [];
+    const result = document.evaluate(expression, contextNode, null, SNAP);
+    for (let i = 0, len = result.snapshotLength; i < len; i++) {
+      array.push(result.snapshotItem(i) as T);
     }
-  });
+    return array;
+  };
