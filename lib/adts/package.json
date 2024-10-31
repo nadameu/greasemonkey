@@ -4,6 +4,10 @@
   "main": "./index.ts",
   "types": "./index.ts",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "postinstall": "tsx function/flow.gen.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
   }
 }
