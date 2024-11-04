@@ -12,12 +12,12 @@
 // @connect     eproc.jfrs.jus.br
 // @connect     eproc.jfsc.jus.br
 // @connect     eproc.trf4.jus.br
-// @version     3.1.0
+// @version     3.1.1
 // @author      nadameu
-// @grant       GM.getValue
-// @grant       GM.deleteValue
-// @grant       GM.setValue
-// @grant       GM.xmlHttpRequest
+// @grant       GM_getValue
+// @grant       GM_deleteValue
+// @grant       GM_setValue
+// @grant       GM_xmlhttpRequest
 // ==/UserScript==
 
 class DocumentoInvalido extends Error {
@@ -56,8 +56,8 @@ button {
       button.type = 'button';
       button.addEventListener('click', async () => {
         try {
-          await GM.setValue('customPDF', url.href);
-          await GM.setValue(
+          GM_setValue('customPDF', url.href);
+          GM_setValue(
             'customPDFName',
             document.title.replace(/\W+/g, '_') + '.pdf'
           );
@@ -73,14 +73,14 @@ button {
     }
   } else if (/^validar\.iti\.gov\.br$/.test(document.location.hostname)) {
     try {
-      const url = await GM.getValue('customPDF', undefined);
+      const url = GM_getValue('customPDF', undefined);
       if (!url) return;
-      await GM.deleteValue('customPDF');
+      GM_deleteValue('customPDF');
       const filename =
-        (await GM.getValue('customPDFName')) || 'documento_userscript.pdf';
-      await GM.deleteValue('customPDFName');
+        GM_getValue('customPDFName') || 'documento_userscript.pdf';
+      GM_deleteValue('customPDFName');
       const blob = await new Promise(async (resolve, reject) => {
-        GM.xmlHttpRequest({
+        GM_xmlhttpRequest({
           url: url,
           responseType: 'blob',
           onload: xhr => resolve(xhr.response),
