@@ -1,4 +1,5 @@
 import { Either, isLeft } from '../either';
+import { Trampoline } from './definitions';
 
 export const thrush =
   <a>(a: a) =>
@@ -26,3 +27,9 @@ export const constant =
   } =>
   <b>(_: b): a =>
     a;
+
+export const runTrampoline = <a>(t: Trampoline<a>): a => {
+  let result = t;
+  while (typeof result === 'function') result = result();
+  return result.value;
+};
