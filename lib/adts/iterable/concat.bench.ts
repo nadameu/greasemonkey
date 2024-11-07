@@ -1,6 +1,6 @@
 import { assert, bench, describe } from 'vitest';
 import { I } from '.';
-import { runTrampoline, Trampoline } from '../function';
+import { done, loop, runTrampoline, Trampoline } from '../function';
 import { Cons, isCons, List, Nil } from '../list';
 import { makeEq } from './functions';
 
@@ -92,20 +92,21 @@ describe('concat', () => {
         next: Cons[1],
         depth: number
       ): Trampoline<Rec> => {
-        if (depth > MAX_RECURSION) return () => go(xs, next, 0);
+        if (depth > MAX_RECURSION) return loop(() => go(xs, next, 0));
         if (xs instanceof TrampConcat) {
           return go(
             xs.left,
             depth => {
-              if (depth > MAX_RECURSION) return () => go(xs.right, next, 0);
+              if (depth > MAX_RECURSION)
+                return loop(() => go(xs.right, next, 0));
               return go(xs.right, next, depth + 1);
             },
             depth + 1
           );
         }
-        return { value: [xs, next] };
+        return done([xs, next]);
       };
-      let result = runTrampoline(go(this, () => ({ value: null }), 0));
+      let result = runTrampoline(go(this, () => done(null), 0));
       while (result) {
         yield* result[0];
         result = runTrampoline(result[1](0));

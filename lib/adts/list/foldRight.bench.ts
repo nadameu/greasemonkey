@@ -1,7 +1,7 @@
 import { bench, expect } from 'vitest';
 import { Cons, isCons, isNil, List, Nil } from '.';
 import { auto } from '../../tco/src/auto';
-import { runTrampoline, Trampoline } from '../function';
+import { done, loop, runTrampoline, Trampoline } from '../function';
 
 const MAX = 1e4;
 let list: List<number> = Nil;
@@ -18,19 +18,20 @@ const trampolined_foldRight = <a, b>(
     next: (acc: b, depth: number) => Trampoline<b>,
     depth: number
   ): Trampoline<b> => {
-    if (depth > MAX_RECURSION) return () => go(list, next, 0);
+    if (depth > MAX_RECURSION) return loop(() => go(list, next, 0));
     if (isNil(list)) return next(seed, depth + 1);
     return go(
       list.tail,
       (acc, depth) => {
-        if (depth > MAX_RECURSION) return () => next(f(list.head, acc), 0);
+        if (depth > MAX_RECURSION)
+          return loop(() => next(f(list.head, acc), 0));
         return next(f(list.head, acc), depth + 1);
       },
       depth + 1
     );
   };
 
-  return runTrampoline(go(xs, value => ({ value }), 0));
+  return runTrampoline(go(xs, done, 0));
 };
 bench('trampolined foldRight', () => {
   const sum = trampolined_foldRight(list, 0, (a, b) => a + b);
@@ -75,6 +76,38 @@ bench(
   'auto foldRight',
   () => {
     const sum = auto_foldRight(list, 0, (a, b) => a + b);
+    expect(sum).toBe((MAX * (MAX + 1)) / 2);
+  },
+  { throws: true }
+);
+
+const tuple_reverse_foldRight = <a, b>(
+  xs: List<a>,
+  seed: b,
+  f: (a: a, acc: b) => b
+): b => {
+  type Rev = [init: Rev, last: a] | null;
+  let rev: Rev = null;
+  for (let curr = xs; isCons(curr); curr = curr.tail) rev = [rev, curr.head];
+  let acc = seed;
+  for (let curr = rev; curr; curr = curr[0]) acc = f(curr[1], acc);
+  return acc;
+};
+bench(
+  'tuple reverse foldRight',
+  () => {
+    const sum = tuple_reverse_foldRight(list, 0, (a, b) => a + b);
+    expect(sum).toBe((MAX * (MAX + 1)) / 2);
+  },
+  { throws: true }
+);
+
+bench(
+  'array foldRight',
+  () => {
+    const array: number[] = [];
+    for (let curr = list; isCons(curr); curr = curr.tail) array.push(curr.head);
+    const sum = array.reduceRight((acc, x) => x + acc, 0);
     expect(sum).toBe((MAX * (MAX + 1)) / 2);
   },
   { throws: true }

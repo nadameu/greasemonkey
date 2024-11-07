@@ -28,8 +28,8 @@ export const constant =
   <b>(_: b): a =>
     a;
 
-export const runTrampoline = <a>(t: Trampoline<a>): a => {
-  let result = t;
-  while (typeof result === 'function') result = result();
+export const runTrampoline = <a>(trampoline: Trampoline<a>): a => {
+  let result = trampoline;
+  while (!result.done) result = result.loop();
   return result.value;
 };
