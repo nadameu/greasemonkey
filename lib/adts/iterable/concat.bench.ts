@@ -62,7 +62,7 @@ describe('concat', () => {
   }
 
   bench(
-    'candidate',
+    'manual iterator',
     () => {
       let list: Iterable<number> = [];
       for (let i = MAX / 2, j = i + 1; i >= 1 && j <= MAX; i--, j++) {
@@ -113,7 +113,7 @@ describe('concat', () => {
     }
   }
   bench(
-    'tramp',
+    'trampoline',
     () => {
       let list: Iterable<number> = [];
       for (let i = MAX / 2, j = i + 1; i >= 1 && j <= MAX; i--, j++) {
