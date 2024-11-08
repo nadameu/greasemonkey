@@ -1,4 +1,14 @@
-import { Apply, FlatMap, Functor, Kind, Of, Type } from './definitions';
+import { flow } from '../function/flow';
+import { Maybe } from '../maybe/definitions';
+import {
+  Apply,
+  FilterableFunctor,
+  FlatMap,
+  Functor,
+  Kind,
+  Of,
+  Type,
+} from './definitions';
 
 const deriveMap =
   <F extends Kind>(M: Of<F> & FlatMap<F>): Functor<F>['map'] =>
@@ -21,3 +31,15 @@ const deriveLift2 =
   <e, e2>(fa: Type<F, e, a>, fb: Type<F, e2, b>): Type<F, e | e2, c> =>
     M.ap(fb)(M.map((a: a) => (b: b) => f(a, b))(fa));
 export { deriveLift2 as lift2 };
+
+const deriveFilterMap =
+  <F extends Kind>(M: FilterableFunctor<F>) =>
+  <a, b>(f: (a: a, i: number) => Maybe<b>) =>
+  <e>(xs: Type<F, e, a>): Type<F, e, b> =>
+    flow(
+      xs,
+      M.map(f),
+      M.filter(m => m._tag === 'Just'),
+      M.map(j => j.value)
+    );
+export { deriveFilterMap as filterMap };

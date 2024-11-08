@@ -1,20 +1,7 @@
-import { tailRec } from '../function';
-import { Cons, isCons, isNil, L, List, Nil } from '../list';
 import { Kind } from '../typeclasses';
 
 export interface IterableF extends Kind {
   type: Iterable<this['a']>;
-}
-
-export class FlatMap<b, a = unknown> implements Iterable<b> {
-  constructor(
-    private _xs: Iterable<a>,
-    private _f: (a: a, i: number) => Iterable<b>
-  ) {}
-  *[Symbol.iterator]() {
-    let i = 0;
-    for (const x of this._xs) yield* this._f(x, i++);
-  }
 }
 
 export class Concat<a> implements Iterable<a> {

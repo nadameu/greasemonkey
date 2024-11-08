@@ -29,6 +29,15 @@ export interface MonoidK<F extends Kind> extends SemigroupK<F> {
 export interface Functor<F extends Kind> extends Typeclass<F> {
   map<a, b>(f: (_: a) => b): <e>(fa: Type<F, e, a>) => Type<F, e, b>;
 }
+export interface FilterableFunctor<F extends Kind> extends Functor<F> {
+  map<a, b>(f: (a: a, i: number) => b): <e>(fa: Type<F, e, a>) => Type<F, e, b>;
+  filter<a, b extends a>(
+    pred: (a: a, i: number) => a is b
+  ): <e>(fa: Type<F, e, a>) => Type<F, e, b>;
+  filter<a>(
+    pred: (a: a, i: number) => boolean
+  ): <e>(fa: Type<F, e, a>) => Type<F, e, a>;
+}
 export interface Ap<F extends Kind> extends Typeclass<F> {
   ap<a, e2>(
     fa: Type<F, e2, a>

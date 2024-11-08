@@ -1,7 +1,15 @@
-import { apply, identity } from '../function';
-import { isJust, Just, Maybe, Nothing } from '../maybe';
-import { Applicative, Kind, Monoid, MonoidK, Type } from '../typeclasses';
-import { Concat, FlatMap } from './internal';
+import { apply, flow, identity } from '../function';
+import { Just, Maybe, Nothing } from '../maybe';
+import {
+  Applicative,
+  derive,
+  Kind,
+  Monoid,
+  MonoidK,
+  Type,
+} from '../typeclasses';
+import { Concat, IterableF } from './internal';
+export { toIterable as fromList } from '../list/functions';
 
 type Reducer<a, b> = (acc: b, a: a, i: number) => b;
 
@@ -55,23 +63,37 @@ export const foldMap: {
     foldLeft<a, m>(M.empty(), (left, x, i) => M.concat(left, f(x, i)))(xs);
 export const flatMap =
   <a, b>(f: (a: a, i: number) => Iterable<b>) =>
-  (xs: Iterable<a>): Iterable<b> =>
-    new FlatMap(xs, f);
-export const map = <a, b>(f: (a: a, i: number) => b) =>
-  flatMap<a, b>((x, i) => [f(x, i)]);
+  (xs: Iterable<a>): Iterable<b> => ({
+    *[Symbol.iterator](i = 0) {
+      for (const x of xs) {
+        for (const y of f(x, i++)) yield y;
+      }
+    },
+  });
+export const map =
+  <a, b>(f: (a: a, i: number) => b) =>
+  (xs: Iterable<a>): Iterable<b> => ({
+    *[Symbol.iterator](i = 0) {
+      for (const x of xs) yield f(x, i++);
+    },
+  });
 export const filter: {
   <a, b extends a>(
     pred: (a: a, i: number) => a is b
   ): (xs: Iterable<a>) => Iterable<b>;
   <a>(pred: (a: a, i: number) => boolean): (xs: Iterable<a>) => Iterable<a>;
-} = <a>(pred: (a: a, i: number) => boolean) =>
-  flatMap<a, a>((x, i) => (pred(x, i) ? [x] : []));
-export const filterMap = <a, b>(f: (a: a, i: number) => Maybe<b>) =>
-  flatMap<a, b>((x, i) => {
-    const maybe = f(x, i);
-    if (isJust(maybe)) return [maybe.value];
-    return [];
+} =
+  <a>(pred: (a: a, i: number) => boolean) =>
+  (xs: Iterable<a>): Iterable<a> => ({
+    *[Symbol.iterator](i = 0) {
+      for (const x of xs) if (pred(x, i++)) yield x;
+    },
   });
+export const filterMap = /* #__PURE__ */ derive.filterMap<IterableF>({
+  map,
+  filter,
+});
+
 export const toArray = <a>(xs: Iterable<a>): a[] =>
   foldLeft<a, a[]>([], (acc, x) => (acc.push(x), acc))(xs);
 export const lift2 =

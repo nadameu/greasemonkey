@@ -1,5 +1,5 @@
 import { MemberOf, TaggedUnion, isTagged, tag } from '../tagged';
-import { Kind } from '../typeclasses';
+import { ListF } from './internal';
 
 type ListU<a> = TaggedUnion<
   'List',
@@ -19,7 +19,3 @@ export const isNil: <a>(list: List<a>) => list is Nil =
   /* #__PURE__ */ isTagged<ListF, 'Nil'>('Nil');
 
 export type List<a> = Cons<a> | Nil;
-
-interface ListF extends Kind {
-  type: List<this['a']>;
-}
