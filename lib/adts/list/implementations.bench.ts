@@ -325,3 +325,71 @@ describe('toIterable', () => {
     })
   );
 });
+
+describe('map', () => {
+  const MAX = 1e4;
+  const SUM = (MAX * (MAX + 1)) / 2;
+
+  let list: List<number> = Nil;
+  for (let i = MAX; i > 0; i--) {
+    list = Cons(i, list);
+  }
+
+  const bench_map = (
+    description: string,
+    map: <a, b>(xs: List<a>, f: (a: a, i: number) => b) => List<b>
+  ) => {
+    bench(description, () => {
+      let sum = 0;
+      map(list, x => (sum += x));
+      assert.equal(sum, SUM);
+    });
+  };
+
+  bench_map(
+    'mutable',
+    <a, b>(xs: List<a>, f: (a: a, i: number) => b): List<b> => {
+      let first: List<b> = Nil;
+      let last: Cons<b>;
+      let push = (b: b) => {
+        first = last = Cons(b, Nil);
+        push = b => {
+          last.tail = last = Cons(b, Nil);
+        };
+      };
+      for (let i = 0, curr = xs; curr._tag === 'Cons'; curr = curr.tail) {
+        push(f(curr.head, i++));
+      }
+      return first;
+    }
+  );
+
+  bench_map(
+    'array',
+    <a, b>(xs: List<a>, f: (a: a, i: number) => b): List<b> => {
+      const array: b[] = [];
+      for (
+        let i = 0, curr = xs;
+        curr._tag === 'Cons';
+        array.push(f(curr.head, i++)), curr = curr.tail
+      );
+      return A.toList(array);
+    }
+  );
+
+  bench_map(
+    'tuple',
+    <a, b>(xs: List<a>, f: (a: a, i: number) => b): List<b> => {
+      type Rev = [Rev, b] | null;
+      let rev: Rev = null;
+      for (let i = 0, curr = xs; curr._tag === 'Cons'; curr = curr.tail) {
+        rev = [rev, f(curr.head, i++)];
+      }
+      let list: List<b> = Nil;
+      for (let curr = rev; curr !== null; curr = curr[0]) {
+        list = Cons(curr[1], list);
+      }
+      return list;
+    }
+  );
+});
