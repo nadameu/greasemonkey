@@ -1,4 +1,5 @@
-import { apply, flow, identity } from '../function';
+import { apply, identity } from '../function';
+import { toIterable as fromList } from '../list/functions';
 import { Just, Maybe, Nothing } from '../maybe';
 import {
   Applicative,
@@ -9,7 +10,7 @@ import {
   Type,
 } from '../typeclasses';
 import { Concat, IterableF } from './internal';
-export { toIterable as fromList } from '../list/functions';
+export { fromList };
 
 type Reducer<a, b> = (acc: b, a: a, i: number) => b;
 

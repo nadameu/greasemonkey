@@ -1,10 +1,10 @@
 import { A } from '../array';
+import { toList as fromArray } from '../array/functions';
 import { flow } from '../function';
-import { Maybe } from '../maybe';
 import { derive } from '../typeclasses';
 import { Cons, List, Nil } from './definitions';
 import { ListF } from './internal';
-export { toList as fromArray } from '../array/functions';
+export { fromArray };
 
 export const toIterable = <a>(xs: List<a>): Iterable<a, void> => ({
   [Symbol.iterator]() {

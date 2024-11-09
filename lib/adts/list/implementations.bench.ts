@@ -3,7 +3,6 @@ import { L } from '.';
 import { A } from '../array';
 import { done, flow, loop, runTrampoline, Trampoline } from '../function';
 import { Cons, isCons, List, Nil } from './definitions';
-import { I } from '../iterable';
 
 describe('forEach', () => {
   const MAX = 1e4;

@@ -1,8 +1,9 @@
+import { toArray as fromIterable } from '../iterable/functions';
 import { Cons, List, Nil } from '../list/definitions';
+import { toArray as fromList } from '../list/functions';
 import { filterMap as deriveFilterMap } from '../typeclasses/functions';
 import { ArrayF } from './internal';
-export { toArray as fromIterable } from '../iterable/functions';
-export { toArray as fromList } from '../list/functions';
+export { fromIterable, fromList };
 
 type Transform<a, b> = (xs: ArrayLike<a>) => b;
 
