@@ -1,5 +1,4 @@
 import { M, Maybe } from '../maybe';
-import { Seq } from '../seq';
 
 export const query =
   <T extends Element>(selector: string) =>
@@ -7,7 +6,7 @@ export const query =
     M.fromNullable<T>(parentNode.querySelector<T>(selector));
 export const queryAll =
   <T extends Element>(selector: string) =>
-  (parentNode: ParentNode): Seq<T> =>
+  (parentNode: ParentNode): NodeListOf<T> =>
     parentNode.querySelectorAll<T>(selector);
 export const text = (node: Node) => M.fromNullable(node.textContent);
 const FIRST = XPathResult.FIRST_ORDERED_NODE_TYPE;
