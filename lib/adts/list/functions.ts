@@ -49,36 +49,30 @@ export const foldRight =
   (xs: List<a>): b =>
     flow(xs, toArray, A.foldRight(seed, f));
 
-const _foldLeftToNewList =
-  <a, b>(f: (push: (_: b) => void) => (a: a, i: number) => void) =>
-  (xs: List<a>): List<b> => {
-    let first: List<b>;
-    let last: Cons<b>;
-    let g = f(b => {
-      first = last = Cons(b, Nil);
-      g = f(b => {
-        last.tail = last = Cons(b, Nil);
-      });
-    });
-    for (
-      let i = 0, curr = xs;
-      curr._tag === 'Cons';
-      g(curr.head, i++), curr = curr.tail
-    );
-    first ??= Nil;
-    return first;
-  };
-
 export const filter: {
   <a, b extends a>(pred: (a: a, i: number) => a is b): (xs: List<a>) => List<b>;
   <a>(pred: (a: a, i: number) => boolean): (xs: List<a>) => List<a>;
-} = <a>(pred: (a: a, i: number) => boolean) =>
-  _foldLeftToNewList<a, a>(push => (a, i) => {
-    if (pred(a, i)) push(a);
-  });
+} =
+  <a>(pred: (a: a, i: number) => boolean) =>
+  (xs: List<a>) => {
+    const array: a[] = [];
+    for (let i = 0, curr = xs; curr._tag === 'Cons'; curr = curr.tail) {
+      if (pred(curr.head, i++)) array.push(curr.head);
+    }
+    return fromArray(array);
+  };
 
-export const map = <a, b>(f: (a: a, i: number) => b) =>
-  _foldLeftToNewList<a, b>(push => (a, i) => void push(f(a, i)));
+export const map =
+  <a, b>(f: (a: a, i: number) => b) =>
+  (xs: List<a>) => {
+    let array: b[] = [];
+    for (
+      let i = 0, curr = xs;
+      curr._tag === 'Cons';
+      array.push(f(curr.head, i++)), curr = curr.tail
+    );
+    return fromArray(array);
+  };
 
 export const filterMap = /* #__PURE__ */ derive.filterMap<ListF>({
   map,
