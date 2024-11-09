@@ -1,17 +1,17 @@
 import { GM_addStyle, GM_deleteValue, GM_getValue, GM_setValue } from '$';
 import {
+  A,
   D,
   Just,
   M,
   Nothing,
-  S,
   T,
   applicativeMaybe,
+  flow,
   isJust,
   tuple,
 } from '@nadameu/adts';
 import { h } from '@nadameu/create-element';
-import { pipe } from '@nadameu/pipe';
 import * as P from '@nadameu/predicates';
 import { createIntersectionObserver } from '../createIntersectionObserver';
 import { configurarAbertura } from './configurarAbertura';
@@ -35,13 +35,13 @@ export function telaMovimentacoes(url: URL): null {
     null;
   if (!abaCorreta) return null;
 
-  const links = pipe(
+  const links = flow(
     document,
     D.xqueryAll<HTMLImageElement>(
       '//img[starts-with(@id, "iconmovimentacoes")]'
     ),
-    S.map((link, i) =>
-      pipe(
+    A.map((link, i) =>
+      flow(
         link,
         D.xquery<HTMLElement>(
           'ancestor::tr/following-sibling::*[1]/self::tr//*[contains(concat(" ", normalize-space(@class), " "), " extendedinfo ")]'
@@ -72,7 +72,7 @@ export function telaMovimentacoes(url: URL): null {
     }
 
     const id = matchId[1];
-    const img = pipe(
+    const img = flow(
       document,
       D.xquery<HTMLImageElement>(`//img[@id = "iconmovimentacoes${id}"]`),
       M.getOrElse(() => {
@@ -159,14 +159,14 @@ export function telaMovimentacoes(url: URL): null {
     }
   });
 
-  const tabela = pipe(
+  const tabela = flow(
     document,
     D.query<HTMLTableElement>('table.resultTable'),
     M.getOrElse(() => {
       throw new Error('Tabela de movimentações não encontrada.');
     })
   );
-  const [colgroup, linhaCabecalho] = pipe(
+  const [colgroup, linhaCabecalho] = flow(
     tabela,
     T.fanout(
       D.xquery<Element>('colgroup'),
@@ -177,7 +177,7 @@ export function telaMovimentacoes(url: URL): null {
       throw new Error('Elementos da tabela de movimentações não encontrados.');
     })
   );
-  const linhas = pipe(tabela, D.xqueryAll<HTMLTableRowElement>('tbody/tr'));
+  const linhas = flow(tabela, D.xqueryAll<HTMLTableRowElement>('tbody/tr'));
 
   for (const linha of linhas) {
     if (P.arrayHasLength(1)(linha.cells)) {
@@ -272,10 +272,10 @@ function createOnDocumentClick({
     ) {
       evt.preventDefault();
       const link = evt.target as HTMLAnchorElement;
-      pipe(
+      flow(
         document,
         D.queryAll(`.${classNames.ultimoClicado}`),
-        S.map(x => x.classList.remove(classNames.ultimoClicado!))
+        A.map(x => x.classList.remove(classNames.ultimoClicado!))
       );
       link.classList.add(classNames.ultimoClicado!);
       exibirBotaoFechar();
@@ -353,9 +353,9 @@ function criarBotaoJanelasAbertas(janelasAbertas: Map<string, Window>) {
   }
 }
 function onTabelaAdicionada(table: HTMLTableElement) {
-  return pipe(
+  return flow(
     table.rows,
-    S.map((linha, l) => {
+    A.map((linha, l) => {
       if (!P.arrayHasLength(7)(linha.cells)) {
         if (
           linha.classList.contains('linhaPeticao') &&
@@ -368,10 +368,10 @@ function onTabelaAdicionada(table: HTMLTableElement) {
         }
         throw new Error(`Formato de linha desconhecido: ${l}.`);
       }
-      const sequencialNome = pipe(
+      const sequencialNome = flow(
         linha.cells[0],
         x => x.childNodes,
-        S.filter(x => !(x instanceof Text) || x.nodeValue?.trim() !== ''),
+        A.filter(x => !(x instanceof Text) || x.nodeValue?.trim() !== ''),
         M.maybeBool(
           P.isAnyOf(
             P.isTuple(P.isInstanceOf(Text)),
@@ -386,7 +386,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
           tuple(texto, obs.length === 2 ? Just(obs) : Nothing)
         ),
         M.flatMap(([texto, observacao]) =>
-          pipe(
+          flow(
             M.fromNullable(texto.nodeValue),
             M.mapNullable(
               x =>
@@ -405,7 +405,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
           throw new Error(`Sequencial e nome não reconhecidos: ${l}.`);
         })
       );
-      const assinatura = pipe(
+      const assinatura = flow(
         linha.cells[2],
         D.text,
         M.mapNullable(
@@ -416,7 +416,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
           throw new Error(`Assinatura não reconhecida: ${l}.`);
         })
       );
-      const infoLink = pipe(
+      const infoLink = flow(
         linha.cells[4],
         (
           celula
@@ -426,10 +426,10 @@ function onTabelaAdicionada(table: HTMLTableElement) {
           link: HTMLAnchorElement;
           play: Node | undefined;
         } => {
-          const opcao1 = pipe(
+          const opcao1 = flow(
             celula,
             c => c.childNodes,
-            S.filter(
+            A.filter(
               x => !(x instanceof Text && /^\s*$/.test(x.nodeValue ?? ''))
             ),
             M.maybeBool(
@@ -453,7 +453,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
             })
           );
           if (isJust(opcao1)) return opcao1.value;
-          return pipe(
+          return flow(
             celula,
             D.xquery<HTMLAnchorElement>('.//strike//a[@href]'),
             M.map(link => {
@@ -467,7 +467,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
           );
         }
       );
-      const sigilo = pipe(
+      const sigilo = flow(
         linha.cells[6],
         D.text,
         M.map(x => x.trim()),
@@ -482,7 +482,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
         link.title = `${link.title?.trim() ?? ''}\n\nAss.: ${assinatura}\n\n${sigilo}`;
         const frag = document.createDocumentFragment();
         frag.append(menu, popup);
-        pipe(
+        flow(
           link.href,
           href => new URL(href),
           u => M.fromNullable(u.searchParams.get('_tj')),
