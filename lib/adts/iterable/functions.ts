@@ -65,17 +65,39 @@ export const foldMap: {
 export const flatMap =
   <a, b>(f: (a: a, i: number) => Iterable<b>) =>
   (xs: Iterable<a>): Iterable<b> => ({
-    *[Symbol.iterator](i = 0) {
-      for (const x of xs) {
-        for (const y of f(x, i++)) yield y;
-      }
+    [Symbol.iterator]() {
+      const outer = xs[Symbol.iterator]();
+      let inner: Iterator<b> | null = null;
+      let index = 0;
+      return {
+        next() {
+          while (true) {
+            if (inner === null) {
+              const result = outer.next();
+              if (result.done === true) return result;
+              inner = f(result.value, index++)[Symbol.iterator]();
+            }
+            const result = inner.next();
+            if (result.done === false) return result;
+            inner = null;
+          }
+        },
+      };
     },
   });
 export const map =
   <a, b>(f: (a: a, i: number) => b) =>
   (xs: Iterable<a>): Iterable<b> => ({
-    *[Symbol.iterator](i = 0) {
-      for (const x of xs) yield f(x, i++);
+    [Symbol.iterator]() {
+      const it = xs[Symbol.iterator]();
+      let index = 0;
+      return {
+        next() {
+          const result = it.next();
+          if (result.done === true) return result;
+          return { done: false, value: f(result.value, index++) };
+        },
+      };
     },
   });
 export const filter: {
@@ -86,8 +108,18 @@ export const filter: {
 } =
   <a>(pred: (a: a, i: number) => boolean) =>
   (xs: Iterable<a>): Iterable<a> => ({
-    *[Symbol.iterator](i = 0) {
-      for (const x of xs) if (pred(x, i++)) yield x;
+    [Symbol.iterator]() {
+      const it = xs[Symbol.iterator]();
+      let index = 0;
+      return {
+        next() {
+          let result = it.next();
+          while (result.done !== true && pred(result.value, index++) !== true) {
+            result = it.next();
+          }
+          return result;
+        },
+      };
     },
   });
 export const filterMap = /* #__PURE__ */ derive.filterMap<IterableF>({
