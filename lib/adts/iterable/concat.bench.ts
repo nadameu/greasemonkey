@@ -2,9 +2,8 @@ import { assert, bench, describe } from 'vitest';
 import { I } from '.';
 import { done, loop, runTrampoline, Trampoline } from '../function';
 import { Cons, isCons, List, Nil } from '../list';
-import { makeEq } from './functions';
 
-const eq = makeEq<number>();
+const eq = I.makeEq<number>();
 
 describe('concat', () => {
   const MAX = 1e4;
@@ -125,4 +124,106 @@ describe('concat', () => {
     },
     { throws: true }
   );
+});
+
+describe('flatMap', () => {
+  const MAX = 1e4;
+  const iterable = {
+    *[Symbol.iterator]() {
+      for (let i = 1; i <= MAX; i++) yield i;
+    },
+  };
+  const bench_flatMap = (
+    description: string,
+    flatMap: <a, b>(
+      xs: Iterable<a>,
+      f: (a: a, i: number) => Iterable<b>
+    ) => Iterable<b>
+  ) => {
+    bench(
+      description,
+      () => {
+        const result = I.toArray(flatMap(iterable, (x, i) => [x * 2 - i / 4]));
+        assert.equal(result.length, MAX);
+        assert.equal(result[0], 2);
+        assert.equal(result[MAX - 1], 2 * MAX - (MAX - 1) / 4);
+      },
+      { throws: true }
+    );
+  };
+
+  bench_flatMap('generator', (xs, f) => ({
+    *[Symbol.iterator](i = 0) {
+      for (const x of xs) for (const y of f(x, i++)) yield y;
+    },
+  }));
+
+  bench_flatMap(
+    'manual',
+    <a, b>(xs: Iterable<a>, f: (a: a, i: number) => Iterable<b>) => ({
+      [Symbol.iterator]() {
+        const outer = xs[Symbol.iterator]();
+        let inner: Iterator<b> | null = null;
+        let index = 0;
+        return {
+          next() {
+            while (true) {
+              if (inner === null) {
+                const result = outer.next();
+                if (result.done === true) return result;
+                inner = f(result.value, index++)[Symbol.iterator]();
+              }
+              const result = inner.next();
+              if (result.done !== true) return result;
+              inner = null;
+            }
+          },
+        };
+      },
+    })
+  );
+});
+
+describe('map', () => {
+  const MAX = 1e4;
+  const iterable = {
+    *[Symbol.iterator]() {
+      for (let i = 1; i <= MAX; i++) yield i;
+    },
+  };
+  const bench_map = (
+    description: string,
+    map: <a, b>(xs: Iterable<a>, f: (a: a, i: number) => b) => Iterable<b>
+  ) => {
+    bench(
+      description,
+      () => {
+        const result = I.toArray(map(iterable, (x, i) => x * 2 - i / 4));
+        assert.equal(result.length, MAX);
+        assert.equal(result[0], 2);
+        assert.equal(result[MAX - 1], 2 * MAX - (MAX - 1) / 4);
+      },
+      { throws: true }
+    );
+  };
+
+  bench_map('generator', (xs, f) => ({
+    *[Symbol.iterator](i = 0) {
+      for (const x of xs) yield f(x, i++);
+    },
+  }));
+
+  bench_map('manual', <a, b>(xs: Iterable<a>, f: (a: a, i: number) => b) => ({
+    [Symbol.iterator]() {
+      const it = xs[Symbol.iterator]();
+      let index = 0;
+      return {
+        next() {
+          const result = it.next();
+          if (result.done === true) return result;
+          return { done: false, value: f(result.value, index++) };
+        },
+      };
+    },
+  }));
 });
