@@ -7,8 +7,9 @@
     "bench": "vitest bench --run",
     "test": "vitest run",
     "gen:flow": "tsx function/flow.gen.ts",
+    "gen:mapN": "tsx typeclasses/mapN.gen.ts",
     "gen:pipe": "tsx function/pipe.gen.ts",
-    "postinstall": "run-p gen:flow gen:pipe"
+    "postinstall": "run-p gen:flow gen:mapN gen:pipe"
   },
   "devDependencies": {
     "tsx": "^4.19.2"

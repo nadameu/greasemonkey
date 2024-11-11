@@ -9,6 +9,8 @@ import {
   Of,
   Type,
 } from './definitions';
+import { deriveMapN } from './mapN';
+export { deriveMapN as mapN };
 
 const deriveMap =
   <F extends Kind>(M: Of<F> & FlatMap<F>): Functor<F>['map'] =>
