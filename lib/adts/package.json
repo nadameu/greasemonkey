@@ -6,7 +6,9 @@
   "scripts": {
     "bench": "vitest bench --run",
     "test": "vitest run",
-    "postinstall": "tsx function/flow.gen.ts"
+    "gen:flow": "tsx function/flow.gen.ts",
+    "gen:pipe": "tsx function/pipe.gen.ts",
+    "postinstall": "run-p gen:flow gen:pipe"
   },
   "devDependencies": {
     "tsx": "^4.19.2"
