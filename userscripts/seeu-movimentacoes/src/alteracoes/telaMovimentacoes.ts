@@ -2,6 +2,7 @@ import { GM_addStyle, GM_deleteValue, GM_getValue, GM_setValue } from '$';
 import {
   A,
   D,
+  I,
   Just,
   M,
   Nothing,
@@ -40,24 +41,20 @@ export function telaMovimentacoes(url: URL): null {
     D.xqueryAll<HTMLImageElement>(
       '//img[starts-with(@id, "iconmovimentacoes")]'
     ),
-    A.map((link, i) =>
+    I.map((link, i) =>
       flow(
         link,
         D.xquery<HTMLElement>(
           'ancestor::tr/following-sibling::*[1]/self::tr//*[contains(concat(" ", normalize-space(@class), " "), " extendedinfo ")]'
         ),
-        M.map(mutationTarget => ({ link, mutationTarget })),
-        M.getOrElse(() => {
-          throw new Error(`Lista de eventos não reconhecida: ${i}.`);
-        })
+        M.getOrThrow(`Lista de eventos não reconhecida: ${i}.`),
+        mutationTarget => ({ link, mutationTarget })
       )
     )
   );
 
   const isAjax = P.hasShape({ Updater: P.isFunction });
-  if (!isAjax(Ajax)) {
-    throw new Error('Impossível capturar o carregamento de documentos.');
-  }
+  P.assert(isAjax(Ajax), 'Impossível capturar o carregamento de documentos.');
 
   const oldUpdater = Ajax.Updater;
   Ajax.Updater = function (a, b, c) {
@@ -75,9 +72,7 @@ export function telaMovimentacoes(url: URL): null {
     const img = flow(
       document,
       D.xquery<HTMLImageElement>(`//img[@id = "iconmovimentacoes${id}"]`),
-      M.getOrElse(() => {
-        throw new Error(`Imagem não encontrada: #iconmovimentacoes${id}.`);
-      })
+      M.getOrThrow(`Imagem não encontrada: #iconmovimentacoes${id}.`)
     );
     if (/iPlus.gif$/.test(img.src)) {
       /* Não recarregar documentos quando a linha é fechada */
@@ -88,22 +83,19 @@ export function telaMovimentacoes(url: URL): null {
       ...c,
       onComplete() {
         try {
-          const resultado = null as any;
-          // const resultado = c.onComplete(...arguments);
-          console.log(arguments[0].response.replace(/\s+/g, ' '));
+          const resultado = c.onComplete(...arguments);
 
-          const div = document.getElementById(a);
-          if (!div) {
-            throw new Error(`Elemento não encontrado: #${a}.`);
-          }
+          const div = P.check(
+            P.isNotNull,
+            document.getElementById(a),
+            `Elemento não encontrado: #${a}.`
+          );
 
-          const tabelas =
-            div.querySelectorAll<HTMLTableElement>(':scope > table');
-          if (!P.arrayHasLength(1)(tabelas)) {
-            throw new Error(`Tabela referente a #${a} não encontrada.`);
-          }
-
-          const tabela = tabelas[0];
+          const tabela = P.check(
+            P.arrayHasLength(1),
+            div.querySelectorAll<HTMLTableElement>(':scope > table'),
+            `Tabela referente a #${a} não encontrada.`
+          )[0];
 
           div.parentNode
             ?.querySelector(`.${classNames.avisoCarregando}`)
@@ -162,9 +154,7 @@ export function telaMovimentacoes(url: URL): null {
   const tabela = flow(
     document,
     D.query<HTMLTableElement>('table.resultTable'),
-    M.getOrElse(() => {
-      throw new Error('Tabela de movimentações não encontrada.');
-    })
+    M.getOrThrow('Tabela de movimentações não encontrada.')
   );
   const [colgroup, linhaCabecalho] = flow(
     tabela,
@@ -173,9 +163,7 @@ export function telaMovimentacoes(url: URL): null {
       D.xquery<HTMLTableRowElement>('thead/tr')
     ),
     T.sequence(applicativeMaybe),
-    M.getOrElse(() => {
-      throw new Error('Elementos da tabela de movimentações não encontrados.');
-    })
+    M.getOrThrow('Elementos da tabela de movimentações não encontrados.')
   );
   const linhas = flow(tabela, D.xqueryAll<HTMLTableRowElement>('tbody/tr'));
 
