@@ -7,12 +7,8 @@ import { Kind, Type } from './typeclasses';
 import { Just, Maybe, Nothing } from './maybe';
 
 const MAX = 1e4;
-const iterable: Iterable<number> = {
-  *[Symbol.iterator]() {
-    for (let i = 1; i <= MAX; ++i) yield i;
-  },
-};
-const array = A.fromIterable(iterable);
+const array = Array.from({ length: MAX }, (_, i) => i + 1);
+const iterable: Iterable<number> = array;
 const list = L.fromArray(array);
 
 describe('filterMap().filter().map().foldLeft()', () => {
@@ -49,7 +45,8 @@ describe('filterMap().filter().map().foldLeft()', () => {
         const result = flow(
           collection,
           filterMap(x => ((x & 0b0111) !== 0b0001 ? Just(x) : Nothing)),
-          filterMap(x => ((x & 0b0111) !== 0b0100 ? Just(x) : Nothing)),
+          M.filter(x => (x & 0b0111) !== 0b0100),
+          M.map(x => x),
           M.foldLeft(0, (a, b) => a + b)
         );
         assert.equal(result, 37508750);
