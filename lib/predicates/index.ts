@@ -19,6 +19,11 @@ export function check<T, U extends T>(
   value: T,
   message?: string
 ): Exclude<T, U>;
+export function check<T, U extends T>(
+  predicate: Refinement<T, U>,
+  value: T,
+  message?: string
+): U;
 export function check<T>(
   predicate: Predicate<T>,
   value: unknown,
