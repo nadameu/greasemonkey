@@ -39,6 +39,12 @@ export const makeEq =
     if (i >= Number.MAX_SAFE_INTEGER) throw new Error('Too many iterations.');
     return false;
   };
+export const forEach =
+  <a>(f: (a: a, i: number) => void) =>
+  (xs: Iterable<a>): void => {
+    let i = 0;
+    for (const x of xs) f(x, i++);
+  };
 export const of = <a>(value: a): a[] => [value];
 export const foldLeft =
   <a, b>(seed: b, f: Reducer<a, b>) =>
