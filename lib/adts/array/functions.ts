@@ -5,10 +5,7 @@ import { filterMap as deriveFilterMap } from '../typeclasses/functions';
 import { ArrayF } from './internal';
 export { fromIterable, fromList };
 
-export const forEach = <a>(
-  xs: ArrayLike<a>,
-  f: (a: a, i: number) => void
-): void => {
+const _forEach = <a>(xs: ArrayLike<a>, f: (a: a, i: number) => void): void => {
   for (let i = 0, len = xs.length; i < len; i++) f(xs[i]!, i);
 };
 
@@ -19,22 +16,20 @@ export const foldLeft =
   ): ((xs: ArrayLike<a>) => b) =>
   xs => {
     let acc = seed;
-    forEach(xs, (a, i) => {
+    _forEach(xs, (a, i) => {
       acc = f(acc, a, i);
     });
     return acc;
   };
 
 const _foldLeftToNewArray =
-  <a, b>(
-    f: (push: (_: b) => void) => (a: a, i: number) => void
-  ): ((xs: ArrayLike<a>) => b[]) =>
-  xs => {
+  <a, b>(f: (push: (_: b) => void) => (a: a, i: number) => void) =>
+  (xs: ArrayLike<a>): b[] => {
     const result: b[] = [];
-    const g = f(b => {
-      result.push(b);
-    });
-    forEach(xs, g);
+    _forEach(
+      xs,
+      f(b => result.push(b))
+    );
     return result;
   };
 
@@ -49,7 +44,7 @@ export const foldRight =
 export const flatMap = <a, b>(
   f: (a: a, i: number) => ArrayLike<b>
 ): ((xs: ArrayLike<a>) => b[]) =>
-  _foldLeftToNewArray(push => (a, i) => forEach(f(a, i), push));
+  _foldLeftToNewArray(push => (a, i) => _forEach(f(a, i), push));
 export const map = <a, b>(
   f: (a: a, i: number) => b
 ): ((xs: ArrayLike<a>) => b[]) =>
