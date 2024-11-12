@@ -72,3 +72,19 @@ export const toEither =
   <a>(whenLeft: () => a) =>
   <b>(fb: Maybe<b>): Either<a, b> =>
     isNothing(fb) ? Left(whenLeft()) : Right(fb.value);
+
+/**
+ * @template {number} N Comprimento do array de resultado
+ * @param re Expressão regular
+ */
+export const match =
+  <N extends number = 1>(re: RegExp) =>
+  (x: string) =>
+    fromNullable(x.match(re) as CustomMatchArray<N> | null);
+
+type CustomMatchArray<
+  N extends number,
+  Acc extends string[] = [],
+> = N extends Acc['length'] ? Acc : CustomMatchArray<N, [...Acc, string]>;
+
+export const test = (re: RegExp) => maybeBool((x: string) => re.test(x));
