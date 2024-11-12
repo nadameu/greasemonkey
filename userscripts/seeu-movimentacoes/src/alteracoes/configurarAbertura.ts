@@ -1,8 +1,8 @@
 import { GM_deleteValue, GM_getValue, GM_info, GM_setValue } from '$';
 import { h } from '@nadameu/create-element';
 import { createFiniteStateMachine } from '@nadameu/finite-state-machine';
-import { TaggedWithUnion } from '@nadameu/match';
-import { TIPO_ABERTURA, PARAMETROS_JANELA } from './parametros';
+import { FromConstructorsWith, makeConstructorsWith } from '@nadameu/match';
+import { PARAMETROS_JANELA, TIPO_ABERTURA } from './parametros';
 
 const NOME_JANELA = `gm-${GM_info.script.name}__configurar-abertura`;
 
@@ -15,35 +15,21 @@ interface Posicao {
   height: number;
 }
 
-type State = TaggedWithUnion<
-  'status',
-  {
-    INICIO: { current: TipoAbertura };
-    SALVO_PADRAO: {};
-    JANELA_POSICAO: {};
-    JANELA_CONFIRMAR: { posicao: Posicao };
-    SALVO_JANELA: { posicao: Posicao };
-  }
->;
+const State = makeConstructorsWith('status', {
+  INICIO: (current: TipoAbertura) => ({ current }),
+  SALVO_PADRAO: () => ({}),
+  JANELA_POSICAO: () => ({}),
+  JANELA_CONFIRMAR: (posicao: Posicao) => ({ posicao }),
+  SALVO_JANELA: (posicao: Posicao) => ({ posicao }),
+});
+type State = FromConstructorsWith<'status', typeof State>;
 
-type Action = TaggedWithUnion<
-  'type',
-  {
-    OPCAO_SELECIONADA: { opcao: TipoAbertura };
-    SALVAR: {};
-  }
->;
-const Action = {
-  OPCAO_SELECIONADA: (opcao: TipoAbertura) => ({
-    type: 'OPCAO_SELECIONADA',
-    opcao,
-  }),
-  SALVAR: { type: 'SALVAR' },
-} satisfies {
-  [k in Action['type']]:
-    | Extract<Action, { type: k }>
-    | ((...args: never[]) => Extract<Action, { type: k }>);
-};
+const Action = makeConstructorsWith('type', {
+  OPCAO_SELECIONADA: (opcao: TipoAbertura) => ({ opcao }),
+  SALVAR: () => ({}),
+});
+type Action = FromConstructorsWith<'type', typeof Action>;
+
 export function configurarAbertura() {
   const antiga = window.open('about:blank', NOME_JANELA);
   antiga?.close();
@@ -67,40 +53,27 @@ export function configurarAbertura() {
 
 function onJanelaAberta(win: Window) {
   const fsm = createFiniteStateMachine<State, Action>(
-    {
-      status: 'INICIO',
-      current: GM_getValue(TIPO_ABERTURA, 'padrao'),
-    },
+    State.INICIO(GM_getValue(TIPO_ABERTURA, 'padrao')),
     {
       INICIO: {
-        OPCAO_SELECIONADA({ opcao }) {
-          return { status: 'INICIO', current: opcao };
-        },
-        SALVAR(_, state) {
-          if (state.current === 'padrao') return { status: 'SALVO_PADRAO' };
-          return {
-            status: 'JANELA_POSICAO',
-          };
+        OPCAO_SELECIONADA: ({ opcao }) => State.INICIO(opcao),
+        SALVAR: (_, { current }) => {
+          if (current === 'padrao') return State.SALVO_PADRAO();
+          return State.JANELA_POSICAO();
         },
       },
       SALVO_PADRAO: {},
       JANELA_POSICAO: {
-        SALVAR() {
-          return {
-            status: 'JANELA_CONFIRMAR',
-            posicao: {
-              top: win.screenY,
-              left: win.screenX,
-              width: win.innerWidth,
-              height: win.innerHeight,
-            },
-          };
-        },
+        SALVAR: () =>
+          State.JANELA_CONFIRMAR({
+            top: win.screenY,
+            left: win.screenX,
+            width: win.innerWidth,
+            height: win.innerHeight,
+          }),
       },
       JANELA_CONFIRMAR: {
-        SALVAR(_, { posicao }) {
-          return { status: 'SALVO_JANELA', posicao };
-        },
+        SALVAR: (_, { posicao }) => State.SALVO_JANELA(posicao),
       },
       SALVO_JANELA: {},
     },
@@ -135,7 +108,7 @@ function onJanelaAberta(win: Window) {
     'Cancelar'
   );
   const botaoSalvar = h('button', { type: 'button' });
-  botaoSalvar.addEventListener('click', () => fsm.dispatch(Action.SALVAR));
+  botaoSalvar.addEventListener('click', () => fsm.dispatch(Action.SALVAR()));
   const div = h(
     'div',
     {},
