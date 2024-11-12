@@ -6,11 +6,11 @@ import {
   flow,
   I,
   isJust,
+  isNothing,
   Just,
   M,
   Nothing,
   T,
-  tuple,
 } from '@nadameu/adts';
 import { h } from '@nadameu/create-element';
 import * as P from '@nadameu/predicates';
@@ -59,17 +59,19 @@ export function telaMovimentacoes(url: URL): null {
 
   const oldUpdater = Ajax.Updater;
   Ajax.Updater = function (a, b, c) {
-    const matchId = a.match(
-      /^divArquivosMovimentacaoProcessomovimentacoes(\d+)$/
-    ) as [string, string] | null;
-    if (
-      !matchId ||
-      !/^\/seeu\/processo\/movimentacaoArquivoDocumento\.do\?_tj=/.test(b)
-    ) {
+    const regA = /^divArquivosMovimentacaoProcessomovimentacoes(\d+)$/;
+    const regB = /^\/seeu\/processo\/movimentacaoArquivoDocumento\.do\?_tj=/;
+
+    const maybeId = (() => {
+      if (!regB.test(b)) return Nothing;
+      return M.match<2>(regA)(a);
+    })();
+
+    if (isNothing(maybeId)) {
       return oldUpdater.call(this, a, b, c);
     }
 
-    const id = matchId[1];
+    const id = maybeId.value[1];
     const img = flow(
       document,
       D.xquery<HTMLImageElement>(`//img[@id = "iconmovimentacoes${id}"]`),
@@ -129,7 +131,7 @@ export function telaMovimentacoes(url: URL): null {
     });
 
     link.addEventListener('click', () => {
-      if (link.src.match(/iPlus/)) {
+      if (/iPlus/.test(link.src)) {
       } else {
         mutationTarget.querySelector(':scope > table')?.remove();
         mutationTarget.parentNode!.insertBefore(aviso, mutationTarget);
@@ -334,36 +336,26 @@ function onTabelaAdicionada(table: HTMLTableElement) {
         }
         throw new Error(`Formato de linha desconhecido: ${l}.`);
       }
+      const isTextoObservacoes = P.isAnyOf(
+        P.isTuple(P.isInstanceOf(Text)),
+        P.isTuple(
+          P.isInstanceOf(Text),
+          P.isInstanceOf(HTMLAnchorElement),
+          P.isInstanceOf(HTMLElement)
+        )
+      );
       const sequencialNome = flow(
-        linha.cells[0],
-        x => x.childNodes,
-        A.filter(x => !(x instanceof Text) || x.nodeValue?.trim() !== ''),
-        M.maybeBool(
-          P.isAnyOf(
-            P.isTuple(P.isInstanceOf(Text)),
-            P.isTuple(
-              P.isInstanceOf(Text),
-              P.isInstanceOf(HTMLAnchorElement),
-              P.isInstanceOf(HTMLElement)
-            )
-          )
-        ),
-        M.map(([texto, ...obs]) =>
-          tuple(texto, obs.length === 2 ? Just(obs) : Nothing)
-        ),
-        M.flatMap(([texto, observacao]) =>
+        linha.cells[0].childNodes,
+        A.filter(x => !(x instanceof Text) || P.isNonEmptyString(x.nodeValue)),
+        M.maybeBool(isTextoObservacoes),
+        M.flatMap(([texto, ...obs]) =>
           flow(
             M.fromNullable(texto.nodeValue),
-            M.mapNullable(
-              x =>
-                x.match(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/) as
-                  | [string, string, string]
-                  | null
-            ),
+            M.flatMap(M.match<3>(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/)),
             M.map(([, sequencial, nome]) => ({
               sequencial,
               nome: nome || 'Outros',
-              observacao,
+              observacao: obs.length === 2 ? Just(obs) : Nothing,
             }))
           )
         ),
@@ -372,9 +364,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
       const assinatura = flow(
         linha.cells[2],
         D.text,
-        M.mapNullable(
-          x => x.match(/^\s*Ass\.:\s+(.*)\s*$/) as [string, string] | null
-        ),
+        M.flatMap(M.match<2>(/^\s*Ass\.:\s+(.*)\s*$/)),
         M.map(([, assinatura]) => assinatura),
         M.getOrThrow(`Assinatura não reconhecida: ${l}.`)
       );
