@@ -1,19 +1,16 @@
-import { GM_deleteValue, GM_getValue, GM_info, GM_setValue } from '$';
+import { GM_info } from '$';
 import { h } from '@nadameu/create-element';
 import { createFiniteStateMachine } from '@nadameu/finite-state-machine';
 import { FromConstructorsWith, makeConstructorsWith } from '@nadameu/match';
-import { PARAMETROS_JANELA, TIPO_ABERTURA } from './parametros';
+import {
+  DadosAbertura,
+  Posicao,
+  posicaoToFeatures,
+  TipoAbertura,
+  validarPosicao,
+} from './dadosAbertura';
 
 const NOME_JANELA = `gm-${GM_info.script.name}__configurar-abertura`;
-
-type TipoAbertura = 'padrao' | 'janela';
-
-interface Posicao {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
 
 const State = makeConstructorsWith('status', {
   INICIO: (current: TipoAbertura) => ({ current }),
@@ -36,7 +33,9 @@ export function configurarAbertura() {
   const win = window.open(
     'about:blank',
     NOME_JANELA,
-    'top=0,left=0,width=800,height=450'
+    posicaoToFeatures(
+      validarPosicao({ top: 0, left: 0, width: 800, height: 450 })
+    )
   );
   if (!win) {
     window.alert(
@@ -51,9 +50,19 @@ export function configurarAbertura() {
   aoAbrirJanelaExecutar(win, () => onJanelaAberta(win));
 }
 
+function obterPosicaoJanela(win: Window): Posicao {
+  return validarPosicao({
+    top: win.screenY,
+    left: win.screenX,
+    width: win.innerWidth,
+    height: win.innerHeight,
+  });
+}
+
 function onJanelaAberta(win: Window) {
+  const tipoAberturaAtual = DadosAbertura.carregar().tipo;
   const fsm = createFiniteStateMachine<State, Action>(
-    State.INICIO(GM_getValue(TIPO_ABERTURA, 'padrao')),
+    State.INICIO(tipoAberturaAtual),
     {
       INICIO: {
         OPCAO_SELECIONADA: ({ opcao }) => State.INICIO(opcao),
@@ -64,13 +73,7 @@ function onJanelaAberta(win: Window) {
       },
       SALVO_PADRAO: {},
       JANELA_POSICAO: {
-        SALVAR: () =>
-          State.JANELA_CONFIRMAR({
-            top: win.screenY,
-            left: win.screenX,
-            width: win.innerWidth,
-            height: win.innerHeight,
-          }),
+        SALVAR: () => State.JANELA_CONFIRMAR(obterPosicaoJanela(win)),
       },
       JANELA_CONFIRMAR: {
         SALVAR: (_, { posicao }) => State.SALVO_JANELA(posicao),
@@ -85,18 +88,14 @@ function onJanelaAberta(win: Window) {
     type: 'radio',
     name: 'tipo',
     value: 'padrao',
-    checked: (state => state.status === 'INICIO' && state.current === 'padrao')(
-      fsm.getState()
-    ),
+    checked: tipoAberturaAtual === 'padrao',
     onclick: () => fsm.dispatch(Action.OPCAO_SELECIONADA('padrao')),
   });
   const inputJanela = h('input', {
     type: 'radio',
     name: 'tipo',
     value: 'janela',
-    checked: (state => state.status !== 'INICIO' || state.current === 'janela')(
-      fsm.getState()
-    ),
+    checked: tipoAberturaAtual === 'janela',
     onclick: () => fsm.dispatch(Action.OPCAO_SELECIONADA('janela')),
   });
   const botaoCancelar = h(
@@ -107,8 +106,10 @@ function onJanelaAberta(win: Window) {
     },
     'Cancelar'
   );
-  const botaoSalvar = h('button', { type: 'button' });
-  botaoSalvar.addEventListener('click', () => fsm.dispatch(Action.SALVAR()));
+  const botaoSalvar = h('button', {
+    type: 'button',
+    onclick: () => fsm.dispatch(Action.SALVAR()),
+  });
   const div = h(
     'div',
     {},
@@ -121,8 +122,7 @@ function onJanelaAberta(win: Window) {
     div,
     p(botaoCancelar, ' ', botaoSalvar)
   );
-  fsm.subscribe(() => {
-    const estado = fsm.getState();
+  fsm.subscribe(estado => {
     switch (estado.status) {
       case 'INICIO': {
         if (estado.current === 'padrao') {
@@ -134,8 +134,7 @@ function onJanelaAberta(win: Window) {
       }
 
       case 'SALVO_PADRAO': {
-        GM_setValue(TIPO_ABERTURA, 'padrao');
-        GM_deleteValue(PARAMETROS_JANELA);
+        DadosAbertura.salvar({ tipo: 'padrao' });
         win.close();
         break;
       }
@@ -155,15 +154,9 @@ function onJanelaAberta(win: Window) {
         const frag = document.createDocumentFragment();
         frag.append(...win.document.body.childNodes);
         win.close();
-        const parametros = Object.entries(estado.posicao)
-          .map(([key, value]) => `${key}=${value}`)
-          .join(',');
+        const features = posicaoToFeatures(estado.posicao);
         try {
-          const newWin = win.open(
-            'about:blank',
-            `${NOME_JANELA}_2`,
-            parametros
-          );
+          const newWin = win.open('about:blank', `${NOME_JANELA}_2`, features);
           if (!newWin) throw new Error('Não foi possível abrir a janela.');
           win = newWin;
         } catch (e) {
@@ -194,8 +187,7 @@ function onJanelaAberta(win: Window) {
       }
 
       case 'SALVO_JANELA': {
-        GM_setValue(TIPO_ABERTURA, 'janela');
-        GM_setValue(PARAMETROS_JANELA, estado.posicao);
+        DadosAbertura.salvar({ tipo: 'janela', posicao: estado.posicao });
         win.close();
         break;
       }

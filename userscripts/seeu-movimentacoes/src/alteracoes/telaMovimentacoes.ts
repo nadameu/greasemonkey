@@ -1,21 +1,22 @@
-import { GM_addStyle, GM_deleteValue, GM_getValue, GM_setValue } from '$';
+import { GM_addStyle, GM_getValue, GM_setValue } from '$';
 import {
   A,
+  applicativeMaybe,
   D,
+  flow,
   I,
+  isJust,
   Just,
   M,
   Nothing,
   T,
-  applicativeMaybe,
-  flow,
-  isJust,
   tuple,
 } from '@nadameu/adts';
 import { h } from '@nadameu/create-element';
 import * as P from '@nadameu/predicates';
 import { createIntersectionObserver } from '../createIntersectionObserver';
 import { configurarAbertura } from './configurarAbertura';
+import { DadosAbertura, dadosAberturaToFeatures } from './dadosAbertura';
 import css from './estilos-seeu.scss?inline';
 import * as Parametros from './parametros';
 import classNames from './telaMovimentacoes.module.scss';
@@ -260,11 +261,9 @@ function createOnDocumentClick({
     ) {
       evt.preventDefault();
       const link = evt.target as HTMLAnchorElement;
-      flow(
-        document,
-        D.queryAll(`.${classNames.ultimoClicado}`),
-        A.map(x => x.classList.remove(classNames.ultimoClicado!))
-      );
+      document
+        .querySelectorAll(`.${classNames.ultimoClicado}`)
+        .forEach(x => x.classList.remove(classNames.ultimoClicado!));
       link.classList.add(classNames.ultimoClicado!);
       exibirBotaoFechar();
       const id = link.dataset.gmDocLink!;
@@ -275,29 +274,8 @@ function createOnDocumentClick({
           return;
         }
       }
-      const features =
-        ((): string | null => {
-          const tipo = GM_getValue(Parametros.TIPO_ABERTURA);
-          if (P.isLiteral('padrao')(tipo)) return null;
-          if (P.isLiteral('janela')(tipo)) {
-            const parametros = GM_getValue(Parametros.PARAMETROS_JANELA);
-            if (
-              P.hasShape({
-                top: P.isInteger,
-                left: P.isInteger,
-                width: P.isNonNegativeInteger,
-                height: P.isNonNegativeInteger,
-              })(parametros)
-            ) {
-              return Object.entries(parametros)
-                .map(([key, value]) => `${key}=${value.toString(10)}`)
-                .join(',');
-            }
-          }
-          GM_setValue(Parametros.TIPO_ABERTURA, 'padrao');
-          GM_deleteValue(Parametros.PARAMETROS_JANELA);
-          return null;
-        })() ?? undefined;
+
+      const features = dadosAberturaToFeatures(DadosAbertura.carregar());
       const win = window.open(link.href, `doc${id}`, features);
       janelasAbertas.set(id, win!);
     }
@@ -343,7 +321,7 @@ function criarBotaoJanelasAbertas(janelasAbertas: Map<string, Window>) {
 function onTabelaAdicionada(table: HTMLTableElement) {
   return flow(
     table.rows,
-    A.map((linha, l) => {
+    I.map((linha, l) => {
       if (!P.arrayHasLength(7)(linha.cells)) {
         if (
           linha.classList.contains('linhaPeticao') &&
@@ -501,22 +479,21 @@ function onTabelaAdicionada(table: HTMLTableElement) {
         return [sequencial, frag, file, cadeado];
       }
     }),
+    I.map((children, r) => {
+      const tr = h('tr', { className: r % 2 === 0 ? 'even' : 'odd' });
+
+      for (const child of children) {
+        tr.append(h('td', {}, child));
+      }
+
+      if (P.arrayHasLength(1)(tr.cells)) {
+        tr.className = 'incidente';
+        tr.cells[0].colSpan = 4;
+      }
+      return tr;
+    }),
     linhas => {
-      table.replaceChildren(
-        ...linhas.map((children, r) => {
-          const tr = h('tr', { className: r % 2 === 0 ? 'even' : 'odd' });
-
-          for (const child of children) {
-            tr.append(h('td', {}, child));
-          }
-
-          if (P.arrayHasLength(1)(tr.cells)) {
-            tr.className = 'incidente';
-            tr.cells[0].colSpan = 4;
-          }
-          return tr;
-        })
-      );
+      table.replaceChildren(...linhas);
     }
   );
 }
