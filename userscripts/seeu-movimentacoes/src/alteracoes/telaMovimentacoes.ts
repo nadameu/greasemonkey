@@ -367,9 +367,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
             }))
           )
         ),
-        M.getOrElse(() => {
-          throw new Error(`Sequencial e nome não reconhecidos: ${l}.`);
-        })
+        M.getOrThrow(`Sequencial e nome não reconhecidos: ${l}.`)
       );
       const assinatura = flow(
         linha.cells[2],
@@ -378,9 +376,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
           x => x.match(/^\s*Ass\.:\s+(.*)\s*$/) as [string, string] | null
         ),
         M.map(([, assinatura]) => assinatura),
-        M.getOrElse(() => {
-          throw new Error(`Assinatura não reconhecida: ${l}.`);
-        })
+        M.getOrThrow(`Assinatura não reconhecida: ${l}.`)
       );
       const infoLink = flow(
         linha.cells[4],
@@ -427,9 +423,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
               return link;
             }),
             M.map(link => ({ menu: '', popup: '', link, play: undefined })),
-            M.getOrElse(() => {
-              throw new Error(`Link para documento não reconhecido: ${l}.`);
-            })
+            M.getOrThrow(`Link para documento não reconhecido: ${l}.`)
           );
         }
       );
@@ -438,9 +432,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
         D.text,
         M.map(x => x.trim()),
         M.filter(x => x !== ''),
-        M.getOrElse(() => {
-          throw new Error(`Nível de sigilo não reconhecido: ${l}.`);
-        })
+        M.getOrThrow(`Nível de sigilo não reconhecido: ${l}.`)
       );
       const { sequencial, nome, observacao } = sequencialNome;
       const { menu, popup, link, play } = infoLink;
