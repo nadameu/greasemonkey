@@ -5,6 +5,7 @@ export * from './either';
 export * from './function';
 export * from './iterable';
 export * from './maybe';
+export * from './nullish';
 export * from './number';
 export * from './object';
 export * from './string';

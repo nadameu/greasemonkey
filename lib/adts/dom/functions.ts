@@ -1,22 +1,18 @@
-import { M, Maybe } from '../maybe';
-
 export const query =
   <T extends Element>(selector: string) =>
-  (parentNode: ParentNode): Maybe<T> =>
-    M.fromNullable<T>(parentNode.querySelector<T>(selector));
+  (parentNode: ParentNode) =>
+    <T>parentNode.querySelector<T>(selector);
 export const queryAll =
   <T extends Element>(selector: string) =>
   (parentNode: ParentNode): NodeListOf<T> =>
     parentNode.querySelectorAll<T>(selector);
-export const text = (node: Node) => M.fromNullable(node.textContent);
+export const text = (node: Node) => node.textContent;
 const FIRST = XPathResult.FIRST_ORDERED_NODE_TYPE;
 export const xquery =
   <T extends Node>(expression: string) =>
-  (contextNode: Node): Maybe<T> =>
-    M.fromNullable(
-      document.evaluate(expression, contextNode, null, FIRST)
-        .singleNodeValue as T | null
-    );
+  (contextNode: Node): T | null =>
+    document.evaluate(expression, contextNode, null, FIRST)
+      .singleNodeValue as T | null;
 const SNAP = XPathResult.ORDERED_NODE_SNAPSHOT_TYPE;
 export const xqueryAll =
   <T extends Node>(expression: string) =>
