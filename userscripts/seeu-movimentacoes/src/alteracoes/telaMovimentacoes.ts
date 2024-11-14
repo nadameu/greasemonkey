@@ -1,17 +1,5 @@
 import { GM_addStyle, GM_getValue, GM_setValue } from '$';
-import {
-  A,
-  applicativeMaybe,
-  D,
-  flow,
-  I,
-  isJust,
-  isNothing,
-  Just,
-  M,
-  Nothing,
-  T,
-} from '@nadameu/adts';
+import { A, applicativeNullish, D, flow, I, N, T } from '@nadameu/adts';
 import { h } from '@nadameu/create-element';
 import * as P from '@nadameu/predicates';
 import { createIntersectionObserver } from '../createIntersectionObserver';
@@ -48,7 +36,7 @@ export function telaMovimentacoes(url: URL): null {
         D.xquery<HTMLElement>(
           'ancestor::tr/following-sibling::*[1]/self::tr//*[contains(concat(" ", normalize-space(@class), " "), " extendedinfo ")]'
         ),
-        M.getOrThrow(`Lista de eventos não reconhecida: ${i}.`),
+        N.orThrow(`Lista de eventos não reconhecida: ${i}.`),
         mutationTarget => ({ link, mutationTarget })
       )
     )
@@ -62,20 +50,22 @@ export function telaMovimentacoes(url: URL): null {
     const regA = /^divArquivosMovimentacaoProcessomovimentacoes(\d+)$/;
     const regB = /^\/seeu\/processo\/movimentacaoArquivoDocumento\.do\?_tj=/;
 
-    const maybeId = (() => {
-      if (!regB.test(b)) return Nothing;
-      return M.match<2>(regA)(a);
-    })();
+    const id = flow(
+      b,
+      N.test(regB),
+      N.map(() => a),
+      N.match<2>(regA),
+      N.mapProp(1)
+    );
 
-    if (isNothing(maybeId)) {
+    if (id == null) {
       return oldUpdater.call(this, a, b, c);
     }
 
-    const id = maybeId.value[1];
     const img = flow(
       document,
       D.xquery<HTMLImageElement>(`//img[@id = "iconmovimentacoes${id}"]`),
-      M.getOrThrow(`Imagem não encontrada: #iconmovimentacoes${id}.`)
+      N.orThrow(`Imagem não encontrada: #iconmovimentacoes${id}.`)
     );
     if (/iPlus.gif$/.test(img.src)) {
       /* Não recarregar documentos quando a linha é fechada */
@@ -157,7 +147,7 @@ export function telaMovimentacoes(url: URL): null {
   const tabela = flow(
     document,
     D.query<HTMLTableElement>('table.resultTable'),
-    M.getOrThrow('Tabela de movimentações não encontrada.')
+    N.orThrow('Tabela de movimentações não encontrada.')
   );
   const [colgroup, linhaCabecalho] = flow(
     tabela,
@@ -165,8 +155,8 @@ export function telaMovimentacoes(url: URL): null {
       D.xquery<Element>('colgroup'),
       D.xquery<HTMLTableRowElement>('thead/tr')
     ),
-    T.sequence(applicativeMaybe),
-    M.getOrThrow('Elementos da tabela de movimentações não encontrados.')
+    T.sequence(applicativeNullish),
+    N.orThrow('Elementos da tabela de movimentações não encontrados.')
   );
   const linhas = flow(tabela, D.xqueryAll<HTMLTableRowElement>('tbody/tr'));
 
@@ -336,37 +326,45 @@ function onTabelaAdicionada(table: HTMLTableElement) {
         }
         throw new Error(`Formato de linha desconhecido: ${l}.`);
       }
-      const isTextoObservacoes = P.isAnyOf(
-        P.isTuple(P.isInstanceOf(Text)),
-        P.isTuple(
-          P.isInstanceOf(Text),
-          P.isInstanceOf(HTMLAnchorElement),
-          P.isInstanceOf(HTMLElement)
-        )
-      );
+      const isTextoObservacoes = (
+        xs: ChildNode[]
+      ): xs is [Text] | [Text, HTMLAnchorElement, HTMLElement] =>
+        xs.length >= 1 &&
+        xs[0] instanceof Text &&
+        (xs.length === 1 ||
+          (xs.length === 3 &&
+            xs[1] instanceof HTMLAnchorElement &&
+            xs[2] instanceof HTMLElement));
       const sequencialNome = flow(
         linha.cells[0].childNodes,
         A.filter(x => !(x instanceof Text) || P.isNonEmptyString(x.nodeValue)),
-        M.maybeBool(isTextoObservacoes),
-        M.flatMap(([texto, ...obs]) =>
+        N.filter(isTextoObservacoes),
+        N.map(([texto, ...obs]) =>
           flow(
-            M.fromNullable(texto.nodeValue),
-            M.flatMap(M.match<3>(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/)),
-            M.map(([, sequencial, nome]) => ({
+            texto.nodeValue,
+            N.match<3>(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/),
+            N.map(([, sequencial, nome]) => ({
               sequencial,
               nome: nome || 'Outros',
-              observacao: obs.length === 2 ? Just(obs) : Nothing,
+              observacao: flow(
+                obs,
+                N.filter(
+                  (
+                    x: [HTMLAnchorElement, HTMLElement] | []
+                  ): x is [HTMLAnchorElement, HTMLElement] => x.length === 2
+                )
+              ),
             }))
           )
         ),
-        M.getOrThrow(`Sequencial e nome não reconhecidos: ${l}.`)
+        N.orThrow(`Sequencial e nome não reconhecidos: ${l}.`)
       );
       const assinatura = flow(
         linha.cells[2],
         D.text,
-        M.flatMap(M.match<2>(/^\s*Ass\.:\s+(.*)\s*$/)),
-        M.map(([, assinatura]) => assinatura),
-        M.getOrThrow(`Assinatura não reconhecida: ${l}.`)
+        N.match<2>(/^\s*Ass\.:\s+(.*)\s*$/),
+        N.map(([, assinatura]) => assinatura),
+        N.orThrow(`Assinatura não reconhecida: ${l}.`)
       );
       const infoLink = flow(
         linha.cells[4],
@@ -377,52 +375,56 @@ function onTabelaAdicionada(table: HTMLTableElement) {
           popup: Node | string;
           link: HTMLAnchorElement;
           play: Node | undefined;
-        } => {
-          const opcao1 = flow(
+        } =>
+          flow(
             celula,
             c => c.childNodes,
-            A.filter(
+            I.filter(
               x => !(x instanceof Text && /^\s*$/.test(x.nodeValue ?? ''))
             ),
-            M.maybeBool(
-              P.isAnyOf(
-                P.isTuple(
-                  P.isInstanceOf(HTMLImageElement),
-                  P.isInstanceOf(HTMLDivElement),
-                  P.isInstanceOf(HTMLAnchorElement)
-                ),
-                P.isTuple(
-                  P.isInstanceOf(HTMLImageElement),
-                  P.isInstanceOf(HTMLDivElement),
-                  P.isInstanceOf(HTMLAnchorElement),
-                  P.isInstanceOf(HTMLAnchorElement)
-                )
-              )
+            I.toArray,
+            N.filter(
+              (
+                xs
+              ): xs is [
+                HTMLImageElement,
+                HTMLDivElement,
+                HTMLAnchorElement,
+                ...([] | [HTMLAnchorElement]),
+              ] => {
+                return (
+                  (xs.length === 3 || xs.length === 4) &&
+                  xs[0] instanceof HTMLImageElement &&
+                  xs[1] instanceof HTMLDivElement &&
+                  xs[2] instanceof HTMLAnchorElement &&
+                  (xs[3] === undefined || xs[3] instanceof HTMLAnchorElement)
+                );
+              }
             ),
-            M.map(childNodes => {
+            N.map(childNodes => {
               const [menu, popup, link, play] = childNodes;
               return { menu, popup, link, play };
-            })
-          );
-          if (isJust(opcao1)) return opcao1.value;
-          return flow(
-            celula,
-            D.xquery<HTMLAnchorElement>('.//strike//a[@href]'),
-            M.map(link => {
-              link.classList.add(classNames.struck!);
-              return link;
             }),
-            M.map(link => ({ menu: '', popup: '', link, play: undefined })),
-            M.getOrThrow(`Link para documento não reconhecido: ${l}.`)
-          );
-        }
+            N.orElse(() =>
+              flow(
+                celula,
+                D.xquery<HTMLAnchorElement>('.//strike//a[@href]'),
+                N.map(link => {
+                  link.classList.add(classNames.struck!);
+                  return link;
+                }),
+                N.map(link => ({ menu: '', popup: '', link, play: undefined })),
+                N.orThrow(`Link para documento não reconhecido: ${l}.`)
+              )
+            )
+          )
       );
       const sigilo = flow(
         linha.cells[6],
         D.text,
-        M.map(x => x.trim()),
-        M.filter(x => x !== ''),
-        M.getOrThrow(`Nível de sigilo não reconhecido: ${l}.`)
+        N.map(x => x.trim()),
+        N.filter(x => x !== ''),
+        N.orThrow(`Nível de sigilo não reconhecido: ${l}.`)
       );
       const { sequencial, nome, observacao } = sequencialNome;
       const { menu, popup, link, play } = infoLink;
@@ -431,11 +433,9 @@ function onTabelaAdicionada(table: HTMLTableElement) {
         const frag = document.createDocumentFragment();
         frag.append(menu, popup);
         flow(
-          link.href,
-          href => new URL(href),
-          u => M.fromNullable(u.searchParams.get('_tj')),
-          M.map(getId),
-          M.map(id => {
+          new URL(link.href).searchParams.get('_tj'),
+          N.map(getId),
+          N.map(id => {
             link.dataset.gmDocLink = id.toString(36);
           })
         );
@@ -451,8 +451,8 @@ function onTabelaAdicionada(table: HTMLTableElement) {
         }
         link.textContent = link.textContent!.trim();
         file.append(link);
-        if (isJust(observacao)) {
-          file.append(h('br'), ...observacao.value);
+        if (observacao != null) {
+          file.append(h('br'), ...observacao);
         }
         const cadeado =
           sigilo === 'Público'
