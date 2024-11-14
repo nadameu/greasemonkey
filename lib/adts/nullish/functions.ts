@@ -48,10 +48,8 @@ export const mapProp =
  * @template {number} N Comprimento do array de resultado
  * @param {RegExp} re Expressão regular
  */
-export const match =
-  <N extends number = 1>(re: RegExp) =>
-  (x: string) =>
-    x.match(re) as CustomMatchArray<N> | null;
+export const match = <N extends number = 1>(re: RegExp) =>
+  map((x: string) => x.match(re) as CustomMatchArray<N> | null);
 
 type CustomMatchArray<N extends number> = CustomMatchArrayHelper<N, []>;
 type CustomMatchArrayHelper<
