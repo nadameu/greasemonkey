@@ -1,5 +1,5 @@
 import { GM_addStyle, GM_getValue, GM_setValue } from '$';
-import { A, applicativeNullish, D, flow, I, N, T } from '@nadameu/adts';
+import { applicativeNullish, D, flow, I, N, T } from '@nadameu/adts';
 import { h } from '@nadameu/create-element';
 import * as P from '@nadameu/predicates';
 import { createIntersectionObserver } from '../createIntersectionObserver';
@@ -337,7 +337,8 @@ function onTabelaAdicionada(table: HTMLTableElement) {
             xs[2] instanceof HTMLElement));
       const sequencialNome = flow(
         linha.cells[0].childNodes,
-        A.filter(x => !(x instanceof Text) || P.isNonEmptyString(x.nodeValue)),
+        I.filter(x => !(x instanceof Text) || P.isNonEmptyString(x.nodeValue)),
+        I.toArray,
         N.filter(isTextoObservacoes),
         N.map(([texto, ...obs]) =>
           flow(
