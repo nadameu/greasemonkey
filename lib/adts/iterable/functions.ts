@@ -14,7 +14,7 @@ export { fromList };
 
 type Reducer<a, b> = (acc: b, a: a, i: number) => b;
 
-export const makeEq =
+const makeEqIterable =
   <T>(eq: (a: T, b: T) => boolean = (a, b) => a === b) =>
   (left: Iterable<T>, right: Iterable<T>): boolean => {
     const itL = left[Symbol.iterator]();
@@ -39,14 +39,19 @@ export const makeEq =
     if (i >= Number.MAX_SAFE_INTEGER) throw new Error('Too many iterations.');
     return false;
   };
-export const forEach =
+export { makeEqIterable as makeEq };
+
+const forEachInIterable =
   <a>(f: (a: a, i: number) => void) =>
   (xs: Iterable<a>): void => {
     let i = 0;
     for (const x of xs) f(x, i++);
   };
-export const of = <a>(value: a): a[] => [value];
-export const foldLeft =
+export { forEachInIterable as forEach };
+
+const ofIterable = <a>(value: a): a[] => [value];
+export { ofIterable as of };
+const foldLeftIterable =
   <a, b>(seed: b, f: Reducer<a, b>) =>
   (xs: Iterable<a>): b => {
     let acc = seed;
@@ -54,9 +59,13 @@ export const foldLeft =
     for (const x of xs) acc = f(acc, x, i++);
     return acc;
   };
-export const concat = <a>(left: Iterable<a>, right: Iterable<a>): Iterable<a> =>
-  new Concat(left, right);
-export const foldMap: {
+export { foldLeftIterable as foldLeft };
+const concatIterable = <a>(
+  left: Iterable<a>,
+  right: Iterable<a>
+): Iterable<a> => new Concat(left, right);
+export { concatIterable as concat };
+const foldMapIterable: {
   <F extends Kind>(
     M: MonoidK<F>
   ): <a, b, e = never>(
@@ -67,8 +76,11 @@ export const foldMap: {
   <m>(M: Monoid<m>) =>
   <a>(f: (a: a, i: number) => m) =>
   (xs: Iterable<a>) =>
-    foldLeft<a, m>(M.empty(), (left, x, i) => M.concat(left, f(x, i)))(xs);
-export const flatMap =
+    foldLeftIterable<a, m>(M.empty(), (left, x, i) => M.concat(left, f(x, i)))(
+      xs
+    );
+export { foldMapIterable as foldMap };
+const flatMapIterable =
   <a, b>(f: (a: a, i: number) => Iterable<b>) =>
   (xs: Iterable<a>): Iterable<b> => ({
     [Symbol.iterator]() {
@@ -91,7 +103,8 @@ export const flatMap =
       };
     },
   });
-export const map =
+export { flatMapIterable as flatMap };
+const mapIterable =
   <a, b>(f: (a: a, i: number) => b) =>
   (xs: Iterable<a>): Iterable<b> => ({
     [Symbol.iterator]() {
@@ -106,7 +119,8 @@ export const map =
       };
     },
   });
-export const filter: {
+export { mapIterable as map };
+const filterIterable: {
   <a, b extends a>(
     pred: (a: a, i: number) => a is b
   ): (xs: Iterable<a>) => Iterable<b>;
@@ -128,38 +142,44 @@ export const filter: {
       };
     },
   });
+export { filterIterable as filter };
 export const filterMap = /* #__PURE__ */ derive.filterMap<IterableF>({
-  map,
-  filter,
+  map: mapIterable,
+  filter: filterIterable,
 });
 
-export const toArray = <a>(xs: Iterable<a>): a[] =>
-  foldLeft<a, a[]>([], (acc, x) => (acc.push(x), acc))(xs);
-export const lift2 =
+const iterableToArray = <a>(xs: Iterable<a>): a[] =>
+  foldLeftIterable<a, a[]>([], (acc, x) => (acc.push(x), acc))(xs);
+export { iterableToArray as toArray };
+const lift2Iterable =
   <a, b, c>(f: (a: a, b: b) => c) =>
   (fa: Iterable<a>, fb: Iterable<b>): Iterable<c> => ({
     *[Symbol.iterator]() {
       for (const a of fa) for (const b of fb) yield f(a, b);
     },
   });
-export const ap =
+export { lift2Iterable as lift2 };
+const apIterable =
   <a>(fa: Iterable<a>) =>
   <b>(ff: Iterable<(_: a) => b>): Iterable<b> =>
-    lift2<(_: a) => b, a, b>(apply)(ff, fa);
+    lift2Iterable<(_: a) => b, a, b>(apply)(ff, fa);
+export { apIterable as ap };
 
-export const fold: {
+const foldIterable: {
   <F extends Kind>(
     M: MonoidK<F>
   ): <a, e = never>(fa: Iterable<Type<F, e, a>>) => Type<F, e, a>;
   <a>(M: Monoid<a>): (fa: Iterable<a>) => a;
-} = <a>(M: Monoid<a>) => foldMap(M)<a>(identity);
-export const traverse =
+} = <a>(M: Monoid<a>) => foldMapIterable(M)<a>(identity);
+export { foldIterable as fold };
+const traverseIterable =
   <F extends Kind>(M: Applicative<F>) =>
   <a, b, e>(f: (a: a, i: number) => Type<F, e, b>) =>
   (fa: Iterable<a>): Type<F, e, b[]> =>
-    sequence(M)(map(f)(fa));
+    sequenceIterable(M)(mapIterable(f)(fa));
+export { traverseIterable as traverse };
 
-export const sequence =
+const sequenceIterable =
   <F extends Kind>(M: Applicative<F>) =>
   <a, e>(tfa: Iterable<Type<F, e, a>>): Type<F, e, a[]> => {
     const appendPartial = M.map((xs: a[]) => (x: a) => (xs.push(x), xs));
@@ -169,16 +189,20 @@ export const sequence =
     }
     return result;
   };
+export { sequenceIterable as sequence };
 
-export const toNonEmptyArray = <a>(xs: Iterable<a>): Maybe<[a, ...a[]]> => {
+const iterableToNonEmptyArray = <a>(xs: Iterable<a>): Maybe<[a, ...a[]]> => {
   const arr = [...xs];
   if (arr.length > 0) return Just(xs as [a, ...a[]]);
   return Nothing;
 };
+export { iterableToNonEmptyArray as toNonEmptyArray };
 
-export const first = <a>(xs: Iterable<a>): Maybe<a> => {
+const firstElementOfIterable = <a>(xs: Iterable<a>): Maybe<a> => {
   for (const x of xs) return Just(x);
   return Nothing;
 };
+export { firstElementOfIterable as first };
 
-export const reverse = <a>(fa: Iterable<a>): a[] => [...fa].reverse();
+const reverseIterable = <a>(fa: Iterable<a>): a[] => [...fa].reverse();
+export { reverseIterable as reverse };
