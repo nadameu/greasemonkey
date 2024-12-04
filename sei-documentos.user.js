@@ -5,7 +5,7 @@
 // @match       https://sei.trf4.jus.br/controlador.php?acao=editor_montar&*
 // @match       https://sei.trf4.jus.br/controlador.php?acao=documento_visualizar&*
 // @grant       GM_addStyle
-// @version     1.0.0
+// @version     1.1.0
 // @author      Paulo R. Maurici Jr.
 // @description Limita a largura máxima dos documentos do SEI! para refletir a aparência do PDF correspondente
 // ==/UserScript==
@@ -21,7 +21,8 @@ function main() {
     case "editor_montar":
       GM_addStyle(/* css */ `
   .infra-editor__editor {
-    max-width: calc(var(--largura-pdf) + 2 * 2em);
+    width: calc(var(--largura-pdf) + 2 * 2em);
+    max-width: 100%;
     margin-inline: auto;
   }
   `);
@@ -30,7 +31,8 @@ function main() {
     case "documento_visualizar":
       GM_addStyle(/* css */ `
   body {
-    max-width: var(--largura-pdf);
+    width: var(--largura-pdf);
+    max-width: 100%;
     margin-inline: auto;
   }
     `);
