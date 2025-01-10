@@ -1,0 +1,22 @@
+{
+  "name": "eproc-favoritos-historico",
+  "gm_name": "eproc - favoritos e histórico",
+  "description": "Permite definir processos favoritos e visualizar o histórico de processos acessados",
+  "author": "nadameu",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "format": "prettier --write ../../eproc-favoritos-historico.user.js",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@nadameu/enderecos-eproc": "workspace:^"
+  },
+  "dependencies": {
+    "@nadameu/create-element": "workspace:^",
+    "@nadameu/predicates": "workspace:^"
+  }
+}

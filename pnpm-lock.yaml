@@ -249,6 +249,19 @@ importers:
         specifier: workspace:^
         version: link:../../lib/enderecos-eproc
 
+  userscripts/eproc-favoritos-historico:
+    dependencies:
+      '@nadameu/create-element':
+        specifier: workspace:^
+        version: link:../../lib/create-element
+      '@nadameu/predicates':
+        specifier: workspace:^
+        version: link:../../lib/predicates
+    devDependencies:
+      '@nadameu/enderecos-eproc':
+        specifier: workspace:^
+        version: link:../../lib/enderecos-eproc
+
   userscripts/gerenciar-entidades:
     dependencies:
       '@nadameu/create-element':

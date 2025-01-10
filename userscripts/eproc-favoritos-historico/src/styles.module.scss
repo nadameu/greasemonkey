@@ -1,0 +1,18 @@
+:global(.bootstrap-styles #divCapaProcesso) {
+  :global(.row) {
+    align-items: center;
+  }
+  .div {
+    a.link {
+      color: hsl(333, 75%, 25%);
+
+      &.added {
+        color: hsl(333, 75%, 35%);
+      }
+
+      .icon {
+        color: inherit;
+      }
+    }
+  }
+}
