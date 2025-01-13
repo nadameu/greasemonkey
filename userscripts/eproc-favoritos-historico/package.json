@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@nadameu/create-element": "workspace:^",
-    "@nadameu/predicates": "workspace:^"
+    "@nadameu/predicates": "workspace:^",
+    "idb": "^8.0.1"
   }
 }

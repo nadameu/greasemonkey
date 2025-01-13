@@ -4,14 +4,20 @@
   }
   .div {
     a.link {
-      color: hsl(333, 75%, 25%);
-
-      &.added {
-        color: hsl(333, 75%, 35%);
+      .icon {
+        color: hsl(333, 75%, 25%);
       }
 
-      .icon {
-        color: inherit;
+      &.added {
+        .icon {
+          color: hsl(333, 75%, 35%);
+        }
+      }
+
+      &.wait {
+        .icon {
+          color: hsl(333, 15%, 66%);
+        }
       }
     }
   }
