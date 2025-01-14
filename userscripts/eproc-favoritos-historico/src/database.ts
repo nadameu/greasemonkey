@@ -57,3 +57,18 @@ export async function remover_favorito(numproc: string) {
   const db = await abrir_db();
   await db.delete('favoritos', numproc);
 }
+
+export async function acrescentar_historico(
+  numproc: string,
+  timestamp: number
+) {
+  const db = await abrir_db();
+  const existente = await db.getKeyFromIndex('historico', 'numproc', numproc);
+  await db.put('historico', { numproc, timestamp }, existente);
+}
+
+export async function obter_historico() {
+  return abrir_db()
+    .then(db => db.getAll('historico'))
+    .then(xs => xs.sort((a, b) => b.timestamp - a.timestamp));
+}

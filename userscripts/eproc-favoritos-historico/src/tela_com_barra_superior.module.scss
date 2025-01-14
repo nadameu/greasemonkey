@@ -7,3 +7,21 @@
     }
   }
 }
+
+.historico,
+.favoritos {
+  width: 90%;
+  height: 90%;
+  border-radius: 7px;
+  box-shadow: 10px 20px 30px hsla(333, 15%, 15%, 0.5);
+
+  &::backdrop {
+    background-color: hsla(333, 15%, 15%, 0.8);
+  }
+}
+
+.historico {
+}
+
+.favoritos {
+}
