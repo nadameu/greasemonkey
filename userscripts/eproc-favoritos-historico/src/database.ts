@@ -72,3 +72,9 @@ export async function obter_historico() {
     .then(db => db.getAll('historico'))
     .then(xs => xs.sort((a, b) => b.timestamp - a.timestamp));
 }
+
+export async function obter_favoritos() {
+  return abrir_db()
+    .then(db => db.getAll('favoritos'))
+    .then(xs => xs.sort((a, b) => b.prioridade - a.prioridade));
+}

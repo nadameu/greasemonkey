@@ -81,9 +81,35 @@ export async function tela_com_barra_superior() {
       throw err;
     }
   });
-  icone_favoritos.addEventListener('click', evt => {
+  icone_favoritos.addEventListener('click', async evt => {
     evt.preventDefault();
-    dialogo_favoritos.showModal();
+    const df = dialogo_favoritos;
+    df.textContent = '';
+    df.showModal();
+    df.append(h('h1', {}, 'Favoritos'));
+    const dl = h('ul');
+    df.append(dl);
+    try {
+      for (const entry of await db.obter_favoritos()) {
+        const link = h(
+          'a',
+          {
+            href: '#',
+            onclick: evt => {
+              evt.preventDefault();
+              df.close();
+              abrir_processo(entry.numproc).catch(err => {
+                log_error(err);
+              });
+            },
+          },
+          entry.numproc
+        );
+        df.append(h('li', {}, link));
+      }
+    } catch (err) {
+      throw err;
+    }
   });
 
   async function abrir_processo(numproc: string) {
