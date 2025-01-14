@@ -74,7 +74,21 @@ export async function tela_com_barra_superior() {
           },
           entry.numproc
         );
-        dh.append(h('dt', {}, link));
+        const link_nova_aba = h(
+          'a',
+          {
+            href: '#',
+            onclick: evt => {
+              evt.preventDefault();
+              dh.close();
+              abrir_processo_nova_aba(entry.numproc).catch(err => {
+                log_error(err);
+              });
+            },
+          },
+          'Abrir em nova aba'
+        );
+        dh.append(h('dt', {}, link, link_nova_aba));
         dh.append(h('dd', {}, date.toLocaleString()));
       }
     } catch (err) {
@@ -113,8 +127,17 @@ export async function tela_com_barra_superior() {
   });
 
   async function abrir_processo(numproc: string) {
+    const valor_antigo = pesquisa_rapida.value;
     pesquisa_rapida.value = numproc;
     botao_mesma_aba.click();
+    pesquisa_rapida.value = valor_antigo;
+  }
+
+  async function abrir_processo_nova_aba(numproc: string) {
+    const valor_antigo = pesquisa_rapida.value;
+    pesquisa_rapida.value = numproc;
+    botao_nova_aba.click();
+    pesquisa_rapida.value = valor_antigo;
   }
 }
 
