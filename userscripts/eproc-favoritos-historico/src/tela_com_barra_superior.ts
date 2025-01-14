@@ -119,7 +119,21 @@ export async function tela_com_barra_superior() {
           },
           entry.numproc
         );
-        df.append(h('li', {}, link));
+        const link_nova_aba = h(
+          'a',
+          {
+            href: '#',
+            onclick: evt => {
+              evt.preventDefault();
+              df.close();
+              abrir_processo_nova_aba(entry.numproc).catch(err => {
+                log_error(err);
+              });
+            },
+          },
+          'Abrir em nova aba'
+        );
+        df.append(h('li', {}, link, link_nova_aba));
       }
     } catch (err) {
       throw err;
