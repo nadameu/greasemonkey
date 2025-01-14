@@ -1,11 +1,12 @@
+import { GM_info } from '$';
 import * as idb from 'idb';
-import * as pkg from '../package.json';
 
 interface My_Database extends idb.DBSchema {
   favoritos: {
     key: string;
     value: {
       numproc: string;
+      descricao: string;
       prioridade: number;
     };
     indexes: { prioridade: number };
@@ -17,9 +18,8 @@ interface My_Database extends idb.DBSchema {
   };
 }
 
-async function abrir_db() {
-  // DEBUG
-  return await idb.openDB<My_Database>(pkg.name, 1, {
+function abrir_db() {
+  return idb.openDB<My_Database>(GM_info.script.name, 1, {
     upgrade(db, oldVersion) {
       if (oldVersion < 1) {
         const favoritos = db.createObjectStore('favoritos', {
@@ -46,7 +46,11 @@ export async function verificar_favorito(numproc: string): Promise<boolean> {
 
 export async function salvar_favorito(numproc: string) {
   const db = await abrir_db();
-  await db.put('favoritos', { numproc, prioridade: 0 });
+  await db.put('favoritos', {
+    numproc,
+    descricao: '',
+    prioridade: 0,
+  });
 }
 
 export async function remover_favorito(numproc: string) {

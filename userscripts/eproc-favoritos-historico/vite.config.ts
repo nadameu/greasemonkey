@@ -15,7 +15,7 @@ export default defineConfig({
       userscript: {
         name: { 'pt-BR': pkg.gm_name },
         namespace: 'http://nadameu.com.br',
-        match: [...enderecosEproc(`acao=processo_selecionar&*`)],
+        match: [...enderecosEproc(`acao=*`)],
       },
     }),
   ],

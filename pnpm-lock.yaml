@@ -264,6 +264,9 @@ importers:
       '@nadameu/enderecos-eproc':
         specifier: workspace:^
         version: link:../../lib/enderecos-eproc
+      '@nadameu/handler':
+        specifier: workspace:^
+        version: link:../../lib/handler
 
   userscripts/gerenciar-entidades:
     dependencies:
