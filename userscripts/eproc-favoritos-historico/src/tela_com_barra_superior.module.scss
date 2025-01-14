@@ -1,0 +1,9 @@
+:global(.bootstrap-styles .navbar) {
+  .link {
+    :global(.navbar-icons).icon {
+      &:hover {
+        background-color: hsla(333, 100%, 75%, 0.5) !important;
+      }
+    }
+  }
+}

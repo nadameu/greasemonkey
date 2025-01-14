@@ -3,7 +3,7 @@ import * as P from '@nadameu/predicates';
 import { create_store } from './create_store';
 import * as db from './database';
 import { log_error } from './log_error';
-import classes from './styles.module.scss';
+import classes from './tela_processo.module.scss';
 
 type Status = 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'ERROR';
 
