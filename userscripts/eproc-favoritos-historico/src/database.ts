@@ -3,14 +3,14 @@ import { NumProc } from './NumProc';
 import { Prioridade } from './Prioridade';
 
 const DB_NAME = 'eproc-favoritos-historico';
-interface Item {
+export interface Item {
   /** Timestamp de quando foi adicionado como favorito */
   favorito: Favorito | undefined;
   /** Timestamp do último acesso */
   acesso: number;
 }
 
-interface Favorito {
+export interface Favorito {
   prioridade: Prioridade;
   motivo: string;
   timestamp: number;
