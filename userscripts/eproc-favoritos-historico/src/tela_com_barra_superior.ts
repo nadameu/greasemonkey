@@ -98,7 +98,7 @@ function criar_link_barra({
   return link;
 }
 
-function criar_dialogo({ classe, titulo }: { classe: string; titulo: string }) {
+function criar_dialogo(titulo: string) {
   const aviso = h(
     'div',
     { classList: [classes.aviso] },
@@ -107,7 +107,7 @@ function criar_dialogo({ classe, titulo }: { classe: string; titulo: string }) {
   const output = h('output');
   const dialogo = h(
     'dialog',
-    { classList: [classe] },
+    { classList: [classes.dialogo] },
     aviso,
     h('h1', {}, titulo),
     h(
@@ -133,10 +133,7 @@ function criar_dialogo({ classe, titulo }: { classe: string; titulo: string }) {
 function criar_dialogo_historico(
   abrir_processo: (numproc: NumProc, aba: 'MESMA_ABA' | 'NOVA_ABA') => void
 ) {
-  const { aviso, dialogo, output } = criar_dialogo({
-    classe: classes.historico,
-    titulo: 'Histórico de processos',
-  });
+  const { aviso, dialogo, output } = criar_dialogo('Histórico de processos');
   aviso.append(
     ...[
       'Aparecerão aqui apenas os processos acessados neste navegador e computador.',
@@ -173,10 +170,7 @@ function criar_dialogo_historico(
 function criar_dialogo_favoritos(
   abrir_processo: (numproc: NumProc, aba: 'MESMA_ABA' | 'NOVA_ABA') => void
 ) {
-  const { dialogo, aviso, output } = criar_dialogo({
-    classe: classes.favoritos,
-    titulo: 'Favoritos',
-  });
+  const { dialogo, aviso, output } = criar_dialogo('Favoritos');
   aviso.append(
     ...[
       'Os favoritos são salvos apenas neste navegador e computador.',

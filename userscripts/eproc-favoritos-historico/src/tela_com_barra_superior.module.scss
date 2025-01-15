@@ -2,6 +2,8 @@
   :global(.navbar) {
     .link {
       :global(.navbar-icons).icon {
+        color: hsl(333, 40%, 89%);
+
         &:hover {
           background-color: hsla(333, 100%, 75%, 0.5) !important;
         }
@@ -9,8 +11,7 @@
     }
   }
 
-  .historico,
-  .favoritos {
+  .dialogo {
     min-width: 35%;
     height: 90%;
     border-radius: 7px;
@@ -39,11 +40,5 @@
         margin-block: 0.5em;
       }
     }
-  }
-
-  .historico {
-  }
-
-  .favoritos {
   }
 }
