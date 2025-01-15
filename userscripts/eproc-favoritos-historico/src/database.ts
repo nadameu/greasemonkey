@@ -1,80 +1,107 @@
-import { GM_info } from '$';
-import * as idb from 'idb';
+import * as key_val from 'idb-keyval';
+import { Opaque } from '../../../lib/opaque';
 
-interface My_Database extends idb.DBSchema {
-  favoritos: {
-    key: string;
-    value: {
-      numproc: string;
-      descricao: string;
-      prioridade: number;
-    };
-    indexes: { prioridade: number };
-  };
-  historico: {
-    key: number;
-    value: { numproc: string; timestamp: number };
-    indexes: { numproc: string; timestamp: number };
-  };
+const DB_NAME = 'eproc-favoritos-historico';
+export type NumProc = Opaque<string, { NumProc: NumProc }>;
+export function isNumProc(x: string): x is NumProc {
+  return /^\d{20}$/.test(x);
 }
 
-function abrir_db() {
-  return idb.openDB<My_Database>(GM_info.script.name, 1, {
-    upgrade(db, oldVersion) {
-      if (oldVersion < 1) {
-        const favoritos = db.createObjectStore('favoritos', {
-          keyPath: 'numproc',
-        });
-        favoritos.createIndex('prioridade', 'prioridade', { unique: false });
+interface Item {
+  /** Timestamp de quando foi adicionado como favorito */
+  favorito: Favorito | undefined;
+  /** Timestamp do último acesso */
+  acesso: number;
+}
 
-        const historico = db.createObjectStore('historico', {
-          autoIncrement: true,
-        });
-        historico.createIndex('numproc', 'numproc', { unique: true });
-        historico.createIndex('timestamp', 'timestamp', { unique: false });
-      }
-    },
+export const Prioridade = { BAIXA: 1, MEDIA: 2, ALTA: 3 } as const;
+export type Prioridade = (typeof Prioridade)[keyof typeof Prioridade];
+
+interface Favorito {
+  prioridade: Prioridade;
+  motivo: string;
+  timestamp: number;
+}
+
+class Store {
+  private _store: key_val.UseStore;
+  private constructor() {
+    this._store = key_val.createStore(DB_NAME, 'itens');
+  }
+
+  get(numproc: NumProc) {
+    return key_val.get<Item>(numproc, this._store);
+  }
+
+  getAll() {
+    return key_val.entries<NumProc, Item>(this._store);
+  }
+
+  set(numproc: NumProc, item: Item) {
+    return key_val.set(numproc, item, this._store);
+  }
+
+  update(numproc: NumProc, update: (item: Item | undefined) => Item) {
+    return key_val.update(numproc, update, this._store);
+  }
+
+  static getInstance() {
+    return new Store();
+  }
+}
+
+export async function verificar_favorito(numproc: NumProc) {
+  const item = await Store.getInstance().get(numproc);
+  return item?.favorito;
+}
+
+export async function salvar_favorito({
+  motivo,
+  numproc,
+  prioridade,
+}: {
+  numproc: NumProc;
+  motivo: string;
+  prioridade: Prioridade;
+}) {
+  const timestamp = new Date().getTime();
+  await Store.getInstance().set(numproc, {
+    favorito: { motivo, prioridade, timestamp },
+    acesso: timestamp,
   });
 }
 
-export async function verificar_favorito(numproc: string): Promise<boolean> {
-  const db = await abrir_db();
-  const result = await db.getAll('favoritos', numproc);
-  if (result.length > 1) throw new Error('Mais de um resultado.');
-  return result.length === 1;
-}
-
-export async function salvar_favorito(numproc: string) {
-  const db = await abrir_db();
-  await db.put('favoritos', {
-    numproc,
-    descricao: '',
-    prioridade: 0,
+export async function remover_favorito(numproc: NumProc) {
+  await Store.getInstance().set(numproc, {
+    favorito: undefined,
+    acesso: new Date().getTime(),
   });
 }
 
-export async function remover_favorito(numproc: string) {
-  const db = await abrir_db();
-  await db.delete('favoritos', numproc);
-}
-
-export async function acrescentar_historico(
-  numproc: string,
-  timestamp: number
-) {
-  const db = await abrir_db();
-  const existente = await db.getKeyFromIndex('historico', 'numproc', numproc);
-  await db.put('historico', { numproc, timestamp }, existente);
+export async function acrescentar_historico(numproc: NumProc) {
+  await Store.getInstance().update(numproc, dados => {
+    const { favorito } = dados ?? {};
+    return { favorito, acesso: new Date().getTime() };
+  });
 }
 
 export async function obter_historico() {
-  return abrir_db()
-    .then(db => db.getAll('historico'))
-    .then(xs => xs.sort((a, b) => b.timestamp - a.timestamp));
+  return (await Store.getInstance().getAll())
+    .map(([numproc, item]) => ({
+      numproc,
+      ...item,
+    }))
+    .sort((a, b) => b.acesso - a.acesso);
 }
 
 export async function obter_favoritos() {
-  return abrir_db()
-    .then(db => db.getAll('favoritos'))
-    .then(xs => xs.sort((a, b) => b.prioridade - a.prioridade));
+  return (await Store.getInstance().getAll())
+    .flatMap(([numproc, { favorito }]) => {
+      if (favorito === undefined) return [];
+      return { numproc, ...favorito };
+    })
+    .sort((a, b) => {
+      if (a.prioridade !== b.prioridade) return b.prioridade - a.prioridade;
+      return b.timestamp - a.timestamp;
+    });
 }

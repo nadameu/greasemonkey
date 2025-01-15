@@ -7,8 +7,11 @@ export async function main() {
   const url = new URL(document.location.href);
   if (url.searchParams.get('acao') === 'processo_selecionar') {
     const numproc = url.searchParams.get('num_processo');
-    P.assert(P.isNotNull(numproc), 'Erro ao obter o número do processo.');
-    await db.acrescentar_historico(numproc, new Date().getTime());
+    P.assert(
+      P.isNotNull(numproc) && db.isNumProc(numproc),
+      'Erro ao obter o número do processo.'
+    );
+    await db.acrescentar_historico(numproc);
     await tela_processo();
   }
 

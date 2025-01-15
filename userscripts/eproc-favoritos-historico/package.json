@@ -19,6 +19,8 @@
   "dependencies": {
     "@nadameu/create-element": "workspace:^",
     "@nadameu/predicates": "workspace:^",
-    "idb": "^8.0.1"
+    "@nadameu/resolvable": "workspace:^",
+    "idb": "^8.0.1",
+    "idb-keyval": "^6.2.1"
   }
 }

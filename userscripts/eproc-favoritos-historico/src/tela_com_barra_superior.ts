@@ -1,6 +1,7 @@
 import { h } from '@nadameu/create-element';
 import * as P from '@nadameu/predicates';
 import * as db from './database';
+import { formatar_numproc } from './formatar_numproc';
 import { log_error } from './log_error';
 import { query_first } from './query_first';
 import classes from './tela_com_barra_superior.module.scss';
@@ -14,13 +15,13 @@ export async function tela_com_barra_superior() {
   const link_casa = icones_casa[0]!.closest('a[href]');
   P.assert(P.isNotNull(link_casa), 'Erro ao definir localização dos ícones.');
 
-  const pesquisa_rapida = query_first<HTMLInputElement>(
+  const pesquisa_rapida = await query_first<HTMLInputElement>(
     'input[id="txtNumProcessoPesquisaRapida"]'
   );
-  const botao_mesma_aba = query_first<HTMLButtonElement>(
+  const botao_mesma_aba = await query_first<HTMLButtonElement>(
     'button[name="btnPesquisaRapidaSubmit"]'
   );
-  const botao_nova_aba = query_first<HTMLButtonElement>(
+  const botao_nova_aba = await query_first<HTMLButtonElement>(
     'button[name="btnPesquisaRapidaSubmitNovaAba"]'
   );
 
@@ -55,43 +56,89 @@ export async function tela_com_barra_superior() {
     dh.textContent = '';
     dh.showModal();
     dh.append(h('h1', {}, 'Histórico de processos'));
-    const dl = h('dl');
-    dh.append(dl);
     try {
-      for (const entry of await db.obter_historico()) {
-        const date = new Date(entry.timestamp);
-        const link = h(
-          'a',
-          {
-            href: '#',
-            onclick: evt => {
-              evt.preventDefault();
-              dh.close();
-              abrir_processo(entry.numproc).catch(err => {
-                log_error(err);
-              });
-            },
-          },
-          entry.numproc
-        );
-        const link_nova_aba = h(
-          'a',
-          {
-            href: '#',
-            onclick: evt => {
-              evt.preventDefault();
-              dh.close();
-              abrir_processo_nova_aba(entry.numproc).catch(err => {
-                log_error(err);
-              });
-            },
-          },
-          'Abrir em nova aba'
-        );
-        dh.append(h('dt', {}, link, link_nova_aba));
-        dh.append(h('dd', {}, date.toLocaleString()));
-      }
+      dh.append(
+        h(
+          'table',
+          {},
+          h(
+            'thead',
+            {},
+            ...['Favorito?', 'Processo', 'Último acesso'].map(texto =>
+              h('th', {}, texto)
+            )
+          ),
+          h(
+            'tbody',
+            {},
+            ...(await db.obter_historico()).map(
+              ({ numproc, favorito, acesso }) =>
+                h(
+                  'tr',
+                  {},
+                  h(
+                    'td',
+                    {},
+                    favorito === undefined
+                      ? ''
+                      : h(
+                          'i',
+                          {
+                            classList: ['material-icons'],
+                            title: favorito.motivo,
+                          },
+                          'star'
+                        )
+                  ),
+                  h(
+                    'td',
+                    {},
+                    h(
+                      'a',
+                      {
+                        href: '#',
+                        onclick: evt => {
+                          evt.preventDefault();
+                          dh.close();
+                          abrir_processo(numproc).catch(err => {
+                            log_error(err);
+                          });
+                        },
+                      },
+                      formatar_numproc(numproc)
+                    ),
+                    h(
+                      'a',
+                      {
+                        href: '#',
+                        onclick: evt => {
+                          evt.preventDefault();
+                          dh.close();
+                          abrir_processo_nova_aba(numproc).catch(err => {
+                            log_error(err);
+                          });
+                        },
+                      },
+                      ' ',
+                      h(
+                        'i',
+                        {
+                          classList: ['material-icons'],
+                          title: 'Abrir em nova aba',
+                        },
+                        'open_in_new'
+                      )
+                    )
+                  ),
+                  h('td', {}, new Date(acesso).toLocaleString('pt-BR'))
+                )
+            )
+          )
+        )
+      );
     } catch (err) {
+      if (err instanceof Error) log_error(err);
+      else log_error(new Error(JSON.stringify(err)));
       throw err;
     }
   });
@@ -101,41 +148,88 @@ export async function tela_com_barra_superior() {
     df.textContent = '';
     df.showModal();
     df.append(h('h1', {}, 'Favoritos'));
-    const dl = h('ul');
-    df.append(dl);
     try {
-      for (const entry of await db.obter_favoritos()) {
-        const link = h(
-          'a',
-          {
-            href: '#',
-            onclick: evt => {
-              evt.preventDefault();
-              df.close();
-              abrir_processo(entry.numproc).catch(err => {
-                log_error(err);
-              });
-            },
-          },
-          entry.numproc
-        );
-        const link_nova_aba = h(
-          'a',
-          {
-            href: '#',
-            onclick: evt => {
-              evt.preventDefault();
-              df.close();
-              abrir_processo_nova_aba(entry.numproc).catch(err => {
-                log_error(err);
-              });
-            },
-          },
-          'Abrir em nova aba'
-        );
-        df.append(h('li', {}, link, link_nova_aba));
-      }
+      df.append(
+        h(
+          'table',
+          {},
+          h(
+            'thead',
+            {},
+            h(
+              'tr',
+              {},
+              ...['Prioridade', 'Processo', 'Motivo'].map(texto =>
+                h('th', {}, texto)
+              )
+            )
+          ),
+          h(
+            'tbody',
+            {},
+            ...(await db.obter_favoritos()).map(
+              ({ numproc, motivo, prioridade }) =>
+                h(
+                  'tr',
+                  {},
+
+                  h(
+                    'td',
+                    {},
+                    {
+                      [db.Prioridade.ALTA]: 'Alta',
+                      [db.Prioridade.MEDIA]: 'Média',
+                      [db.Prioridade.BAIXA]: 'Baixa',
+                    }[prioridade]
+                  ),
+                  h(
+                    'td',
+                    {},
+                    h(
+                      'a',
+                      {
+                        href: '#',
+                        onclick: evt => {
+                          evt.preventDefault();
+                          df.close();
+                          abrir_processo(numproc).catch(err => {
+                            log_error(err);
+                          });
+                        },
+                      },
+                      formatar_numproc(numproc)
+                    ),
+                    h(
+                      'a',
+                      {
+                        href: '#',
+                        onclick: evt => {
+                          evt.preventDefault();
+                          df.close();
+                          abrir_processo_nova_aba(numproc).catch(err => {
+                            log_error(err);
+                          });
+                        },
+                      },
+                      h(
+                        'i',
+                        {
+                          classList: ['material-icons'],
+                          title: 'Abrir em nova aba',
+                        },
+                        'open_in_new'
+                      )
+                    )
+                  ),
+                  h('td', {}, motivo)
+                )
+            )
+          )
+        )
+      );
     } catch (err) {
+      if (err instanceof Error) log_error(err);
+      else log_error(new Error(JSON.stringify(err)));
       throw err;
     }
   });

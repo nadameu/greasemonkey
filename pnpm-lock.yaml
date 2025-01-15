@@ -257,9 +257,15 @@ importers:
       '@nadameu/predicates':
         specifier: workspace:^
         version: link:../../lib/predicates
+      '@nadameu/resolvable':
+        specifier: workspace:^
+        version: link:../../lib/resolvable
       idb:
         specifier: ^8.0.1
         version: 8.0.1
+      idb-keyval:
+        specifier: ^6.2.1
+        version: 6.2.1
     devDependencies:
       '@nadameu/enderecos-eproc':
         specifier: workspace:^
@@ -2227,6 +2233,9 @@ packages:
   iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
     engines: {node: '>=0.10.0'}
+
+  idb-keyval@6.2.1:
+    resolution: {integrity: sha512-8Sb3veuYCyrZL+VBt9LJfZjLUPWVvqn8tG28VqYNFCo43KHcKuq+b4EiXGeuaLAQWL2YmyDgMp2aSpH9JHsEQg==}
 
   idb@8.0.1:
     resolution: {integrity: sha512-EkBCzUZSdhJV8PxMSbeEV//xguVKZu9hZZulM+2gHXI0t2hGVU3eYE6/XnH77DS6FM2FY8wl17aDcu9vXpvLWQ==}
@@ -5128,6 +5137,8 @@ snapshots:
   iconv-lite@0.6.3:
     dependencies:
       safer-buffer: 2.1.2
+
+  idb-keyval@6.2.1: {}
 
   idb@8.0.1: {}
 
