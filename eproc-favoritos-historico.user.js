@@ -2,7 +2,7 @@
 // @name         eproc-favoritos-historico
 // @name:pt-BR   eproc - favoritos e histórico
 // @namespace    http://nadameu.com.br
-// @version      1.0.0
+// @version      1.1.0
 // @author       nadameu
 // @description  Permite definir processos favoritos e visualizar o histórico de processos acessados
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=*
@@ -21,7 +21,7 @@
   const _ = document.createElement('style');
   (_.textContent = o), document.head.append(_);
 })(
-  ' .bootstrap-styles .navbar ._link_123p5_1 .navbar-icons._icon_123p5_1:hover{background-color:#ff80b980!important}._historico_123p5_5,._favoritos_123p5_6{width:90%;height:90%;border-radius:7px;box-shadow:10px 20px 30px #2c212680}._historico_123p5_5::backdrop,._favoritos_123p5_6::backdrop{background-color:#2c2126cc}.bootstrap-styles #divCapaProcesso .row{align-items:center}.bootstrap-styles #divCapaProcesso ._div_17q4m_4 a._link_17q4m_4 ._icon_17q4m_4{color:#70103b}.bootstrap-styles #divCapaProcesso ._div_17q4m_4 a._link_17q4m_4._added_17q4m_7 ._icon_17q4m_4{color:#9c1653}.bootstrap-styles #divCapaProcesso ._div_17q4m_4 a._link_17q4m_4._wait_17q4m_10 ._icon_17q4m_4{color:#674c58} '
+  ' .bootstrap-styles .navbar ._link_o5pf7_1 .navbar-icons._icon_o5pf7_1{color:#eed8e2}.bootstrap-styles .navbar ._link_o5pf7_1 .navbar-icons._icon_o5pf7_1:hover{background-color:#ff80b980!important}.bootstrap-styles ._dialogo_o5pf7_7{min-width:35%;height:90%;border-radius:7px;box-shadow:10px 20px 30px #2c212680}.bootstrap-styles ._dialogo_o5pf7_7::backdrop{background-color:#2c2126cc}.bootstrap-styles ._dialogo_o5pf7_7 h1{text-align:center}.bootstrap-styles ._dialogo_o5pf7_7 ._barra_o5pf7_19{text-align:right}.bootstrap-styles ._dialogo_o5pf7_7 ._aviso_o5pf7_22{background:#fdd;border:1px solid #caa;font-size:90%;margin-block:1em;padding-inline:2ex}.bootstrap-styles ._dialogo_o5pf7_7 ._aviso_o5pf7_22 p{margin-block:.5em}.bootstrap-styles #divCapaProcesso .row{align-items:center}.bootstrap-styles #divCapaProcesso ._div_17q4m_4 a._link_17q4m_4 ._icon_17q4m_4{color:#70103b}.bootstrap-styles #divCapaProcesso ._div_17q4m_4 a._link_17q4m_4._added_17q4m_7 ._icon_17q4m_4{color:#9c1653}.bootstrap-styles #divCapaProcesso ._div_17q4m_4 a._link_17q4m_4._wait_17q4m_10 ._icon_17q4m_4{color:#674c58} '
 );
 
 (function () {
@@ -143,10 +143,6 @@
     });
   }
   const DB_NAME = 'eproc-favoritos-historico';
-  function isNumProc(x) {
-    return /^\d{20}$/.test(x);
-  }
-  const Prioridade = { BAIXA: 1, MEDIA: 2, ALTA: 3 };
   class Store {
     _store;
     constructor() {
@@ -210,6 +206,9 @@
         return b.timestamp - a.timestamp;
       });
   }
+  function isNumProc(x) {
+    return /^\d{20}$/.test(x);
+  }
   function h(tag, props = null, ...children) {
     const element = document.createElement(tag);
     for (const [key, value] of Object.entries(props ?? {})) {
@@ -241,28 +240,25 @@
     let index = 0;
     return '#######-##.####.#.##.####'.replace(/#/g, () => numproc[index++]);
   }
-  function query_first(selector, parentNode = document) {
-    let element = void 0;
-    return {
-      then(f, g) {
-        if (element === void 0) element = parentNode.querySelector(selector);
-        if (element === null)
-          return g(
-            new Error(`Não foi possível obter elemento: \`${selector}\`.`)
-          );
-        return f(element);
-      },
-    };
+  const Prioridade = { BAIXA: 1, MEDIA: 2, ALTA: 3 };
+  async function query_first(selector, parentNode = document) {
+    const element = parentNode.querySelector(selector);
+    if (element === null) {
+      throw new Error(`Não foi possível obter elemento: \`${selector}\`.`);
+    }
+    return element;
   }
-  const link$1 = '_link_123p5_1';
-  const icon$1 = '_icon_123p5_1';
-  const historico = '_historico_123p5_5';
-  const favoritos = '_favoritos_123p5_6';
+  const link$1 = '_link_o5pf7_1';
+  const icon$1 = '_icon_o5pf7_1';
+  const dialogo = '_dialogo_o5pf7_7';
+  const barra = '_barra_o5pf7_19';
+  const aviso = '_aviso_o5pf7_22';
   const classes$1 = {
     link: link$1,
     icon: icon$1,
-    historico,
-    favoritos,
+    dialogo,
+    barra,
+    aviso,
   };
   async function tela_com_barra_superior() {
     const icones_casa = Array.from(
@@ -281,243 +277,223 @@
     const botao_nova_aba = await query_first(
       'button[name="btnPesquisaRapidaSubmitNovaAba"]'
     );
-    const icone_ultimo = criar_icone({
-      symbol: 'refresh',
-      title: 'Reabrir último processo',
-    });
-    const icone_historico = criar_icone({
+    const abrir_processo = (numproc, aba) => {
+      const valor_antigo = pesquisa_rapida.value;
+      pesquisa_rapida.value = numproc;
+      if (aba === 'MESMA_ABA') botao_mesma_aba.click();
+      else botao_nova_aba.click();
+      pesquisa_rapida.value = valor_antigo;
+    };
+    const link_historico = criar_link_barra({
       symbol: 'history',
       title: 'Histórico de processos',
     });
-    const icone_favoritos = criar_icone({
+    const link_favoritos = criar_link_barra({
       symbol: 'bookmark_border',
       title: 'Favoritos',
     });
     const div2 = h(
       'div',
       { classList: ['px-2'] },
-      icone_ultimo,
-      icone_historico,
-      icone_favoritos
+      link_historico,
+      link_favoritos
     );
     link_casa.parentNode.insertBefore(div2, link_casa);
-    const dialogo_historico = h('dialog', { classList: [classes$1.historico] });
-    const dialogo_favoritos = h('dialog', { classList: [classes$1.favoritos] });
-    document.body.append(dialogo_historico, dialogo_favoritos);
-    icone_historico.addEventListener('click', async evt => {
+    const dialogo_historico = criar_dialogo_historico(abrir_processo);
+    const dialogo_favoritos = criar_dialogo_favoritos(abrir_processo);
+    document.body.append(dialogo_historico.dialogo, dialogo_favoritos.dialogo);
+    const criar_handler_abertura =
+      ({ dialogo: dialogo2, update: update2 }, obter_dados) =>
+      evt => {
+        evt.preventDefault();
+        update2([]);
+        dialogo2.showModal();
+        obter_dados()
+          .then(update2)
+          .catch(err => {
+            log_error(err);
+            window.alert('Não foi possível obter os dados.');
+            dialogo2.close();
+          });
+      };
+    link_historico.addEventListener(
+      'click',
+      criar_handler_abertura(dialogo_historico, obter_historico)
+    );
+    link_favoritos.addEventListener(
+      'click',
+      criar_handler_abertura(dialogo_favoritos, obter_favoritos)
+    );
+  }
+  function criar_link_barra({ symbol, title }) {
+    const icone = criar_icone_material(symbol, title);
+    icone.classList.add(classes$1.icon, 'navbar-icons');
+    icone.style.padding = '0';
+    const link2 = h('a', { classList: [classes$1.link], href: '#' }, icone);
+    return link2;
+  }
+  function criar_dialogo(titulo) {
+    const aviso2 = h(
+      'div',
+      { classList: [classes$1.aviso] },
+      h('p', { style: { textAlign: 'center' } }, h('strong', {}, 'ATENÇÃO'))
+    );
+    const output = h('output');
+    const dialogo2 = h(
+      'dialog',
+      { classList: [classes$1.dialogo] },
+      aviso2,
+      h('h1', {}, titulo),
+      h(
+        'div',
+        { classList: [classes$1.barra] },
+        h('button', { type: 'button', onclick }, 'Fechar')
+      ),
+      output,
+      h(
+        'div',
+        { classList: [classes$1.barra] },
+        h('button', { type: 'button', onclick }, 'Fechar')
+      )
+    );
+    return { dialogo: dialogo2, aviso: aviso2, output };
+    function onclick(evt) {
       evt.preventDefault();
-      const dh = dialogo_historico;
-      dh.textContent = '';
-      dh.showModal();
-      dh.append(h('h1', {}, 'Histórico de processos'));
-      try {
-        dh.append(
-          h(
-            'table',
-            {},
-            h(
-              'thead',
-              {},
-              ...['Favorito?', 'Processo', 'Último acesso'].map(texto =>
-                h('th', {}, texto)
-              )
-            ),
-            h(
-              'tbody',
-              {},
-              ...(await obter_historico()).map(
-                ({ numproc, favorito, acesso }) =>
-                  h(
-                    'tr',
-                    {},
-                    h(
-                      'td',
-                      {},
-                      favorito === void 0
-                        ? ''
-                        : h(
-                            'i',
-                            {
-                              classList: ['material-icons'],
-                              title: favorito.motivo,
-                            },
-                            'star'
-                          )
-                    ),
-                    h(
-                      'td',
-                      {},
-                      h(
-                        'a',
-                        {
-                          href: '#',
-                          onclick: evt2 => {
-                            evt2.preventDefault();
-                            dh.close();
-                            abrir_processo(numproc).catch(err => {
-                              log_error(err);
-                            });
-                          },
-                        },
-                        formatar_numproc(numproc)
-                      ),
-                      h(
-                        'a',
-                        {
-                          href: '#',
-                          onclick: evt2 => {
-                            evt2.preventDefault();
-                            dh.close();
-                            abrir_processo_nova_aba(numproc).catch(err => {
-                              log_error(err);
-                            });
-                          },
-                        },
-                        ' ',
-                        h(
-                          'i',
-                          {
-                            classList: ['material-icons'],
-                            title: 'Abrir em nova aba',
-                          },
-                          'open_in_new'
-                        )
-                      )
-                    ),
-                    h('td', {}, new Date(acesso).toLocaleString('pt-BR'))
-                  )
-              )
-            )
-          )
-        );
-      } catch (err) {
-        if (err instanceof Error) log_error(err);
-        else log_error(new Error(JSON.stringify(err)));
-        throw err;
-      }
-    });
-    icone_favoritos.addEventListener('click', async evt => {
-      evt.preventDefault();
-      const df = dialogo_favoritos;
-      df.textContent = '';
-      df.showModal();
-      df.append(h('h1', {}, 'Favoritos'));
-      try {
-        df.append(
-          h(
-            'table',
-            {},
-            h(
-              'thead',
-              {},
-              h(
-                'tr',
-                {},
-                ...['Prioridade', 'Processo', 'Motivo'].map(texto =>
-                  h('th', {}, texto)
-                )
-              )
-            ),
-            h(
-              'tbody',
-              {},
-              ...(await obter_favoritos()).map(
-                ({ numproc, motivo, prioridade }) =>
-                  h(
-                    'tr',
-                    {},
-                    h(
-                      'td',
-                      {},
-                      {
-                        [Prioridade.ALTA]: 'Alta',
-                        [Prioridade.MEDIA]: 'Média',
-                        [Prioridade.BAIXA]: 'Baixa',
-                      }[prioridade]
-                    ),
-                    h(
-                      'td',
-                      {},
-                      h(
-                        'a',
-                        {
-                          href: '#',
-                          onclick: evt2 => {
-                            evt2.preventDefault();
-                            df.close();
-                            abrir_processo(numproc).catch(err => {
-                              log_error(err);
-                            });
-                          },
-                        },
-                        formatar_numproc(numproc)
-                      ),
-                      h(
-                        'a',
-                        {
-                          href: '#',
-                          onclick: evt2 => {
-                            evt2.preventDefault();
-                            df.close();
-                            abrir_processo_nova_aba(numproc).catch(err => {
-                              log_error(err);
-                            });
-                          },
-                        },
-                        h(
-                          'i',
-                          {
-                            classList: ['material-icons'],
-                            title: 'Abrir em nova aba',
-                          },
-                          'open_in_new'
-                        )
-                      )
-                    ),
-                    h('td', {}, motivo)
-                  )
-              )
-            )
-          )
-        );
-      } catch (err) {
-        if (err instanceof Error) log_error(err);
-        else log_error(new Error(JSON.stringify(err)));
-        throw err;
-      }
-    });
-    async function abrir_processo(numproc) {
-      const valor_antigo = pesquisa_rapida.value;
-      pesquisa_rapida.value = numproc;
-      botao_mesma_aba.click();
-      pesquisa_rapida.value = valor_antigo;
-    }
-    async function abrir_processo_nova_aba(numproc) {
-      const valor_antigo = pesquisa_rapida.value;
-      pesquisa_rapida.value = numproc;
-      botao_nova_aba.click();
-      pesquisa_rapida.value = valor_antigo;
+      dialogo2.close();
     }
   }
-  function criar_icone({ symbol, title }) {
-    const icone = h(
-      'i',
-      {
-        classList: [classes$1.icon, 'material-icons', 'navbar-icons'],
-        style: { padding: '0' },
-        title,
-      },
-      symbol
+  function criar_dialogo_historico(abrir_processo) {
+    const {
+      aviso: aviso2,
+      dialogo: dialogo2,
+      output,
+    } = criar_dialogo('Histórico de processos');
+    aviso2.append(
+      ...[
+        'Aparecerão aqui apenas os processos acessados neste navegador e computador.',
+        'Usuários com perfil de Diretor de Secretaria conseguem obter a relação completa de processos acessados.',
+      ].map(x => h('p', {}, x))
     );
-    const link2 = h(
-      'a',
-      {
-        classList: [classes$1.link],
-        href: '#',
+    const criar_links_numproc = criar_links_dialogo(dialogo2, abrir_processo);
+    return {
+      dialogo: dialogo2,
+      update(dados) {
+        if (dados.length === 0) {
+          output.textContent = 'Não há dados relativos a processos acessados.';
+          return;
+        }
+        output.textContent = '';
+        output.append(
+          criar_tabela(
+            ['Favorito?', 'Processo', 'Último acesso'],
+            dados.map(({ numproc, favorito, acesso }) => {
+              const c0 =
+                favorito === void 0
+                  ? ''
+                  : criar_icone_material('star', favorito.motivo);
+              const c1 = criar_links_numproc(numproc);
+              const c2 = new Date(acesso).toLocaleString('pt-BR');
+              return [c0, c1, c2];
+            })
+          )
+        );
       },
-      icone
+    };
+  }
+  function criar_dialogo_favoritos(abrir_processo) {
+    const {
+      dialogo: dialogo2,
+      aviso: aviso2,
+      output,
+    } = criar_dialogo('Favoritos');
+    aviso2.append(
+      ...[
+        'Os favoritos são salvos apenas neste navegador e computador.',
+        'Cabe ao navegador determinar por quanto tempo estes dados serão mantidos e quando precisam ser excluídos.',
+        'Para evitar perda de dados, adicione processos importantes a um localizador destinado a este fim.',
+      ].map(x => h('p', {}, x))
     );
-    return link2;
+    const criar_links_numproc = criar_links_dialogo(dialogo2, abrir_processo);
+    return {
+      dialogo: dialogo2,
+      update(dados) {
+        if (dados.length === 0) {
+          output.textContent = 'Não há favoritos cadastrados.';
+          return;
+        }
+        output.textContent = '';
+        output.append(
+          criar_tabela(
+            ['Prioridade', 'Processo', 'Motivo'],
+            dados.map(({ numproc, motivo, prioridade }) => {
+              const c0 = {
+                [Prioridade.ALTA]: 'Alta',
+                [Prioridade.MEDIA]: 'Média',
+                [Prioridade.BAIXA]: 'Baixa',
+              }[prioridade];
+              const c1 = criar_links_numproc(numproc);
+              const c2 = motivo;
+              return [c0, c1, c2];
+            })
+          )
+        );
+      },
+    };
+  }
+  function criar_icone_material(symbol, title) {
+    return h('i', { classList: ['material-icons'], title }, symbol);
+  }
+  function criar_tabela(cabecalhos, linhas) {
+    return h(
+      'table',
+      {},
+      h(
+        'thead',
+        {},
+        h('tr', {}, ...cabecalhos.map(child => h('th', {}, child)))
+      ),
+      h(
+        'tbody',
+        {},
+        ...linhas.map(celulas =>
+          h('tr', {}, ...celulas.map(conteudo => h('td', {}, conteudo)))
+        )
+      )
+    );
+  }
+  function criar_links_dialogo(dialogo2, abrir_processo) {
+    return numproc => {
+      const criar_onclick = aba => evt => {
+        evt.preventDefault();
+        if (aba === 'MESMA_ABA') dialogo2.close();
+        try {
+          abrir_processo(numproc, aba);
+        } catch (err) {
+          log_error(err);
+          window.alert('Não foi possível abrir o processo selecionado.');
+        }
+      };
+      const link_mesma = h(
+        'a',
+        { href: '#', onclick: criar_onclick('MESMA_ABA') },
+        formatar_numproc(numproc)
+      );
+      const link_nova = h(
+        'a',
+        { href: '#', onclick: criar_onclick('NOVA_ABA') },
+        h(
+          'i',
+          {
+            classList: ['material-icons'],
+            title: 'Abrir em nova aba',
+          },
+          'open_in_new'
+        )
+      );
+      const frag = document.createDocumentFragment();
+      frag.append(link_mesma, ' ', link_nova);
+      return frag;
+    };
   }
   function create_store(initialState) {
     let state = initialState;
@@ -602,8 +578,8 @@
         }
       } catch (err) {
         status.set('ERROR');
-        if (err instanceof Error) log_error(err);
-        else log_error(new Error(JSON.stringify(err)));
+        log_error(err);
+        throw err;
       }
     });
   }
