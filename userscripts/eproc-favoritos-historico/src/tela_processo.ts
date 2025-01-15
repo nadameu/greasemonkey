@@ -64,8 +64,8 @@ export async function tela_processo() {
       }
     } catch (err) {
       status.set('ERROR');
-      if (err instanceof Error) log_error(err);
-      else log_error(new Error(JSON.stringify(err)));
+      log_error(err);
+      throw err;
     }
   });
 }
