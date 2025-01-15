@@ -1,5 +1,6 @@
 import * as P from '@nadameu/predicates';
 import * as db from './database';
+import { isNumProc } from './NumProc';
 import { tela_com_barra_superior } from './tela_com_barra_superior';
 import { tela_processo } from './tela_processo';
 
@@ -8,7 +9,7 @@ export async function main() {
   if (url.searchParams.get('acao') === 'processo_selecionar') {
     const numproc = url.searchParams.get('num_processo');
     P.assert(
-      P.isNotNull(numproc) && db.isNumProc(numproc),
+      P.isNotNull(numproc) && isNumProc(numproc),
       'Erro ao obter o número do processo.'
     );
     await db.acrescentar_historico(numproc);

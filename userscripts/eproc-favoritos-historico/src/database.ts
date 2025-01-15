@@ -1,21 +1,14 @@
 import * as key_val from 'idb-keyval';
-import { Opaque } from '../../../lib/opaque';
+import { NumProc } from './NumProc';
+import { Prioridade } from './Prioridade';
 
 const DB_NAME = 'eproc-favoritos-historico';
-export type NumProc = Opaque<string, { NumProc: NumProc }>;
-export function isNumProc(x: string): x is NumProc {
-  return /^\d{20}$/.test(x);
-}
-
 interface Item {
   /** Timestamp de quando foi adicionado como favorito */
   favorito: Favorito | undefined;
   /** Timestamp do último acesso */
   acesso: number;
 }
-
-export const Prioridade = { BAIXA: 1, MEDIA: 2, ALTA: 3 } as const;
-export type Prioridade = (typeof Prioridade)[keyof typeof Prioridade];
 
 interface Favorito {
   prioridade: Prioridade;

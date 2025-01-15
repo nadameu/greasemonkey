@@ -3,6 +3,8 @@ import * as P from '@nadameu/predicates';
 import { create_store } from './create_store';
 import * as db from './database';
 import { log_error } from './log_error';
+import { isNumProc } from './NumProc';
+import { Prioridade } from './Prioridade';
 import classes from './tela_processo.module.scss';
 
 type Status =
@@ -23,7 +25,7 @@ export async function tela_processo() {
     'Erro ao obter o número do processo.'
   );
   const numero = P.check(
-    db.isNumProc,
+    isNumProc,
     numero_formatado.replace(/[.-]/g, ''),
     'Erro ao obter número do processo'
   );
@@ -56,7 +58,7 @@ export async function tela_processo() {
         status.set('PENDING');
         // TODO
         const motivo = '';
-        const prioridade = db.Prioridade.MEDIA;
+        const prioridade = Prioridade.MEDIA;
         await db.salvar_favorito({ numproc: numero, motivo, prioridade });
         status.set({ status: 'ACTIVE', motivo });
       }

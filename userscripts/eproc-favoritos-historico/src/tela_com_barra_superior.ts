@@ -3,6 +3,7 @@ import * as P from '@nadameu/predicates';
 import * as db from './database';
 import { formatar_numproc } from './formatar_numproc';
 import { log_error } from './log_error';
+import { Prioridade } from './Prioridade';
 import { query_first } from './query_first';
 import classes from './tela_com_barra_superior.module.scss';
 
@@ -177,9 +178,9 @@ export async function tela_com_barra_superior() {
                     'td',
                     {},
                     {
-                      [db.Prioridade.ALTA]: 'Alta',
-                      [db.Prioridade.MEDIA]: 'Média',
-                      [db.Prioridade.BAIXA]: 'Baixa',
+                      [Prioridade.ALTA]: 'Alta',
+                      [Prioridade.MEDIA]: 'Média',
+                      [Prioridade.BAIXA]: 'Baixa',
                     }[prioridade]
                   ),
                   h(

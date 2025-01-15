@@ -254,15 +254,12 @@ importers:
       '@nadameu/create-element':
         specifier: workspace:^
         version: link:../../lib/create-element
+      '@nadameu/opaque':
+        specifier: workspace:^
+        version: link:../../lib/opaque
       '@nadameu/predicates':
         specifier: workspace:^
         version: link:../../lib/predicates
-      '@nadameu/resolvable':
-        specifier: workspace:^
-        version: link:../../lib/resolvable
-      idb:
-        specifier: ^8.0.1
-        version: 8.0.1
       idb-keyval:
         specifier: ^6.2.1
         version: 6.2.1
@@ -2236,9 +2233,6 @@ packages:
 
   idb-keyval@6.2.1:
     resolution: {integrity: sha512-8Sb3veuYCyrZL+VBt9LJfZjLUPWVvqn8tG28VqYNFCo43KHcKuq+b4EiXGeuaLAQWL2YmyDgMp2aSpH9JHsEQg==}
-
-  idb@8.0.1:
-    resolution: {integrity: sha512-EkBCzUZSdhJV8PxMSbeEV//xguVKZu9hZZulM+2gHXI0t2hGVU3eYE6/XnH77DS6FM2FY8wl17aDcu9vXpvLWQ==}
 
   immutable@4.3.7:
     resolution: {integrity: sha512-1hqclzwYwjRDFLjcFxOM5AYkkG0rpFPpr1RLPMEuGczoS7YA8gLhy8SWXYRAA/XwfEHpfo3cw5JGioS32fnMRw==}
@@ -5139,8 +5133,6 @@ snapshots:
       safer-buffer: 2.1.2
 
   idb-keyval@6.2.1: {}
-
-  idb@8.0.1: {}
 
   immutable@4.3.7: {}
 
