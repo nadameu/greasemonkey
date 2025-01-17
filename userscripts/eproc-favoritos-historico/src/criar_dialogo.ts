@@ -7,24 +7,26 @@ export function criar_dialogo(titulo: string, classes: CSSModuleClasses) {
     h('p', { style: { textAlign: 'center' } }, h('strong', {}, 'ATENÇÃO'))
   );
   const output = h('output');
+  const barra_topo = h(
+    'div',
+    { classList: [classes.barra] },
+    h('button', { type: 'button' }, 'Fechar')
+  );
+  const barra_rodape = barra_topo.cloneNode(true) as HTMLDivElement;
+  const barras = [barra_topo, barra_rodape];
+  barras.forEach(barra => {
+    barra.querySelector('button')!.onclick = onclick;
+  });
   const dialogo = h(
     'dialog',
     { classList: [classes.dialogo] },
     aviso,
     h('h1', {}, titulo),
-    h(
-      'div',
-      { classList: [classes.barra] },
-      h('button', { type: 'button', onclick }, 'Fechar')
-    ),
+    barra_topo,
     output,
-    h(
-      'div',
-      { classList: [classes.barra] },
-      h('button', { type: 'button', onclick }, 'Fechar')
-    )
+    barra_rodape
   );
-  return { dialogo, aviso, output };
+  return { dialogo, aviso, output, barras };
 
   function onclick(evt: Event) {
     evt.preventDefault();
