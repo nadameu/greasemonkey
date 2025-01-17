@@ -1,4 +1,28 @@
 :global(.bootstrap-styles) {
+  :global(#divCapaProcesso) {
+    :global(.row) {
+      align-items: center;
+    }
+
+    .div {
+      a.link {
+        --cor: hsl(333, 75%, 25%);
+
+        &.added {
+          --cor: hsl(333, 75%, 35%);
+        }
+
+        &.wait {
+          --cor: hsl(332, 15%, 35%);
+        }
+
+        .icon {
+          color: var(--cor);
+        }
+      }
+    }
+  }
+
   :global(.navbar) {
     .link {
       :global(.navbar-icons).icon {

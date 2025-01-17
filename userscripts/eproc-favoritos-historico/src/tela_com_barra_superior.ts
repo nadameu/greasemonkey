@@ -1,12 +1,16 @@
 import { h } from '@nadameu/create-element';
 import * as P from '@nadameu/predicates';
+import { criar_dialogo } from './criar_dialogo';
+import { criar_icone_material } from './criar_icone_material';
+import { criar_tabela } from './criar_tabela';
 import * as db from './database';
+import classes from './estilos.module.scss';
 import { formatar_numproc } from './formatar_numproc';
 import { log_error } from './log_error';
+import { mensagem_aviso_favoritos } from './mensagem_aviso_favoritos';
 import { NumProc } from './NumProc';
 import { Prioridade } from './Prioridade';
 import { query_first } from './query_first';
-import classes from './tela_com_barra_superior.module.scss';
 
 export async function tela_com_barra_superior() {
   const icones_casa = Array.from(
@@ -98,42 +102,13 @@ function criar_link_barra({
   return link;
 }
 
-function criar_dialogo(titulo: string) {
-  const aviso = h(
-    'div',
-    { classList: [classes.aviso] },
-    h('p', { style: { textAlign: 'center' } }, h('strong', {}, 'ATENÇÃO'))
-  );
-  const output = h('output');
-  const dialogo = h(
-    'dialog',
-    { classList: [classes.dialogo] },
-    aviso,
-    h('h1', {}, titulo),
-    h(
-      'div',
-      { classList: [classes.barra] },
-      h('button', { type: 'button', onclick }, 'Fechar')
-    ),
-    output,
-    h(
-      'div',
-      { classList: [classes.barra] },
-      h('button', { type: 'button', onclick }, 'Fechar')
-    )
-  );
-  return { dialogo, aviso, output };
-
-  function onclick(evt: Event) {
-    evt.preventDefault();
-    dialogo.close();
-  }
-}
-
 function criar_dialogo_historico(
   abrir_processo: (numproc: NumProc, aba: 'MESMA_ABA' | 'NOVA_ABA') => void
 ) {
-  const { aviso, dialogo, output } = criar_dialogo('Histórico de processos');
+  const { aviso, dialogo, output } = criar_dialogo(
+    'Histórico de processos',
+    classes
+  );
   aviso.append(
     ...[
       'Aparecerão aqui apenas os processos acessados neste navegador e computador.',
@@ -170,14 +145,8 @@ function criar_dialogo_historico(
 function criar_dialogo_favoritos(
   abrir_processo: (numproc: NumProc, aba: 'MESMA_ABA' | 'NOVA_ABA') => void
 ) {
-  const { dialogo, aviso, output } = criar_dialogo('Favoritos');
-  aviso.append(
-    ...[
-      'Os favoritos são salvos apenas neste navegador e computador.',
-      'Cabe ao navegador determinar por quanto tempo estes dados serão mantidos e quando precisam ser excluídos.',
-      'Para evitar perda de dados, adicione processos importantes a um localizador destinado a este fim.',
-    ].map(x => h('p', {}, x))
-  );
+  const { dialogo, aviso, output } = criar_dialogo('Favoritos', classes);
+  aviso.append(...mensagem_aviso_favoritos.map(x => h('p', {}, x)));
   const criar_links_numproc = criar_links_dialogo(dialogo, abrir_processo);
   return {
     dialogo,
@@ -204,28 +173,6 @@ function criar_dialogo_favoritos(
       );
     },
   };
-}
-
-function criar_icone_material(symbol: string, title?: string) {
-  return h('i', { classList: ['material-icons'], title }, symbol);
-}
-
-function criar_tabela(
-  cabecalhos: Array<Node | string>,
-  linhas: Array<Array<Node | string>>
-) {
-  return h(
-    'table',
-    {},
-    h('thead', {}, h('tr', {}, ...cabecalhos.map(child => h('th', {}, child)))),
-    h(
-      'tbody',
-      {},
-      ...linhas.map(celulas =>
-        h('tr', {}, ...celulas.map(conteudo => h('td', {}, conteudo)))
-      )
-    )
-  );
 }
 
 function criar_links_dialogo(

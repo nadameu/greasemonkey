@@ -5,6 +5,7 @@ import * as db from './database';
 import { log_error } from './log_error';
 import { isNumProc } from './NumProc';
 import { Prioridade } from './Prioridade';
+import classes from './estilos.module.scss';
 import classes from './tela_processo.module.scss';
 
 type Status =
@@ -46,7 +47,7 @@ export async function tela_processo() {
 
   const estrela = render_estrela(elemento_numero);
   status.subscribe(estrela.update);
-  estrela.eventTarget.addEventListener('click', async () => {
+  estrela.link.addEventListener('click', async () => {
     const current = status.get();
     if (current === 'ERROR' || current === 'PENDING') return;
     try {
@@ -73,16 +74,11 @@ export async function tela_processo() {
 function render_estrela(elemento_numero: HTMLElement) {
   const parent = elemento_numero.parentNode!;
   const icon = h('i', { classList: ['material-icons', classes.icon] });
-  const eventTarget = new EventTarget();
   const link = h(
     'a',
     {
       classList: [classes.link, classes.wait, 'col-auto', 'px-1'],
       href: '#',
-      onclick: evt => {
-        evt.preventDefault();
-        eventTarget.dispatchEvent(new Event('click'));
-      },
     },
     icon
   );
@@ -106,7 +102,7 @@ function render_estrela(elemento_numero: HTMLElement) {
   };
 
   return {
-    eventTarget,
+    link,
     update: (status: Status) => {
       const { symbol, title } =
         typeof status === 'string' ? info[status] : info[status.status];
