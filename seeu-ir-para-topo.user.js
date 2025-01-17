@@ -2,7 +2,7 @@
 // @name         seeu-ir-para-topo
 // @name:pt-BR   SEEU - Ir para o topo
 // @namespace    nadameu.com.br
-// @version      1.2.1
+// @version      1.2.2
 // @author       nadameu
 // @description  Acrescenta botão para facilitar ir para o início da página
 // @match        https://seeu.pje.jus.br/*
@@ -48,8 +48,10 @@ function main() {
   });
   document.body.insertAdjacentElement('beforeend', button);
   GM_addStyle(/* css */ `
-#container {
-  margin-bottom: 70px;
+#container::after {
+  content: '';
+  display: block;
+  height: 70px;
 }
 #gm-${GM_info.script.name} {
   --cor-fundo: hsl(333, 50%, 97%);
