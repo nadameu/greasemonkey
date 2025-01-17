@@ -4,16 +4,17 @@ import { create_store } from './create_store';
 import { criar_dialogo } from './criar_dialogo';
 import * as db from './database';
 import classes from './estilos.module.scss';
+import { formatar_numproc } from './formatar_numproc';
 import { log_error } from './log_error';
 import { mensagem_aviso_favoritos } from './mensagem_aviso_favoritos';
 import { isNumProc } from './NumProc';
 import { Prioridade } from './Prioridade';
 
 type Status =
-  | 'PENDING'
+  | { status: 'PENDING' }
   | { status: 'ACTIVE'; motivo: string }
-  | 'INACTIVE'
-  | 'ERROR';
+  | { status: 'INACTIVE' }
+  | { status: 'ERROR' };
 
 export async function tela_processo() {
   const elemento_numero = document.getElementById('txtNumProcesso');
@@ -32,70 +33,108 @@ export async function tela_processo() {
     'Erro ao obter número do processo'
   );
 
-  const status = create_store<Status>('PENDING');
+  const estado = create_store<Status>({ status: 'PENDING' });
 
   try {
     const resultado = await db.verificar_favorito(numero);
-    status.set(
+    estado.set(
       resultado !== undefined
         ? { status: 'ACTIVE', motivo: resultado.motivo }
-        : 'INACTIVE'
+        : { status: 'INACTIVE' }
     );
   } catch (err) {
-    status.set('ERROR');
+    estado.set({ status: 'ERROR' });
     throw err;
   }
 
-  const { dialogo, aviso, output, barras } = criar_dialogo(
-    'Adicionar aos favoritos',
+  const { dialogo, aviso, barras, output, titulo } = criar_dialogo(
+    'TITULO_DIALOGO',
     classes
   );
   aviso.append(...mensagem_aviso_favoritos.map(x => h('p', {}, x)));
-  const salvar_e_fechar = async (evt: Event) => {
+  const salvar_e_fechar = (evt: Event) => {
     evt.preventDefault();
-    try {
+    (async () => {
       const motivo = input.value;
-      const prioridade = (valor => {
-        if (Object.values(Prioridade).includes(valor as any)) {
-          return valor as Prioridade;
-        } else {
-          throw new Error(`Prioridade desconhecida: ${valor}`);
-        }
-      })(Number(select.value));
+      const valor_prioridade = Number(select.value);
+      const prioridade = P.check(
+        (p: number): p is Prioridade =>
+          Object.values(Prioridade).includes(p as any),
+        Number(select.value),
+        `Prioridade desconhecida: ${valor_prioridade}`
+      );
       await db.salvar_favorito({ numproc: numero, motivo, prioridade });
-      status.set({ status: 'ACTIVE', motivo });
+      estado.set({ status: 'ACTIVE', motivo });
       dialogo.close();
-    } catch (err) {
-      status.set('ERROR');
+    })().catch(err => {
+      estado.set({ status: 'ERROR' });
       log_error(err);
-      throw err;
-    }
+      window.alert('Erro ao salvar favorito.');
+    });
   };
-  const fechar_sem_salvar = async (evt: Event) => {
+  const fechar_sem_salvar = (evt: Event) => {
     evt.preventDefault();
-    try {
+    (async () => {
       dialogo.close();
       const favorito = await db.verificar_favorito(numero);
       if (favorito !== undefined) {
-        status.set({ status: 'ACTIVE', motivo: favorito.motivo });
+        estado.set({ status: 'ACTIVE', motivo: favorito.motivo });
       } else {
-        status.set('INACTIVE');
+        estado.set({ status: 'INACTIVE' });
       }
-    } catch (err) {
-      status.set('ERROR');
+    })().catch(err => {
+      estado.set({ status: 'ERROR' });
       log_error(err);
-      throw err;
-    }
+    });
   };
-  barras.forEach(barra => {
+  const remover_clicado = (evt: Event) => {
+    evt.preventDefault();
+    (async () => {
+      const resposta = window.confirm(
+        `Remover processo ${formatar_numproc(numero)} dos favoritos?`
+      );
+      if (resposta === true) {
+        await db.remover_favorito(numero);
+        dialogo.close();
+        estado.set({ status: 'INACTIVE' });
+      }
+    })().catch(err => {
+      estado.set({ status: 'ERROR' });
+      log_error(err);
+      window.alert('Erro ao remover dos favoritos.');
+    });
+  };
+  const remover = barras.map(barra => {
     const fechar = barra.firstChild as HTMLButtonElement;
     fechar.onclick = fechar_sem_salvar;
-    barra.insertBefore(document.createTextNode(' '), barra.firstChild);
-    barra.insertBefore(
-      h('button', { type: 'button', onclick: salvar_e_fechar }, 'Salvar'),
-      barra.firstChild
+    const frag = document.createDocumentFragment();
+    const remover = h(
+      'span',
+      {},
+      h('button', { type: 'button', onclick: remover_clicado }, 'Remover'),
+      ' '
     );
+    frag.append(
+      h('button', { type: 'button', onclick: salvar_e_fechar }, 'Salvar'),
+      ' ',
+      remover
+    );
+    barra.insertBefore(frag, barra.firstChild);
+    return remover;
   });
+  const update_dialogo = (atual: db.Favorito | undefined) => {
+    if (atual === undefined) {
+      titulo.textContent = 'Adicionar aos favoritos';
+      input.value = '';
+      select.value = Prioridade.MEDIA.toString();
+      remover.forEach(r => (r.hidden = true));
+    } else {
+      titulo.textContent = 'Alterar dados do favorito';
+      input.value = atual.motivo;
+      select.value = atual.prioridade.toString();
+      remover.forEach(r => (r.hidden = false));
+    }
+  };
 
   document.body.append(dialogo);
   const textoPrioridades = {
@@ -107,7 +146,7 @@ export async function tela_processo() {
     'select',
     {},
     ...Object.values(Prioridade)
-      .sort((x, y) => x - y)
+      .sort((x, y) => y - x)
       .map(valor =>
         h('option', { value: valor.toString() }, textoPrioridades[valor])
       )
@@ -120,28 +159,29 @@ export async function tela_processo() {
   );
 
   const estrela = render_estrela(elemento_numero);
-  status.subscribe(estrela.update);
-  estrela.link.addEventListener('click', async evt => {
+  estado.subscribe(estrela.update);
+  estrela.link.addEventListener('click', evt => {
     evt.preventDefault();
 
-    const current = status.get();
-    if (current === 'ERROR' || current === 'PENDING') return;
-    try {
-      if (typeof current === 'object' && current.status === 'ACTIVE') {
-        status.set('PENDING');
-        await db.remover_favorito(numero);
-        status.set('INACTIVE');
+    const current = estado.get();
+    if (current.status === 'ERROR' || current.status === 'PENDING') return;
+    (async () => {
+      estado.set({ status: 'PENDING' });
+      const dados = await db.verificar_favorito(numero);
+      if (current.status === 'ACTIVE' && dados === undefined) {
+        estado.set({ status: 'INACTIVE' });
+        window.alert(
+          'Dados não encontrados. Possivelmente desativado em outra aba.'
+        );
       } else {
-        status.set('PENDING');
+        update_dialogo(dados);
         dialogo.showModal();
-        input.value = '';
-        select.value = Prioridade.MEDIA.toString();
       }
-    } catch (err) {
-      status.set('ERROR');
+    })().catch(err => {
+      estado.set({ status: 'ERROR' });
       log_error(err);
-      throw err;
-    }
+      window.alert('Erro ao realizar a operação.');
+    });
   });
 }
 
@@ -177,28 +217,25 @@ function render_estrela(elemento_numero: HTMLElement) {
 
   return {
     link,
-    update: (status: Status) => {
-      const { symbol, title } =
-        typeof status === 'string' ? info[status] : info[status.status];
+    update: (estado: Status) => {
+      const { symbol, title } = info[estado.status];
       icon.textContent = symbol;
-      if (typeof status === 'string') {
-        link.title = title;
-      } else if (typeof status === 'object' && status.status === 'ACTIVE') {
-        link.title = status.motivo.trim() || title;
-      } else {
-        throw new Error('Status desconhecido.');
-      }
 
-      if (status === 'PENDING') {
+      if (estado.status === 'ACTIVE') {
+        link.classList.add(classes.added);
+        link.classList.remove(classes.wait);
+      } else if (estado.status === 'PENDING') {
+        link.classList.remove(classes.added);
         link.classList.add(classes.wait);
       } else {
+        link.classList.remove(classes.added);
         link.classList.remove(classes.wait);
       }
 
-      if (typeof status === 'object' && status.status === 'ACTIVE') {
-        link.classList.add(classes.added);
+      if (estado.status === 'ACTIVE') {
+        link.title = estado.motivo.trim() || title;
       } else {
-        link.classList.remove(classes.added);
+        link.title = title;
       }
     },
   };

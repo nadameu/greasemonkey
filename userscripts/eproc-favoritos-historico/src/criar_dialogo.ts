@@ -14,19 +14,21 @@ export function criar_dialogo(titulo: string, classes: CSSModuleClasses) {
   );
   const barra_rodape = barra_topo.cloneNode(true) as HTMLDivElement;
   const barras = [barra_topo, barra_rodape];
-  barras.forEach(barra => {
-    barra.querySelector('button')!.onclick = onclick;
+  const botoes = barras.map(b => b.querySelector('button')!);
+  botoes.forEach(botao => {
+    botao.onclick = onclick;
   });
+  const h1 = h('h1', {}, titulo);
   const dialogo = h(
     'dialog',
     { classList: [classes.dialogo] },
     aviso,
-    h('h1', {}, titulo),
+    h1,
     barra_topo,
     output,
     barra_rodape
   );
-  return { dialogo, aviso, output, barras };
+  return { dialogo, aviso, barras, botoes, output, titulo: h1 };
 
   function onclick(evt: Event) {
     evt.preventDefault();
