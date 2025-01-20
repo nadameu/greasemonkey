@@ -2,7 +2,7 @@
 // @name         eproc-favoritos-historico
 // @name:pt-BR   eproc - favoritos e histórico
 // @namespace    http://nadameu.com.br
-// @version      1.1.0
+// @version      1.2.0
 // @author       nadameu
 // @description  Permite definir processos favoritos e visualizar o histórico de processos acessados
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=*
@@ -21,7 +21,7 @@
   const _ = document.createElement('style');
   (_.textContent = o), document.head.append(_);
 })(
-  ' .bootstrap-styles .navbar ._link_o5pf7_1 .navbar-icons._icon_o5pf7_1{color:#eed8e2}.bootstrap-styles .navbar ._link_o5pf7_1 .navbar-icons._icon_o5pf7_1:hover{background-color:#ff80b980!important}.bootstrap-styles ._dialogo_o5pf7_7{min-width:35%;height:90%;border-radius:7px;box-shadow:10px 20px 30px #2c212680}.bootstrap-styles ._dialogo_o5pf7_7::backdrop{background-color:#2c2126cc}.bootstrap-styles ._dialogo_o5pf7_7 h1{text-align:center}.bootstrap-styles ._dialogo_o5pf7_7 ._barra_o5pf7_19{text-align:right}.bootstrap-styles ._dialogo_o5pf7_7 ._aviso_o5pf7_22{background:#fdd;border:1px solid #caa;font-size:90%;margin-block:1em;padding-inline:2ex}.bootstrap-styles ._dialogo_o5pf7_7 ._aviso_o5pf7_22 p{margin-block:.5em}.bootstrap-styles #divCapaProcesso .row{align-items:center}.bootstrap-styles #divCapaProcesso ._div_17q4m_4 a._link_17q4m_4 ._icon_17q4m_4{color:#70103b}.bootstrap-styles #divCapaProcesso ._div_17q4m_4 a._link_17q4m_4._added_17q4m_7 ._icon_17q4m_4{color:#9c1653}.bootstrap-styles #divCapaProcesso ._div_17q4m_4 a._link_17q4m_4._wait_17q4m_10 ._icon_17q4m_4{color:#674c58} '
+  ' .bootstrap-styles #divCapaProcesso .row{align-items:center}.bootstrap-styles #divCapaProcesso ._div_g5qzc_4 a._link_g5qzc_4{--cor: hsl(333, 75%, 25%)}.bootstrap-styles #divCapaProcesso ._div_g5qzc_4 a._link_g5qzc_4._added_g5qzc_7{--cor: hsl(333, 75%, 35%)}.bootstrap-styles #divCapaProcesso ._div_g5qzc_4 a._link_g5qzc_4._wait_g5qzc_10{--cor: hsl(332, 15%, 35%)}.bootstrap-styles #divCapaProcesso ._div_g5qzc_4 a._link_g5qzc_4 ._icon_g5qzc_13{color:var(--cor)}.bootstrap-styles .navbar ._link_g5qzc_4 .navbar-icons._icon_g5qzc_13{color:#eed8e2}.bootstrap-styles .navbar ._link_g5qzc_4 .navbar-icons._icon_g5qzc_13:hover{background-color:#ff80b980!important}.bootstrap-styles ._dialogo_g5qzc_22{min-width:35%;height:90%;border-radius:7px;box-shadow:10px 20px 30px #2c212680}.bootstrap-styles ._dialogo_g5qzc_22::backdrop{background-color:#2c2126cc}.bootstrap-styles ._dialogo_g5qzc_22 h1{text-align:center}.bootstrap-styles ._dialogo_g5qzc_22 ._barra_g5qzc_34{text-align:right}.bootstrap-styles ._dialogo_g5qzc_22 ._aviso_g5qzc_37{background:#fdd;border:1px solid #caa;font-size:90%;margin-block:1em;padding-inline:2ex}.bootstrap-styles ._dialogo_g5qzc_22 ._aviso_g5qzc_37 p{margin-block:.5em} '
 );
 
 (function () {
@@ -236,10 +236,95 @@
     element.append(...children);
     return element;
   }
+  function criar_dialogo(titulo, classes2) {
+    const aviso2 = h(
+      'div',
+      { classList: [classes2.aviso] },
+      h('p', { style: { textAlign: 'center' } }, h('strong', {}, 'ATENÇÃO'))
+    );
+    const output = h('output');
+    const barra_topo = h(
+      'div',
+      { classList: [classes2.barra] },
+      h('button', { type: 'button' }, 'Fechar')
+    );
+    const barra_rodape = barra_topo.cloneNode(true);
+    const barras = [barra_topo, barra_rodape];
+    const botoes = barras.map(b => b.querySelector('button'));
+    botoes.forEach(botao => {
+      botao.onclick = onclick;
+    });
+    const h1 = h('h1', {}, titulo);
+    const dialogo2 = h(
+      'dialog',
+      { classList: [classes2.dialogo] },
+      aviso2,
+      h1,
+      barra_topo,
+      output,
+      barra_rodape
+    );
+    return {
+      dialogo: dialogo2,
+      aviso: aviso2,
+      barras,
+      botoes,
+      output,
+      titulo: h1,
+    };
+    function onclick(evt) {
+      evt.preventDefault();
+      dialogo2.close();
+    }
+  }
+  function criar_icone_material(symbol, title) {
+    return h('i', { classList: ['material-icons'], title }, symbol);
+  }
+  function criar_tabela(cabecalhos, linhas) {
+    return h(
+      'table',
+      {},
+      h(
+        'thead',
+        {},
+        h('tr', {}, ...cabecalhos.map(child => h('th', {}, child)))
+      ),
+      h(
+        'tbody',
+        {},
+        ...linhas.map(celulas =>
+          h('tr', {}, ...celulas.map(conteudo => h('td', {}, conteudo)))
+        )
+      )
+    );
+  }
+  const div = '_div_g5qzc_4';
+  const link = '_link_g5qzc_4';
+  const added = '_added_g5qzc_7';
+  const wait = '_wait_g5qzc_10';
+  const icon = '_icon_g5qzc_13';
+  const dialogo = '_dialogo_g5qzc_22';
+  const barra = '_barra_g5qzc_34';
+  const aviso = '_aviso_g5qzc_37';
+  const classes = {
+    div,
+    link,
+    added,
+    wait,
+    icon,
+    dialogo,
+    barra,
+    aviso,
+  };
   function formatar_numproc(numproc) {
     let index = 0;
     return '#######-##.####.#.##.####'.replace(/#/g, () => numproc[index++]);
   }
+  const mensagem_aviso_favoritos = [
+    'Os favoritos são salvos apenas neste navegador e computador.',
+    'Cabe ao navegador determinar por quanto tempo estes dados serão mantidos e quando precisam ser excluídos.',
+    'Para evitar perda de dados, adicione processos importantes a um localizador destinado a este fim.',
+  ];
   const Prioridade = { BAIXA: 1, MEDIA: 2, ALTA: 3 };
   async function query_first(selector, parentNode = document) {
     const element = parentNode.querySelector(selector);
@@ -248,18 +333,6 @@
     }
     return element;
   }
-  const link$1 = '_link_o5pf7_1';
-  const icon$1 = '_icon_o5pf7_1';
-  const dialogo = '_dialogo_o5pf7_7';
-  const barra = '_barra_o5pf7_19';
-  const aviso = '_aviso_o5pf7_22';
-  const classes$1 = {
-    link: link$1,
-    icon: icon$1,
-    dialogo,
-    barra,
-    aviso,
-  };
   async function tela_com_barra_superior() {
     const icones_casa = Array.from(
       document.querySelectorAll('#navbar i.navbar-icons')
@@ -327,47 +400,17 @@
   }
   function criar_link_barra({ symbol, title }) {
     const icone = criar_icone_material(symbol, title);
-    icone.classList.add(classes$1.icon, 'navbar-icons');
+    icone.classList.add(classes.icon, 'navbar-icons');
     icone.style.padding = '0';
-    const link2 = h('a', { classList: [classes$1.link], href: '#' }, icone);
+    const link2 = h('a', { classList: [classes.link], href: '#' }, icone);
     return link2;
-  }
-  function criar_dialogo(titulo) {
-    const aviso2 = h(
-      'div',
-      { classList: [classes$1.aviso] },
-      h('p', { style: { textAlign: 'center' } }, h('strong', {}, 'ATENÇÃO'))
-    );
-    const output = h('output');
-    const dialogo2 = h(
-      'dialog',
-      { classList: [classes$1.dialogo] },
-      aviso2,
-      h('h1', {}, titulo),
-      h(
-        'div',
-        { classList: [classes$1.barra] },
-        h('button', { type: 'button', onclick }, 'Fechar')
-      ),
-      output,
-      h(
-        'div',
-        { classList: [classes$1.barra] },
-        h('button', { type: 'button', onclick }, 'Fechar')
-      )
-    );
-    return { dialogo: dialogo2, aviso: aviso2, output };
-    function onclick(evt) {
-      evt.preventDefault();
-      dialogo2.close();
-    }
   }
   function criar_dialogo_historico(abrir_processo) {
     const {
       aviso: aviso2,
       dialogo: dialogo2,
       output,
-    } = criar_dialogo('Histórico de processos');
+    } = criar_dialogo('Histórico de processos', classes);
     aviso2.append(
       ...[
         'Aparecerão aqui apenas os processos acessados neste navegador e computador.',
@@ -405,14 +448,8 @@
       dialogo: dialogo2,
       aviso: aviso2,
       output,
-    } = criar_dialogo('Favoritos');
-    aviso2.append(
-      ...[
-        'Os favoritos são salvos apenas neste navegador e computador.',
-        'Cabe ao navegador determinar por quanto tempo estes dados serão mantidos e quando precisam ser excluídos.',
-        'Para evitar perda de dados, adicione processos importantes a um localizador destinado a este fim.',
-      ].map(x => h('p', {}, x))
-    );
+    } = criar_dialogo('Favoritos', classes);
+    aviso2.append(...mensagem_aviso_favoritos.map(x => h('p', {}, x)));
     const criar_links_numproc = criar_links_dialogo(dialogo2, abrir_processo);
     return {
       dialogo: dialogo2,
@@ -439,27 +476,6 @@
         );
       },
     };
-  }
-  function criar_icone_material(symbol, title) {
-    return h('i', { classList: ['material-icons'], title }, symbol);
-  }
-  function criar_tabela(cabecalhos, linhas) {
-    return h(
-      'table',
-      {},
-      h(
-        'thead',
-        {},
-        h('tr', {}, ...cabecalhos.map(child => h('th', {}, child)))
-      ),
-      h(
-        'tbody',
-        {},
-        ...linhas.map(celulas =>
-          h('tr', {}, ...celulas.map(conteudo => h('td', {}, conteudo)))
-        )
-      )
-    );
   }
   function criar_links_dialogo(dialogo2, abrir_processo) {
     return numproc => {
@@ -519,18 +535,6 @@
       },
     };
   }
-  const div = '_div_17q4m_4';
-  const link = '_link_17q4m_4';
-  const icon = '_icon_17q4m_4';
-  const added = '_added_17q4m_7';
-  const wait = '_wait_17q4m_10';
-  const classes = {
-    div,
-    link,
-    icon,
-    added,
-    wait,
-  };
   async function tela_processo() {
     const elemento_numero = document.getElementById('txtNumProcesso');
     assert(
@@ -547,55 +551,162 @@
       numero_formatado.replace(/[.-]/g, ''),
       'Erro ao obter número do processo'
     );
-    const status = create_store('PENDING');
+    const estado = create_store({ status: 'PENDING' });
     try {
       const resultado = await verificar_favorito(numero);
-      status.set(
+      estado.set(
         resultado !== void 0
           ? { status: 'ACTIVE', motivo: resultado.motivo }
-          : 'INACTIVE'
+          : { status: 'INACTIVE' }
       );
     } catch (err) {
-      status.set('ERROR');
+      estado.set({ status: 'ERROR' });
       throw err;
     }
-    const estrela = render_estrela(elemento_numero);
-    status.subscribe(estrela.update);
-    estrela.eventTarget.addEventListener('click', async () => {
-      const current = status.get();
-      if (current === 'ERROR' || current === 'PENDING') return;
-      try {
-        if (typeof current === 'object' && current.status === 'ACTIVE') {
-          status.set('PENDING');
-          await remover_favorito(numero);
-          status.set('INACTIVE');
-        } else {
-          status.set('PENDING');
-          const motivo = '';
-          const prioridade = Prioridade.MEDIA;
-          await salvar_favorito({ numproc: numero, motivo, prioridade });
-          status.set({ status: 'ACTIVE', motivo });
-        }
-      } catch (err) {
-        status.set('ERROR');
+    const {
+      dialogo: dialogo2,
+      aviso: aviso2,
+      barras,
+      output,
+      titulo,
+    } = criar_dialogo('TITULO_DIALOGO', classes);
+    aviso2.append(...mensagem_aviso_favoritos.map(x => h('p', {}, x)));
+    const salvar_e_fechar = evt => {
+      evt.preventDefault();
+      (async () => {
+        const motivo = input.value;
+        const valor_prioridade = Number(select.value);
+        const prioridade = check(
+          p => Object.values(Prioridade).includes(p),
+          Number(select.value),
+          `Prioridade desconhecida: ${valor_prioridade}`
+        );
+        await salvar_favorito({ numproc: numero, motivo, prioridade });
+        estado.set({ status: 'ACTIVE', motivo });
+        dialogo2.close();
+      })().catch(err => {
+        estado.set({ status: 'ERROR' });
         log_error(err);
-        throw err;
+        window.alert('Erro ao salvar favorito.');
+      });
+    };
+    const fechar_sem_salvar = evt => {
+      evt.preventDefault();
+      (async () => {
+        dialogo2.close();
+        const favorito = await verificar_favorito(numero);
+        if (favorito !== void 0) {
+          estado.set({ status: 'ACTIVE', motivo: favorito.motivo });
+        } else {
+          estado.set({ status: 'INACTIVE' });
+        }
+      })().catch(err => {
+        estado.set({ status: 'ERROR' });
+        log_error(err);
+      });
+    };
+    const remover_clicado = evt => {
+      evt.preventDefault();
+      (async () => {
+        const resposta = window.confirm(
+          `Remover processo ${formatar_numproc(numero)} dos favoritos?`
+        );
+        if (resposta === true) {
+          await remover_favorito(numero);
+          dialogo2.close();
+          estado.set({ status: 'INACTIVE' });
+        }
+      })().catch(err => {
+        estado.set({ status: 'ERROR' });
+        log_error(err);
+        window.alert('Erro ao remover dos favoritos.');
+      });
+    };
+    const remover = barras.map(barra2 => {
+      const fechar = barra2.firstChild;
+      fechar.onclick = fechar_sem_salvar;
+      const frag = document.createDocumentFragment();
+      const remover2 = h(
+        'span',
+        {},
+        h('button', { type: 'button', onclick: remover_clicado }, 'Remover'),
+        ' '
+      );
+      frag.append(
+        h('button', { type: 'button', onclick: salvar_e_fechar }, 'Salvar'),
+        ' ',
+        remover2
+      );
+      barra2.insertBefore(frag, barra2.firstChild);
+      return remover2;
+    });
+    const update_dialogo = atual => {
+      if (atual === void 0) {
+        titulo.textContent = 'Adicionar aos favoritos';
+        input.value = '';
+        select.value = Prioridade.MEDIA.toString();
+        remover.forEach(r => (r.hidden = true));
+      } else {
+        titulo.textContent = 'Alterar dados do favorito';
+        input.value = atual.motivo;
+        select.value = atual.prioridade.toString();
+        remover.forEach(r => (r.hidden = false));
       }
+    };
+    document.body.append(dialogo2);
+    const textoPrioridades = {
+      [Prioridade.BAIXA]: 'Baixa',
+      [Prioridade.MEDIA]: 'Média',
+      [Prioridade.ALTA]: 'Alta',
+    };
+    const select = h(
+      'select',
+      {},
+      ...Object.values(Prioridade)
+        .sort((x, y) => y - x)
+        .map(valor =>
+          h('option', { value: valor.toString() }, textoPrioridades[valor])
+        )
+    );
+    const input = h('input', { autofocus: true, size: 50 });
+    output.append(
+      h('label', {}, 'Motivo: ', input),
+      h('br'),
+      h('label', {}, 'Prioridade: ', select)
+    );
+    const estrela = render_estrela(elemento_numero);
+    estado.subscribe(estrela.update);
+    estrela.link.addEventListener('click', evt => {
+      evt.preventDefault();
+      const current = estado.get();
+      if (current.status === 'ERROR' || current.status === 'PENDING') return;
+      (async () => {
+        estado.set({ status: 'PENDING' });
+        const dados = await verificar_favorito(numero);
+        if (current.status === 'ACTIVE' && dados === void 0) {
+          estado.set({ status: 'INACTIVE' });
+          window.alert(
+            'Dados não encontrados. Possivelmente desativado em outra aba.'
+          );
+        } else {
+          update_dialogo(dados);
+          dialogo2.showModal();
+        }
+      })().catch(err => {
+        estado.set({ status: 'ERROR' });
+        log_error(err);
+        window.alert('Erro ao realizar a operação.');
+      });
     });
   }
   function render_estrela(elemento_numero) {
     const parent = elemento_numero.parentNode;
     const icon2 = h('i', { classList: ['material-icons', classes.icon] });
-    const eventTarget = new EventTarget();
     const link2 = h(
       'a',
       {
         classList: [classes.link, classes.wait, 'col-auto', 'px-1'],
         href: '#',
-        onclick: evt => {
-          evt.preventDefault();
-          eventTarget.dispatchEvent(new Event('click'));
-        },
       },
       icon2
     );
@@ -614,27 +725,24 @@
       ERROR: { symbol: 'error_outline', title: 'Erro ao carregar dados' },
     };
     return {
-      eventTarget,
-      update: status => {
-        const { symbol, title } =
-          typeof status === 'string' ? info[status] : info[status.status];
+      link: link2,
+      update: estado => {
+        const { symbol, title } = info[estado.status];
         icon2.textContent = symbol;
-        if (typeof status === 'string') {
-          link2.title = title;
-        } else if (typeof status === 'object' && status.status === 'ACTIVE') {
-          link2.title = status.motivo.trim() || title;
-        } else {
-          throw new Error('Status desconhecido.');
-        }
-        if (status === 'PENDING') {
+        if (estado.status === 'ACTIVE') {
+          link2.classList.add(classes.added);
+          link2.classList.remove(classes.wait);
+        } else if (estado.status === 'PENDING') {
+          link2.classList.remove(classes.added);
           link2.classList.add(classes.wait);
         } else {
+          link2.classList.remove(classes.added);
           link2.classList.remove(classes.wait);
         }
-        if (typeof status === 'object' && status.status === 'ACTIVE') {
-          link2.classList.add(classes.added);
+        if (estado.status === 'ACTIVE') {
+          link2.title = estado.motivo.trim() || title;
         } else {
-          link2.classList.remove(classes.added);
+          link2.title = title;
         }
       },
     };
