@@ -145,9 +145,54 @@ function criar_dialogo_historico(
 function criar_dialogo_favoritos(
   abrir_processo: (numproc: NumProc, aba: 'MESMA_ABA' | 'NOVA_ABA') => void
 ) {
-  const { dialogo, aviso, output } = criar_dialogo('Favoritos', classes);
+  const { dialogo, aviso, output, barras } = criar_dialogo(
+    'Favoritos',
+    classes
+  );
   aviso.append(...mensagem_aviso_favoritos.map(x => h('p', {}, x)));
   const criar_links_numproc = criar_links_dialogo(dialogo, abrir_processo);
+  barras.forEach(barra => {
+    barra.prepend(
+      h('button', { type: 'button' }, 'Importar...'),
+      ' ',
+      h(
+        'button',
+        {
+          type: 'button',
+          onclick: function exportar(evt) {
+            evt.preventDefault();
+            const new_hidden_state = !div_download.classList.contains(
+              classes['div-download__hidden']
+            );
+            div_download.classList.toggle(
+              classes['div-download__hidden'],
+              new_hidden_state
+            );
+          },
+        },
+        'Exportar...'
+      ),
+      ' '
+    );
+  });
+  const link_download = h(
+    'a',
+    {
+      href: 'data:application/json,{"teste":"funcionou"}',
+      download: 'processos_favoritos.json',
+    },
+    'Clique aqui'
+  );
+  const div_download = h(
+    'p',
+    {
+      classList: [classes['div-download'], classes['div-download__hidden']],
+    },
+    link_download,
+    ' para fazer download dos favoritos e salvá-los em um arquivo.',
+    h('br')
+  );
+  barras[0]!.after(div_download);
   return {
     dialogo,
     update(dados: ({ numproc: NumProc } & db.Favorito)[]) {
@@ -156,7 +201,10 @@ function criar_dialogo_favoritos(
         return;
       }
       output.textContent = '';
+      const arquivo = h('input', { type: 'file', accept: 'application/json' });
+      const div = h('div', {}, h('div', { hidden: true }, arquivo));
       output.append(
+        div,
         criar_tabela(
           ['Prioridade', 'Processo', 'Motivo'],
           dados.map(({ numproc, motivo, prioridade }) => {

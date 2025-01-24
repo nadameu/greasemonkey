@@ -40,6 +40,7 @@
     height: 90%;
     border-radius: 7px;
     box-shadow: 10px 20px 30px hsla(333, 15%, 15%, 0.5);
+    background: hsl(333, 50%, 97%);
 
     &::backdrop {
       background-color: hsla(333, 15%, 15%, 0.8);
@@ -49,13 +50,38 @@
       text-align: center;
     }
 
+    button {
+      border: 1px outset hsl(333, 50%, 75%);
+      padding: 0.1em 1ch;
+      border-radius: 4px;
+      color: hsl(333, 100%, 8%);
+      background: hsl(333, 25%, 85%);
+    }
+
+    .div-download {
+      background: transparent;
+      transition: 1s background 2s;
+      padding: 1em 3ch;
+
+      &.div-download__hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        top: -3em;
+        left: -7ch;
+        background: hsl(31, 100%, 93%);
+        transition: none;
+      }
+    }
+
     .barra {
       text-align: right;
     }
 
     .aviso {
-      background: #fdd;
-      border: 1px solid #caa;
+      background: hsl(31, 100%, 93%);
+      border: 1px solid hsl(31, 25%, 75%);
       font-size: 90%;
       margin-block: 1em;
       padding-inline: 2ex;
