@@ -187,18 +187,18 @@ export async function tela_processo() {
 
 function render_estrela(elemento_numero: HTMLElement) {
   const parent = elemento_numero.parentNode!;
-  const icon = h('i', { classList: ['material-icons', classes.icon] });
+  const icon = h('i', { classList: ['material-icons', classes.icon!] });
   const link = h(
     'a',
     {
-      classList: [classes.link, classes.wait, 'col-auto', 'px-1'],
+      classList: [classes.link!, classes.wait!, 'col-auto', 'px-1'],
       href: '#',
     },
     icon
   );
   const div = h(
     'div',
-    { classList: [classes.div, 'row'] },
+    { classList: [classes.div!, 'row'] },
     elemento_numero,
     link
   );
@@ -222,14 +222,14 @@ function render_estrela(elemento_numero: HTMLElement) {
       icon.textContent = symbol;
 
       if (estado.status === 'ACTIVE') {
-        link.classList.add(classes.added);
-        link.classList.remove(classes.wait);
+        link.classList.add(classes.added!);
+        link.classList.remove(classes.wait!);
       } else if (estado.status === 'PENDING') {
-        link.classList.remove(classes.added);
-        link.classList.add(classes.wait);
+        link.classList.remove(classes.added!);
+        link.classList.add(classes.wait!);
       } else {
-        link.classList.remove(classes.added);
-        link.classList.remove(classes.wait);
+        link.classList.remove(classes.added!);
+        link.classList.remove(classes.wait!);
       }
 
       if (estado.status === 'ACTIVE') {

@@ -5,6 +5,7 @@ import { criar_icone_material } from './criar_icone_material';
 import { criar_tabela } from './criar_tabela';
 import * as db from './database';
 import classes from './estilos.module.scss';
+import { formatar_intervalo } from './formatar_intervalo';
 import { formatar_numproc } from './formatar_numproc';
 import { log_error } from './log_error';
 import { mensagem_aviso_favoritos } from './mensagem_aviso_favoritos';
@@ -52,7 +53,14 @@ export async function tela_com_barra_superior() {
 
   const dialogo_historico = criar_dialogo_historico(abrir_processo);
   const dialogo_favoritos = criar_dialogo_favoritos(abrir_processo);
-  document.body.append(dialogo_historico.dialogo, dialogo_favoritos.dialogo);
+  document.body.append(
+    h(
+      'div',
+      { className: 'bootstrap-styles' },
+      dialogo_historico.dialogo,
+      dialogo_favoritos.dialogo
+    )
+  );
 
   const criar_handler_abertura =
     <T>(
@@ -94,10 +102,10 @@ function criar_link_barra({
   title: string;
 }) {
   const icone = criar_icone_material(symbol, title);
-  icone.classList.add(classes.icon, 'navbar-icons');
+  icone.classList.add(classes.icon!, 'navbar-icons');
   icone.style.padding = '0';
 
-  const link = h('a', { classList: [classes.link], href: '#' }, icone);
+  const link = h('a', { classList: [classes.link!], href: '#' }, icone);
 
   return link;
 }
@@ -124,6 +132,7 @@ function criar_dialogo_historico(
         return;
       }
       output.textContent = '';
+      const data_agora = new Date();
       output.append(
         criar_tabela(
           ['Favorito?', 'Processo', 'Último acesso'],
@@ -133,7 +142,16 @@ function criar_dialogo_historico(
                 ? ''
                 : criar_icone_material('star', favorito.motivo);
             const c1 = criar_links_numproc(numproc);
-            const c2 = new Date(acesso).toLocaleString('pt-BR');
+            const data_acesso = new Date(acesso);
+
+            const c2 = h(
+              'time',
+              {
+                dateTime: data_acesso.toISOString(),
+                title: data_acesso.toLocaleString('pt-BR'),
+              },
+              formatar_intervalo(data_acesso, data_agora)
+            );
             return [c0, c1, c2];
           })
         )
@@ -159,11 +177,11 @@ function criar_dialogo_favoritos(
         type: 'button',
         onclick: function exportar(evt) {
           evt.preventDefault();
-          div_upload.classList.toggle(classes.hidden, true);
+          div_upload.classList.toggle(classes.hidden!, true);
           const new_hidden_state = !div_download.classList.contains(
-            classes.hidden
+            classes.hidden!
           );
-          div_download.classList.toggle(classes.hidden, new_hidden_state);
+          div_download.classList.toggle(classes.hidden!, new_hidden_state);
         },
       },
       'Exportar...'
@@ -175,11 +193,11 @@ function criar_dialogo_favoritos(
         type: 'button',
         onclick: function importar(evt) {
           evt.preventDefault();
-          div_download.classList.toggle(classes.hidden, true);
+          div_download.classList.toggle(classes.hidden!, true);
           const new_hidden_state = !div_upload.classList.contains(
-            classes.hidden
+            classes.hidden!
           );
-          div_upload.classList.toggle(classes.hidden, new_hidden_state);
+          div_upload.classList.toggle(classes.hidden!, new_hidden_state);
         },
       },
       'Importar...'
@@ -199,7 +217,7 @@ function criar_dialogo_favoritos(
       link_download.href = `data:application/json,${window.encodeURIComponent(JSON.stringify(favoritos))}`;
     })
     .catch(err => {
-      div_download.classList.toggle(classes.hidden, true);
+      div_download.classList.toggle(classes.hidden!, true);
       botoes_exportar.forEach(botao_exportar => {
         botao_exportar.onclick = evt => {
           evt.preventDefault();
@@ -211,22 +229,22 @@ function criar_dialogo_favoritos(
   const div_download = h(
     'div',
     {
-      classList: [classes.div_download, classes.hidden],
+      classList: [classes.div_download!, classes.hidden!],
     },
     h(
       'p',
       {},
       link_download,
-      ' e selecione ',
-      h('q', {}, 'Salvar link como...'),
-      ' para salvar os favoritos em um arquivo.'
+      ' e selecione “',
+      h('samp', {}, 'Salvar link como...'),
+      '” para salvar os favoritos em um arquivo.'
     ),
     h(
       'p',
       {},
-      'Posteriormente você poderá usar o botão ',
-      h('q', {}, 'Importar...'),
-      ' para utilizá-lo em outro computador ou navegador.'
+      'Posteriormente você poderá usar o botão “',
+      h('samp', {}, 'Importar...'),
+      '” para utilizá-lo em outro computador ou navegador.'
     )
   );
   const arquivo = h('input', {
@@ -263,7 +281,7 @@ function criar_dialogo_favoritos(
             window.alert(
               'Favoritos importados. Atualize a página para que as alterações tenham efeito.'
             );
-            div_upload.classList.add(classes.hidden);
+            div_upload.classList.add(classes.hidden!);
             dialogo.close();
           } else {
           }
@@ -276,7 +294,7 @@ function criar_dialogo_favoritos(
   });
   const div_upload = h(
     'div',
-    { classList: [classes.div_upload, classes.hidden] },
+    { classList: [classes.div_upload!, classes.hidden!] },
     h('p', {}, 'Selecione abaixo o arquivo a importar.'),
     arquivo
   );
@@ -289,21 +307,24 @@ function criar_dialogo_favoritos(
         return;
       }
       output.textContent = '';
-      output.append(
-        criar_tabela(
-          ['Prioridade', 'Processo', 'Motivo'],
-          dados.map(({ numproc, motivo, prioridade }) => {
-            const c0 = {
-              [Prioridade.ALTA]: 'Alta',
-              [Prioridade.MEDIA]: 'Média',
-              [Prioridade.BAIXA]: 'Baixa',
-            }[prioridade];
-            const c1 = criar_links_numproc(numproc);
-            const c2 = motivo;
-            return [c0, c1, c2];
-          })
-        )
+      const tabela = criar_tabela(
+        ['Prioridade', 'Processo', 'Motivo'],
+        dados.map(({ numproc, motivo, prioridade }) => {
+          const c0 = {
+            [Prioridade.ALTA]: 'Alta',
+            [Prioridade.MEDIA]: 'Média',
+            [Prioridade.BAIXA]: 'Baixa',
+          }[prioridade];
+          const c1 = criar_links_numproc(numproc);
+          const c2 = motivo;
+          return [c0, c1, c2];
+        })
       );
+      const linhas = P.check(P.isDefined, tabela.tBodies[0]?.rows);
+      for (const linha of linhas) {
+        P.check(P.isDefined, linha.cells[2]).style.textAlign = 'start';
+      }
+      output.append(tabela);
     },
   };
 }
@@ -329,15 +350,20 @@ function criar_links_dialogo(
       formatar_numproc(numproc)
     );
     const link_nova = h(
-      'a',
-      { href: '#', onclick: criar_onclick('NOVA_ABA') },
+      'small',
+      {},
       h(
-        'i',
-        {
-          classList: ['material-icons'],
-          title: 'Abrir em nova aba',
-        },
-        'open_in_new'
+        'a',
+        { href: '#', onclick: criar_onclick('NOVA_ABA') },
+        h(
+          'i',
+          {
+            classList: ['material-icons'],
+            title: 'Abrir em nova aba',
+            style: { fontSize: '17px' },
+          },
+          'open_in_new'
+        )
       )
     );
     const frag = document.createDocumentFragment();
