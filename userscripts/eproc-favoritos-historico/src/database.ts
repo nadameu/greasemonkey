@@ -64,6 +64,21 @@ export async function salvar_favorito({
   });
 }
 
+export async function importar_favorito({
+  numproc,
+  ...favorito
+}: {
+  numproc: NumProc;
+  motivo: string;
+  prioridade: Prioridade;
+  timestamp: number;
+}) {
+  Store.getInstance().update(numproc, item => {
+    const acesso = item === undefined ? favorito.timestamp : item.acesso;
+    return { acesso, favorito };
+  });
+}
+
 export async function remover_favorito(numproc: NumProc) {
   await Store.getInstance().set(numproc, {
     favorito: undefined,

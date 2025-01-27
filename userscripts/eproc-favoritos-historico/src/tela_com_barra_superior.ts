@@ -8,8 +8,8 @@ import classes from './estilos.module.scss';
 import { formatar_numproc } from './formatar_numproc';
 import { log_error } from './log_error';
 import { mensagem_aviso_favoritos } from './mensagem_aviso_favoritos';
-import { NumProc } from './NumProc';
-import { Prioridade } from './Prioridade';
+import { isNumProc, NumProc } from './NumProc';
+import { isPrioridade, Prioridade } from './Prioridade';
 import { query_first } from './query_first';
 
 export async function tela_com_barra_superior() {
@@ -151,48 +151,136 @@ function criar_dialogo_favoritos(
   );
   aviso.append(...mensagem_aviso_favoritos.map(x => h('p', {}, x)));
   const criar_links_numproc = criar_links_dialogo(dialogo, abrir_processo);
+  const botoes_exportar: HTMLButtonElement[] = [];
   barras.forEach(barra => {
-    barra.prepend(
-      h('button', { type: 'button' }, 'Importar...'),
-      ' ',
-      h(
-        'button',
-        {
-          type: 'button',
-          onclick: function exportar(evt) {
-            evt.preventDefault();
-            const new_hidden_state = !div_download.classList.contains(
-              classes['div-download__hidden']
-            );
-            div_download.classList.toggle(
-              classes['div-download__hidden'],
-              new_hidden_state
-            );
-          },
+    const botao_exportar = h(
+      'button',
+      {
+        type: 'button',
+        onclick: function exportar(evt) {
+          evt.preventDefault();
+          div_upload.classList.toggle(classes.hidden, true);
+          const new_hidden_state = !div_download.classList.contains(
+            classes.hidden
+          );
+          div_download.classList.toggle(classes.hidden, new_hidden_state);
         },
-        'Exportar...'
-      ),
-      ' '
+      },
+      'Exportar...'
     );
+    botoes_exportar.push(botao_exportar);
+    const botao_importar = h(
+      'button',
+      {
+        type: 'button',
+        onclick: function importar(evt) {
+          evt.preventDefault();
+          div_download.classList.toggle(classes.hidden, true);
+          const new_hidden_state = !div_upload.classList.contains(
+            classes.hidden
+          );
+          div_upload.classList.toggle(classes.hidden, new_hidden_state);
+        },
+      },
+      'Importar...'
+    );
+    barra.prepend(botao_importar, ' ', botao_exportar, ' ');
   });
   const link_download = h(
     'a',
     {
-      href: 'data:application/json,{"teste":"funcionou"}',
+      href: `data:application/json,${window.encodeURIComponent('[]')}`,
       download: 'processos_favoritos.json',
     },
-    'Clique aqui'
+    'Clique aqui com o botão direito do mouse'
   );
+  db.obter_favoritos()
+    .then(favoritos => {
+      link_download.href = `data:application/json,${window.encodeURIComponent(JSON.stringify(favoritos))}`;
+    })
+    .catch(err => {
+      div_download.classList.toggle(classes.hidden, true);
+      botoes_exportar.forEach(botao_exportar => {
+        botao_exportar.onclick = evt => {
+          evt.preventDefault();
+          log_error(err);
+          window.alert('Erro ao obter os favoritos.');
+        };
+      });
+    });
   const div_download = h(
-    'p',
+    'div',
     {
-      classList: [classes['div-download'], classes['div-download__hidden']],
+      classList: [classes.div_download, classes.hidden],
     },
-    link_download,
-    ' para fazer download dos favoritos e salvá-los em um arquivo.',
-    h('br')
+    h(
+      'p',
+      {},
+      link_download,
+      ' e selecione ',
+      h('q', {}, 'Salvar link como...'),
+      ' para salvar os favoritos em um arquivo.'
+    ),
+    h(
+      'p',
+      {},
+      'Posteriormente você poderá usar o botão ',
+      h('q', {}, 'Importar...'),
+      ' para utilizá-lo em outro computador ou navegador.'
+    )
   );
-  barras[0]!.after(div_download);
+  const arquivo = h('input', {
+    type: 'file',
+    accept: 'application/json',
+    onchange(evt) {
+      evt.preventDefault();
+      if ((arquivo.files?.length ?? 0) === 1) {
+        (async () => {
+          const file = arquivo.files!.item(0)!;
+          console.log({ file });
+          const text = await file.text();
+          const novos_favoritos = P.check(
+            P.isTypedArray(
+              P.hasShape({
+                numproc: P.refine(P.isString, isNumProc),
+                prioridade: isPrioridade,
+                motivo: P.isString,
+                timestamp: P.isNonNegativeInteger,
+              })
+            ),
+            JSON.parse(text)
+          );
+          const resposta = window.confirm(
+            'ATENÇÃO: TODOS OS FAVORITOS SERÃO EXCLUÍDOS E SUBSTITUÍDOS PELO ARQUIVO IMPORTADO. DESEJA CONTINUAR?'
+          );
+          if (resposta === true) {
+            for (const { numproc } of await db.obter_favoritos()) {
+              await db.remover_favorito(numproc);
+            }
+            for (const fav of novos_favoritos) {
+              await db.importar_favorito(fav);
+            }
+            window.alert(
+              'Favoritos importados. Atualize a página para que as alterações tenham efeito.'
+            );
+            div_upload.classList.add(classes.hidden);
+            dialogo.close();
+          } else {
+          }
+        })().catch(err => {
+          log_error(err);
+          window.alert('Erro ao abrir arquivo.');
+        });
+      }
+    },
+  });
+  const div_upload = h(
+    'div',
+    { classList: [classes.div_upload, classes.hidden] },
+    h('p', {}, 'Selecione abaixo o arquivo a importar.'),
+    arquivo
+  );
+  barras[0]!.after(div_download, div_upload);
   return {
     dialogo,
     update(dados: ({ numproc: NumProc } & db.Favorito)[]) {
@@ -201,10 +289,7 @@ function criar_dialogo_favoritos(
         return;
       }
       output.textContent = '';
-      const arquivo = h('input', { type: 'file', accept: 'application/json' });
-      const div = h('div', {}, h('div', { hidden: true }, arquivo));
       output.append(
-        div,
         criar_tabela(
           ['Prioridade', 'Processo', 'Motivo'],
           dados.map(({ numproc, motivo, prioridade }) => {

@@ -50,6 +50,10 @@
       text-align: center;
     }
 
+    q {
+      font-style: italic;
+    }
+
     button {
       border: 1px outset hsl(333, 50%, 75%);
       padding: 0.1em 1ch;
@@ -58,12 +62,13 @@
       background: hsl(333, 25%, 85%);
     }
 
-    .div-download {
+    .div_download,
+    .div_upload {
       background: transparent;
       transition: 1s background 2s;
       padding: 1em 3ch;
 
-      &.div-download__hidden {
+      &.hidden {
         position: absolute;
         width: 1px;
         height: 1px;
