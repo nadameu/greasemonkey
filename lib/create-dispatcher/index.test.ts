@@ -5,10 +5,11 @@ function createExampleDispatcher() {
   const d = createDispatcher<number>();
   for (let i = 0; i < 5; i++) d.dispatch(i);
   d.end();
+  d.dispatch(5);
   return d;
 }
 async function* createExampleGenerator() {
-  for (let i = 0; i < 5; i++) yield await Promise.resolve(i);
+  for (let i = 0; i < 5; i++) yield i;
 }
 
 test.each([

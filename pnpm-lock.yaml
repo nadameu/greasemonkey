@@ -105,7 +105,11 @@ importers:
         specifier: workspace:^
         version: link:../handler
 
-  lib/create-dispatcher: {}
+  lib/create-dispatcher:
+    dependencies:
+      '@nadameu/handler':
+        specifier: workspace:^
+        version: link:../handler
 
   lib/create-element: {}
 
