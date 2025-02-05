@@ -1,6 +1,6 @@
 import { h } from '@nadameu/create-element';
+import { createStore } from '@nadameu/create-store';
 import * as P from '@nadameu/predicates';
-import { create_store } from './create_store';
 import { criar_dialogo } from './criar_dialogo';
 import * as db from './database';
 import classes from './estilos.module.scss';
@@ -33,17 +33,20 @@ export async function tela_processo() {
     'Erro ao obter número do processo'
   );
 
-  const estado = create_store<Status>({ status: 'PENDING' });
+  const estado = createStore<Status, Status>(
+    () => ({ status: 'PENDING' }),
+    (_, x) => x
+  );
 
   try {
     const resultado = await db.verificar_favorito(numero);
-    estado.set(
+    estado.dispatch(
       resultado !== undefined
         ? { status: 'ACTIVE', motivo: resultado.motivo }
         : { status: 'INACTIVE' }
     );
   } catch (err) {
-    estado.set({ status: 'ERROR' });
+    estado.dispatch({ status: 'ERROR' });
     throw err;
   }
 
@@ -64,10 +67,10 @@ export async function tela_processo() {
         `Prioridade desconhecida: ${valor_prioridade}`
       );
       await db.salvar_favorito({ numproc: numero, motivo, prioridade });
-      estado.set({ status: 'ACTIVE', motivo });
+      estado.dispatch({ status: 'ACTIVE', motivo });
       dialogo.close();
     })().catch(err => {
-      estado.set({ status: 'ERROR' });
+      estado.dispatch({ status: 'ERROR' });
       log_error(err);
       window.alert('Erro ao salvar favorito.');
     });
@@ -78,12 +81,12 @@ export async function tela_processo() {
       dialogo.close();
       const favorito = await db.verificar_favorito(numero);
       if (favorito !== undefined) {
-        estado.set({ status: 'ACTIVE', motivo: favorito.motivo });
+        estado.dispatch({ status: 'ACTIVE', motivo: favorito.motivo });
       } else {
-        estado.set({ status: 'INACTIVE' });
+        estado.dispatch({ status: 'INACTIVE' });
       }
     })().catch(err => {
-      estado.set({ status: 'ERROR' });
+      estado.dispatch({ status: 'ERROR' });
       log_error(err);
     });
   };
@@ -96,10 +99,10 @@ export async function tela_processo() {
       if (resposta === true) {
         await db.remover_favorito(numero);
         dialogo.close();
-        estado.set({ status: 'INACTIVE' });
+        estado.dispatch({ status: 'INACTIVE' });
       }
     })().catch(err => {
-      estado.set({ status: 'ERROR' });
+      estado.dispatch({ status: 'ERROR' });
       log_error(err);
       window.alert('Erro ao remover dos favoritos.');
     });
@@ -163,13 +166,13 @@ export async function tela_processo() {
   estrela.link.addEventListener('click', evt => {
     evt.preventDefault();
 
-    const current = estado.get();
+    const current = estado.getState();
     if (current.status === 'ERROR' || current.status === 'PENDING') return;
     (async () => {
-      estado.set({ status: 'PENDING' });
+      estado.dispatch({ status: 'PENDING' });
       const dados = await db.verificar_favorito(numero);
       if (current.status === 'ACTIVE' && dados === undefined) {
-        estado.set({ status: 'INACTIVE' });
+        estado.dispatch({ status: 'INACTIVE' });
         window.alert(
           'Dados não encontrados. Possivelmente desativado em outra aba.'
         );
@@ -178,7 +181,7 @@ export async function tela_processo() {
         dialogo.showModal();
       }
     })().catch(err => {
-      estado.set({ status: 'ERROR' });
+      estado.dispatch({ status: 'ERROR' });
       log_error(err);
       window.alert('Erro ao realizar a operação.');
     });

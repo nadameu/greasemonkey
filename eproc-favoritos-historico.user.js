@@ -94,7 +94,7 @@
       request.onabort = request.onerror = () => reject(request.error);
     });
   }
-  function createStore(dbName, storeName) {
+  function createStore$1(dbName, storeName) {
     const request = indexedDB.open(dbName);
     request.onupgradeneeded = () => request.result.createObjectStore(storeName);
     const dbp = promisifyRequest(request);
@@ -106,7 +106,7 @@
   let defaultGetStoreFunc;
   function defaultGetStore() {
     if (!defaultGetStoreFunc) {
-      defaultGetStoreFunc = createStore('keyval-store', 'keyval');
+      defaultGetStoreFunc = createStore$1('keyval-store', 'keyval');
     }
     return defaultGetStoreFunc;
   }
@@ -166,7 +166,7 @@
   class Store {
     _store;
     constructor() {
-      this._store = createStore(DB_NAME, 'itens');
+      this._store = createStore$1(DB_NAME, 'itens');
     }
     get(numproc) {
       return get(numproc, this._store);
@@ -728,29 +728,25 @@
       return frag;
     };
   }
-  function create_store(initialState) {
-    let state = initialState;
+  function createStore(getInitialState, reducer) {
     const listeners = /* @__PURE__ */ new Set();
-    return {
-      get() {
-        return state;
-      },
-      set(newState) {
-        state = newState;
-        for (const listener of listeners) {
-          listener(state);
-        }
-      },
-      subscribe(listener) {
-        listeners.add(listener);
-        listener(state);
-        return {
-          unsubscribe() {
-            listeners.delete(listener);
-          },
-        };
-      },
-    };
+    let state = getInitialState();
+    return { dispatch, getState, subscribe };
+    function dispatch(action) {
+      state = reducer(state, action);
+      for (const l of listeners) l(state);
+    }
+    function getState() {
+      return state;
+    }
+    function subscribe(listener) {
+      listeners.add(listener);
+      listener(state);
+      return { unsubscribe };
+      function unsubscribe() {
+        listeners.delete(listener);
+      }
+    }
   }
   async function tela_processo() {
     const elemento_numero = document.getElementById('txtNumProcesso');
@@ -768,16 +764,19 @@
       numero_formatado.replace(/[.-]/g, ''),
       'Erro ao obter número do processo'
     );
-    const estado = create_store({ status: 'PENDING' });
+    const estado = createStore(
+      () => ({ status: 'PENDING' }),
+      (_, x) => x
+    );
     try {
       const resultado = await verificar_favorito(numero);
-      estado.set(
+      estado.dispatch(
         resultado !== void 0
           ? { status: 'ACTIVE', motivo: resultado.motivo }
           : { status: 'INACTIVE' }
       );
     } catch (err) {
-      estado.set({ status: 'ERROR' });
+      estado.dispatch({ status: 'ERROR' });
       throw err;
     }
     const {
@@ -799,10 +798,10 @@
           `Prioridade desconhecida: ${valor_prioridade}`
         );
         await salvar_favorito({ numproc: numero, motivo, prioridade });
-        estado.set({ status: 'ACTIVE', motivo });
+        estado.dispatch({ status: 'ACTIVE', motivo });
         dialogo2.close();
       })().catch(err => {
-        estado.set({ status: 'ERROR' });
+        estado.dispatch({ status: 'ERROR' });
         log_error(err);
         window.alert('Erro ao salvar favorito.');
       });
@@ -813,12 +812,12 @@
         dialogo2.close();
         const favorito = await verificar_favorito(numero);
         if (favorito !== void 0) {
-          estado.set({ status: 'ACTIVE', motivo: favorito.motivo });
+          estado.dispatch({ status: 'ACTIVE', motivo: favorito.motivo });
         } else {
-          estado.set({ status: 'INACTIVE' });
+          estado.dispatch({ status: 'INACTIVE' });
         }
       })().catch(err => {
-        estado.set({ status: 'ERROR' });
+        estado.dispatch({ status: 'ERROR' });
         log_error(err);
       });
     };
@@ -831,10 +830,10 @@
         if (resposta === true) {
           await remover_favorito(numero);
           dialogo2.close();
-          estado.set({ status: 'INACTIVE' });
+          estado.dispatch({ status: 'INACTIVE' });
         }
       })().catch(err => {
-        estado.set({ status: 'ERROR' });
+        estado.dispatch({ status: 'ERROR' });
         log_error(err);
         window.alert('Erro ao remover dos favoritos.');
       });
@@ -895,13 +894,13 @@
     estado.subscribe(estrela.update);
     estrela.link.addEventListener('click', evt => {
       evt.preventDefault();
-      const current = estado.get();
+      const current = estado.getState();
       if (current.status === 'ERROR' || current.status === 'PENDING') return;
       (async () => {
-        estado.set({ status: 'PENDING' });
+        estado.dispatch({ status: 'PENDING' });
         const dados = await verificar_favorito(numero);
         if (current.status === 'ACTIVE' && dados === void 0) {
-          estado.set({ status: 'INACTIVE' });
+          estado.dispatch({ status: 'INACTIVE' });
           window.alert(
             'Dados não encontrados. Possivelmente desativado em outra aba.'
           );
@@ -910,7 +909,7 @@
           dialogo2.showModal();
         }
       })().catch(err => {
-        estado.set({ status: 'ERROR' });
+        estado.dispatch({ status: 'ERROR' });
         log_error(err);
         window.alert('Erro ao realizar a operação.');
       });

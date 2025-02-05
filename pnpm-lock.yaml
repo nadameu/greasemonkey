@@ -254,6 +254,9 @@ importers:
       '@nadameu/create-element':
         specifier: workspace:^
         version: link:../../lib/create-element
+      '@nadameu/create-store':
+        specifier: workspace:^
+        version: link:../../lib/create-store
       '@nadameu/opaque':
         specifier: workspace:^
         version: link:../../lib/opaque
