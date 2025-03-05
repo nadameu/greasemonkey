@@ -167,6 +167,11 @@ type ArrayWithLength<
   Obj extends ArrayLike<T>,
   T,
   N extends number,
+> = number extends N ? Obj : ArrayWithAtLeastLength<Obj, T, N> & { length: N };
+type ArrayWithAtLeastLength<
+  Obj extends ArrayLike<T>,
+  T,
+  N extends number,
 > = number extends N ? Obj : Obj & ArrayWithLengthHelper<T, N>;
 type ArrayWithLengthHelper<
   T,
@@ -185,7 +190,7 @@ export const arrayHasAtLeastLength =
   <N extends number>(num: N) =>
   <T, Obj extends ArrayLike<T>>(
     array: Obj & ArrayLike<T>
-  ): array is Obj & ArrayWithLength<Obj, T, N> =>
+  ): array is Obj & ArrayWithAtLeastLength<Obj, T, N> =>
     array.length >= num;
 export function hasKeys<K extends string>(
   ...keys: K[]

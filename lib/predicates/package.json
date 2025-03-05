@@ -1,6 +1,6 @@
 {
   "name": "@nadameu/predicates",
-  "version": "2.4.0",
+  "version": "3.0.0",
   "main": "./index.ts",
   "types": "./index.ts",
   "dependencies": {
