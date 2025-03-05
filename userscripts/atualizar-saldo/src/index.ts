@@ -1,12 +1,11 @@
-import { E, Right, pipeValue as pipe } from 'adt-ts';
+import { E, flow } from '@nadameu/adts';
 import { main } from './main';
 
-pipe(
+flow(
   main(),
-  E.catchError(error => {
+  E.getOrElse(error => {
     console.group('<atualizar-saldo>');
     console.error(error);
     console.groupEnd();
-    return Right(undefined as void);
   })
 );

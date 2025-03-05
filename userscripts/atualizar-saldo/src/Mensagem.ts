@@ -1,55 +1,41 @@
 import { createBroadcastService } from '@nadameu/create-broadcast-service';
-import { createTaggedUnion, matchBy, Static } from '@nadameu/match';
+import { makeConstructorsWith } from '@nadameu/match';
 import * as p from '@nadameu/predicates';
 import { isNumproc, NumProc } from './NumProc';
 
-export const Mensagem = /* @__PURE__ */ createTaggedUnion(
-  {
-    InformaContas: (
-      numproc: NumProc,
-      qtdComSaldo: number,
-      permiteAtualizar: boolean
-    ) => ({
-      numproc,
-      qtdComSaldo,
-      permiteAtualizar,
-    }),
-    InformaSaldoDeposito: (numproc: NumProc, qtdComSaldo: number) => ({
-      numproc,
-      qtdComSaldo,
-    }),
-    PerguntaAtualizar: (numproc: NumProc) => ({ numproc }),
-    RespostaAtualizar: (numproc: NumProc, atualizar: boolean) => ({
-      numproc,
-      atualizar,
-    }),
+export const isMensagem = /* @__PURE__ */ p.isTaggedUnion('tipo', {
+  InformaContas: {
+    numproc: isNumproc,
+    qtdComSaldo: p.isNumber,
+    permiteAtualizar: p.isBoolean,
   },
-  'tipo'
-);
-export type Mensagem = Static<typeof Mensagem>;
-
-type MensagemDict = {
-  [K in Mensagem['tipo']]: Extract<Mensagem, { tipo: K }>;
+  InformaSaldoDeposito: { numproc: isNumproc, qtdComSaldo: p.isNumber },
+  PerguntaAtualizar: { numproc: isNumproc },
+  RespostaAtualizar: { numproc: isNumproc, atualizar: p.isBoolean },
+});
+export type Mensagem = p.Static<typeof isMensagem>;
+export const Mensagem = makeConstructorsWith('tipo', {
+  InformaContas: (
+    numproc: NumProc,
+    qtdComSaldo: number,
+    permiteAtualizar: boolean
+  ) => ({
+    numproc,
+    qtdComSaldo,
+    permiteAtualizar,
+  }),
+  InformaSaldoDeposito: (numproc: NumProc, qtdComSaldo: number) => ({
+    numproc,
+    qtdComSaldo,
+  }),
+  PerguntaAtualizar: (numproc: NumProc) => ({ numproc }),
+  RespostaAtualizar: (numproc: NumProc, atualizar: boolean) => ({
+    numproc,
+    atualizar,
+  }),
+}) satisfies {
+  [K in Mensagem['tipo']]: (...args: never[]) => Extract<Mensagem, { tipo: K }>;
 };
-type DefinicoesPredicate = {
-  [K in keyof MensagemDict]: {
-    [S in keyof MensagemDict[K] as Exclude<S, 'tipo'>]: p.Predicate<
-      MensagemDict[K][S]
-    >;
-  };
-};
-
-export const isMensagem: p.Predicate<Mensagem> =
-  /* @__PURE__ */ p.isTaggedUnion<'tipo', DefinicoesPredicate>('tipo', {
-    InformaContas: {
-      numproc: isNumproc,
-      qtdComSaldo: p.isNumber,
-      permiteAtualizar: p.isBoolean,
-    },
-    InformaSaldoDeposito: { numproc: isNumproc, qtdComSaldo: p.isNumber },
-    PerguntaAtualizar: { numproc: isNumproc },
-    RespostaAtualizar: { numproc: isNumproc, atualizar: p.isBoolean },
-  });
 
 export function createMsgService() {
   return createBroadcastService<Mensagem>('gm-atualizar-saldo', isMensagem);

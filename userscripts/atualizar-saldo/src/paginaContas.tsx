@@ -1,16 +1,24 @@
-import { createStore, Subscription } from '@nadameu/create-store';
-import { Handler } from '@nadameu/handler';
-import { createTaggedUnion, Static } from '@nadameu/match';
-import * as p from '@nadameu/predicates';
 import {
-  AL,
+  A,
   applicativeEither,
   E,
   Either,
-  Left as Err,
-  Right as Ok,
-  pipeValue as pipe,
-} from 'adt-ts';
+  flow,
+  I,
+  Left,
+  M,
+  pipe,
+  Right,
+} from '@nadameu/adts';
+import { createStore, Subscription } from '@nadameu/create-store';
+import { Handler } from '@nadameu/handler';
+import {
+  FromConstructors,
+  makeConstructors,
+  match,
+  matchWith,
+} from '@nadameu/match';
+import * as p from '@nadameu/predicates';
 import { render } from 'preact';
 import { createMsgService, Mensagem } from './Mensagem';
 import { NumProc } from './NumProc';
@@ -26,7 +34,7 @@ declare function atualizarSaldo(
   qtdMovimentos: number
 ): void;
 
-const Estado = createTaggedUnion({
+const Estado = makeConstructors({
   Ocioso: (infoContas: InfoConta[]) => ({ infoContas }),
   Atualizando: (infoContas: InfoConta[], conta: number) => ({
     infoContas,
@@ -34,19 +42,19 @@ const Estado = createTaggedUnion({
   }),
   Erro: (erro: Error) => ({ erro }),
 });
-type Estado = Static<typeof Estado>;
+type Estado = FromConstructors<typeof Estado>;
 
-const Acao = createTaggedUnion({
-  Atualizar: null,
+const Acao = makeConstructors({
+  Atualizar: () => ({}),
   SaldoAtualizado: (saldo: number) => ({ saldo }),
   ErroComunicacao: (mensagem?: string) => ({ mensagem }),
 });
-type Acao = Static<typeof Acao>;
+type Acao = FromConstructors<typeof Acao>;
 
 export function paginaContas(numproc: NumProc): Either<Error, void> {
   const barra = document.getElementById('divInfraBarraLocalizacao');
   if (!barra) {
-    return Err(new Error('Barra de localização não encontrada.'));
+    return Left(new Error('Barra de localização não encontrada.'));
   }
   const div = document.createElement('div');
   div.className = 'gm-atualizar-saldo__contas';
@@ -56,34 +64,37 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
   const bc = createMsgService();
   const store = createStore<Estado, Acao>(
     () => {
-      const estado = pipe(
-        obterContas(),
-        E.either<Error, Estado>(Estado.Erro)(Estado.Ocioso)
-      );
-      if (estado.tag !== 'Erro') {
-        bc.subscribe(msg =>
-          Mensagem.match(msg, {
-            InformaContas: () => {},
-            InformaSaldoDeposito: () => {},
-            PerguntaAtualizar: () => {},
-            RespostaAtualizar: ({ numproc: msgNumproc, atualizar }) => {
-              if (msgNumproc !== numproc) return;
-              if (atualizar) {
-                store.dispatch(Acao.Atualizar);
-              }
-            },
-          })
-        );
-        bc.publish(Mensagem.PerguntaAtualizar(numproc));
-      }
+      const estado = flow(obterContas(), E.match(Estado.Erro, Estado.Ocioso));
+      match(estado)
+        .case('Erro', () => {})
+        .otherwise(() => {
+          bc.subscribe(msg =>
+            matchWith('tipo')(msg)
+              .case('InformaContas', () => {})
+              .case('InformaSaldoDeposito', () => {})
+              .case('PerguntaAtualizar', () => {})
+              .case(
+                'RespostaAtualizar',
+                ({ numproc: msgNumproc, atualizar }) => {
+                  if (msgNumproc !== numproc) return;
+                  if (atualizar) {
+                    store.dispatch(Acao.Atualizar());
+                  }
+                }
+              )
+              .get()
+          );
+          bc.publish(Mensagem.PerguntaAtualizar(numproc));
+        })
+        .get();
       return estado;
     },
     (estado, acao) =>
-      Acao.match(acao, {
-        Atualizar: () =>
-          Estado.match(estado, {
-            Erro: () => estado,
-            Ocioso: ({ infoContas }) => {
+      match(acao)
+        .case('Atualizar', () =>
+          match(estado)
+            .case('Erro', () => estado)
+            .case('Ocioso', ({ infoContas }) => {
               ouvirXHR(x => store.dispatch(x));
               const primeiraConta = encontrarContaAtualizavel(infoContas);
               if (primeiraConta < 0) {
@@ -99,17 +110,19 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
               }
               infoContas[primeiraConta]!.atualizacao!();
               return Estado.Atualizando(infoContas, primeiraConta);
-            },
-            Atualizando: () =>
+            })
+            .case('Atualizando', () =>
               Estado.Erro(
                 new Error('Tentativa de atualização durante outra atualização.')
-              ),
-          }),
-        SaldoAtualizado: ({ saldo }) =>
-          Estado.match(estado, {
-            Erro: () => estado,
-            Ocioso: () => estado,
-            Atualizando: ({ conta, infoContas }) => {
+              )
+            )
+            .get()
+        )
+        .case('SaldoAtualizado', ({ saldo }) =>
+          match(estado)
+            .case('Erro', () => estado)
+            .case('Ocioso', () => estado)
+            .case('Atualizando', ({ conta, infoContas }) => {
               const infoNova: InfoConta[] = infoContas
                 .slice(0, conta)
                 .concat([{ saldo, atualizacao: null }])
@@ -129,25 +142,32 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
               }
               infoNova[proxima]!.atualizacao!();
               return Estado.Atualizando(infoNova, proxima);
-            },
-          }),
-        ErroComunicacao: ({
-          mensagem = 'Ocorreu um erro na atualização dos saldos.',
-        }) =>
-          Estado.match(estado, { Erro: () => estado }, () => {
-            bc.destroy();
-            return Estado.Erro(new Error(mensagem));
-          }),
-      })
+            })
+            .get()
+        )
+        .case(
+          'ErroComunicacao',
+          ({ mensagem = 'Ocorreu um erro na atualização dos saldos.' }) =>
+            match(estado)
+              .case('Erro', () => estado)
+              .otherwise(() => {
+                bc.destroy();
+                return Estado.Erro(new Error(mensagem));
+              })
+              .get()
+        )
+        .get()
   );
 
   sub = store.subscribe(update);
-  return Ok(undefined as void);
+  return Right(undefined as void);
 
   function App({ estado }: { estado: Estado }) {
-    return Estado.match(estado, {
-      Atualizando: ({ conta }) => <span>Atualizando conta {conta + 1}...</span>,
-      Ocioso: ({ infoContas }) => {
+    return match(estado)
+      .case('Atualizando', ({ conta }) => (
+        <span>Atualizando conta {conta + 1}...</span>
+      ))
+      .case('Ocioso', ({ infoContas }) => {
         const contasComSaldo = infoContas.filter(x => x.saldo > 0).length;
         const contasAtualizaveis = infoContas
           .map(x => x.atualizacao)
@@ -171,20 +191,20 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
             {botao}
           </>
         );
-      },
-      Erro: ({ erro }) => {
+      })
+      .case('Erro', ({ erro }) => {
         if (sub) {
           sub.unsubscribe();
           sub = null;
         }
         return <span class="erro">{erro.message}</span>;
-      },
-    });
+      })
+      .get();
   }
 
   function onClick(evt: Event) {
     evt.preventDefault();
-    store.dispatch(Acao.Atualizar);
+    store.dispatch(Acao.Atualizar());
   }
 
   function update(estado: Estado) {
@@ -194,15 +214,16 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
     const tabela = document.querySelector<HTMLTableElement>(
       '#divInfraAreaDadosDinamica > table'
     );
-    if (!tabela) return Ok([]);
-    return pipe(
+    if (!tabela) return Right([]);
+    return flow(
       tabela.querySelectorAll<HTMLTableRowElement>('tr[id^="tdConta"]'),
-      AL.traverse(applicativeEither)(linha => {
-        const info = obterInfoContaLinha(linha);
-        if (info === null)
-          return Err(new Error('Erro ao obter dados das contas.'));
-        else return Ok(info);
-      })
+      I.traverse(applicativeEither)(
+        pipe(
+          obterInfoContaLinha,
+          M.fromNullable,
+          M.toEither(() => new Error('Erro ao obter dados das contas.'))
+        )
+      )
     );
   }
 
@@ -215,19 +236,18 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
         if (url.searchParams.get('acao_ajax') !== 'atualizar_precatorio_rpv')
           return;
         try {
-          p.check(p.isLiteral(200), xhr.status);
+          p.assert(p.isLiteral(200)(xhr.status));
           const responseXML = xhr.responseXML;
           if (responseXML) {
             const erros = responseXML.querySelectorAll('erros > erro');
             const mensagem =
               erros.length === 0
                 ? undefined
-                : Array.from(
+                : flow(
                     erros,
-                    erro => erro.getAttribute('descricao')?.trim() ?? ''
-                  )
-                    .filter(x => x !== '')
-                    .join('\n') || undefined;
+                    A.map(erro => erro.getAttribute('descricao')?.trim() ?? ''),
+                    A.filter(x => x !== '')
+                  ).join('\n') || undefined;
             return handler(Acao.ErroComunicacao(mensagem));
           }
           const json = p.check(
@@ -257,17 +277,17 @@ const jsLinkRE =
   /^javascript:atualizarSaldo\('(\d{20})','(\d+)',(\d+),'(\d+)','(\d{20})',(\d{3}),'(\d+)',(\d+)\)$/;
 
 function obterInfoContaLinha(row: HTMLTableRowElement): InfoConta | null {
-  if (row.cells.length !== 15) return null;
+  if (!p.arrayHasLength(15)(row.cells)) return null;
   const celulaSaldo = row.querySelector('td[id^="saldoRemanescente"]');
   if (!celulaSaldo) {
-    if ((row.cells[12]?.textContent ?? '').match(/^Valor estornado/))
+    if ((row.cells[12].textContent ?? '').match(/^Valor estornado/))
       return { saldo: 0, atualizacao: null };
     return null;
   }
   const textoSaldo = celulaSaldo.textContent ?? '';
   const match = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
-  if (!match || match.length < 2) return null;
-  const [, numeros] = match as [string, string];
+  if (!match || !p.arrayHasLength(2)(match)) return null;
+  const [, numeros] = match;
   const saldo = Number(numeros.replace(/\./g, '').replace(',', '.'));
   const link = row.cells[
     row.cells.length - 1
@@ -275,9 +295,9 @@ function obterInfoContaLinha(row: HTMLTableRowElement): InfoConta | null {
   let atualizacao: (() => void) | null = null;
   if (link) {
     const match = link.href.match(jsLinkRE);
-    if (!match || match.length < 9) return null;
+    if (!match || !p.arrayHasLength(9)(match)) return null;
     const [
-      _,
+      ,
       numProcessoOriginario,
       agencia,
       strConta,
@@ -286,17 +306,7 @@ function obterInfoContaLinha(row: HTMLTableRowElement): InfoConta | null {
       strBanco,
       idRequisicaoBeneficiarioPagamento,
       strQtdMovimentos,
-    ] = match as [
-      string,
-      string,
-      string,
-      string,
-      string,
-      string,
-      string,
-      string,
-      string,
-    ];
+    ] = match;
     const [conta, numBanco, qtdMovimentos] = [
       Number(strConta),
       Number(strBanco),

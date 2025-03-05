@@ -1,21 +1,26 @@
+import { E, Either } from '@nadameu/adts';
 import { createStore } from '@nadameu/create-store';
-import { Static, createTaggedUnion } from '@nadameu/match';
+import {
+  FromConstructors,
+  makeConstructors,
+  match,
+  matchWith,
+} from '@nadameu/match';
 import { Natural } from '@nadameu/predicates';
-import { E, Either, O, applicativeEither, pipeValue as pipe } from 'adt-ts';
 import { render } from 'preact';
 import { Mensagem, createMsgService } from './Mensagem';
 import { NumProc } from './NumProc';
 import { obter } from './obter';
 
 export function paginaProcesso(numproc: NumProc): Either<Error, void> {
-  return pipe(
-    O.sequence(applicativeEither)({
-      informacoesAdicionais: obterInformacoesAdicionais(),
-      linkDepositos: obterLinkDepositos(),
-      linkRPV: obterLinkRPV(),
-    }),
-    E.map(props => modificarPaginaProcesso({ ...props, numproc }))
-  );
+  return E.gen(function* ($_) {
+    modificarPaginaProcesso({
+      informacoesAdicionais: yield* $_(obterInformacoesAdicionais()),
+      linkDepositos: yield* $_(obterLinkDepositos()),
+      linkRPV: yield* $_(obterLinkRPV()),
+      numproc,
+    });
+  });
 }
 
 function modificarPaginaProcesso({
@@ -38,20 +43,20 @@ function modificarPaginaProcesso({
     depositos: InfoTipo;
   }
 
-  const Estado = createTaggedUnion({
-    AguardaVerificacaoInicial: null,
+  const Estado = makeConstructors({
+    AguardaVerificacaoInicial: () => ({}),
     AguardaAtualizacao: ({ rpv, depositos }: TipoContas) => ({
       rpv,
       depositos,
     }),
     Ocioso: ({ rpv, depositos }: TipoContas) => ({ rpv, depositos }),
-    Erro: null,
+    Erro: () => ({}),
   });
-  type Estado = Static<typeof Estado>;
+  type Estado = FromConstructors<typeof Estado>;
 
-  const Acao = createTaggedUnion({
-    Erro: null,
-    PaginaContasAberta: null,
+  const Acao = makeConstructors({
+    Erro: () => ({}),
+    PaginaContasAberta: () => ({}),
     VerificacaoTerminada: ({ rpv, depositos }: TipoContas) => ({
       rpv,
       depositos,
@@ -68,7 +73,7 @@ function modificarPaginaProcesso({
       alvo,
     }),
   });
-  type Acao = Static<typeof Acao>;
+  type Acao = FromConstructors<typeof Acao>;
 
   const bc = createMsgService();
   const store = createStore<Estado, Acao>(
@@ -77,7 +82,7 @@ function modificarPaginaProcesso({
 
       const timer = window.setTimeout(() => {
         observer.disconnect();
-        store.dispatch(Acao.Erro);
+        store.dispatch(Acao.Erro());
       }, AGUARDAR_MS);
 
       const observer = new MutationObserver(() => {
@@ -99,67 +104,75 @@ function modificarPaginaProcesso({
       observer.observe(linkRPV, { childList: true });
 
       bc.subscribe(msg => {
-        Mensagem.match(msg, {
-          InformaContas: ({
-            numproc: msgNumproc,
-            qtdComSaldo,
-            permiteAtualizar,
-          }) => {
+        matchWith('tipo')(msg)
+          .case(
+            'InformaContas',
+            ({ numproc: msgNumproc, qtdComSaldo, permiteAtualizar }) => {
+              if (msgNumproc !== numproc) return;
+              store.dispatch(
+                Acao.AtualizacaoRPV({
+                  quantidade: qtdComSaldo,
+                  atualiza: permiteAtualizar,
+                })
+              );
+            }
+          )
+          .case(
+            'InformaSaldoDeposito',
+            ({ numproc: msgNumproc, qtdComSaldo }) => {
+              if (msgNumproc !== numproc) return;
+              store.dispatch(
+                Acao.AtualizacaoDepositos({
+                  quantidade: qtdComSaldo,
+                  atualiza: false,
+                })
+              );
+            }
+          )
+          .case('PerguntaAtualizar', ({ numproc: msgNumproc }) => {
             if (msgNumproc !== numproc) return;
-            store.dispatch(
-              Acao.AtualizacaoRPV({
-                quantidade: qtdComSaldo,
-                atualiza: permiteAtualizar,
-              })
-            );
-          },
-          InformaSaldoDeposito: ({ numproc: msgNumproc, qtdComSaldo }) => {
-            if (msgNumproc !== numproc) return;
-            store.dispatch(
-              Acao.AtualizacaoDepositos({
-                quantidade: qtdComSaldo,
-                atualiza: false,
-              })
-            );
-          },
-          PerguntaAtualizar: ({ numproc: msgNumproc }) => {
-            if (msgNumproc !== numproc) return;
-            store.dispatch(Acao.PaginaContasAberta);
-          },
-          RespostaAtualizar: () => {},
-        });
+            store.dispatch(Acao.PaginaContasAberta());
+          })
+          .case('RespostaAtualizar', () => {})
+          .get();
       });
 
-      return Estado.AguardaVerificacaoInicial;
+      return Estado.AguardaVerificacaoInicial();
     },
     (estado, acao) =>
-      Acao.match(acao, {
-        AtualizacaoDepositos: ({ quantidade, atualiza }) =>
-          Estado.match(estado, {
-            AguardaAtualizacao: ({ rpv }) =>
+      match(acao)
+        .case('AtualizacaoDepositos', ({ quantidade, atualiza }) =>
+          match(estado)
+            .case('AguardaAtualizacao', ({ rpv }) =>
               Estado.AguardaAtualizacao({
                 rpv,
                 depositos: { quantidade, atualiza },
-              }),
-            AguardaVerificacaoInicial: () => Estado.Erro,
-            Erro: () => estado,
-            Ocioso: ({ rpv }) =>
-              Estado.Ocioso({ rpv, depositos: { quantidade, atualiza } }),
-          }),
-        AtualizacaoRPV: ({ quantidade, atualiza }) =>
-          Estado.match(estado, {
-            AguardaAtualizacao: ({ depositos }) =>
-              Estado.Ocioso({ rpv: { quantidade, atualiza }, depositos }),
-            AguardaVerificacaoInicial: () => Estado.Erro,
-            Erro: () => estado,
-            Ocioso: ({ depositos }) =>
-              Estado.Ocioso({ rpv: { quantidade, atualiza }, depositos }),
-          }),
-        Clique: ({ alvo }) =>
-          Estado.match(estado, {
-            AguardaVerificacaoInicial: () => estado,
-            AguardaAtualizacao: () => estado,
-            Ocioso: dados => {
+              })
+            )
+            .case('AguardaVerificacaoInicial', () => Estado.Erro())
+            .case('Erro', () => estado)
+            .case('Ocioso', ({ rpv }) =>
+              Estado.Ocioso({ rpv, depositos: { quantidade, atualiza } })
+            )
+            .get()
+        )
+        .case('AtualizacaoRPV', ({ quantidade, atualiza }) =>
+          match(estado)
+            .case('AguardaAtualizacao', ({ depositos }) =>
+              Estado.Ocioso({ rpv: { quantidade, atualiza }, depositos })
+            )
+            .case('AguardaVerificacaoInicial', () => Estado.Erro())
+            .case('Erro', () => estado)
+            .case('Ocioso', ({ depositos }) =>
+              Estado.Ocioso({ rpv: { quantidade, atualiza }, depositos })
+            )
+            .get()
+        )
+        .case('Clique', ({ alvo }) =>
+          match(estado)
+            .case('AguardaVerificacaoInicial', () => estado)
+            .case('AguardaAtualizacao', () => estado)
+            .case('Ocioso', dados => {
               if (alvo === 'BOTAO_DEP' || alvo === 'LINK_DEP') {
                 window.open(linkDepositos.href);
               } else if (alvo === 'BOTAO_RPV' || alvo === 'LINK_RPV') {
@@ -169,36 +182,41 @@ function modificarPaginaProcesso({
                 }
               }
               return estado;
-            },
-            Erro: () => estado,
-          }),
-        Erro: () =>
-          Estado.match(estado, { Erro: () => estado }, () => {
-            bc.destroy();
-            return Estado.Erro;
-          }),
-        PaginaContasAberta: () =>
-          Estado.match(estado, {
-            AguardaVerificacaoInicial: () => Estado.Erro,
-            AguardaAtualizacao: () => {
+            })
+            .case('Erro', () => estado)
+            .get()
+        )
+        .case('Erro', () =>
+          match(estado)
+            .case('Erro', () => estado)
+            .otherwise(() => {
+              bc.destroy();
+              return Estado.Erro();
+            })
+            .get()
+        )
+        .case('PaginaContasAberta', () =>
+          match(estado)
+            .case('AguardaVerificacaoInicial', () => Estado.Erro())
+            .case('AguardaAtualizacao', () => {
               bc.publish(Mensagem.RespostaAtualizar(numproc, true));
               return estado;
-            },
-            Ocioso: () => estado,
-            Erro: () => estado,
-          }),
-        VerificacaoTerminada: ({ rpv, depositos }) => {
+            })
+            .case('Ocioso', () => estado)
+            .case('Erro', () => estado)
+            .get()
+        )
+        .case('VerificacaoTerminada', ({ rpv, depositos }) => {
           const ocioso = Estado.Ocioso({ rpv, depositos });
-          return Estado.match(estado, {
-            AguardaVerificacaoInicial: () => ocioso,
-            AguardaAtualizacao: () => ocioso,
-            Ocioso: () => ocioso,
-            Erro: () => estado,
-          });
-        },
-      })
+          return match(estado)
+            .case('AguardaVerificacaoInicial', () => ocioso)
+            .case('AguardaAtualizacao', () => ocioso)
+            .case('Ocioso', () => ocioso)
+            .case('Erro', () => estado)
+            .get();
+        })
+        .get()
   );
-
   let div: HTMLElement | undefined;
   const sub = store.subscribe(estado => {
     if (!div) {
@@ -222,14 +240,14 @@ function modificarPaginaProcesso({
   }
 
   function App({ estado }: { estado: Estado }) {
-    return Estado.match(estado, {
-      AguardaVerificacaoInicial: () => (
+    return match(estado)
+      .case('AguardaVerificacaoInicial', () => (
         <output>Verificando contas com saldo...</output>
-      ),
-      AguardaAtualizacao: () => (
+      ))
+      .case('AguardaAtualizacao', () => (
         <output>Aguardando atualização das contas...</output>
-      ),
-      Ocioso: ({ depositos, rpv }) => {
+      ))
+      .case('Ocioso', ({ depositos, rpv }) => {
         const qDep = depositos.quantidade as 0 | Natural | undefined;
         const qRPV = rpv.quantidade as 0 | Natural | undefined;
 
@@ -254,8 +272,8 @@ function modificarPaginaProcesso({
             {...{ classe, mensagem, rpv: qRPV ?? -1, dep: qDep ?? -1 }}
           />
         );
-      },
-      Erro: () => {
+      })
+      .case('Erro', () => {
         sub.unsubscribe();
         return (
           <MensagemComBotao
@@ -265,8 +283,8 @@ function modificarPaginaProcesso({
             dep={0}
           />
         );
-      },
-    });
+      })
+      .get();
   }
 
   function MensagemComBotao({

@@ -1,17 +1,20 @@
-import { createStore } from '@nadameu/create-store';
-import { createTaggedUnion, Static } from '@nadameu/match';
-import { render } from 'preact';
-import { createMsgService, Mensagem } from './Mensagem';
-import { NumProc } from './NumProc';
 import {
-  A,
   applicativeEither,
   E,
   Either,
+  flow,
+  I,
   Left,
-  pipeValue as pipe,
+  M,
+  pipe,
   Right,
-} from 'adt-ts';
+} from '@nadameu/adts';
+import { createStore } from '@nadameu/create-store';
+import { makeConstructorsWith, match, matchWith } from '@nadameu/match';
+import * as p from '@nadameu/predicates';
+import { render } from 'preact';
+import { createMsgService, Mensagem } from './Mensagem';
+import { NumProc } from './NumProc';
 
 declare function consultarSaldo(
   idProcessoDepositoJudicialConta: string,
@@ -19,16 +22,29 @@ declare function consultarSaldo(
 ): void;
 declare function consultarSaldoTodos(): void;
 
-const Estado = createTaggedUnion({
+const isEstado = /* @__PURE__ */ p.isTaggedUnion('status', {
+  Ocioso: {
+    infoContas: p.isTypedArray(
+      p.hasShape({ saldo: p.isNumber, atualizacao: p.isBoolean })
+    ),
+  },
+  Erro: { erro: p.isInstanceOf(Error) },
+});
+type Estado = p.Static<typeof isEstado>;
+const Estado = makeConstructorsWith('status', {
   Ocioso: (infoContas: InfoConta[]) => ({ infoContas }),
   Erro: (erro: Error) => ({ erro }),
-});
-type Estado = Static<typeof Estado>;
+}) satisfies {
+  [K in Estado['status']]: (...args: never[]) => Extract<Estado, { status: K }>;
+};
 
-const Acao = createTaggedUnion({
-  Atualizar: null,
-});
-type Acao = Static<typeof Acao>;
+const isAcao = /* @__PURE__ */ p.isTaggedUnion('tipo', { Atualizar: {} });
+type Acao = p.Static<typeof isAcao>;
+const Acao = makeConstructorsWith('tipo', {
+  Atualizar: () => ({}),
+}) satisfies {
+  [K in Acao['tipo']]: (...args: never[]) => Extract<Acao, { tipo: K }>;
+};
 
 export function paginaDepositos(numproc: NumProc): Either<Error, void> {
   const barra = document.getElementById('divInfraBarraLocalizacao');
@@ -42,9 +58,9 @@ export function paginaDepositos(numproc: NumProc): Either<Error, void> {
   const bc = createMsgService();
   const store = createStore<Estado, Acao>(
     () =>
-      pipe(
+      flow(
         obterContas(),
-        E.either<Error, Estado>(Estado.Erro)(infoContas => {
+        E.match(Estado.Erro, infoContas => {
           bc.publish(
             Mensagem.InformaSaldoDeposito(
               numproc,
@@ -55,25 +71,27 @@ export function paginaDepositos(numproc: NumProc): Either<Error, void> {
           return Estado.Ocioso(infoContas);
         })
       ),
-    (estado, acao) =>
-      Acao.match(acao, {
-        Atualizar: () =>
-          Estado.match(estado, {
-            Erro: () => estado,
-            Ocioso: () => {
+    (estado, acao) => {
+      return matchWith('tipo')(acao)
+        .case('Atualizar', () =>
+          matchWith('status')(estado)
+            .case('Erro', () => estado)
+            .case('Ocioso', () => {
               consultarSaldoTodos();
               return estado;
-            },
-          }),
-      })
+            })
+            .get()
+        )
+        .get();
+    }
   );
 
   const sub = store.subscribe(update);
   return Right(undefined as void);
 
   function App({ estado }: { estado: Estado }) {
-    return Estado.match(estado, {
-      Ocioso: ({ infoContas }) => {
+    return matchWith('status')(estado)
+      .case('Ocioso', ({ infoContas }) => {
         const contasComSaldo = infoContas.filter(x => x.saldo > 0).length;
         const contasAtualizaveis = infoContas.filter(x => x.atualizacao).length;
         const classe = contasComSaldo === 0 ? 'zerado' : 'saldo';
@@ -95,17 +113,17 @@ export function paginaDepositos(numproc: NumProc): Either<Error, void> {
             {botao}
           </>
         );
-      },
-      Erro: ({ erro }) => {
+      })
+      .case('Erro', ({ erro }) => {
         window.setTimeout(() => sub.unsubscribe(), 0);
         return <span class="erro">{erro.message}</span>;
-      },
-    });
+      })
+      .get();
   }
 
   function onClick(evt: Event) {
     evt.preventDefault();
-    store.dispatch(Acao.Atualizar);
+    store.dispatch(Acao.Atualizar());
   }
 
   function update(estado: Estado) {
@@ -116,18 +134,18 @@ export function paginaDepositos(numproc: NumProc): Either<Error, void> {
       'table#tblSaldoConta'
     );
     if (!tabela) return Left(new Error('Tabela de contas não encontrada'));
-    return pipe(
-      Array.from(
-        tabela.querySelectorAll<HTMLTableRowElement>(
-          'tr[id^="tblSaldoContaROW"]'
+    return flow(
+      tabela.querySelectorAll<HTMLTableRowElement>(
+        'tr[id^="tblSaldoContaROW"]'
+      ),
+      I.filter(x => !/Saldos$/.test(x.id)),
+      I.traverse(applicativeEither)(
+        pipe(
+          obterInfoContaLinha,
+          M.fromNullable,
+          M.toEither(() => new Error('Erro ao obter dados das contas.'))
         )
-      ).filter(x => !/Saldos$/.test(x.id)),
-      A.traverse(applicativeEither)(linha => {
-        const info = obterInfoContaLinha(linha);
-        return info
-          ? Right(info)
-          : Left(new Error('Erro ao obter dados das contas.'));
-      })
+      )
     );
   }
 }
@@ -138,11 +156,12 @@ interface InfoConta {
 }
 
 function obterInfoContaLinha(row: HTMLTableRowElement): InfoConta | null {
-  if (row.cells.length !== 11 && row.cells.length !== 13) return null;
+  if (!p.arrayHasLength(11)(row.cells) && !p.arrayHasLength(13)(row.cells))
+    return null;
   const textoSaldo = row.cells[row.cells.length - 4]!.textContent ?? '';
   const match = textoSaldo.match(/^R\$ ([0-9.]*\d,\d{2})$/);
-  if (!match || match.length < 2) return null;
-  const [, numeros] = match as [string, string];
+  if (!match || !p.arrayHasLength(2)(match)) return null;
+  const [, numeros] = match;
   const saldo = Number(numeros.replace(/\./g, '').replace(',', '.'));
   const link = row.cells[
     row.cells.length - 1

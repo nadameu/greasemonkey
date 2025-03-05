@@ -1,19 +1,8 @@
-import { defineConfig } from 'vite';
-import preact from '@preact/preset-vite';
-import monkey, { cdn } from 'vite-plugin-monkey';
+import { enderecosEproc } from '@nadameu/enderecos-eproc';
 import target from '@nadameu/esbuild-target';
-
-const urlInfo = ['pr', 'rs', 'sc']
-  .map(uf => `eproc.jf${uf}.jus.br`)
-  .map(domain => ({ domain, directory: 'eprocV2' }))
-  .concat([{ domain: 'eproc.trf4.jus.br', directory: 'eproc2trf4' }]);
-
-function buildUrl(acao: string) {
-  return urlInfo.map(
-    ({ domain, directory }) =>
-      `https://${domain}/${directory}/controlador.php?acao=${acao}&*`
-  );
-}
+import preact from '@preact/preset-vite';
+import { defineConfig } from 'vite';
+import monkey, { cdn } from 'vite-plugin-monkey';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -31,9 +20,9 @@ export default defineConfig({
         name: { 'pt-BR': 'Atualizar saldos' },
         namespace: 'http://nadameu.com.br',
         match: [
-          ...buildUrl('processo_precatorio_rpv'),
-          ...buildUrl('processo_selecionar'),
-          ...buildUrl('processo_depositos_judiciais'),
+          ...enderecosEproc('acao=processo_precatorio_rpv&*'),
+          ...enderecosEproc('acao=processo_selecionar&*'),
+          ...enderecosEproc('acao=processo_depositos_judiciais&*'),
         ],
       },
       build: {

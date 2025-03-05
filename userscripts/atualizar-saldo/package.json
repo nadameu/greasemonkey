@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@nadameu/adts": "workspace:^",
     "@nadameu/create-broadcast-service": "workspace:^",
     "@nadameu/create-element": "workspace:^",
     "@nadameu/create-store": "workspace:^",
@@ -22,5 +23,8 @@
     "@nadameu/opaque": "workspace:^",
     "@nadameu/predicates": "workspace:^",
     "@nadameu/resolvable": "workspace:^"
+  },
+  "devDependencies": {
+    "@nadameu/enderecos-eproc": "workspace:^"
   }
 }

@@ -1,14 +1,5 @@
+import { E, Either, Left, Right } from '@nadameu/adts';
 import * as p from '@nadameu/predicates';
-import {
-  A,
-  E,
-  Either,
-  Left,
-  O,
-  Right,
-  applicativeEither,
-  pipeValue as pipe,
-} from 'adt-ts';
 import { isNumproc } from './NumProc';
 import './main.scss';
 import { paginaContas } from './paginaContas';
@@ -21,34 +12,32 @@ const paginas = {
   processo_depositos_judiciais: paginaDepositos,
 };
 
-const isAcaoReconhecida = p.isAnyOf(
-  ...(Object.keys(paginas) as Array<keyof typeof paginas>).map(k =>
-    p.isLiteral(k)
-  )
-);
-type AcaoReconhecida = p.Static<typeof isAcaoReconhecida>;
+const isAcaoReconhecida = (x: string): x is keyof typeof paginas =>
+  Object.keys(paginas).includes(x);
 
 export function main(): Either<Error, void> {
-  const params = new URL(document.location.href).searchParams;
-  const acao = validar(
-    params,
-    'acao',
-    'Página desconhecida',
-    isAcaoReconhecida,
-    acao => `Ação desconhecida: "${acao}".`
-  );
-  const numproc = validar(
-    params,
-    'num_processo',
-    'Número do processo não encontrado.',
-    isNumproc,
-    numproc => `Número de processo inválido: "${numproc}".`
-  );
-  return pipe(
-    { acao, numproc },
-    O.sequence(applicativeEither),
-    E.bind(({ acao, numproc }) => paginas[acao](numproc))
-  );
+  return E.gen(function* ($_) {
+    const params = new URL(document.location.href).searchParams;
+    const acao = yield* $_(
+      validar(
+        params,
+        'acao',
+        'Página desconhecida',
+        isAcaoReconhecida,
+        acao => `Ação desconhecida: "${acao}".`
+      )
+    );
+    const numproc = yield* $_(
+      validar(
+        params,
+        'num_processo',
+        'Número do processo não encontrado.',
+        isNumproc,
+        numproc => `Número de processo inválido: "${numproc}".`
+      )
+    );
+    return yield* $_(paginas[acao](numproc));
+  });
 }
 
 function validar<T extends string>(

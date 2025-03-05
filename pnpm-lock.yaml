@@ -191,6 +191,9 @@ importers:
 
   userscripts/atualizar-saldo:
     dependencies:
+      '@nadameu/adts':
+        specifier: workspace:^
+        version: link:../../lib/adts
       '@nadameu/create-broadcast-service':
         specifier: workspace:^
         version: link:../../lib/create-broadcast-service
@@ -221,6 +224,10 @@ importers:
       '@nadameu/resolvable':
         specifier: workspace:^
         version: link:../../lib/resolvable
+    devDependencies:
+      '@nadameu/enderecos-eproc':
+        specifier: workspace:^
+        version: link:../../lib/enderecos-eproc
 
   userscripts/baixa-acordo-inss:
     dependencies:
