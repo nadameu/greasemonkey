@@ -6,7 +6,9 @@ export class AssertionError extends Error {
     super(message);
   }
 }
-
+/**
+ * @throws {AssertionError}
+ */
 export function assert(
   condition: boolean,
   message?: string
@@ -14,6 +16,9 @@ export function assert(
   if (!condition) throw new AssertionError(message);
 }
 
+/**
+ * @throws {AssertionError}
+ */
 export function check<T, U extends T>(
   predicate: Negate<U>,
   value: T,
@@ -24,11 +29,6 @@ export function check<T, U extends T>(
   value: T,
   message?: string
 ): U;
-export function check<T>(
-  predicate: Predicate<T>,
-  value: unknown,
-  message?: string
-): T;
 export function check<T>(
   predicate: Predicate<T>,
   value: unknown,
@@ -55,6 +55,7 @@ export type Static<T> = T extends Predicate<infer U> ? U : never;
 export const isUnknown: Predicate<unknown> = (
   _value: unknown
 ): _value is unknown => true;
+export const isAny: Predicate<any> = isUnknown;
 
 interface IsOfTypeMap {
   bigint: bigint;
@@ -129,7 +130,9 @@ export const isObject = /* @__PURE__ */ refine(isOfTypeObject, isNotNull);
 export type Integer = Opaque<number, { Integer: Integer }>;
 export const isInteger: Predicate<Integer> = /* @__PURE__*/ (x): x is Integer =>
   Number.isInteger(x);
+/** Integer greater than 0 (zero) */
 export type Natural = Opaque<Integer, { Natural: Natural }>;
+/** is an integer greater than 0 (zero) */
 export const isNatural = /* @__PURE__*/ refine(
   isInteger,
   (x: number): x is Natural => x > 0
