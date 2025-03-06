@@ -1,23 +1,17 @@
-import { E, Either } from '@nadameu/adts';
+import { E, Either, tuple } from '@nadameu/adts';
 import { createStore } from '@nadameu/create-store';
-import {
-  FromConstructors,
-  makeConstructors,
-  match,
-  matchWith,
-} from '@nadameu/match';
-import { Natural } from '@nadameu/predicates';
+import { makeConstructorsWith, match, matchWith } from '@nadameu/match';
+import * as p from '@nadameu/predicates';
 import { render } from 'preact';
-import { Mensagem, createMsgService } from './Mensagem';
+import { createMsgService, Mensagem } from './Mensagem';
 import { NumProc } from './NumProc';
 import { obter } from './obter';
 
 export function paginaProcesso(numproc: NumProc): Either<Error, void> {
   return E.gen(function* ($_) {
+    const informacoesAdicionais = yield* $_(obterInformacoesAdicionais());
     modificarPaginaProcesso({
-      informacoesAdicionais: yield* $_(obterInformacoesAdicionais()),
-      linkDepositos: yield* $_(obterLinkDepositos()),
-      linkRPV: yield* $_(obterLinkRPV()),
+      informacoesAdicionais,
       numproc,
     });
   });
@@ -25,15 +19,14 @@ export function paginaProcesso(numproc: NumProc): Either<Error, void> {
 
 function modificarPaginaProcesso({
   informacoesAdicionais,
-  linkRPV,
-  linkDepositos,
   numproc,
 }: {
   informacoesAdicionais: HTMLElement;
-  linkRPV: HTMLAnchorElement;
-  linkDepositos: HTMLAnchorElement;
   numproc: NumProc;
 }) {
+  let linkRPV: HTMLAnchorElement;
+  let linkDepositos: HTMLAnchorElement;
+
   interface InfoTipo {
     quantidade: number | undefined;
     atualiza: boolean;
@@ -43,37 +36,68 @@ function modificarPaginaProcesso({
     depositos: InfoTipo;
   }
 
-  const Estado = makeConstructors({
-    AguardaVerificacaoInicial: () => ({}),
-    AguardaAtualizacao: ({ rpv, depositos }: TipoContas) => ({
-      rpv,
-      depositos,
-    }),
-    Ocioso: ({ rpv, depositos }: TipoContas) => ({ rpv, depositos }),
-    Erro: () => ({}),
-  });
-  type Estado = FromConstructors<typeof Estado>;
+  interface EstadoBase<K extends string> {
+    status: K;
+  }
+  interface EstadoAguardaAtualizacao
+    extends EstadoBase<'AguardaAtualizacao'>,
+      TipoContas {}
+  interface EstadoAguardaVerificacaoInicial
+    extends EstadoBase<'AguardaVerificacaoInicial'> {}
+  interface EstadoErro extends EstadoBase<'Erro'> {}
+  interface EstadoOcioso extends EstadoBase<'Ocioso'>, TipoContas {}
+  type Estado =
+    | EstadoAguardaAtualizacao
+    | EstadoAguardaVerificacaoInicial
+    | EstadoErro
+    | EstadoOcioso;
 
-  const Acao = makeConstructors({
+  const Estado = makeConstructorsWith('status', {
+    AguardaVerificacaoInicial: () => ({}),
+    AguardaAtualizacao: (tipoContas: TipoContas) => tipoContas,
+    Ocioso: (tipoContas: TipoContas) => tipoContas,
     Erro: () => ({}),
-    PaginaContasAberta: () => ({}),
-    VerificacaoTerminada: ({ rpv, depositos }: TipoContas) => ({
-      rpv,
-      depositos,
-    }),
-    AtualizacaoRPV: ({ quantidade, atualiza }: InfoTipo) => ({
-      quantidade,
-      atualiza,
-    }),
-    AtualizacaoDepositos: ({ quantidade, atualiza }: InfoTipo) => ({
-      quantidade,
-      atualiza,
-    }),
+  }) satisfies {
+    [K in Estado['status']]: (
+      ...args: never[]
+    ) => Extract<Estado, { status: K }>;
+  };
+  const matchEstado = /* @__PURE__ */ matchWith('status')<Estado>;
+
+  interface AcaoBase<K extends string> {
+    type: K;
+  }
+  interface AcaoAtualizacaoDepositos
+    extends AcaoBase<'AtualizacaoDepositos'>,
+      InfoTipo {}
+  interface AcaoAtualizacaoRPV extends AcaoBase<'AtualizacaoRPV'>, InfoTipo {}
+  interface AcaoClique extends AcaoBase<'Clique'> {
+    alvo: 'BOTAO_RPV' | 'LINK_RPV' | 'BOTAO_DEP' | 'LINK_DEP';
+  }
+  interface AcaoErro extends AcaoBase<'Erro'> {}
+  interface AcaoPaginaContasAberta extends AcaoBase<'PaginaContasAberta'> {}
+  interface AcaoVerificacaoTerminada
+    extends AcaoBase<'VerificacaoTerminada'>,
+      TipoContas {}
+  type Acao =
+    | AcaoAtualizacaoDepositos
+    | AcaoAtualizacaoRPV
+    | AcaoClique
+    | AcaoErro
+    | AcaoPaginaContasAberta
+    | AcaoVerificacaoTerminada;
+  const Acao = makeConstructorsWith('type', {
+    AtualizacaoDepositos: (infoTipo: InfoTipo) => infoTipo,
+    AtualizacaoRPV: (infoTipo: InfoTipo) => infoTipo,
     Clique: (alvo: 'BOTAO_RPV' | 'LINK_RPV' | 'BOTAO_DEP' | 'LINK_DEP') => ({
       alvo,
     }),
-  });
-  type Acao = FromConstructors<typeof Acao>;
+    Erro: () => ({}),
+    PaginaContasAberta: () => ({}),
+    VerificacaoTerminada: (tipoContas: TipoContas) => tipoContas,
+  }) satisfies {
+    [K in Acao['type']]: (...args: never[]) => Extract<Acao, { type: K }>;
+  };
 
   const bc = createMsgService();
   const store = createStore<Estado, Acao>(
@@ -86,6 +110,12 @@ function modificarPaginaProcesso({
       }, AGUARDAR_MS);
 
       const observer = new MutationObserver(() => {
+        const tempRPV = obterLinkRPV();
+        if (tempRPV._tag === 'Left') return;
+        const tempDepositos = obterLinkDepositos();
+        if (tempDepositos._tag === 'Left') return;
+        linkRPV = tempRPV.right;
+        linkDepositos = tempDepositos.right;
         window.clearTimeout(timer);
         observer.disconnect();
         const info: TipoContas = {
@@ -93,15 +123,17 @@ function modificarPaginaProcesso({
           depositos: { quantidade: 0, atualiza: false },
         };
 
-        if (linkRPV.textContent === 'Há conta com saldo')
+        if (linkRPV.textContent?.trim() === 'Há conta com saldo')
           info.rpv = { quantidade: undefined, atualiza: true };
 
-        if (linkDepositos.textContent === 'Há conta com saldo')
+        if (linkDepositos.textContent?.trim() === 'Há conta com saldo')
           info.depositos = { quantidade: undefined, atualiza: false };
-
         store.dispatch(Acao.VerificacaoTerminada(info));
       });
-      observer.observe(linkRPV, { childList: true });
+      observer.observe(informacoesAdicionais, {
+        childList: true,
+        subtree: true,
+      });
 
       bc.subscribe(msg => {
         matchWith('tipo')(msg)
@@ -139,83 +171,85 @@ function modificarPaginaProcesso({
 
       return Estado.AguardaVerificacaoInicial();
     },
-    (estado, acao) =>
-      match(acao)
-        .case('AtualizacaoDepositos', ({ quantidade, atualiza }) =>
-          match(estado)
-            .case('AguardaAtualizacao', ({ rpv }) =>
-              Estado.AguardaAtualizacao({
-                rpv,
-                depositos: { quantidade, atualiza },
-              })
-            )
-            .case('AguardaVerificacaoInicial', () => Estado.Erro())
-            .case('Erro', () => estado)
-            .case('Ocioso', ({ rpv }) =>
-              Estado.Ocioso({ rpv, depositos: { quantidade, atualiza } })
-            )
-            .get()
-        )
-        .case('AtualizacaoRPV', ({ quantidade, atualiza }) =>
-          match(estado)
-            .case('AguardaAtualizacao', ({ depositos }) =>
-              Estado.Ocioso({ rpv: { quantidade, atualiza }, depositos })
-            )
-            .case('AguardaVerificacaoInicial', () => Estado.Erro())
-            .case('Erro', () => estado)
-            .case('Ocioso', ({ depositos }) =>
-              Estado.Ocioso({ rpv: { quantidade, atualiza }, depositos })
-            )
-            .get()
-        )
-        .case('Clique', ({ alvo }) =>
-          match(estado)
-            .case('AguardaVerificacaoInicial', () => estado)
-            .case('AguardaAtualizacao', () => estado)
-            .case('Ocioso', dados => {
-              if (alvo === 'BOTAO_DEP' || alvo === 'LINK_DEP') {
-                window.open(linkDepositos.href);
-              } else if (alvo === 'BOTAO_RPV' || alvo === 'LINK_RPV') {
-                window.open(linkRPV.href);
-                if (alvo === 'BOTAO_RPV' && dados.rpv.atualiza) {
-                  return Estado.AguardaAtualizacao(dados);
-                }
-              }
-              return estado;
-            })
-            .case('Erro', () => estado)
-            .get()
-        )
-        .case('Erro', () =>
-          match(estado)
-            .case('Erro', () => estado)
-            .otherwise(() => {
-              bc.destroy();
-              return Estado.Erro();
-            })
-            .get()
-        )
-        .case('PaginaContasAberta', () =>
-          match(estado)
-            .case('AguardaVerificacaoInicial', () => Estado.Erro())
-            .case('AguardaAtualizacao', () => {
-              bc.publish(Mensagem.RespostaAtualizar(numproc, true));
-              return estado;
-            })
-            .case('Ocioso', () => estado)
-            .case('Erro', () => estado)
-            .get()
-        )
-        .case('VerificacaoTerminada', ({ rpv, depositos }) => {
-          const ocioso = Estado.Ocioso({ rpv, depositos });
-          return match(estado)
-            .case('AguardaVerificacaoInicial', () => ocioso)
-            .case('AguardaAtualizacao', () => ocioso)
-            .case('Ocioso', () => ocioso)
-            .case('Erro', () => estado)
-            .get();
+    (estado, acao) => {
+      type Helper<P extends string, S extends Array<string>> = S extends []
+        ? any
+        : {
+            [p in P]: S[number];
+          };
+
+      const matches =
+        <
+          T extends [Estado, Acao],
+          const S extends Array<T[0]['status']>,
+          const A extends Array<T[1]['type']>,
+        >(
+          statuses: S,
+          types: A
+        ) =>
+        (obj: T): obj is Extract<T, [Helper<'status', S>, Helper<'type', A>]> =>
+          (statuses.length === 0 ||
+            statuses.some(status => obj[0].status === status)) &&
+          (types.length === 0 || types.some(type => obj[1].type === type));
+
+      return match(tuple(estado, acao))
+        .when(matches(['Erro'], []), ([estado]) => estado)
+        .when(matches([], ['Erro']), () => {
+          bc.destroy();
+          return Estado.Erro();
         })
-        .get()
+        .when(
+          matches(
+            ['AguardaAtualizacao', 'AguardaVerificacaoInicial'],
+            ['Clique']
+          ),
+          ([estado]) => estado
+        )
+        .when(
+          matches(['AguardaAtualizacao', 'Ocioso'], ['AtualizacaoDepositos']),
+          ([{ status, rpv }, { quantidade, atualiza }]) =>
+            Estado[status]({ rpv, depositos: { quantidade, atualiza } })
+        )
+        .when(
+          matches(['AguardaAtualizacao', 'Ocioso'], ['AtualizacaoRPV']),
+          ([{ status, depositos }, { quantidade, atualiza }]) =>
+            Estado[status]({ depositos, rpv: { quantidade, atualiza } })
+        )
+        .when(
+          matches(
+            ['AguardaVerificacaoInicial'],
+            ['AtualizacaoDepositos', 'AtualizacaoRPV', 'PaginaContasAberta']
+          ),
+          () => Estado.Erro()
+        )
+        .when(
+          matches(
+            ['AguardaAtualizacao', 'AguardaVerificacaoInicial', 'Ocioso'],
+            ['VerificacaoTerminada']
+          ),
+          ([, { rpv, depositos }]) => Estado.Ocioso({ rpv, depositos })
+        )
+        .when(matches(['Ocioso'], ['Clique']), ([dados, { alvo }]) => {
+          if (alvo === 'BOTAO_DEP' || alvo === 'LINK_DEP') {
+            window.open(linkDepositos.href);
+          } else if (alvo === 'BOTAO_RPV' || alvo === 'LINK_RPV') {
+            window.open(linkRPV.href);
+            if (alvo === 'BOTAO_RPV' && dados.rpv.atualiza) {
+              return Estado.AguardaAtualizacao(dados);
+            }
+          }
+          return dados;
+        })
+        .when(matches(['Ocioso'], ['PaginaContasAberta']), ([estado]) => estado)
+        .when(
+          matches(['AguardaAtualizacao'], ['PaginaContasAberta']),
+          ([estado]) => {
+            bc.publish(Mensagem.RespostaAtualizar(numproc, true));
+            return estado;
+          }
+        )
+        .get();
+    }
   );
   let div: HTMLElement | undefined;
   const sub = store.subscribe(estado => {
@@ -240,7 +274,7 @@ function modificarPaginaProcesso({
   }
 
   function App({ estado }: { estado: Estado }) {
-    return match(estado)
+    return matchEstado(estado)
       .case('AguardaVerificacaoInicial', () => (
         <output>Verificando contas com saldo...</output>
       ))
@@ -248,12 +282,12 @@ function modificarPaginaProcesso({
         <output>Aguardando atualização das contas...</output>
       ))
       .case('Ocioso', ({ depositos, rpv }) => {
-        const qDep = depositos.quantidade as 0 | Natural | undefined;
-        const qRPV = rpv.quantidade as 0 | Natural | undefined;
+        const qDep = depositos.quantidade as 0 | p.Natural | undefined;
+        const qRPV = rpv.quantidade as 0 | p.Natural | undefined;
 
         const classe = qDep === 0 && qRPV === 0 ? 'zerado' : 'saldo';
 
-        function textoContas(qtd: Natural | undefined) {
+        function textoContas(qtd: p.Natural | undefined) {
           if (qtd === undefined) return 'conta(s)';
           if (qtd === 1) return `1 conta`;
           return `${qtd} contas`;
