@@ -2,7 +2,7 @@
 // @name         seeu-movimentacoes
 // @name:pt-BR   SEEU - Movimentações
 // @namespace    nadameu.com.br
-// @version      2.5.1
+// @version      2.6.0
 // @author       nadameu
 // @description  Melhoria na apresentação das movimentações do processo
 // @match        https://seeu.pje.jus.br/*
@@ -18,173 +18,15 @@
     GM_addStyle(t);
     return;
   }
-  const o = document.createElement('style');
-  (o.textContent = t), document.head.append(o);
+  const e = document.createElement('style');
+  (e.textContent = t), document.head.append(e);
 })(
-  ' ._dica_25o7b_1{position:absolute;border:1px solid #408;background:hsl(66,25%,93%);max-width:25%}td a._struck_25o7b_8{cursor:not-allowed}td a._struck_25o7b_8,td a._struck_25o7b_8:hover{text-decoration:line-through}._avisoCarregando_25o7b_15{font-size:1.2em;font-style:italic}._divConfigurarAbertura_25o7b_20{text-align:right;--cor-secundaria: hsl(333, 20%, 35%)}html #container .extendedinfo td a.link{padding:0 1px!important;border:1px solid transparent}html #container .extendedinfo td a.link._ultimoClicado_25o7b_29{background:hsl(333,35%,91%)!important;border:1px dotted hsl(333,75%,8%)} '
+  ' td a._struck_14zo8_1{cursor:not-allowed}td a._struck_14zo8_1,td a._struck_14zo8_1:hover{text-decoration:line-through}._avisoCarregando_14zo8_8{font-size:1.2em;font-style:italic}._divConfigurarAbertura_14zo8_13{text-align:right;--cor-secundaria: hsl(333, 20%, 35%)}html #container .extendedinfo td a.link{padding:0 1px!important;border:1px solid transparent}html #container .extendedinfo td a.link._ultimoClicado_14zo8_22{background:#f0e0e7!important;border:1px dotted hsl(333,75%,8%)} '
 );
 
 (function () {
   'use strict';
 
-  var __defProp = Object.defineProperty;
-  var __defNormalProp = (obj, key, value) =>
-    key in obj
-      ? __defProp(obj, key, {
-          enumerable: true,
-          configurable: true,
-          writable: true,
-          value,
-        })
-      : (obj[key] = value);
-  var __publicField = (obj, key, value) => {
-    __defNormalProp(obj, typeof key !== 'symbol' ? key + '' : key, value);
-    return value;
-  };
-  const concat = (l, r) => l.concat(r);
-  const semigroupArray = { concat };
-  const tag = _type => _tag => props => Object.assign(props, { _type, _tag });
-  const isTagged = _tag => obj => obj._tag === _tag;
-  const tagMaybe = /* @__PURE__ */ tag('Maybe');
-  const Just = value => tagMaybe('Just')({ value });
-  const isJust = /* @__PURE__ */ isTagged('Just');
-  const Nothing = /* @__PURE__ */ tagMaybe('Nothing')({});
-  const isNothing = /* @__PURE__ */ isTagged('Nothing');
-  const tagEither = /* @__PURE__ */ tag('Either');
-  const Left = left => tagEither('Left')({ left });
-  const isLeft = /* @__PURE__ */ isTagged('Left');
-  const Right = right => tagEither('Right')({ right });
-  const isRight = /* @__PURE__ */ isTagged('Right');
-  const deriveMap = M => f => M.flatMap(x => M.of(f(x)));
-  const deriveAp = M => fa => ff =>
-    M.flatMap(f => M.flatMap(a => M.of(f(a)))(fa))(ff);
-  const deriveLift2 = M => f => (fa, fb) =>
-    M.ap(fb)(M.map(a => b => f(a, b))(fa));
-  const of$1 = Right;
-  const match = (f, g) => fa => (isLeft(fa) ? f(fa.left) : g(fa.right));
-  const flatMapBoth = match;
-  const flatMap$1 = f => fa => (isRight(fa) ? f(fa.right) : fa);
-  const mapBoth = (f, g) =>
-    flatMapBoth(
-      e => Left(f(e)),
-      a => Right(g(a))
-    );
-  const map$2 = /* @__PURE__ */ deriveMap({ of: of$1, flatMap: flatMap$1 });
-  const ap = /* @__PURE__ */ deriveAp({ of: of$1, flatMap: flatMap$1 });
-  const mapLeft = f => fa => (isLeft(fa) ? Left(f(fa.left)) : fa);
-  const eitherBool = pred => a => (pred(a) ? Right(a) : Left(a));
-  const merge = fa => (isLeft(fa) ? fa.left : fa.right);
-  const orElse$1 = f => fa => (isRight(fa) ? fa : f(fa.left));
-  const applicativeEither = { ap, map: map$2, of: of$1 };
-  const flatMap = f => fa => (isNothing(fa) ? Nothing : f(fa.value));
-  const of = Just;
-  const map$1 = /* @__PURE__ */ deriveMap({ of, flatMap });
-  const orElse = ifNothing => fa => (isNothing(fa) ? ifNothing() : fa);
-  const fromNullable = value => (value == null ? Nothing : Just(value));
-  const mapNullable = f => flatMap(x => fromNullable(f(x)));
-  const getOrElse = getDefault => fa =>
-    isNothing(fa) ? getDefault() : fa.value;
-  const maybeBool = pred => a => (pred(a) ? Just(a) : Nothing);
-  const filter$1 = pred => flatMap(maybeBool(pred));
-  const toEither = whenLeft => fb =>
-    isNothing(fb) ? Left(whenLeft()) : Right(fb.value);
-  const query = selector => parentNode =>
-    fromNullable(parentNode.querySelector(selector));
-  const queryAll = selector => parentNode =>
-    parentNode.querySelectorAll(selector);
-  const text = node => fromNullable(node.textContent);
-  const identity = x => x;
-  const tailRec = (seed, f) => {
-    let result = f(seed);
-    while (isLeft(result)) result = f(result.left);
-    return result.right;
-  };
-  const constant = a => _ => a;
-  const tagList = /* @__PURE__ */ tag('List');
-  const Cons = (head, tail) => tagList('Cons')({ head, tail });
-  const Nil = /* @__PURE__ */ tagList('Nil')({});
-  const isNil = /* @__PURE__ */ isTagged('Nil');
-  class Concat {
-    constructor(left, right) {
-      __publicField(this, 'length');
-      this.left = left;
-      this.right = right;
-      this.length = left.length + right.length;
-    }
-    *[Symbol.iterator]() {
-      let left = this.left;
-      let rights = Cons(this.right, Nil);
-      while (true) {
-        while (left instanceof Concat) {
-          rights = Cons(left.right, rights);
-          left = left.left;
-        }
-        yield* left;
-        if (isNil(rights)) return;
-        left = rights.head;
-        rights = rights.tail;
-      }
-    }
-  }
-  const fromGen =
-    gen =>
-    (...args) => [...gen(...args)];
-  const empty = () => [];
-  const append = (xs, x) => (xs.length === 0 ? [x] : new Concat(xs, [x]));
-  const map = f =>
-    fromGen(function* (fa, i = 0) {
-      for (const a of fa) yield f(a, i++);
-    });
-  const foldLeft = (seed, f) => fa => {
-    let acc = seed,
-      i = 0;
-    for (const a of fa) acc = f(acc, a, i++);
-    return acc;
-  };
-  const foldMap = M => f =>
-    foldLeft(M.empty(), (bs, a, i) => M.concat(bs, f(a, i)));
-  const fold = M => foldMap(M)(identity);
-  const traverse = M => f => fa => {
-    const lifted = deriveLift2(M)(append);
-    return M.map(xs => [...xs])(
-      foldLeft(M.of(empty()), (ftb, a, i) => lifted(ftb, f(a, i)))(fa)
-    );
-  };
-  const sequence$1 = M => traverse(M)(identity);
-  const filterMap = f =>
-    fromGen(function* (fa, i = 0) {
-      for (const a of fa) {
-        const maybe = f(a, i++);
-        if (isJust(maybe)) yield maybe.value;
-      }
-    });
-  const filter = pred => filterMap((a, i) => (pred(a, i) ? Just(a) : Nothing));
-  const toNonEmptyArray = seq => (seq.length === 0 ? Nothing : Just([...seq]));
-  const monoidString = {
-    empty: () => '',
-    concat: (l, r) => `${l}${r}`,
-  };
-  const tuple = (...values) => values;
-  const sequence = sequence$1;
-  const makeApplicativeValidation = M => ({
-    map: map$2,
-    of: of$1,
-    ap: fa => ff =>
-      isLeft(ff)
-        ? isLeft(fa)
-          ? Left(M.concat(ff.left, fa.left))
-          : ff
-        : isLeft(fa)
-          ? fa
-          : Right(ff.right(fa.right)),
-  });
-  function pipe(x) {
-    let y = x;
-    for (let i = 1, len = arguments.length; i < len; i += 1) {
-      y = arguments[i](y);
-    }
-    return y;
-  }
   var _GM_addStyle = /* @__PURE__ */ (() =>
     typeof GM_addStyle != 'undefined' ? GM_addStyle : void 0)();
   var _GM_deleteValue = /* @__PURE__ */ (() =>
@@ -195,19 +37,139 @@
     typeof GM_info != 'undefined' ? GM_info : void 0)();
   var _GM_setValue = /* @__PURE__ */ (() =>
     typeof GM_setValue != 'undefined' ? GM_setValue : void 0)();
+  const flow = (value, ...fns) => {
+    let x = value;
+    for (let i = 0; i < fns.length; i++) x = fns[i](x);
+    return x;
+  };
+  const tag = _type => _tag => props => Object.assign(props, { _type, _tag });
+  const apply = (f, ...args) => f(...args);
+  const identity = x => x;
+  const foldLeftIterable = (seed, f) => xs => {
+    let acc = seed;
+    let i = 0;
+    for (const x of xs) acc = f(acc, x, i++);
+    return acc;
+  };
+  const mapIterable = f => xs => ({
+    [Symbol.iterator]() {
+      const it = xs[Symbol.iterator]();
+      let index = 0;
+      return {
+        next() {
+          const result = it.next();
+          if (result.done === true) return result;
+          return { done: false, value: f(result.value, index++) };
+        },
+      };
+    },
+  });
+  const filterIterable = pred => xs => ({
+    [Symbol.iterator]() {
+      const it = xs[Symbol.iterator]();
+      let index = 0;
+      return {
+        next() {
+          let result = it.next();
+          while (result.done !== true && pred(result.value, index++) !== true) {
+            result = it.next();
+          }
+          return result;
+        },
+      };
+    },
+  });
+  const iterableToArray = xs =>
+    foldLeftIterable([], (acc, x) => (acc.push(x), acc))(xs);
+  const sequenceIterable = M => tfa => {
+    const appendPartial = M.map(xs => x => (xs.push(x), xs));
+    let result = M.of([]);
+    for (const fa of tfa) {
+      result = M.ap(fa)(appendPartial(result));
+    }
+    return result;
+  };
+  const query = selector => parentNode => parentNode.querySelector(selector);
+  const text = node => node.textContent;
+  const FIRST = XPathResult.FIRST_ORDERED_NODE_TYPE;
+  const xquery = expression => contextNode =>
+    document.evaluate(expression, contextNode, null, FIRST).singleNodeValue;
+  const SNAP = XPathResult.ORDERED_NODE_SNAPSHOT_TYPE;
+  const xqueryAll = expression => contextNode => {
+    const array = [];
+    const result = document.evaluate(expression, contextNode, null, SNAP);
+    for (let i = 0, len = result.snapshotLength; i < len; i++) {
+      array.push(result.snapshotItem(i));
+    }
+    return array;
+  };
+  const of = identity;
+  const map = f => value => (value == null ? value : f(value));
+  const lift2 = f => (a, b) => (a == null ? a : b == null ? b : f(a, b));
+  const ap = fa => ff => lift2(apply)(ff, fa);
+  const orElse = ifNullish => a => (a == null ? ifNullish() : a);
+  const orThrow = message =>
+    orElse(() => {
+      throw new Error(message);
+    });
+  const filter = pred => a => (a == null ? a : pred(a) ? a : null);
+  const mapProp = prop => obj => obj?.[prop];
+  const match = re => map(x => x.match(re));
+  const test = re => filter(x => re.test(x));
+  const applicativeNullish = { ap, map, of };
+  const sequence = sequenceIterable;
+  const fanout =
+    (...fns) =>
+    value =>
+      fns.map(f => f(value));
+  const tagSeq = tag('Seq');
+  tagSeq('Zero')({});
   function h(tag2, props = null, ...children) {
     const element = document.createElement(tag2);
     for (const [key, value] of Object.entries(props ?? {})) {
-      element[key] = value;
+      if (key === 'style' || key === 'dataset') {
+        for (const [k, v] of Object.entries(value)) {
+          element[key][k] = v;
+        }
+      } else if (key === 'classList') {
+        let classes;
+        if (Array.isArray(value)) {
+          classes = value.filter(x => x !== null);
+        } else {
+          classes = Object.entries(value).flatMap(([k, v]) => {
+            if (!v) return [];
+            return [k];
+          });
+        }
+        for (const className of classes) {
+          element.classList.add(className);
+        }
+      } else {
+        element[key] = value;
+      }
     }
     element.append(...children);
     return element;
   }
+  class AssertionError extends Error {
+    name = 'AssertionError';
+    constructor(message) {
+      super(message);
+    }
+  }
+  function assert(condition, message) {
+    if (!condition) throw new AssertionError(message);
+  }
+  function check(predicate, value, message) {
+    assert(predicate(value), message);
+    return value;
+  }
   function isOfType(typeRepresentation) {
     return value => typeof value === typeRepresentation;
   }
+  const isFunction = /* @__PURE__ */ isOfType('function');
   const isOfTypeObject = /* @__PURE__ */ isOfType('object');
-  const isInstanceOf = Constructor => obj => obj instanceof Constructor;
+  const isString = /* @__PURE__ */ isOfType('string');
   function isLiteral(literal) {
     return value => value === literal;
   }
@@ -222,10 +184,11 @@
   const isObject = /* @__PURE__ */ refine(isOfTypeObject, isNotNull);
   const isInteger = x => Number.isInteger(x);
   const isNonNegativeInteger = /* @__PURE__ */ refine(isInteger, x => x > -1);
-  function isAnyOf(...predicates) {
-    return value => predicates.some(p2 => p2(value));
-  }
-  const isArray = x => Array.isArray(x);
+  const isNonEmptyString = /* @__PURE__ */ refine(
+    isString,
+    x => x.trim().length > 0
+  );
+  const arrayHasLength = num => obj => obj.length === num;
   function hasShape(predicates) {
     return refine(isObject, obj =>
       Object.entries(predicates).every(([key, predicate]) =>
@@ -233,14 +196,6 @@
       )
     );
   }
-  const isTuple = (...predicates) =>
-    refine(isArray, xs => {
-      if (xs.length !== predicates.length) return false;
-      for (let i = 0; i < predicates.length; i += 1) {
-        if (!predicates[i](xs[i])) return false;
-      }
-      return true;
-    });
   const createObserver = nativeObserver => {
     const callbacks = /* @__PURE__ */ new Map();
     const obs = nativeObserver(callbacks);
@@ -253,12 +208,8 @@
         obs.observe(key);
         return {
           unobserve() {
-            var _a, _b;
-            (_a = callbacks.get(key)) == null ? void 0 : _a.delete(callback);
-            if (
-              ((_b = callbacks.get(key)) == null ? void 0 : _b.size) ??
-              true
-            ) {
+            callbacks.get(key)?.delete(callback);
+            if (callbacks.get(key)?.size ?? true) {
               callbacks.delete(key);
               if (callbacks.size === 0) {
                 obs.disconnect();
@@ -282,28 +233,6 @@
           }
         })
     );
-  const createMutationObserver = () =>
-    createObserver(callbacks => {
-      const mut = new MutationObserver(records => {
-        for (const record of records) {
-          if (callbacks.has(record.target)) {
-            for (const callback of callbacks.get(record.target)) {
-              for (const node of record.addedNodes) {
-                callback(node);
-              }
-            }
-          }
-        }
-      });
-      return {
-        disconnect() {
-          mut.disconnect();
-        },
-        observe(key) {
-          mut.observe(key, { childList: true, subtree: true });
-        },
-      };
-    });
   function createFiniteStateMachine(
     initialState,
     transitions,
@@ -336,24 +265,90 @@
       };
     }
   }
+  const makeConstructorsWith = (tagName, constructors) =>
+    Object.fromEntries(
+      Object.entries(constructors).map(([k, v]) => [
+        k,
+        (...args) => tagWith(tagName)(k)(v(...args)),
+      ])
+    );
+  const tagWith =
+    tagName =>
+    tag2 =>
+    (obj = {}) => {
+      obj[tagName] = tag2;
+      return obj;
+    };
   const TIPO_ABERTURA = 'tipo_abertura';
   const PARAMETROS_JANELA = 'parametros_janela';
   const FECHAR_AUTOMATICAMENTE = 'fechar_automaticamente';
-  const NOME_JANELA = `gm-${_GM_info}__configurar-abertura`;
-  const Action = {
-    OPCAO_SELECIONADA: opcao => ({
-      type: 'OPCAO_SELECIONADA',
-      opcao,
-    }),
-    SALVAR: { type: 'SALVAR' },
+  const isPosicao = /* @__PURE__ */ hasShape({
+    top: isInteger,
+    left: isInteger,
+    width: isNonNegativeInteger,
+    height: isNonNegativeInteger,
+  });
+  const validarPosicao = posicao =>
+    check(
+      isPosicao,
+      posicao,
+      `Posição inválida: \`${JSON.stringify(posicao)}\`.`
+    );
+  function posicaoToFeatures(posicao) {
+    return Object.entries(posicao)
+      .map(([k, v]) => `${k}=${v.toString(10)}`)
+      .join(',');
+  }
+  function dadosAberturaToFeatures(dadosAbertura) {
+    if (dadosAbertura.tipo === 'padrao') return void 0;
+    else return posicaoToFeatures(dadosAbertura.posicao);
+  }
+  const DadosAbertura = {
+    carregar() {
+      const tipo = _GM_getValue(TIPO_ABERTURA, 'padrao');
+      if (tipo === 'padrao') return { tipo };
+      if (tipo === 'janela') {
+        const posicao = _GM_getValue(PARAMETROS_JANELA, null);
+        if (isPosicao(posicao)) return { tipo, posicao };
+      }
+      DadosAbertura.salvar(null);
+      return { tipo: 'padrao' };
+    },
+    salvar(dadosAbertura) {
+      if (dadosAbertura?.tipo ?? true) {
+        _GM_deleteValue(PARAMETROS_JANELA);
+      }
+      if (dadosAbertura === null) {
+        _GM_deleteValue(TIPO_ABERTURA);
+      } else {
+        _GM_setValue(TIPO_ABERTURA, dadosAbertura.tipo);
+        if (dadosAbertura.tipo === 'janela') {
+          _GM_setValue(PARAMETROS_JANELA, dadosAbertura.posicao);
+        }
+      }
+    },
   };
+  const NOME_JANELA = `gm-${_GM_info.script.name}__configurar-abertura`;
+  const State = makeConstructorsWith('status', {
+    INICIO: current => ({ current }),
+    SALVO_PADRAO: () => ({}),
+    JANELA_POSICAO: () => ({}),
+    JANELA_CONFIRMAR: posicao => ({ posicao }),
+    SALVO_JANELA: posicao => ({ posicao }),
+  });
+  const Action = makeConstructorsWith('type', {
+    OPCAO_SELECIONADA: opcao => ({ opcao }),
+    SALVAR: () => ({}),
+  });
   function configurarAbertura() {
     const antiga = window.open('about:blank', NOME_JANELA);
-    antiga == null ? void 0 : antiga.close();
+    antiga?.close();
     const win = window.open(
       'about:blank',
       NOME_JANELA,
-      'top=0,left=0,width=800,height=450'
+      posicaoToFeatures(
+        validarPosicao({ top: 0, left: 0, width: 800, height: 450 })
+      )
     );
     if (!win) {
       window.alert(
@@ -366,42 +361,32 @@
     }
     aoAbrirJanelaExecutar(win, () => onJanelaAberta(win));
   }
+  function obterPosicaoJanela(win) {
+    return validarPosicao({
+      top: win.screenY,
+      left: win.screenX,
+      width: win.innerWidth,
+      height: win.innerHeight,
+    });
+  }
   function onJanelaAberta(win) {
+    const tipoAberturaAtual = DadosAbertura.carregar().tipo;
     const fsm = createFiniteStateMachine(
-      {
-        status: 'INICIO',
-        current: _GM_getValue(TIPO_ABERTURA, 'padrao'),
-      },
+      State.INICIO(tipoAberturaAtual),
       {
         INICIO: {
-          OPCAO_SELECIONADA({ opcao }) {
-            return { status: 'INICIO', current: opcao };
-          },
-          SALVAR(_, state) {
-            if (state.current === 'padrao') return { status: 'SALVO_PADRAO' };
-            return {
-              status: 'JANELA_POSICAO',
-            };
+          OPCAO_SELECIONADA: ({ opcao }) => State.INICIO(opcao),
+          SALVAR: (_, { current }) => {
+            if (current === 'padrao') return State.SALVO_PADRAO();
+            return State.JANELA_POSICAO();
           },
         },
         SALVO_PADRAO: {},
         JANELA_POSICAO: {
-          SALVAR() {
-            return {
-              status: 'JANELA_CONFIRMAR',
-              posicao: {
-                top: win.screenY,
-                left: win.screenX,
-                width: win.innerWidth,
-                height: win.innerHeight,
-              },
-            };
-          },
+          SALVAR: () => State.JANELA_CONFIRMAR(obterPosicaoJanela(win)),
         },
         JANELA_CONFIRMAR: {
-          SALVAR(_, { posicao }) {
-            return { status: 'SALVO_JANELA', posicao };
-          },
+          SALVAR: (_, { posicao }) => State.SALVO_JANELA(posicao),
         },
         SALVO_JANELA: {},
       },
@@ -412,20 +397,14 @@
       type: 'radio',
       name: 'tipo',
       value: 'padrao',
-      checked: (state =>
-        state.status === 'INICIO' && state.current === 'padrao')(
-        fsm.getState()
-      ),
+      checked: tipoAberturaAtual === 'padrao',
       onclick: () => fsm.dispatch(Action.OPCAO_SELECIONADA('padrao')),
     });
     const inputJanela = h('input', {
       type: 'radio',
       name: 'tipo',
       value: 'janela',
-      checked: (state =>
-        state.status !== 'INICIO' || state.current === 'janela')(
-        fsm.getState()
-      ),
+      checked: tipoAberturaAtual === 'janela',
       onclick: () => fsm.dispatch(Action.OPCAO_SELECIONADA('janela')),
     });
     const botaoCancelar = h(
@@ -436,8 +415,10 @@
       },
       'Cancelar'
     );
-    const botaoSalvar = h('button', { type: 'button' });
-    botaoSalvar.addEventListener('click', () => fsm.dispatch(Action.SALVAR));
+    const botaoSalvar = h('button', {
+      type: 'button',
+      onclick: () => fsm.dispatch(Action.SALVAR()),
+    });
     const div = h(
       'div',
       {},
@@ -450,8 +431,7 @@
       div,
       p(botaoCancelar, ' ', botaoSalvar)
     );
-    fsm.subscribe(() => {
-      const estado = fsm.getState();
+    fsm.subscribe(estado => {
       switch (estado.status) {
         case 'INICIO': {
           if (estado.current === 'padrao') {
@@ -462,8 +442,7 @@
           break;
         }
         case 'SALVO_PADRAO': {
-          _GM_setValue(TIPO_ABERTURA, 'padrao');
-          _GM_deleteValue(PARAMETROS_JANELA);
+          DadosAbertura.salvar({ tipo: 'padrao' });
           win.close();
           break;
         }
@@ -481,14 +460,12 @@
           const frag = document.createDocumentFragment();
           frag.append(...win.document.body.childNodes);
           win.close();
-          const parametros = Object.entries(estado.posicao)
-            .map(([key, value]) => `${key}=${value}`)
-            .join(',');
+          const features = posicaoToFeatures(estado.posicao);
           try {
             const newWin = win.open(
               'about:blank',
               `${NOME_JANELA}_2`,
-              parametros
+              features
             );
             if (!newWin) throw new Error('Não foi possível abrir a janela.');
             win = newWin;
@@ -519,8 +496,7 @@
           break;
         }
         case 'SALVO_JANELA': {
-          _GM_setValue(TIPO_ABERTURA, 'janela');
-          _GM_setValue(PARAMETROS_JANELA, estado.posicao);
+          DadosAbertura.salvar({ tipo: 'janela', posicao: estado.posicao });
           win.close();
           break;
         }
@@ -538,303 +514,218 @@
     }
   }
   const css$1 =
-    'table.resultTable>tbody>tr{--cor-pessoa: #444}div>table.resultTable>tbody>tr>td:nth-last-child(3){background:linear-gradient(to bottom right,var(--cor-pessoa) 50%,transparent 50%) top left/12px 12px no-repeat}table.resultTable>tbody>tr[id*=",JUIZ,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",JUIZ,"]>td:nth-last-child(3){border:1px solid var(--cor-pessoa)}table.resultTable>tbody>tr[id*=",SERVIDOR,"]{--cor-pessoa: #698e23}table.resultTable>tbody>tr[id*=",PROMOTOR,"]{--cor-pessoa: #236e8e}table.resultTable>tbody>tr[id*=",ADVOGADO,"]{--cor-pessoa: #8e3523}table.resultTable>tbody>tr[id*=",OUTROS,"]{--cor-pessoa: #595959}table.resultTable thead>tr>th{padding:0 5px}table.resultTable tr div.extendedinfo{border:none;margin:0;width:auto}table.resultTable table.form{margin:0 0 4px;width:calc(100% - 4px);border-collapse:collapse;border:1px solid}table.resultTable table.form td{width:auto;padding:0;vertical-align:top!important}table.resultTable table.form td:nth-child(1){width:36px;text-align:center;padding-left:6px;padding-right:2px}table.resultTable table.form td:nth-child(2){width:16px;text-align:center;padding:5px 0 4px}table.resultTable table.form td:nth-child(3){width:89%}table.resultTable table.form td:nth-child(4){width:16px}table.resultTable table.form tr.odd{background:hsl(333,34.8%,91%)}table.resultTable table.form tr.even,table.resultTable table.form tr.incidente{background:hsl(333,33.3%,97.1%)}table.resultTable table.form .ajaxCalloutGenericoHelp{display:inline;margin-right:4px}\n';
-  const dica$1 = '_dica_25o7b_1';
-  const struck = '_struck_25o7b_8';
-  const avisoCarregando = '_avisoCarregando_25o7b_15';
-  const divConfigurarAbertura = '_divConfigurarAbertura_25o7b_20';
-  const ultimoClicado = '_ultimoClicado_25o7b_29';
+    'div>table.resultTable>tbody>tr>td:nth-last-child(4){--cor-pessoa: hsl(var(--hue-pessoa) 50% 50%);background:linear-gradient(to bottom right,var(--cor-pessoa) 50%,transparent 50%) top left/12px 12px no-repeat}table.resultTable>tbody>tr[id*=",JUIZ,"]{--hue-pessoa: 0}table.resultTable>tbody>tr[id*=",JUIZ,"]>td:nth-last-child(3){border:1px solid var(--cor-pessoa)}table.resultTable>tbody>tr[id*=",SERVIDOR,"]{--hue-pessoa: 40}table.resultTable>tbody>tr[id*=",ADVOGADO,"]{--hue-pessoa: 80}table.resultTable>tbody>tr[id*=",PROMOTOR,"]{--hue-pessoa: 120}table.resultTable>tbody>tr[id*=",DEFENSOR,"]{--hue-pessoa: 160}table.resultTable>tbody>tr[id*=",PROCURADOR,"]{--hue-pessoa: 200}table.resultTable>tbody>tr[id*=",OUTROS,"]{--hue-pessoa: 240}table.resultTable>tbody>tr[id*=",AUDIENCIA,"]{--hue-pessoa: 280}table.resultTable>tbody>tr[id*=",OFICIALJUSTICA,"]{--hue-pessoa: 320}table.resultTable{border-collapse:separate}table.resultTable thead>tr>th{padding:0 5px}table.resultTable tr div.extendedinfo{border:none;margin:0;width:auto}table.resultTable table.form{margin:0 0 4px;width:calc(100% - 4px);border-collapse:collapse;border:1px solid}table.resultTable table.form td{width:auto;padding:0;vertical-align:top!important}table.resultTable table.form td:nth-child(1){width:36px;text-align:center;padding-left:6px;padding-right:2px}table.resultTable table.form td:nth-child(2){width:16px;text-align:center;padding:5px 0 4px}table.resultTable table.form td:nth-child(3){width:89%}table.resultTable table.form td:nth-child(4){width:16px}table.resultTable table.form tr.odd{background:#f0e0e7}table.resultTable table.form tr.even,table.resultTable table.form tr.incidente{background:#faf5f7}table.resultTable table.form .ajaxCalloutGenericoHelp{display:inline;margin-right:4px}';
+  const struck = '_struck_14zo8_1';
+  const avisoCarregando = '_avisoCarregando_14zo8_8';
+  const divConfigurarAbertura = '_divConfigurarAbertura_14zo8_13';
+  const ultimoClicado = '_ultimoClicado_14zo8_22';
   const classNames = {
-    dica: dica$1,
     struck,
     avisoCarregando,
     divConfigurarAbertura,
     ultimoClicado,
   };
-  let dica = null;
-  function criarDica() {
-    const dica2 = document.createElement('div');
-    dica2.hidden = true;
-    dica2.className = classNames.dica;
-    document.body.appendChild(dica2);
-    return dica2;
-  }
-  function mostrarDica(html) {
-    if (!dica) {
-      dica = criarDica();
-    }
-    dica.innerHTML = html;
-    dica.hidden = false;
-  }
-  const distanciaDoMouse = 16;
-  const margemBorda = 2 * distanciaDoMouse;
-  const intervalMs = 16;
-  let lastTime = Date.now();
-  let lastE;
-  let timer = null;
-  function moverDica(e) {
-    lastE = e;
-    const curTime = Date.now();
-    if (curTime < lastTime + intervalMs) {
-      if (timer === null) {
-        timer = window.setTimeout(() => {
-          timer = null;
-          moverDica(lastE);
-        }, intervalMs);
-      }
-      return;
-    }
-    lastTime = curTime;
-    let x = e.clientX;
-    let y = e.clientY;
-    const { width, height } = dica.getBoundingClientRect();
-    const { width: docWidth, height: docHeight } =
-      document.documentElement.getBoundingClientRect();
-    if (x + distanciaDoMouse + width > docWidth - margemBorda) {
-      x -= distanciaDoMouse + width - window.scrollX;
-    } else {
-      x += distanciaDoMouse + window.scrollX;
-    }
-    if (y + distanciaDoMouse + height > docHeight - margemBorda) {
-      y -= distanciaDoMouse + height - window.scrollY;
-    } else {
-      y += distanciaDoMouse + window.scrollY;
-    }
-    dica.style.left = `${x}px`;
-    dica.style.top = `${y}px`;
-  }
-  function esconderDica() {
-    dica.hidden = true;
-  }
-  const telaMovimentacoes = url =>
-    pipe(
-      url.pathname,
-      maybeBool(x =>
-        [
-          '/seeu/visualizacaoProcesso.do',
-          '/seeu/processo.do',
-          '/seeu/processo/juntarDocumento.do',
-          '/seeu/processo/buscaProcesso.do',
-        ].includes(x)
-      ),
-      flatMap(() =>
-        pipe(
-          document,
-          query('li[name="tabMovimentacoesProcesso"].currentTab'),
-          map$1(() => {
-            return pipe(
-              document,
-              queryAll('img[id^=iconmovimentacoes]'),
-              map((link, i) =>
-                pipe(
-                  link.closest('tr'),
-                  fromNullable,
-                  mapNullable(x => x.nextElementSibling),
-                  filter$1(x => x.matches('tr')),
-                  flatMap(query('.extendedinfo')),
-                  map$1(mutationTarget => ({ link, mutationTarget })),
-                  toEither(() => `Lista de eventos não reconhecida: ${i}.`)
-                )
-              ),
-              sequence$1(applicativeEither),
-              map$2(links => {
-                const obs = createIntersectionObserver();
-                const mut = createMutationObserver();
-                for (const { link, mutationTarget } of links) {
-                  const aviso = h(
-                    'div',
-                    { className: classNames.avisoCarregando },
-                    'Carregando lista de documentos...'
-                  );
-                  mut.observe(mutationTarget, node => {
-                    if (!(node instanceof HTMLTableElement)) return;
-                    if (link.src.match(/iPlus/)) {
-                      node.style.display = 'none';
-                      return;
-                    }
-                    if (aviso.parentNode) {
-                      aviso.remove();
-                    }
-                    pipe(
-                      onTabelaAdicionada(node),
-                      mapLeft(err => {
-                        console.log(
-                          '<SEEU - Movimentações>',
-                          'Erro encontrado:',
-                          err
-                        );
-                      }),
-                      merge
-                    );
-                  });
-                  const { unobserve } = obs.observe(link, () => {
-                    unobserve();
-                    link.click();
-                  });
-                  link.addEventListener('click', () => {
-                    if (link.src.match(/iPlus/)) {
-                      if (aviso.parentNode) {
-                        aviso.remove();
-                      }
-                      const tabela = mutationTarget.querySelector('table');
-                      if (tabela) {
-                        tabela.style.display = 'none';
-                      }
-                    } else {
-                      mutationTarget.parentNode.insertBefore(
-                        aviso,
-                        mutationTarget
-                      );
-                    }
-                  });
-                }
-                const janelasAbertas = /* @__PURE__ */ new Map();
-                const { exibirBotaoFechar } =
-                  criarBotaoJanelasAbertas(janelasAbertas);
-                const onDocumentClick = createOnDocumentClick({
-                  janelasAbertas,
-                  exibirBotaoFechar,
-                });
-                document.addEventListener('click', onDocumentClick);
-                window.addEventListener('beforeunload', () => {
-                  if (_GM_getValue(FECHAR_AUTOMATICAMENTE, true)) {
-                    for (const win of janelasAbertas.values()) {
-                      if (!win.closed) win.close();
-                    }
-                  }
-                });
-                let currentDica = null;
-                document.addEventListener('mouseover', e => {
-                  if (
-                    e.target instanceof HTMLElement &&
-                    e.target.matches('[data-gm-dica]')
-                  ) {
-                    currentDica = e.target;
-                    mostrarDica(currentDica.dataset.gmDica);
-                    currentDica.addEventListener('mousemove', moverDica);
-                  }
-                });
-                document.addEventListener('mouseout', e => {
-                  if (currentDica && e.target === currentDica) {
-                    currentDica.removeEventListener('mousemove', moverDica);
-                    esconderDica();
-                    currentDica = null;
-                  }
-                });
-                pipe(
-                  document,
-                  queryAll('table.resultTable > tbody > tr'),
-                  map(row => {
-                    if (row.cells.length === 1) {
-                      const previousRow = row.previousElementSibling;
-                      if (previousRow instanceof HTMLTableRowElement) {
-                        row.insertCell(0).colSpan =
-                          previousRow.cells.length - 1;
-                        row.cells[1].colSpan = 1;
-                      }
-                    } else {
-                      const len = row.cells.length;
-                      const colunaDataHora = len - 3;
-                      pipe(
-                        row.cells,
-                        map((cell, i) => {
-                          if (i !== colunaDataHora) {
-                            cell.removeAttribute('nowrap');
-                          }
-                        })
-                      );
-                      row.insertCell();
-                    }
-                  })
-                );
-                pipe(
-                  document,
-                  query('table.resultTable > colgroup'),
-                  map$1(g => {
-                    g.appendChild(h('col'));
-                    return g;
-                  }),
-                  map$1(g => {
-                    pipe(g.children, cols => {
-                      pipe(
-                        cols,
-                        filter(isInstanceOf(HTMLElement)),
-                        map((col, i) => {
-                          col.removeAttribute('width');
-                          switch (i) {
-                            case cols.length - 3:
-                              col.style.width = '40%';
-                              break;
-                            case cols.length - 2:
-                              col.style.width = '15%';
-                              break;
-                            case cols.length - 1:
-                              col.style.width = '30%';
-                              break;
-                          }
-                        })
-                      );
-                    });
-                  })
-                );
-                pipe(
-                  document,
-                  query('table.resultTable'),
-                  map$1(tabela => {
-                    const configurar = h(
-                      'button',
-                      { type: 'button' },
-                      'Configurar abertura de documentos'
-                    );
-                    configurar.addEventListener('click', e => {
-                      e.preventDefault();
-                      configurarAbertura();
-                    });
-                    const fechar = h('input', {
-                      type: 'checkbox',
-                      checked: _GM_getValue(FECHAR_AUTOMATICAMENTE, true),
-                    });
-                    fechar.addEventListener('click', () => {
-                      _GM_setValue(FECHAR_AUTOMATICAMENTE, fechar.checked);
-                    });
-                    tabela.insertAdjacentElement(
-                      'beforebegin',
-                      h(
-                        'div',
-                        { className: classNames.divConfigurarAbertura },
-                        configurar,
-                        h('br'),
-                        h(
-                          'label',
-                          {},
-                          fechar,
-                          ' ',
-                          'Fechar automaticamente documentos abertos ao sair'
-                        )
-                      )
-                    );
-                    return tabela;
-                  }),
-                  flatMap(query(':scope > thead > tr')),
-                  map$1(row => {
-                    const th = h('th', {}, 'Documentos');
-                    row.appendChild(th);
-                    for (const th2 of row.cells) {
-                      th2.removeAttribute('style');
-                    }
-                  })
-                );
-              })
-            );
-          }),
-          orElse(() => Just(of$1(void 0))),
-          map$1(either => {
-            _GM_addStyle(css$1);
-            return either;
-          })
+  const caminhosValidos = [
+    '/seeu/visualizacaoProcesso.do',
+    '/seeu/processo.do',
+    '/seeu/processo/juntarDocumento.do',
+    '/seeu/processo/buscaProcesso.do',
+    '/seeu/processo/criminal/execucao/buscaProcessoExecucao.do',
+  ];
+  function telaMovimentacoes(url) {
+    if (!caminhosValidos.includes(url.pathname)) return null;
+    const abaCorreta =
+      document.querySelector(
+        'li[name="tabMovimentacoesProcesso"].currentTab'
+      ) !== null;
+    if (!abaCorreta) return null;
+    const links = flow(
+      document,
+      xqueryAll('//img[starts-with(@id, "iconmovimentacoes")]'),
+      mapIterable((link, i) =>
+        flow(
+          link,
+          xquery(
+            'ancestor::tr/following-sibling::*[1]/self::tr//*[contains(concat(" ", normalize-space(@class), " "), " extendedinfo ")]'
+          ),
+          orThrow(`Lista de eventos não reconhecida: ${i}.`),
+          mutationTarget => ({ link, mutationTarget })
         )
       )
     );
+    const isAjax = hasShape({ Updater: isFunction });
+    assert(isAjax(Ajax), 'Impossível capturar o carregamento de documentos.');
+    const oldUpdater = Ajax.Updater;
+    Ajax.Updater = function (a, b, c) {
+      const regA = /^divArquivosMovimentacaoProcessomovimentacoes(\d+)$/;
+      const regB = /^\/seeu\/processo\/movimentacaoArquivoDocumento\.do\?_tj=/;
+      const id = flow(
+        b,
+        test(regB),
+        map(() => a),
+        match(regA),
+        mapProp(1)
+      );
+      if (id == null) {
+        return oldUpdater.call(this, a, b, c);
+      }
+      const img = flow(
+        document,
+        xquery(`//img[@id = "iconmovimentacoes${id}"]`),
+        orThrow(`Imagem não encontrada: #iconmovimentacoes${id}.`)
+      );
+      if (/iPlus.gif$/.test(img.src)) {
+        return;
+      }
+      return oldUpdater.call(this, a, b, {
+        ...c,
+        onComplete() {
+          try {
+            const resultado = c.onComplete(...arguments);
+            const div = check(
+              isNotNull,
+              document.getElementById(a),
+              `Elemento não encontrado: #${a}.`
+            );
+            const tabela2 = check(
+              arrayHasLength(1),
+              div.querySelectorAll(':scope > table'),
+              `Tabela referente a #${a} não encontrada.`
+            )[0];
+            div.parentNode
+              ?.querySelector(`.${classNames.avisoCarregando}`)
+              ?.remove();
+            onTabelaAdicionada(tabela2);
+            return resultado;
+          } catch (err) {
+            console.group('<SEEU - Movimentações>');
+            console.error(err);
+            console.groupEnd();
+          }
+        },
+      });
+    };
+    Ajax.Updater.prototype = oldUpdater.prototype;
+    const obs = createIntersectionObserver();
+    for (const { link, mutationTarget } of links) {
+      const aviso = h(
+        'div',
+        { className: classNames.avisoCarregando },
+        'Carregando lista de documentos...'
+      );
+      const { unobserve } = obs.observe(link, () => {
+        unobserve();
+        link.click();
+      });
+      link.addEventListener('click', () => {
+        if (/iPlus/.test(link.src));
+        else {
+          mutationTarget.querySelector(':scope > table')?.remove();
+          mutationTarget.parentNode.insertBefore(aviso, mutationTarget);
+        }
+      });
+    }
+    const janelasAbertas = /* @__PURE__ */ new Map();
+    const { exibirBotaoFechar } = criarBotaoJanelasAbertas(janelasAbertas);
+    const onDocumentClick = createOnDocumentClick({
+      janelasAbertas,
+      exibirBotaoFechar,
+    });
+    document.addEventListener('click', onDocumentClick);
+    window.addEventListener('beforeunload', () => {
+      if (_GM_getValue(FECHAR_AUTOMATICAMENTE, true)) {
+        for (const win of janelasAbertas.values()) {
+          if (!win.closed) win.close();
+        }
+      }
+    });
+    const tabela = flow(
+      document,
+      query('table.resultTable'),
+      orThrow('Tabela de movimentações não encontrada.')
+    );
+    const [colgroup, linhaCabecalho] = flow(
+      tabela,
+      fanout(xquery('colgroup'), xquery('thead/tr')),
+      sequence(applicativeNullish),
+      orThrow('Elementos da tabela de movimentações não encontrados.')
+    );
+    const linhas = flow(tabela, xqueryAll('tbody/tr'));
+    for (const linha of linhas) {
+      if (arrayHasLength(1)(linha.cells)) {
+        const previousRow = linha.previousElementSibling;
+        if (previousRow instanceof HTMLTableRowElement) {
+          linha.insertCell(0).colSpan = previousRow.cells.length - 1;
+          linha.cells[1].colSpan = 1;
+        }
+      } else {
+        const len = linha.cells.length;
+        const colunaDataHora = len - 3;
+        for (const [i, cell] of Object.entries(linha.cells)) {
+          if (Number(i) !== colunaDataHora) {
+            cell.removeAttribute('nowrap');
+          }
+        }
+        linha.insertCell();
+      }
+    }
+    colgroup.append(h('col'));
+    const cols = colgroup.children;
+    for (const [i, col] of Object.entries(cols)) {
+      col.removeAttribute('width');
+      switch (Number(i)) {
+        case cols.length - 4:
+          col.style.width = '40%';
+          break;
+        case cols.length - 2:
+          col.style.width = '15%';
+          break;
+        case cols.length - 1:
+          col.style.width = '30%';
+          break;
+      }
+    }
+    const fechar = h('input', {
+      type: 'checkbox',
+      checked: _GM_getValue(FECHAR_AUTOMATICAMENTE, true),
+      onclick: () => {
+        _GM_setValue(FECHAR_AUTOMATICAMENTE, fechar.checked);
+      },
+    });
+    tabela.insertAdjacentElement(
+      'beforebegin',
+      h(
+        'div',
+        { className: classNames.divConfigurarAbertura },
+        h(
+          'button',
+          {
+            type: 'button',
+            onclick: e => {
+              e.preventDefault();
+              configurarAbertura();
+            },
+          },
+          'Configurar abertura de documentos'
+        ),
+        h('br'),
+        h(
+          'label',
+          {},
+          fechar,
+          ' ',
+          'Fechar automaticamente documentos abertos ao sair'
+        )
+      )
+    );
+    const th = h('th', {}, 'Documentos');
+    linhaCabecalho.appendChild(th);
+    for (const th2 of linhaCabecalho.cells) {
+      th2.removeAttribute('style');
+    }
+    _GM_addStyle(css$1);
+    return null;
+  }
   function createOnDocumentClick({ janelasAbertas, exibirBotaoFechar }) {
     return function onDocumentClick(evt) {
       if (
@@ -843,11 +734,9 @@
       ) {
         evt.preventDefault();
         const link = evt.target;
-        pipe(
-          document,
-          queryAll(`.${classNames.ultimoClicado}`),
-          map(x => x.classList.remove(classNames.ultimoClicado))
-        );
+        document
+          .querySelectorAll(`.${classNames.ultimoClicado}`)
+          .forEach(x => x.classList.remove(classNames.ultimoClicado));
         link.classList.add(classNames.ultimoClicado);
         exibirBotaoFechar();
         const id = link.dataset.gmDocLink;
@@ -858,45 +747,17 @@
             return;
           }
         }
-        const features =
-          (() => {
-            const tipo = _GM_getValue(TIPO_ABERTURA);
-            if (isAnyOf(isLiteral('padrao'), isLiteral('janela'))(tipo)) {
-              if (tipo === 'padrao') return null;
-              const parametros = _GM_getValue(PARAMETROS_JANELA);
-              if (
-                hasShape({
-                  top: isInteger,
-                  left: isInteger,
-                  width: isNonNegativeInteger,
-                  height: isNonNegativeInteger,
-                })(parametros)
-              ) {
-                return Object.entries(parametros)
-                  .map(([key, value]) => `${key}=${value}`)
-                  .join(',');
-              }
-            }
-            _GM_setValue(TIPO_ABERTURA, 'padrao');
-            _GM_deleteValue(PARAMETROS_JANELA);
-            return null;
-          })() ?? void 0;
+        const features = dadosAberturaToFeatures(DadosAbertura.carregar());
         const win = window.open(link.href, `doc${id}`, features);
         janelasAbertas.set(id, win);
       }
     };
   }
   function criarBotaoJanelasAbertas(janelasAbertas) {
-    var _a;
-    const menu =
-      (_a = window.parent) == null
-        ? void 0
-        : _a.document.querySelector('ul#main-menu');
+    const menu = window.parent?.document.querySelector('ul#main-menu');
     if (!menu) {
       console.log('Não encontrado.');
-      return {
-        exibirBotaoFechar() {},
-      };
+      return { exibirBotaoFechar() {} };
     }
     const doc = menu.ownerDocument;
     const fechar = doc.createElement('li');
@@ -928,222 +789,178 @@
       fechar.style.display = 'none';
     }
   }
-  const onTabelaAdicionada = table =>
-    pipe(
+  function onTabelaAdicionada(table) {
+    return flow(
       table.rows,
-      traverse(applicativeEither)((linha, l) => {
-        if (linha.cells.length !== 7) {
+      mapIterable((linha, l) => {
+        if (!arrayHasLength(7)(linha.cells)) {
           if (
             linha.classList.contains('linhaPeticao') &&
-            linha.cells.length === 1 &&
+            arrayHasLength(1)(linha.cells) &&
             linha.cells[0].colSpan === 7
           ) {
             const frag = document.createDocumentFragment();
             frag.append(...linha.cells[0].childNodes);
-            return Right([frag]);
+            return [frag];
           }
-          return Left(`Formato de linha desconhecido: ${l}.`);
+          throw new Error(`Formato de linha desconhecido: ${l}.`);
         }
-        const sequencialNome = pipe(
-          linha.cells[0],
-          x => x.childNodes,
-          filter(x => {
-            var _a;
-            return (
-              !(x instanceof Text) ||
-              ((_a = x.nodeValue) == null ? void 0 : _a.trim()) !== ''
-            );
-          }),
-          maybeBool(
-            isAnyOf(
-              isTuple(isInstanceOf(Text)),
-              isTuple(
-                isInstanceOf(Text),
-                isInstanceOf(HTMLAnchorElement),
-                isInstanceOf(HTMLElement)
-              )
-            )
+        const isTextoObservacoes = xs =>
+          xs.length >= 1 &&
+          xs[0] instanceof Text &&
+          (xs.length === 1 ||
+            (xs.length === 3 &&
+              xs[1] instanceof HTMLAnchorElement &&
+              xs[2] instanceof HTMLElement));
+        const sequencialNome = flow(
+          linha.cells[0].childNodes,
+          filterIterable(
+            x => !(x instanceof Text) || isNonEmptyString(x.nodeValue)
           ),
-          map$1(([texto, ...obs]) =>
-            tuple(texto, obs.length === 2 ? Just(obs) : Nothing)
-          ),
-          flatMap(([texto, observacao]) =>
-            pipe(
-              texto,
-              x => x.nodeValue,
-              x =>
-                fromNullable(x.match(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/)),
-              filter$1(x => x.length === 3),
-              map$1(([, sequencial, nome]) => ({
-                sequencial,
-                nome: nome || 'Outros',
-                observacao,
+          iterableToArray,
+          filter(isTextoObservacoes),
+          map(([texto, ...obs]) =>
+            flow(
+              texto.nodeValue,
+              match(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/),
+              map(([, sequencial2, nome2]) => ({
+                sequencial: sequencial2,
+                nome: nome2 || 'Outros',
+                observacao: flow(
+                  obs,
+                  filter(x => x.length === 2)
+                ),
               }))
             )
           ),
-          toEither(() => `Sequencial e nome não reconhecidos: ${l}.`)
+          orThrow(`Sequencial e nome não reconhecidos: ${l}.`)
         );
-        const assinatura = pipe(
+        const assinatura = flow(
           linha.cells[2],
           text,
-          mapNullable(x => x.match(/^\s*Ass\.:\s+(.*)\s*$/)),
-          filter$1(x => x.length === 2),
-          map$1(([, assinatura2]) => ({ assinatura: assinatura2 })),
-          toEither(() => `Assinatura não reconhecida: ${l}.`)
+          match(/^\s*Ass\.:\s+(.*)\s*$/),
+          map(([, assinatura2]) => assinatura2),
+          orThrow(`Assinatura não reconhecida: ${l}.`)
         );
-        const link = pipe(linha.cells[4], celula =>
-          pipe(
+        const infoLink = flow(linha.cells[4], celula =>
+          flow(
             celula,
             c => c.childNodes,
-            filter(
+            filterIterable(
               x => !(x instanceof Text && /^\s*$/.test(x.nodeValue ?? ''))
             ),
-            eitherBool(
-              isAnyOf(
-                isTuple(
-                  isInstanceOf(HTMLImageElement),
-                  isInstanceOf(HTMLDivElement),
-                  isInstanceOf(HTMLAnchorElement)
-                ),
-                isTuple(
-                  isInstanceOf(HTMLImageElement),
-                  isInstanceOf(HTMLDivElement),
-                  isInstanceOf(HTMLAnchorElement),
-                  isInstanceOf(HTMLAnchorElement)
-                )
-              )
-            ),
-            map$2(childNodes => {
-              const [menu, popup, link2, play] = childNodes;
-              return { menu, popup, link: link2, play };
+            iterableToArray,
+            filter(xs => {
+              return (
+                (xs.length === 3 || xs.length === 4) &&
+                xs[0] instanceof HTMLImageElement &&
+                xs[1] instanceof HTMLDivElement &&
+                xs[2] instanceof HTMLAnchorElement &&
+                (xs[3] === void 0 || xs[3] instanceof HTMLAnchorElement)
+              );
             }),
-            orElse$1(() =>
-              pipe(
+            map(childNodes => {
+              const [menu2, popup2, link2, play2] = childNodes;
+              return { menu: menu2, popup: popup2, link: link2, play: play2 };
+            }),
+            orElse(() =>
+              flow(
                 celula,
-                query('strike'),
-                flatMap(query('a[href]')),
-                map$1(link2 => {
+                xquery('.//strike//a[@href]'),
+                map(link2 => {
                   link2.classList.add(classNames.struck);
                   return link2;
                 }),
-                map$1(link2 => ({
+                map(link2 => ({
                   menu: '',
                   popup: '',
                   link: link2,
                   play: void 0,
                 })),
-                toEither(() => null)
+                orThrow(`Link para documento não reconhecido: ${l}.`)
               )
-            ),
-            mapLeft(() => `Link para documento não reconhecido: ${l}.`)
-          )
-        );
-        const sigilo = pipe(
-          linha.cells[6],
-          text,
-          map$1(x => x.trim()),
-          filter$1(x => x !== ''),
-          map$1(sigilo2 => ({ sigilo: sigilo2 })),
-          toEither(() => `Nível de sigilo não reconhecido: ${l}.`)
-        );
-        const result = pipe(
-          tuple(sequencialNome, assinatura, link, sigilo),
-          sequence(applicativeEither),
-          map$2(
-            ([
-              { sequencial, nome, observacao },
-              { assinatura: assinatura2 },
-              { menu, popup, link: link2, play },
-              { sigilo: sigilo2 },
-            ]) => {
-              var _a;
-              link2.title = `${
-                ((_a = link2.title) == null ? void 0 : _a.trim()) ?? ''
-              }
-
-Ass.: ${assinatura2}
-
-${sigilo2}`;
-              const frag = document.createDocumentFragment();
-              frag.append(menu, popup);
-              pipe(
-                link2.href,
-                href => new URL(href),
-                u => fromNullable(u.searchParams.get('_tj')),
-                map$1(getId),
-                map$1(id => {
-                  link2.dataset.gmDocLink = id.toString(36);
-                })
-              );
-              const file = document.createDocumentFragment();
-              const span = h('span', {}, nome.replace(/_/g, ' '));
-              span.style.fontWeight = 'bold';
-              file.append(span, h('br'));
-              if (play) {
-                file.append(play);
-              }
-              link2.textContent = link2.textContent.trim();
-              file.append(link2);
-              if (isJust(observacao)) {
-                file.append(h('br'), ...observacao.value);
-              }
-              const cadeado =
-                sigilo2 === 'Público'
-                  ? ''
-                  : h('i', { className: 'icon icon-mdi:lock', title: sigilo2 });
-              return [sequencial, frag, file, cadeado];
-            }
-          )
-        );
-        return result;
-      }),
-      map$2(linhas => {
-        table.replaceChildren(
-          ...pipe(
-            linhas,
-            map((linha, r) =>
-              foldLeft(
-                h('tr', { className: r % 2 === 0 ? 'even' : 'odd' }),
-                (tr, node) => {
-                  tr.append(h('td', {}, node));
-                  if (linha.length === 1) {
-                    tr.className = 'incidente';
-                    tr.cells[0].colSpan = 4;
-                  }
-                  return tr;
-                }
-              )(linha)
             )
           )
         );
-      })
-    );
-  function getId(sp) {
-    return pipe(
-      tailRec({ acc: [], curr: sp }, ({ acc, curr }) =>
-        curr.length > 0
-          ? Left({
-              acc: [...acc, curr.slice(0, 8)],
-              curr: curr.slice(8),
+        const sigilo = flow(
+          linha.cells[6],
+          text,
+          map(x => x.trim()),
+          filter(x => x !== ''),
+          orThrow(`Nível de sigilo não reconhecido: ${l}.`)
+        );
+        const { sequencial, nome, observacao } = sequencialNome;
+        const { menu, popup, link, play } = infoLink;
+        {
+          link.title = `${link.title?.trim() ?? ''}
+
+Ass.: ${assinatura}
+
+${sigilo}`;
+          const frag = document.createDocumentFragment();
+          frag.append(menu, popup);
+          flow(
+            new URL(link.href).searchParams.get('_tj'),
+            map(getId),
+            map(id => {
+              link.dataset.gmDocLink = id.toString(36);
             })
-          : Right(acc)
-      ),
-      x => x.slice(6, 8),
-      map(x => parseInt(x, 16)),
-      foldLeft(0n, (acc, x) => acc * 4294967296n + BigInt(x))
+          );
+          const file = document.createDocumentFragment();
+          const span = h(
+            'span',
+            { style: { fontWeight: 'bold' } },
+            nome.replace(/_/g, ' ')
+          );
+          file.append(span, h('br'));
+          if (play) {
+            file.append(play);
+          }
+          link.textContent = link.textContent.trim();
+          file.append(link);
+          if (observacao != null) {
+            file.append(h('br'), ...observacao);
+          }
+          const cadeado =
+            sigilo === 'Público'
+              ? ''
+              : h('i', { className: 'icon icon-mdi:lock', title: sigilo });
+          return [sequencial, frag, file, cadeado];
+        }
+      }),
+      mapIterable((children, r) => {
+        const tr = h('tr', { className: r % 2 === 0 ? 'even' : 'odd' });
+        for (const child of children) {
+          tr.append(h('td', {}, child));
+        }
+        if (arrayHasLength(1)(tr.cells)) {
+          tr.className = 'incidente';
+          tr.cells[0].colSpan = 4;
+        }
+        return tr;
+      }),
+      linhas => {
+        table.replaceChildren(...linhas);
+      }
     );
   }
+  function getId(sp) {
+    let slices = [];
+    for (let curr = sp; curr.length > 0; curr = curr.slice(8)) {
+      slices.push(curr.slice(0, 8));
+    }
+    return slices
+      .slice(6, 8)
+      .map(x => parseInt(x, 16))
+      .reduce((acc, x) => acc * 4294967296n + BigInt(x), 0n);
+  }
   const css =
-    '.sm .gm-seeu-movimentacoes__fechar-janelas-abertas{background:hsla(333,35%,50%,.5);margin-left:3ch}\n';
-  const barraSuperior = url =>
-    pipe(
-      url.pathname,
-      maybeBool(x => x === '/seeu/usuario/areaAtuacao.do'),
-      map$1(() => {
-        _GM_addStyle(css);
-        return Right(void 0);
-      })
-    );
+    '.sm .gm-seeu-movimentacoes__fechar-janelas-abertas{background:#ac537b80;margin-left:3ch}';
+  const barraSuperior = url => {
+    if (url.pathname !== '/seeu/usuario/areaAtuacao.do') return null;
+    _GM_addStyle(css);
+    return null;
+  };
   const alteracoes = /* @__PURE__ */ Object.freeze(
     /* @__PURE__ */ Object.defineProperty(
       {
@@ -1157,21 +974,14 @@ ${sigilo2}`;
   );
   const main = () => {
     const url = new URL(document.location.href);
-    return pipe(
-      Object.entries(alteracoes),
-      filterMap(([name, f]) =>
-        pipe(f(url), map$1(mapLeft(err => [`[${name}]: ${err}`])))
-      ),
-      toNonEmptyArray,
-      map$1(sequence$1(makeApplicativeValidation(semigroupArray))),
-      getOrElse(() => Left([`Página não reconhecida: ${url.pathname}.`])),
-      mapBoth(fold(monoidString), constant(void 0))
-    );
+    Object.values(alteracoes).forEach(f => f(url));
+    return null;
   };
-  pipe(
-    main(),
-    mapLeft(err => {
-      console.log('<SEEU - Movimentações>', 'Erro encontrado:', err);
-    })
-  );
+  try {
+    main();
+  } catch (err) {
+    console.group('<SEEU - Movimentações>');
+    console.error(err);
+    console.groupEnd();
+  }
 })();

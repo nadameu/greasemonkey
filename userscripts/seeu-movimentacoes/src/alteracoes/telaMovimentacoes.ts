@@ -184,7 +184,7 @@ export function telaMovimentacoes(url: URL): null {
   for (const [i, col] of Object.entries(cols)) {
     col.removeAttribute('width');
     switch (Number(i)) {
-      case cols.length - 3:
+      case cols.length - 4:
         col.style.width = '40%';
         break;
       case cols.length - 2:
