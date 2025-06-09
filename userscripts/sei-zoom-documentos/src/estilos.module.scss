@@ -1,0 +1,13 @@
+.div {
+  background-color: hsl(333, 17%, 85%);
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow:
+    0 0.125rem 0.5rem rgba(0, 0, 0, 0.3),
+    0 0.0625rem 0.125rem rgba(0, 0, 0, 0.2);
+
+  input:invalid {
+    background-color: hsl(367, 50%, 75%);
+  }
+}

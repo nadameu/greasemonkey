@@ -1,0 +1,21 @@
+{
+  "name": "sei-zoom-documentos",
+  "gm_name": "SEI! - Zoom em documentos",
+  "description": "Permite aplicar zoom apenas aos documentos do processo, sem afetar o restante da interface",
+  "private": true,
+  "version": "1.0.0",
+  "author": "nadameu",
+  "type": "module",
+  "scripts": {
+    "dev": "run-p watch preview",
+    "build": "tsc && vite build",
+    "format": "prettier --write ../../sei-zoom-documentos.user.js",
+    "preview": "vite preview",
+    "watch": "vite build --watch"
+  },
+  "dependencies": {
+    "@nadameu/create-element": "workspace:^",
+    "@nadameu/opaque": "workspace:^",
+    "@nadameu/predicates": "workspace:^"
+  }
+}

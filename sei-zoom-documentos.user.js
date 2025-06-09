@@ -1,101 +1,155 @@
 // ==UserScript==
-// @name        sei-zoom-documentos
-// @name:pt-br  SEI! - Zoom em documentos
-// @namespace   http://nadameu.com.br
-// @match       https://sei.trf4.jus.br/controlador.php?acao=arvore_visualizar&*
-// @match       https://sei.trf4.jus.br/controlador.php?acao=documento_visualizar&*
-// @grant       none
-// @version     1.0.0
-// @author      Paulo R. Maurici Jr.
-// @description Permite aplicar zoom apenas aos documentos do processo, sem afetar o restante da interface
+// @name         sei-zoom-documentos
+// @name:pt-BR   SEI! - Zoom em documentos
+// @namespace    http://nadameu.com.br
+// @version      1.0.0
+// @author       nadameu
+// @description  Permite aplicar zoom apenas aos documentos do processo, sem afetar o restante da interface
+// @match        https://sei.trf4.jus.br/controlador.php?acao=arvore_visualizar&*
+// @match        https://sei.trf4.jus.br/sei/controlador.php?acao=arvore_visualizar&*
+// @match        https://sei.trf4.jus.br/controlador.php?acao=documento_visualizar&*
+// @match        https://sei.trf4.jus.br/sei/controlador.php?acao=documento_visualizar&*
+// @grant        GM_addStyle
 // ==/UserScript==
 
-const LOCAL_STORAGE_NAME = "gm-sei-zoom-documentos";
-
-function main() {
-  const url = new URL(document.location.href);
-  const params = url.searchParams;
-  switch (params.get("acao")) {
-    case "arvore_visualizar":
-      criar_controles();
-      break;
-
-    case "documento_visualizar":
-      aplicar_zoom();
-      break;
-
-    default:
-      throw new Error(`Ação desconhecida: "${String(acao)}".`);
+(d => {
+  if (typeof GM_addStyle == 'function') {
+    GM_addStyle(d);
+    return;
   }
-}
+  const e = document.createElement('style');
+  (e.textContent = d), document.head.append(e);
+})(
+  ' ._div_1sxbi_1{background-color:#dfd2d8;margin-top:10px;padding:10px;border-radius:5px;box-shadow:0 .125rem .5rem #0000004d,0 .0625rem .125rem #0003}._div_1sxbi_1 input:invalid{background-color:#dfa79f} '
+);
 
-function criar_controles() {
-  const divs_documento = document.querySelectorAll("#divArvoreConteudoIfr");
-  if (divs_documento.length !== 1)
-    throw new Error("Erro ao buscar o container do documento.");
-  const div_documento = divs_documento[0];
+(function () {
+  'use strict';
 
-  const iframes = div_documento.querySelectorAll("iframe");
-  if (iframes.length !== 1)
-    throw new Error("Erro ao buscar a janela do documento.");
-  const iframe = iframes[0];
-
-  const nivel = document.createElement("input");
-  nivel.type = "number";
-  nivel.min = 30;
-  nivel.max = 500;
-  nivel.step = 10;
-  nivel.required = true;
-  let zoom_salvo = localStorage.getItem(LOCAL_STORAGE_NAME);
-  if (
-    Number.isNaN(zoom_salvo) ||
-    zoom_salvo < 30 ||
-    zoom_salvo > 500 ||
-    zoom_salvo % 10 !== 0
-  ) {
-    localStorage.removeItem(LOCAL_STORAGE_NAME);
-    zoom_salvo = 100;
-  }
-  nivel.value = zoom_salvo.toString();
-  const div = document.createElement("div");
-  div.onchange = (evt) => logar_erros(aplicar_zoom);
-  div.append("Zoom:", nivel, "%");
-  div_documento.insertAdjacentElement("beforebegin", div);
-  logar_erros(aplicar_zoom);
-
-  function aplicar_zoom() {
-    if (!nivel.validity.valid) {
-      throw new Error(`Valor inválido: "${nivel.value}".`);
+  function h(tag, props = null, ...children) {
+    const element = document.createElement(tag);
+    for (const [key, value] of Object.entries(props ?? {})) {
+      if (key === 'style' || key === 'dataset') {
+        for (const [k, v] of Object.entries(value)) {
+          element[key][k] = v;
+        }
+      } else if (key === 'classList') {
+        let classes2;
+        if (Array.isArray(value)) {
+          classes2 = value.filter(x => x !== null);
+        } else {
+          classes2 = Object.entries(value).flatMap(([k, v]) => {
+            if (!v) return [];
+            return [k];
+          });
+        }
+        for (const className of classes2) {
+          element.classList.add(className);
+        }
+      } else {
+        element[key] = value;
+      }
     }
-
-    const zoom = nivel.valueAsNumber;
-    iframe.contentDocument.documentElement.style.zoom = (zoom / 100).toString();
-    localStorage.setItem(LOCAL_STORAGE_NAME, zoom);
+    element.append(...children);
+    return element;
   }
-}
-
-function aplicar_zoom() {
-  let zoom_salvo = localStorage.getItem(LOCAL_STORAGE_NAME);
-  if (
-    Number.isNaN(zoom_salvo) ||
-    zoom_salvo < 30 ||
-    zoom_salvo > 500 ||
-    zoom_salvo % 10 !== 0
-  ) {
-    localStorage.removeItem(LOCAL_STORAGE_NAME);
-    zoom_salvo = 100;
+  const div = '_div_1sxbi_1';
+  const classes = {
+    div,
+  };
+  const ZOOM_PADRAO = 100;
+  const ZOOM_MINIMO = 30;
+  const ZOOM_MAXIMO = 500;
+  const ZOOM_STEP = 10;
+  function aproximar(valor) {
+    return (
+      ZOOM_MINIMO + Math.round((valor - ZOOM_MINIMO) / ZOOM_STEP) * ZOOM_STEP
+    );
   }
-  document.documentElement.style.zoom = (zoom_salvo / 100).toString();
-}
-
-function logar_erros(fn) {
-  try {
-    fn();
-  } catch (err) {
-    console.group("sei-zoom-documentos");
-    console.error(err);
-    console.groupEnd();
+  const LOCAL_STORAGE_NAME = 'gm-sei-zoom-documentos';
+  function main() {
+    const url = new URL(document.location.href);
+    const params = url.searchParams;
+    const acao = params.get('acao');
+    switch (acao) {
+      case 'arvore_visualizar':
+        criar_controles();
+        break;
+      case 'documento_visualizar':
+        aplicar_zoom();
+        break;
+      default:
+        throw new Error(`Ação desconhecida: "${String(acao)}".`);
+    }
   }
-}
-
-logar_erros(main);
+  function criar_controles() {
+    const divs_documento = document.querySelectorAll('#divArvoreConteudoIfr');
+    if (divs_documento.length !== 1) {
+      throw new Error('Erro ao buscar o container do documento.');
+    }
+    const div_documento = divs_documento[0];
+    const iframes = div_documento.querySelectorAll('iframe');
+    if (iframes.length !== 1) {
+      throw new Error('Erro ao buscar a janela do documento.');
+    }
+    const iframe = iframes[0];
+    const nivel = h('input', {
+      type: 'number',
+      min: ZOOM_MINIMO.toString(),
+      max: ZOOM_MAXIMO.toString(),
+      step: ZOOM_STEP.toString(),
+      required: true,
+      value: localStorage.getItem(LOCAL_STORAGE_NAME) ?? ZOOM_PADRAO.toString(),
+      onchange,
+    });
+    if (!nivel.validity.valid) {
+      onchange();
+    }
+    const div2 = h(
+      'div',
+      { className: classes.div },
+      'Zoom do documento:',
+      nivel,
+      '%'
+    );
+    div_documento.insertAdjacentElement('afterend', div2);
+    function onchange() {
+      return logar_erros(() => {
+        if (nivel.validity.rangeUnderflow) {
+          nivel.value = nivel.min;
+        } else if (nivel.validity.rangeOverflow) {
+          nivel.value = nivel.max;
+        } else if (nivel.validity.stepMismatch) {
+          nivel.value = aproximar(nivel.valueAsNumber).toString();
+        } else if (!nivel.validity.valid) {
+          nivel.value = ZOOM_PADRAO.toString();
+        }
+        const valor = nivel.valueAsNumber;
+        localStorage.setItem(LOCAL_STORAGE_NAME, valor.toString());
+        const zoom = valor / 100;
+        if (!iframe.contentDocument) {
+          throw new Error('Conteúdo do documento não encontrado.');
+        }
+        iframe.contentDocument.documentElement.style.zoom = zoom.toString();
+      });
+    }
+  }
+  function aplicar_zoom() {
+    const input = window.parent?.document.querySelector(
+      `.${classes.div} > input`
+    );
+    if (!input || !input.validity.valid) return;
+    const zoom = input.valueAsNumber / 100;
+    document.documentElement.style.zoom = zoom.toString();
+  }
+  function logar_erros(fn) {
+    try {
+      fn();
+    } catch (err) {
+      console.group('sei-zoom-documentos');
+      console.error(err);
+      console.groupEnd();
+    }
+  }
+  logar_erros(main);
+})();
