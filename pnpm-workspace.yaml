@@ -1,3 +1,6 @@
 packages:
   - userscripts/*
   - lib/*
+
+ignoredBuiltDependencies:
+  - '@parcel/watcher'
