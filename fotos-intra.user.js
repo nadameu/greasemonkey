@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Fotos Intra
 // @namespace    http://nadameu.com.br/fotos-intra
-// @version      4.5.1
+// @version      4.6.0
 // @author       nadameu
 // @description  Corrige a distorção nas fotos da Intra
 // @website      http://www.nadameu.com.br/
@@ -94,6 +94,10 @@ function adicionarEstilosHome() {
 .avatar[src*="mystery-man"] {
   aspect-ratio: 2/3;
   object-fit: cover;
+}
+.gridly > .brick > .handle > img {
+  width: 75px;
+  height: 75px;
 }
 `);
 }
