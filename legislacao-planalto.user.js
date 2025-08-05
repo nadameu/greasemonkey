@@ -8,7 +8,7 @@
 // @match       http://www.planalto.gov.br/CCIVIL_03/*
 // @match       https://www.planalto.gov.br/CCIVIL_03/*
 // @grant       GM_addStyle
-// @version     1.2.0
+// @version     1.3.0
 // @author      nadameu
 // @description Melhora a aparência da legislação disponível no site do Planalto
 // @run-at      document-start
@@ -18,6 +18,9 @@ if (document.location.hostname.match(/trf4/)) {
   GM_addStyle(`
 body {
   font-size: 0.85em;
+}
+div[align=right] > table {
+  width: 50% !important;
 }
 `);
 }
@@ -58,12 +61,12 @@ a:visited {
 }
 `);
 
-document.addEventListener('readystatechange', checkComplete);
+document.addEventListener("readystatechange", checkComplete);
 checkComplete();
 
 function checkComplete() {
-  if (document.readyState === 'complete') {
-    document.removeEventListener('readystatechange', checkComplete);
+  if (document.readyState === "complete") {
+    document.removeEventListener("readystatechange", checkComplete);
     onload();
   }
 }
@@ -73,10 +76,10 @@ function onload() {
     '//sup[u/text()="o"]|//u[sup/text()="o"]|//sup[text()="o"]',
     document.body
   )) {
-    ordm.parentNode.replaceChild(new Text('º'), ordm);
+    ordm.parentNode.replaceChild(new Text("º"), ordm);
   }
-  for (const text of xQuery('//text()', document.body)) {
-    text.nodeValue = text.nodeValue.replace(/\s+/g, ' ');
+  for (const text of xQuery("//text()", document.body)) {
+    text.nodeValue = text.nodeValue.replace(/\s+/g, " ");
   }
 }
 
