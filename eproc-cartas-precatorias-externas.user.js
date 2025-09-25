@@ -1,6 +1,9 @@
 // ==UserScript==
 // @name        eproc-cartas-precatorias-externas
+// @name:pt-BR  eproc - cartas precatórias externas
 // @namespace   http://nadameu.com.br
+// @match       https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=relatorio_processo_carta_precatoria_listar&*
+// @match       https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=relatorio_processo_carta_precatoria_listar&*
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=relatorio_processo_carta_precatoria_listar&*
 // @match       https://portaldeservicos.pdpj.jus.br/consulta
 // @match       https://portaldeservicos.pdpj.jus.br/consulta/autosdigitais
@@ -9,7 +12,7 @@
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       window.close
-// @version     1.0.0
+// @version     1.1.0
 // @author      nadameu
 // @description Permite consultar cartas precatórias externas através do serviço www.jus.br
 // ==/UserScript==
