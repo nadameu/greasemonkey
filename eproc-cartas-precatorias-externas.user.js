@@ -1,10 +1,15 @@
 // ==UserScript==
 // @name        eproc-cartas-precatorias-externas
-// @name:pt-BR  eproc - cartas precatórias externas
+// @name:pt-BR  eproc - processos externos
 // @namespace   http://nadameu.com.br
 // @match       https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=relatorio_processo_carta_precatoria_listar&*
 // @match       https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=relatorio_processo_carta_precatoria_listar&*
 // @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=relatorio_processo_carta_precatoria_listar&*
+// @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=relatorio_processo_carta_precatoria_listar&*
+// @match       https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
+// @match       https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
+// @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
+// @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
 // @match       https://portaldeservicos.pdpj.jus.br/consulta
 // @match       https://portaldeservicos.pdpj.jus.br/consulta/autosdigitais
 // @grant       GM_addStyle
@@ -12,9 +17,10 @@
 // @grant       GM.getValue
 // @grant       GM.setValue
 // @grant       window.close
-// @version     1.1.0
+// @grant       unsafeWindow
+// @version     1.2.0
 // @author      nadameu
-// @description Permite consultar cartas precatórias externas através do serviço www.jus.br
+// @description Permite consultar processos externos através do serviço www.jus.br
 // ==/UserScript==
 
 async function main() {
@@ -23,11 +29,11 @@ async function main() {
     case 'eproc.jfrs.jus.br':
     case 'eproc.jfsc.jus.br':
     case 'eproc.trf4.jus.br':
-      return main_eproc();
+      return eproc_main();
       break;
 
     case 'portaldeservicos.pdpj.jus.br':
-      return main_pdpj();
+      return pdpj_main();
       break;
 
     default:
@@ -35,7 +41,82 @@ async function main() {
   }
 }
 
-function main_eproc() {
+function eproc_main() {
+  const params = new URL(document.location.href).searchParams;
+  switch (params.get('acao')) {
+    case 'processo_selecionar':
+      return eproc_processo();
+
+    case 'relatorio_processo_carta_precatoria_listar':
+      return eproc_cartas();
+
+    default:
+      throw new Error(`Ação desconhecida: ${params.get('acao')}`);
+  }
+}
+
+function eproc_processo() {
+  const tabelas = document.querySelectorAll('#tableRelacionado');
+  if (tabelas.length > 1) throw new Error('Não foi possível obter tabela única de processos relacionados.');
+  if (tabelas.length === 0) return;
+  const [tabela] = tabelas;
+  const outros = tabela.querySelectorAll('#carregarOutrosRelacionados > a[href^="javascript:"]');
+  if (outros.length > 1) throw new Error('Não foi possível obter link único para carregamento de processos relacionados.');
+  if (outros.length === 1) {
+    const $ = unsafeWindow.jQuery;
+    $(document).on('ajaxComplete', function(_evt, _xhr, opts) {
+      const params = new URL(opts.url, document.location.href).searchParams;
+      if (params.get('acao_ajax') === 'carregar_processos_relacionados') {
+        try {
+          eproc_analisar_tabela(tabela);
+        } catch (err) {
+          log_erro(err);
+        }
+      }
+    });
+  }
+  return eproc_analisar_tabela(tabela);
+}
+
+function eproc_analisar_tabela(tabela) {
+  for (const linha of tabela.rows) {
+    if (linha.cells.length <= 1) continue; // link para carregar mais relacionados
+    if (linha.cells[0].querySelector('a[href]') !== null) continue; // já possui link
+    const texto = linha.cells[0].textContent?.trim() ?? '';
+    const match = texto.match(/^(\d{20})\/[A-Z]{2}$/)
+    if (match === null) {
+      throw new Error(`Formato de número de processo desconhecido: ${texto}.`);
+    }
+    const [, numero] = match;
+    const [, seq, dv, ...resto] = numero.match(/(.......)(..)(....)(.)(..)(....)/);
+    const numero_formatado = `${seq}-${dv}.${resto.join('.')}`;
+    const link = document.createElement('a');
+    link.href = 'javascript:';
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      abrir_aba_pdpj(numero).catch(log_erro);
+    });
+    link.textContent = texto.replace(numero, numero_formatado);
+    const span = document.createElement('span');
+    span.className = 'gm-pdpj';
+    span.textContent = 'jus.br';
+    linha.cells[0].replaceChildren(link, ' ', span);
+  }
+  GM_addStyle(`
+.bootstrap-styles #divCapaProcesso span.gm-pdpj {
+  display: inline-block;
+  font-size: .67rem;
+  font-weight: normal;
+  border-radius: 4px;
+  color: hsl(333, 50%, 30%);
+  border: 1px solid;
+  padding: 0 .5ch;
+  line-height: 1.2em;
+}
+`);
+}
+
+function eproc_cartas() {
   const tabela = document.getElementById('divInfraAreaTabela')?.querySelector(':scope > .infraTable[summary="Tabela de Cartas Precatórias Externas."]');
   assert(tabela != null, 'Erro ao obter tabela.');
   for (const [i, linha] of Array.from(tabela.rows).slice(1).entries()) {
@@ -51,15 +132,12 @@ function main_eproc() {
     const botao = document.createElement('button');
     botao.type = 'button';
     botao.className = 'gm-precatorias'
-    botao.textContent = 'Consultar (PDPJ)';
+    botao.textContent = 'Consultar (jus.br)';
     botao.onclick = (e) => {
       e.preventDefault();
       document.querySelector('button.gm-precatorias.gm-clicked')?.classList.toggle('gm-clicked', false);
       botao.classList.add('gm-clicked');
-      (async () => {
-        await GM.setValue('numero', numero);
-        window.open('https://portaldeservicos.pdpj.jus.br/consulta', '_blank');
-      })();
+      abrir_aba_pdpj(numero).catch(log_erro);
     };
     celula.append(document.createElement('br'), botao);
   }
@@ -78,14 +156,19 @@ function main_eproc() {
 `);
 }
 
-function main_pdpj() {
+async function abrir_aba_pdpj(numero) {
+  await GM.setValue('numero', numero);
+  window.open('https://portaldeservicos.pdpj.jus.br/consulta', '_blank');
+}
+
+function pdpj_main() {
   switch (document.location.pathname) {
     case '/consulta':
-      return main_pdpj_consulta();
+      return pdpj_consulta();
       break;
 
     case '/consulta/autosdigitais':
-      return main_pdpj_processo();
+      return pdpj_processo();
       break;
 
     default:
@@ -93,7 +176,7 @@ function main_pdpj() {
   }
 }
 
-async function main_pdpj_consulta() {
+async function pdpj_consulta() {
   await new Promise((res, rej) => {
     let ms = 100;
     const LIMIT = 15_000;
@@ -149,7 +232,7 @@ async function main_pdpj_consulta() {
   }
 }
 
-async function main_pdpj_processo() {
+async function pdpj_processo() {
   const params = new URL(document.location.href).searchParams;
   const numero_formatado = params.get('processo');
   assert(numero_formatado !== null, 'Número do processo não encontrado.')
@@ -160,11 +243,13 @@ async function main_pdpj_processo() {
   bc.destroy();
 }
 
-main().catch(err => {
+main().catch(log_erro);
+
+function log_erro(err) {
   console.group('<eproc-cartas-precatorias-externas>');
   console.error(err);
   console.groupEnd();
-});
+}
 
 function assert(condition, msg) {
   if (! condition) throw new Error(msg);
