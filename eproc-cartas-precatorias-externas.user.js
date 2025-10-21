@@ -83,7 +83,7 @@ function eproc_analisar_tabela(tabela) {
     if (linha.cells.length <= 1) continue; // link para carregar mais relacionados
     if (linha.cells[0].querySelector('a[href]') !== null) continue; // já possui link
     const texto = linha.cells[0].textContent?.trim() ?? '';
-    const match = texto.match(/^(\d{20})\/[A-Z]{2}$/)
+    const match = texto.match(/^(\d{20})(?:\/[A-Z]{2})?$/)
     if (match === null) {
       throw new Error(`Formato de número de processo desconhecido: ${texto}.`);
     }
