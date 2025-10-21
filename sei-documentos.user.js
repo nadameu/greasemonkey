@@ -19,8 +19,8 @@ function main() {
   }
   `);
   const url = new URL(document.location.href);
-  switch (url.searchParams.get("acao")) {
-    case "editor_montar":
+  switch (url.searchParams.get('acao')) {
+    case 'editor_montar':
       GM_addStyle(/* css */ `
   .infra-editor__editor {
     width: calc(var(--largura-pdf) + 2 * 2em);
@@ -30,7 +30,7 @@ function main() {
   `);
       break;
 
-    case "documento_visualizar":
+    case 'documento_visualizar':
       GM_addStyle(/* css */ `
   body {
     width: var(--largura-pdf);
@@ -48,7 +48,7 @@ function main() {
 try {
   main();
 } catch (e) {
-  console.group("<SEI! - Documentos>");
+  console.group('<SEI! - Documentos>');
   console.error(e);
   console.groupEnd();
 }
