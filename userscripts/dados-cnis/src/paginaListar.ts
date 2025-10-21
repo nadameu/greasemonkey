@@ -48,7 +48,7 @@ async function obterLinhasPrev() {
   for (const linha of linhas) {
     if (linha.cells.length < 9)
       throw new Error('Formato da linha desconhecido.');
-    const tipo = linha.cells[1]!.textContent?.trim() ?? '';
+    const tipo = linha.cells[1]!.textContent.trim() ?? '';
     if (tipo !== 'Dossiê Previdenciário') continue;
     const linkJson = await eitherToPromise(
       queryOne<HTMLAnchorElement>(jsonSelector, linha.cells[8]!)

@@ -44,10 +44,10 @@ export function main(): Info | void {
         cells: Record<'0' | '1', HTMLTableCellElement>;
       } => arrayHasLength(2)(x.cells)
     )
-    .filter(x => (x.cells[0].textContent?.trim() ?? '') === 'Juízo:')
+    .filter(x => (x.cells[0].textContent.trim() ?? '') === 'Juízo:')
     .at(0);
   assert(isDefined(linhaJuizo), `Informações de juízo não encontradas.`);
-  const juizo = linhaJuizo.cells[1].textContent?.trim();
+  const juizo = linhaJuizo.cells[1].textContent.trim();
   assert(isNonEmptyString(juizo), `Informações de juízo não encontradas.`);
   if (areaAtual === juizo)
     return new Info('Botão não adicionado - mesmo juízo');
@@ -68,7 +68,7 @@ export function main(): Info | void {
     isNotNullish(td),
     'Não foi possível encontrar um local para adicionar o botão.'
   );
-  const juizoProcesso = td.textContent?.trim();
+  const juizoProcesso = td.textContent.trim();
   assert(isNonEmptyString(juizoProcesso), 'Juízo do processo desconhecido.');
   if (areaAtual === juizoProcesso)
     return new Info('Botão não adicionado - mesmo juízo');
@@ -111,7 +111,7 @@ async function alternar(url: string, area: string) {
   const doc = await XHR(url);
   const links = Array.from(
     doc.querySelectorAll<HTMLAnchorElement>('a[href][target="mainFrame"]')
-  ).filter(x => x.textContent?.trim() === area);
+  ).filter(x => x.textContent.trim() === area);
   assert(
     arrayHasLength(1)(links),
     `Encontrado(s) ${links.length} link(s) para a área selecionada.`

@@ -23,11 +23,11 @@ export async function enviarFormulario(
     'Houve um erro ao tentar criar a solicitação!',
     '',
   ]);
-  excecoes.forEach(excecao => msgsErro.add(excecao.textContent?.trim() ?? ''));
+  excecoes.forEach(excecao => msgsErro.add(excecao.textContent.trim()));
   if (tabelaErros) {
     const tBodyRows = Array.from(tabelaErros.rows).slice(1);
     tBodyRows
-      .map(linha => linha.cells[1]?.textContent?.trim())
+      .map(linha => linha.cells[1]?.textContent.trim())
       .forEach(msg => msgsErro.add(msg ?? ''));
   }
   if (excecoes.length === 0 && !tabelaErros) {

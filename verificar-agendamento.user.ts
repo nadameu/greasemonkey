@@ -38,7 +38,7 @@ async function obterEhLote() {
     '#divInfraBarraLocalizacao h4'
   );
   assert(headings.length === 1, 'Mais de um título encontrado.');
-  const minuta = headings[0]!.textContent?.match(
+  const minuta = headings[0]!.textContent.match(
     /^Agendamento da Minuta .*(\d+)$/
   )?.[1];
   assert(minuta != null, 'Número da minuta não encontrado.');
@@ -49,7 +49,7 @@ async function obterEhLote() {
     ) ?? []
   )
     .filter(row => row.cells.length >= 2)
-    .filter(row => RegExp(minuta).test(row.cells[1]!.textContent ?? ''));
+    .filter(row => RegExp(minuta).test(row.cells[1]!.textContent));
   assert(linhas.length === 1, 'Quantidade inesperada de linhas encontradas.');
   const linha = linhas[0]!;
   const ehLote =

@@ -22,7 +22,7 @@ export async function tela_processo() {
     P.isNotNullish(elemento_numero),
     'Erro ao obter o número do processo.'
   );
-  const numero_formatado = elemento_numero.textContent?.trim();
+  const numero_formatado = elemento_numero.textContent.trim();
   P.assert(
     P.isNonEmptyString(numero_formatado),
     'Erro ao obter o número do processo.'
