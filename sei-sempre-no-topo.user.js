@@ -16,7 +16,7 @@ function main() {
   const hidden = document.createElement('div');
   header.before(hidden);
   const observer = new IntersectionObserver(([entry]) => {
-    header.classList.toggle("active", !entry.isIntersecting);
+    header.classList.toggle('active', !entry.isIntersecting);
   });
   observer.observe(hidden);
   const style = document.createElement('style');
@@ -46,5 +46,5 @@ try {
 }
 
 function assert(condition, msg) {
-  if (! condition) throw new Error(msg);
+  if (!condition) throw new Error(msg);
 }
