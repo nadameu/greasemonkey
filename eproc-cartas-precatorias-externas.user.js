@@ -57,14 +57,22 @@ function eproc_main() {
 
 function eproc_processo() {
   const tabelas = document.querySelectorAll('#tableRelacionado');
-  if (tabelas.length > 1) throw new Error('Não foi possível obter tabela única de processos relacionados.');
+  if (tabelas.length > 1)
+    throw new Error(
+      'Não foi possível obter tabela única de processos relacionados.'
+    );
   if (tabelas.length === 0) return;
   const [tabela] = tabelas;
-  const outros = tabela.querySelectorAll('#carregarOutrosRelacionados > a[href^="javascript:"]');
-  if (outros.length > 1) throw new Error('Não foi possível obter link único para carregamento de processos relacionados.');
+  const outros = tabela.querySelectorAll(
+    '#carregarOutrosRelacionados > a[href^="javascript:"]'
+  );
+  if (outros.length > 1)
+    throw new Error(
+      'Não foi possível obter link único para carregamento de processos relacionados.'
+    );
   if (outros.length === 1) {
     const $ = unsafeWindow.jQuery;
-    $(document).on('ajaxComplete', function(_evt, _xhr, opts) {
+    $(document).on('ajaxComplete', function (_evt, _xhr, opts) {
       const params = new URL(opts.url, document.location.href).searchParams;
       if (params.get('acao_ajax') === 'carregar_processos_relacionados') {
         try {
@@ -83,12 +91,14 @@ function eproc_analisar_tabela(tabela) {
     if (linha.cells.length <= 1) continue; // link para carregar mais relacionados
     if (linha.cells[0].querySelector('a[href]') !== null) continue; // já possui link
     const texto = linha.cells[0].textContent?.trim() ?? '';
-    const match = texto.match(/^(\d{20})(?:\/[A-Z]{2})?$/)
+    const match = texto.match(/^(\d{20})(?:\/[A-Z]{2})?$/);
     if (match === null) {
       throw new Error(`Formato de número de processo desconhecido: ${texto}.`);
     }
     const [, numero] = match;
-    const [, seq, dv, ...resto] = numero.match(/(.......)(..)(....)(.)(..)(....)/);
+    const [, seq, dv, ...resto] = numero.match(
+      /(.......)(..)(....)(.)(..)(....)/
+    );
     const numero_formatado = `${seq}-${dv}.${resto.join('.')}`;
     const link = document.createElement('a');
     link.href = 'javascript:';
@@ -117,25 +127,34 @@ function eproc_analisar_tabela(tabela) {
 }
 
 function eproc_cartas() {
-  const tabela = document.getElementById('divInfraAreaTabela')?.querySelector(':scope > .infraTable[summary="Tabela de Cartas Precatórias Externas."]');
+  const tabela = document
+    .getElementById('divInfraAreaTabela')
+    ?.querySelector(
+      ':scope > .infraTable[summary="Tabela de Cartas Precatórias Externas."]'
+    );
   assert(tabela != null, 'Erro ao obter tabela.');
   for (const [i, linha] of Array.from(tabela.rows).slice(1).entries()) {
-    assert(linha.cells.length === 14, `Número de células esperado: 14. Obtido: ${linha.cells.length}. Linha: ${i}.`);
+    assert(
+      linha.cells.length === 14,
+      `Número de células esperado: 14. Obtido: ${linha.cells.length}. Linha: ${i}.`
+    );
     const celula = linha.cells[0];
     const numero_formatado = celula.textContent.trim();
     if (numero_formatado === '') continue;
     const numero = numero_formatado.replace(/[.-]/g, '');
-    if(! /^[0-9]{20}$/.test(numero)) {
+    if (!/^[0-9]{20}$/.test(numero)) {
       celula.style.color = 'red';
       continue;
     }
     const botao = document.createElement('button');
     botao.type = 'button';
-    botao.className = 'gm-precatorias'
+    botao.className = 'gm-precatorias';
     botao.textContent = 'Consultar (jus.br)';
-    botao.onclick = (e) => {
+    botao.onclick = e => {
       e.preventDefault();
-      document.querySelector('button.gm-precatorias.gm-clicked')?.classList.toggle('gm-clicked', false);
+      document
+        .querySelector('button.gm-precatorias.gm-clicked')
+        ?.classList.toggle('gm-clicked', false);
       botao.classList.add('gm-clicked');
       abrir_aba_pdpj(numero).catch(log_erro);
     };
@@ -186,7 +205,7 @@ async function pdpj_consulta() {
       if (app == null && ms < LIMIT) {
         ms *= 2;
         window.setTimeout(retry, ms);
-      } else if (ms >= LIMIT){
+      } else if (ms >= LIMIT) {
         rej(new Error('timeout'));
       } else {
         res();
@@ -194,12 +213,17 @@ async function pdpj_consulta() {
     }, ms);
   });
   const numero = await GM.getValue('numero');
-  console.log({numero});
-  if (! numero) return;
+  console.log({ numero });
+  if (!numero) return;
   await GM.deleteValue('numero');
   const input = document.querySelector('input[name="numeroProcesso"]');
-  assert(input != null, 'Não foi possível obter o campo do número do processo.');
-  const botoes = Array.from(document.querySelectorAll('button')).filter(b => b.textContent.trim().match(/Buscar/) !== null);
+  assert(
+    input != null,
+    'Não foi possível obter o campo do número do processo.'
+  );
+  const botoes = Array.from(document.querySelectorAll('button')).filter(
+    b => b.textContent.trim().match(/Buscar/) !== null
+  );
   assert(botoes.length === 1, 'Não foi possível obter o botão "Buscar".');
   const botao = botoes[0];
   input.value = numero;
@@ -208,8 +232,12 @@ async function pdpj_consulta() {
   assert(consulta != null, 'Não foi possível obter consulta.');
   const promise = new Promise(res => {
     const observer = new MutationObserver(x => {
-      x.forEach(y => { console.log(y.addedNodes); });
-      const rows = x.filter(y => y.target.matches('app-lista-processo mat-row'));
+      x.forEach(y => {
+        console.log(y.addedNodes);
+      });
+      const rows = x.filter(y =>
+        y.target.matches('app-lista-processo mat-row')
+      );
       if (rows.length > 0) {
         observer.disconnect();
         res();
@@ -235,9 +263,12 @@ async function pdpj_consulta() {
 async function pdpj_processo() {
   const params = new URL(document.location.href).searchParams;
   const numero_formatado = params.get('processo');
-  assert(numero_formatado !== null, 'Número do processo não encontrado.')
+  assert(numero_formatado !== null, 'Número do processo não encontrado.');
   const numero = numero_formatado.replace(/[.-]/g, '');
-  assert(/^[0-9]{20}$/.test(numero), `Número de processo inválido: ${numero_formatado}.`);
+  assert(
+    /^[0-9]{20}$/.test(numero),
+    `Número de processo inválido: ${numero_formatado}.`
+  );
   const bc = createBroadcastService('gm-precatorias', validar_mensagem);
   bc.publish({ processo_aberto: numero });
   bc.destroy();
@@ -252,7 +283,7 @@ function log_erro(err) {
 }
 
 function assert(condition, msg) {
-  if (! condition) throw new Error(msg);
+  if (!condition) throw new Error(msg);
 }
 
 function createBroadcastService(id, isValidMsg) {
@@ -286,9 +317,11 @@ function createBroadcastService(id, isValidMsg) {
 }
 
 function validar_mensagem(msg) {
-  return typeof msg === 'object' &&
+  return (
+    typeof msg === 'object' &&
     msg !== null &&
-    ('processo_aberto' in msg) &&
+    'processo_aberto' in msg &&
     typeof msg.processo_aberto === 'string' &&
-    /^[0-9]{20}$/.test(msg.processo_aberto);
+    /^[0-9]{20}$/.test(msg.processo_aberto)
+  );
 }
