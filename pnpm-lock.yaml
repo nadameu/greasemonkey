@@ -260,6 +260,28 @@ importers:
         specifier: workspace:^
         version: link:../../lib/enderecos-eproc
 
+  userscripts/eproc-cartas-precatorias-externas:
+    dependencies:
+      '@nadameu/create-broadcast-service':
+        specifier: workspace:^
+        version: link:../../lib/create-broadcast-service
+      '@nadameu/create-element':
+        specifier: workspace:^
+        version: link:../../lib/create-element
+      '@nadameu/handler':
+        specifier: workspace:^
+        version: link:../../lib/handler
+      '@nadameu/opaque':
+        specifier: workspace:^
+        version: link:../../lib/opaque
+      '@nadameu/predicates':
+        specifier: workspace:^
+        version: link:../../lib/predicates
+    devDependencies:
+      '@nadameu/enderecos-eproc':
+        specifier: workspace:^
+        version: link:../../lib/enderecos-eproc
+
   userscripts/eproc-favoritos-historico:
     dependencies:
       '@nadameu/create-element':

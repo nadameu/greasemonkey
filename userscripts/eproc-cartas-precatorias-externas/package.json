@@ -1,0 +1,25 @@
+{
+  "name": "eproc-cartas-precatorias-externas",
+  "gm_name": "eproc - processos externos",
+  "description": "Permite consultar processos externos através do serviço www.jus.br",
+  "private": true,
+  "version": "1.2.1",
+  "type": "module",
+  "author": "nadameu",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "format": "prettier --write ../../eproc-cartas-precatorias-externas.user.js",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@nadameu/enderecos-eproc": "workspace:^"
+  },
+  "dependencies": {
+    "@nadameu/create-broadcast-service": "workspace:^",
+    "@nadameu/create-element": "workspace:^",
+    "@nadameu/handler": "workspace:^",
+    "@nadameu/opaque": "workspace:^",
+    "@nadameu/predicates": "workspace:^"
+  }
+}
