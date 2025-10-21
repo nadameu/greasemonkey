@@ -25,7 +25,7 @@ waitForElement('.titulo')
   .then(() => document.querySelector('.dispositivo'))
   .then(el => el || Promise.reject('Dispositivo não encontrado!'))
   .then(el => {
-    el.scrollIntoView({ behavior: 'smooth' })
+    el.scrollIntoView({ behavior: 'smooth' });
   })
   .then(() => console.log('done'))
   .catch(e => console.error(e));
