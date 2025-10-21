@@ -24,7 +24,7 @@
 // ==/UserScript==
 
 async function main() {
-  switch (document.domain) {
+  switch (document.location.hostname) {
     case 'eproc.jfpr.jus.br':
     case 'eproc.jfrs.jus.br':
     case 'eproc.jfsc.jus.br':
@@ -37,7 +37,7 @@ async function main() {
       break;
 
     default:
-      throw new Error(`Domínio desconhecido: ${document.domain}.`);
+      throw new Error(`Servidor desconhecido: ${document.location.hostname}.`);
   }
 }
 
