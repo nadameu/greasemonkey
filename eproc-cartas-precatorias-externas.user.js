@@ -18,7 +18,7 @@
 // @grant       GM.setValue
 // @grant       window.close
 // @grant       unsafeWindow
-// @version     1.2.0
+// @version     1.2.1
 // @author      nadameu
 // @description Permite consultar processos externos através do serviço www.jus.br
 // ==/UserScript==
