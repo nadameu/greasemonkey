@@ -1,7 +1,7 @@
 export const query =
   <T extends Element>(selector: string) =>
-  (parentNode: ParentNode) =>
-    <T>parentNode.querySelector<T>(selector);
+  (parentNode: ParentNode): T | null =>
+    parentNode.querySelector<T>(selector);
 export const queryAll =
   <T extends Element>(selector: string) =>
   (parentNode: ParentNode): NodeListOf<T> =>
