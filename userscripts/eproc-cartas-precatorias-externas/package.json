@@ -7,10 +7,11 @@
   "type": "module",
   "author": "nadameu",
   "scripts": {
-    "dev": "vite",
+    "dev": "run-p watch preview",
     "build": "tsc && vite build",
     "format": "prettier --write ../../eproc-cartas-precatorias-externas.user.js",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "watch": "vite build --watch"
   },
   "devDependencies": {
     "@nadameu/enderecos-eproc": "workspace:^"
