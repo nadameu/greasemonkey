@@ -6,7 +6,7 @@ export const queryAll =
   <T extends Element>(selector: string) =>
   (parentNode: ParentNode): NodeListOf<T> =>
     parentNode.querySelectorAll<T>(selector);
-export const text = (node: Node) => node.textContent;
+export const text = <T extends Node>(node: T) => node.textContent;
 const FIRST = XPathResult.FIRST_ORDERED_NODE_TYPE;
 export const xquery =
   <T extends Node>(expression: string) =>
