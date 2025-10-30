@@ -8,6 +8,27 @@ export async function main() {
   const tabela = await queryOne<HTMLTableElement>(
     'table[summary="Tabela de Entidade Assistencial."], table[summary="Tabela de Entidade Assistencial Inativas."]'
   );
+  const { caption, registros, captionNewContent, output } =
+    await queryOne<HTMLTableCaptionElement>('caption', tabela).then(
+      async caption => {
+        const match = caption.textContent.match(
+          /^Lista de Entidade Assistencial \((\d+) registros\):$/
+        );
+        if (match === null || match[1] === undefined) {
+          throw new Error(
+            'Conteúdo da legenda da tabela não corresponde ao esperado.'
+          );
+        }
+        const registros = Number(match[1]);
+        const output = h('output', {}, pluralizar(registros));
+        return {
+          caption,
+          registros,
+          captionNewContent: ['Lista de Entidade Assistencial (', output, '):'],
+          output,
+        };
+      }
+    );
   const linhas = Array.from(tabela.rows).slice(1);
   const info = await Promise.all(
     linhas.map(async (linha, index) => {
@@ -79,6 +100,10 @@ export async function main() {
   adicionarEstilos();
   barra.insertAdjacentElement('afterend', div);
 
+  caption.replaceChildren(...captionNewContent);
+
+  updateLinhas('', '');
+
   function onCidadeChange() {
     Array.from(selBairro.children)
       .slice(1)
@@ -103,9 +128,18 @@ export async function main() {
 
   function updateLinhas(cidade: string, bairro: string) {
     const mostrar = cidades.get(cidade)!.get(bairro)!;
-    linhas.forEach((linha, index) => {
-      linha.hidden = !mostrar.has(index);
-    });
+    const exibidas = linhas
+      .map((linha, index): number => {
+        const exibir = mostrar.has(index);
+        linha.hidden = !exibir;
+        return exibir ? 1 : 0;
+      })
+      .reduce((x, y) => x + y, 0);
+    if (exibidas === registros) {
+      output.textContent = pluralizar(registros);
+    } else {
+      output.textContent = `exibindo ${exibidas} de ${pluralizar(registros)}`;
+    }
   }
 }
 
@@ -121,4 +155,8 @@ export function queryOne<T extends Element>(
       )
     );
   return Promise.resolve(elts[0]!);
+}
+
+function pluralizar(registros: number) {
+  return `${registros} registro${registros <= 1 ? '' : 's'}`;
 }
