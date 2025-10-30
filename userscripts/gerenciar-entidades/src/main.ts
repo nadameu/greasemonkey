@@ -77,7 +77,6 @@ export async function main() {
     }
     bairros.get(bairro)!.add(linha);
   }
-  const div = h('div', { className: `${GM_info.script.name}__div` });
   const sortIgnoreCase = new Intl.Collator('pt-BR', {
     sensitivity: 'base',
   }).compare;
@@ -91,12 +90,20 @@ export async function main() {
       )
   );
   selCidade.addEventListener('change', onCidadeChange);
-  const optBairro = h('option');
-  optBairro.value = '';
-  optBairro.textContent = 'TODOS';
-  const selBairro = h('select', { disabled: true }, optBairro);
+  const selBairro = h(
+    'select',
+    { disabled: true },
+    h('option', { value: '' }, 'TODOS')
+  );
   selBairro.addEventListener('change', onBairroChange);
-  div.append('Cidade: ', selCidade, ' Bairro: ', selBairro);
+  const div = h(
+    'div',
+    { className: `${GM_info.script.name}__div` },
+    'Cidade: ',
+    selCidade,
+    ' Bairro: ',
+    selBairro
+  );
   adicionarEstilos();
   barra.insertAdjacentElement('afterend', div);
 
