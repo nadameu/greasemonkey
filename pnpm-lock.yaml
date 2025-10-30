@@ -147,6 +147,8 @@ importers:
         specifier: workspace:^
         version: link:../opaque
 
+  lib/reactive: {}
+
   lib/resolvable:
     dependencies:
       '@nadameu/handler':
