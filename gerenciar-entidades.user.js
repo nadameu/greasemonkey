@@ -2,7 +2,7 @@
 // @name         gerenciar-entidades
 // @name:pt-BR   Gerenciar entidades
 // @namespace    http://nadameu.com.br
-// @version      1.1.0
+// @version      1.2.0
 // @author       nadameu
 // @description  Permite filtrar entidades assistenciais
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=entidade_assistencial_listar&*
@@ -20,18 +20,6 @@
 (function () {
   'use strict';
 
-  var __defProp = Object.defineProperty;
-  var __defNormalProp = (obj, key, value) =>
-    key in obj
-      ? __defProp(obj, key, {
-          enumerable: true,
-          configurable: true,
-          writable: true,
-          value,
-        })
-      : (obj[key] = value);
-  var __publicField = (obj, key, value) =>
-    __defNormalProp(obj, key + '', value);
   var _GM_addStyle = /* @__PURE__ */ (() =>
     typeof GM_addStyle != 'undefined' ? GM_addStyle : void 0)();
   var _GM_info = /* @__PURE__ */ (() =>
@@ -39,13 +27,34 @@
   function h(tag, props = null, ...children) {
     const element = document.createElement(tag);
     for (const [key, value] of Object.entries(props ?? {})) {
-      element[key] = value;
+      if (key === 'style' || key === 'dataset') {
+        for (const [k, v] of Object.entries(value)) {
+          element[key][k] = v;
+        }
+      } else if (key === 'classList') {
+        let classes;
+        if (Array.isArray(value)) {
+          classes = value.filter(x => x !== null);
+        } else {
+          classes = Object.entries(value).flatMap(([k, v]) => {
+            if (!v) return [];
+            return [k];
+          });
+        }
+        for (const className of classes) {
+          element.classList.add(className);
+        }
+      } else {
+        element[key] = value;
+      }
     }
     element.append(...children);
     return element;
   }
   function adicionarEstilos() {
-    _GM_addStyle(`
+    _GM_addStyle(
+      /* css */
+      `
 .bootstrap-styles .${_GM_info.script.name}__div {
   position: relative;
   background: hsl(333deg 35% 70%);
@@ -53,12 +62,13 @@
   padding: 1em 2ch;
   border-radius: 4px;
 }
-    `);
+    `
+    );
   }
   const compare = new Intl.Collator('pt-BR', { sensitivity: 'base' }).compare;
   class StringMap {
+    _internal = /* @__PURE__ */ new Map();
     constructor(values = []) {
-      __publicField(this, '_internal', /* @__PURE__ */ new Map());
       for (const [key, value] of values) {
         this.set(key, value);
       }
@@ -98,10 +108,30 @@
     const tabela = await queryOne(
       'table[summary="Tabela de Entidade Assistencial."], table[summary="Tabela de Entidade Assistencial Inativas."]'
     );
+    const { caption, registros, captionNewContent, output } = await queryOne(
+      'caption',
+      tabela
+    ).then(async caption2 => {
+      const match = caption2.textContent.match(
+        /^Lista de Entidade Assistencial \((\d+) registros\):$/
+      );
+      if (match === null || match[1] === void 0) {
+        throw new Error(
+          'Conteúdo da legenda da tabela não corresponde ao esperado.'
+        );
+      }
+      const registros2 = Number(match[1]);
+      const output2 = h('output', {}, pluralizar(registros2));
+      return {
+        caption: caption2,
+        registros: registros2,
+        captionNewContent: ['Lista de Entidade Assistencial (', output2, '):'],
+        output: output2,
+      };
+    });
     const linhas = Array.from(tabela.rows).slice(1);
     const info = await Promise.all(
       linhas.map(async (linha, index) => {
-        var _a;
         if (linha.cells.length === 0) {
           throw new Error(`Linha sem células: ${index}.`);
         }
@@ -110,12 +140,11 @@
           'img[src$="/lupa.gif"][onmouseover]',
           ultimaCelula
         );
-        const partes =
-          (_a = lupa.getAttribute('onmouseover')) == null
-            ? void 0
-            : _a.match(
-                /^return infraTooltipMostrar\('Cidade: (.+),Bairro: (.+),Endereço: (.+)','Endereço',400\);$/
-              );
+        const partes = lupa
+          .getAttribute('onmouseover')
+          ?.match(
+            /^return infraTooltipMostrar\('Cidade: (.+),Bairro: (.+),Endereço: (.+)','Endereço',400\);$/
+          );
         if (!partes || partes.length !== 4)
           throw new Error(
             `Informações de endereço não encontradas: linha ${index}.`
@@ -148,7 +177,6 @@
       }
       bairros.get(bairro).add(linha);
     }
-    const div = h('div', { className: `${_GM_info.script.name}__div` });
     const sortIgnoreCase = new Intl.Collator('pt-BR', {
       sensitivity: 'base',
     }).compare;
@@ -162,14 +190,24 @@
         )
     );
     selCidade.addEventListener('change', onCidadeChange);
-    const optBairro = h('option');
-    optBairro.value = '';
-    optBairro.textContent = 'TODOS';
-    const selBairro = h('select', { disabled: true }, optBairro);
+    const selBairro = h(
+      'select',
+      { disabled: true },
+      h('option', { value: '' }, 'TODOS')
+    );
     selBairro.addEventListener('change', onBairroChange);
-    div.append('Cidade: ', selCidade, ' Bairro: ', selBairro);
+    const div = h(
+      'div',
+      { className: `${_GM_info.script.name}__div` },
+      'Cidade: ',
+      selCidade,
+      ' Bairro: ',
+      selBairro
+    );
     adicionarEstilos();
     barra.insertAdjacentElement('afterend', div);
+    caption.replaceChildren(...captionNewContent);
+    updateLinhas('', '');
     function onCidadeChange() {
       Array.from(selBairro.children)
         .slice(1)
@@ -192,9 +230,18 @@
     }
     function updateLinhas(cidade, bairro) {
       const mostrar = cidades.get(cidade).get(bairro);
-      linhas.forEach((linha, index) => {
-        linha.hidden = !mostrar.has(index);
-      });
+      const exibidas = linhas
+        .map((linha, index) => {
+          const exibir = mostrar.has(index);
+          linha.hidden = !exibir;
+          return exibir ? 1 : 0;
+        })
+        .reduce((x, y) => x + y, 0);
+      if (exibidas === registros) {
+        output.textContent = pluralizar(registros);
+      } else {
+        output.textContent = `exibindo ${exibidas} de ${pluralizar(registros)}`;
+      }
     }
   }
   function queryOne(selector, context = document) {
@@ -206,6 +253,9 @@
         )
       );
     return Promise.resolve(elts[0]);
+  }
+  function pluralizar(registros) {
+    return `${registros} registro${registros <= 1 ? '' : 's'}`;
   }
   main().catch(err => {
     console.group(_GM_info.script.name);
