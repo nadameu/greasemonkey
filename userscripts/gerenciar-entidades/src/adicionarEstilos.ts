@@ -1,7 +1,7 @@
 import { GM_addStyle, GM_info } from '$';
 
 export function adicionarEstilos() {
-  GM_addStyle(`
+  GM_addStyle(/* css */ `
 .bootstrap-styles .${GM_info.script.name}__div {
   position: relative;
   background: hsl(333deg 35% 70%);
