@@ -10,7 +10,7 @@
     "dev": "run-p watch preview",
     "build": "tsc && vite build",
     "format": "prettier --write ../../seeu-movimentacoes.user.js",
-    "preview": "vite preview",
+    "preview": "vite preview --open ../../seeu-movimentacoes.user.js",
     "watch": "vite build --watch"
   },
   "dependencies": {
