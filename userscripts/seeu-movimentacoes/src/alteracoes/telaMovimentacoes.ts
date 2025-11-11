@@ -314,11 +314,11 @@ function onTabelaAdicionada(table: HTMLTableElement) {
   return flow(
     table.rows,
     I.map((linha, l) => {
-      if (!P.arrayHasLength(7)(linha.cells)) {
+      if (!P.arrayHasLength(8)(linha.cells)) {
         if (
           linha.classList.contains('linhaPeticao') &&
           P.arrayHasLength(1)(linha.cells) &&
-          linha.cells[0].colSpan === 7
+          linha.cells[0].colSpan === 8
         ) {
           const frag = document.createDocumentFragment();
           frag.append(...linha.cells[0].childNodes);
@@ -335,6 +335,8 @@ function onTabelaAdicionada(table: HTMLTableElement) {
           (xs.length === 3 &&
             xs[1] instanceof HTMLAnchorElement &&
             xs[2] instanceof HTMLElement));
+      const isTipoDocumento = (xs: ChildNode[]): xs is [Text] =>
+        xs.length === 1 && xs[0] instanceof Text;
       const sequencialNome = flow(
         linha.cells[0].childNodes,
         I.filter(x => !(x instanceof Text) || P.isNonEmptyString(x.nodeValue)),
@@ -343,7 +345,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
         N.map(([texto, ...obs]) =>
           flow(
             texto.nodeValue,
-            N.match<3>(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/),
+            N.match<3>(/^\s*(\d+\.\d+)\s+Descrição:\s+(.*)\s*$/),
             N.map(([, sequencial, nome]) => ({
               sequencial,
               nome: nome || 'Outros',
@@ -360,15 +362,29 @@ function onTabelaAdicionada(table: HTMLTableElement) {
         ),
         N.orThrow(`Sequencial e nome não reconhecidos: ${l}.`)
       );
+      const tipo = flow(
+        linha.cells[1].childNodes,
+        I.filter(x => !(x instanceof Text) || P.isNonEmptyString(x.nodeValue)),
+        I.toArray,
+        N.filter(isTipoDocumento),
+        N.map(([texto]) =>
+          flow(
+            texto.nodeValue,
+            N.match<3>(/^\s*(\d+\.\d+)\s+Tipo de Documento:\s+(.*)\s*$/),
+            N.map(([, _seq, tipo]) => tipo)
+          )
+        ),
+        N.orThrow(`Tipo de documento não reconhecido: ${l}.`)
+      );
       const assinatura = flow(
-        linha.cells[2],
+        linha.cells[3],
         D.text,
         N.match<2>(/^\s*Ass\.:\s+(.*)\s*$/),
         N.map(([, assinatura]) => assinatura),
         N.orThrow(`Assinatura não reconhecida: ${l}.`)
       );
       const infoLink = flow(
-        linha.cells[4],
+        linha.cells[5],
         (
           celula
         ): {
@@ -421,7 +437,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
           )
       );
       const sigilo = flow(
-        linha.cells[6],
+        linha.cells[7],
         D.text,
         N.map(x => x.trim()),
         N.filter(x => x !== ''),
@@ -441,6 +457,9 @@ function onTabelaAdicionada(table: HTMLTableElement) {
           })
         );
         const file = document.createDocumentFragment();
+        if (tipo !== nome && tipo !== 'Outros Documentos') {
+          file.append(`${tipo}:`, h('br'));
+        }
         const span = h(
           'span',
           { style: { fontWeight: 'bold' } },

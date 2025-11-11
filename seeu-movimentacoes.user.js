@@ -2,7 +2,7 @@
 // @name         seeu-movimentacoes
 // @name:pt-BR   SEEU - Movimentações
 // @namespace    nadameu.com.br
-// @version      2.6.0
+// @version      2.7.0
 // @author       nadameu
 // @description  Melhoria na apresentação das movimentações do processo
 // @match        https://seeu.pje.jus.br/*
@@ -42,7 +42,6 @@
     for (let i = 0; i < fns.length; i++) x = fns[i](x);
     return x;
   };
-  const tag = _type => _tag => props => Object.assign(props, { _type, _tag });
   const apply = (f, ...args) => f(...args);
   const identity = x => x;
   const foldLeftIterable = (seed, f) => xs => {
@@ -122,10 +121,8 @@
     (...fns) =>
     value =>
       fns.map(f => f(value));
-  const tagSeq = tag('Seq');
-  tagSeq('Zero')({});
-  function h(tag2, props = null, ...children) {
-    const element = document.createElement(tag2);
+  function h(tag, props = null, ...children) {
+    const element = document.createElement(tag);
     for (const [key, value] of Object.entries(props ?? {})) {
       if (key === 'style' || key === 'dataset') {
         for (const [k, v] of Object.entries(value)) {
@@ -793,16 +790,17 @@
     return flow(
       table.rows,
       mapIterable((linha, l) => {
-        if (!arrayHasLength(7)(linha.cells)) {
+        if (!arrayHasLength(8)(linha.cells)) {
           if (
             linha.classList.contains('linhaPeticao') &&
             arrayHasLength(1)(linha.cells) &&
-            linha.cells[0].colSpan === 7
+            linha.cells[0].colSpan === 8
           ) {
             const frag = document.createDocumentFragment();
             frag.append(...linha.cells[0].childNodes);
             return [frag];
           }
+          console.debug(linha);
           throw new Error(`Formato de linha desconhecido: ${l}.`);
         }
         const isTextoObservacoes = xs =>
@@ -812,6 +810,7 @@
             (xs.length === 3 &&
               xs[1] instanceof HTMLAnchorElement &&
               xs[2] instanceof HTMLElement));
+        const isTipoDocumento = xs => xs.length === 1 && xs[0] instanceof Text;
         const sequencialNome = flow(
           linha.cells[0].childNodes,
           filterIterable(
@@ -822,7 +821,7 @@
           map(([texto, ...obs]) =>
             flow(
               texto.nodeValue,
-              match(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/),
+              match(/^\s*(\d+\.\d+)\s+Descrição:\s+(.*)\s*$/),
               map(([, sequencial2, nome2]) => ({
                 sequencial: sequencial2,
                 nome: nome2 || 'Outros',
@@ -835,14 +834,30 @@
           ),
           orThrow(`Sequencial e nome não reconhecidos: ${l}.`)
         );
+        const tipo = flow(
+          linha.cells[1].childNodes,
+          filterIterable(
+            x => !(x instanceof Text) || isNonEmptyString(x.nodeValue)
+          ),
+          iterableToArray,
+          filter(isTipoDocumento),
+          map(([texto]) =>
+            flow(
+              texto.nodeValue,
+              match(/^\s*(\d+\.\d+)\s+Tipo de Documento:\s+(.*)\s*$/),
+              map(([, _seq, tipo2]) => tipo2)
+            )
+          ),
+          orThrow(`Tipo de documento não reconhecido: ${l}.`)
+        );
         const assinatura = flow(
-          linha.cells[2],
+          linha.cells[3],
           text,
           match(/^\s*Ass\.:\s+(.*)\s*$/),
           map(([, assinatura2]) => assinatura2),
           orThrow(`Assinatura não reconhecida: ${l}.`)
         );
-        const infoLink = flow(linha.cells[4], celula =>
+        const infoLink = flow(linha.cells[5], celula =>
           flow(
             celula,
             c => c.childNodes,
@@ -883,7 +898,7 @@
           )
         );
         const sigilo = flow(
-          linha.cells[6],
+          linha.cells[7],
           text,
           map(x => x.trim()),
           filter(x => x !== ''),
@@ -907,6 +922,9 @@ ${sigilo}`;
             })
           );
           const file = document.createDocumentFragment();
+          if (tipo !== nome && tipo !== 'Outros Documentos') {
+            file.append(`${tipo}:`, h('br'));
+          }
           const span = h(
             'span',
             { style: { fontWeight: 'bold' } },
