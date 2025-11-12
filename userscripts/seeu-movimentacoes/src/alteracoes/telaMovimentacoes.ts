@@ -274,23 +274,32 @@ function createOnDocumentClick({
   };
 }
 function criarBotaoJanelasAbertas(janelasAbertas: Map<string, Window>) {
-  const menu = window.parent?.document.querySelector('ul#main-menu');
+  const menu = (() => {
+    const opcoes = window.parent?.document.querySelectorAll('seeu-menubar');
+    if (!P.arrayHasLength(1)(opcoes)) return null;
+    const menu = opcoes[0];
+    if (!menu.shadowRoot) return null;
+    const divs = menu.shadowRoot.querySelectorAll('div.seeu-menubar');
+    if (!P.arrayHasLength(1)(divs)) return null;
+    const div = divs[0];
+    return div;
+  })();
   if (!menu) {
     console.log('Não encontrado.');
     return { exibirBotaoFechar() {} };
   }
   const doc = menu.ownerDocument;
-  const fechar = doc.createElement('li');
-  fechar.className = 'gm-seeu-movimentacoes__fechar-janelas-abertas';
+  const fechar = doc.createElement('a');
+  fechar.className = 'root-item';
   fechar.style.display = 'none';
-  const link = doc.createElement('a');
-  link.href = '#';
-  link.textContent = 'Fechar janelas abertas';
-  link.addEventListener('click', onClick);
-  fechar.appendChild(link);
+  fechar.href = '#';
+  fechar.textContent = 'Fechar janelas abertas';
+  fechar.style.backgroundColor = 'hsla(333, 35%, 50%, 0.5)';
+  fechar.style.marginLeft = '3ch';
+  fechar.addEventListener('click', onClick);
   menu.appendChild(fechar);
   window.addEventListener('beforeunload', () => {
-    link.removeEventListener('click', onClick);
+    fechar.removeEventListener('click', onClick);
     menu.removeChild(fechar);
   });
   return {
