@@ -2,7 +2,7 @@
 // @name         seeu-movimentacoes
 // @name:pt-BR   SEEU - Movimentações
 // @namespace    nadameu.com.br
-// @version      2.8.0
+// @version      2.9.0
 // @author       nadameu
 // @description  Melhoria na apresentação das movimentações do processo
 // @match        https://seeu.pje.jus.br/*
@@ -510,7 +510,7 @@
       win.addEventListener('load', () => callback());
     }
   }
-  const css =
+  const css$1 =
     'div>table.resultTable>tbody>tr>td:nth-last-child(4){--cor-pessoa: hsl(var(--hue-pessoa) 50% 50%);background:linear-gradient(to bottom right,var(--cor-pessoa) 50%,transparent 50%) top left/12px 12px no-repeat}table.resultTable>tbody>tr[id*=",JUIZ,"]{--hue-pessoa: 0}table.resultTable>tbody>tr[id*=",JUIZ,"]>td:nth-last-child(3){border:1px solid var(--cor-pessoa)}table.resultTable>tbody>tr[id*=",SERVIDOR,"]{--hue-pessoa: 40}table.resultTable>tbody>tr[id*=",ADVOGADO,"]{--hue-pessoa: 80}table.resultTable>tbody>tr[id*=",PROMOTOR,"]{--hue-pessoa: 120}table.resultTable>tbody>tr[id*=",DEFENSOR,"]{--hue-pessoa: 160}table.resultTable>tbody>tr[id*=",PROCURADOR,"]{--hue-pessoa: 200}table.resultTable>tbody>tr[id*=",OUTROS,"]{--hue-pessoa: 240}table.resultTable>tbody>tr[id*=",AUDIENCIA,"]{--hue-pessoa: 280}table.resultTable>tbody>tr[id*=",OFICIALJUSTICA,"]{--hue-pessoa: 320}table.resultTable{border-collapse:separate}table.resultTable thead>tr>th{padding:0 5px}table.resultTable tr div.extendedinfo{border:none;margin:0;width:auto}table.resultTable table.form{margin:0 0 4px;width:calc(100% - 4px);border-collapse:collapse;border:1px solid}table.resultTable table.form td{width:auto;padding:0;vertical-align:top!important}table.resultTable table.form td:nth-child(1){width:36px;text-align:center;padding-left:6px;padding-right:2px}table.resultTable table.form td:nth-child(2){width:16px;text-align:center;padding:5px 0 4px}table.resultTable table.form td:nth-child(3){width:89%}table.resultTable table.form td:nth-child(4){width:16px}table.resultTable table.form tr.odd{background:#f0e0e7}table.resultTable table.form tr.even,table.resultTable table.form tr.incidente{background:#faf5f7}table.resultTable table.form .ajaxCalloutGenericoHelp{display:inline;margin-right:4px}';
   const struck = '_struck_14zo8_1';
   const avisoCarregando = '_avisoCarregando_14zo8_8';
@@ -720,7 +720,7 @@
     for (const th2 of linhaCabecalho.cells) {
       th2.removeAttribute('style');
     }
-    _GM_addStyle(css);
+    _GM_addStyle(css$1);
     return null;
   }
   function createOnDocumentClick({ janelasAbertas, exibirBotaoFechar }) {
@@ -751,32 +751,23 @@
     };
   }
   function criarBotaoJanelasAbertas(janelasAbertas) {
-    const menu = (() => {
-      const opcoes = window.parent?.document.querySelectorAll('seeu-menubar');
-      if (!arrayHasLength(1)(opcoes)) return null;
-      const menu2 = opcoes[0];
-      if (!menu2.shadowRoot) return null;
-      const divs = menu2.shadowRoot.querySelectorAll('div.seeu-menubar');
-      if (!arrayHasLength(1)(divs)) return null;
-      const div = divs[0];
-      return div;
-    })();
+    const menu = window.parent?.document.querySelector('ul#main-menu');
     if (!menu) {
       console.log('Não encontrado.');
       return { exibirBotaoFechar() {} };
     }
     const doc = menu.ownerDocument;
-    const fechar = doc.createElement('a');
-    fechar.className = 'root-item';
+    const fechar = doc.createElement('li');
+    fechar.className = 'gm-seeu-movimentacoes__fechar-janelas-abertas';
     fechar.style.display = 'none';
-    fechar.href = '#';
-    fechar.textContent = 'Fechar janelas abertas';
-    fechar.style.backgroundColor = 'hsla(333, 35%, 50%, 0.5)';
-    fechar.style.marginLeft = '3ch';
-    fechar.addEventListener('click', onClick);
+    const link = doc.createElement('a');
+    link.href = '#';
+    link.textContent = 'Fechar janelas abertas';
+    link.addEventListener('click', onClick);
+    fechar.appendChild(link);
     menu.appendChild(fechar);
     window.addEventListener('beforeunload', () => {
-      fechar.removeEventListener('click', onClick);
+      link.removeEventListener('click', onClick);
       menu.removeChild(fechar);
     });
     return {
@@ -799,11 +790,11 @@
     return flow(
       table.rows,
       mapIterable((linha, l) => {
-        if (!arrayHasLength(8)(linha.cells)) {
+        if (!arrayHasLength(7)(linha.cells)) {
           if (
             linha.classList.contains('linhaPeticao') &&
             arrayHasLength(1)(linha.cells) &&
-            linha.cells[0].colSpan === 8
+            linha.cells[0].colSpan === 7
           ) {
             const frag = document.createDocumentFragment();
             frag.append(...linha.cells[0].childNodes);
@@ -818,7 +809,6 @@
             (xs.length === 3 &&
               xs[1] instanceof HTMLAnchorElement &&
               xs[2] instanceof HTMLElement));
-        const isTipoDocumento = xs => xs.length === 1 && xs[0] instanceof Text;
         const sequencialNome = flow(
           linha.cells[0].childNodes,
           filterIterable(
@@ -829,7 +819,7 @@
           map(([texto, ...obs]) =>
             flow(
               texto.nodeValue,
-              match(/^\s*(\d+\.\d+)\s+Descrição:\s+(.*)\s*$/),
+              match(/^\s*(\d+\.\d+)\s+Arquivo:\s+(.*)\s*$/),
               map(([, sequencial2, nome2]) => ({
                 sequencial: sequencial2,
                 nome: nome2 || 'Outros',
@@ -842,30 +832,14 @@
           ),
           orThrow(`Sequencial e nome não reconhecidos: ${l}.`)
         );
-        const tipo = flow(
-          linha.cells[1].childNodes,
-          filterIterable(
-            x => !(x instanceof Text) || isNonEmptyString(x.nodeValue)
-          ),
-          iterableToArray,
-          filter(isTipoDocumento),
-          map(([texto]) =>
-            flow(
-              texto.nodeValue,
-              match(/^\s*(\d+\.\d+)\s+Tipo de Documento:\s+(.*)\s*$/),
-              map(([, _seq, tipo2]) => tipo2)
-            )
-          ),
-          orThrow(`Tipo de documento não reconhecido: ${l}.`)
-        );
         const assinatura = flow(
-          linha.cells[3],
+          linha.cells[2],
           text,
           match(/^\s*Ass\.:\s+(.*)\s*$/),
           map(([, assinatura2]) => assinatura2),
           orThrow(`Assinatura não reconhecida: ${l}.`)
         );
-        const infoLink = flow(linha.cells[5], celula =>
+        const infoLink = flow(linha.cells[4], celula =>
           flow(
             celula,
             c => c.childNodes,
@@ -906,7 +880,7 @@
           )
         );
         const sigilo = flow(
-          linha.cells[7],
+          linha.cells[6],
           text,
           map(x => x.trim()),
           filter(x => x !== ''),
@@ -930,9 +904,6 @@ ${sigilo}`;
             })
           );
           const file = document.createDocumentFragment();
-          if (tipo !== nome && tipo !== 'Outros Documentos') {
-            file.append(`${tipo}:`, h('br'));
-          }
           const span = h(
             'span',
             { style: { fontWeight: 'bold' } },
@@ -980,10 +951,18 @@ ${sigilo}`;
       .map(x => parseInt(x, 16))
       .reduce((acc, x) => acc * 4294967296n + BigInt(x), 0n);
   }
+  const css =
+    '.sm .gm-seeu-movimentacoes__fechar-janelas-abertas{background:#ac537b80;margin-left:3ch}';
+  const barraSuperior = url => {
+    if (url.pathname !== '/seeu/usuario/areaAtuacao.do') return null;
+    _GM_addStyle(css);
+    return null;
+  };
   const alteracoes = /* @__PURE__ */ Object.freeze(
     /* @__PURE__ */ Object.defineProperty(
       {
         __proto__: null,
+        barraSuperior,
         telaMovimentacoes,
       },
       Symbol.toStringTag,
