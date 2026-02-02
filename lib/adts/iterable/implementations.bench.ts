@@ -40,6 +40,10 @@ describe('forEach', () => {
       );
     }
   );
+
+  bench_forEach('native', (xs, f) =>
+    Iterator.prototype.forEach.call(xs[Symbol.iterator](), f)
+  );
 });
 
 describe('toArray', () => {
@@ -74,5 +78,9 @@ describe('toArray', () => {
 
   bench_toArray('foldLeft', <a>(xs: Iterable<a>): a[] =>
     I.foldLeft<a, a[]>([], (xs, x) => (xs.push(x), xs))(xs)
+  );
+
+  bench_toArray('native', xs =>
+    Iterator.prototype.toArray.call(xs[Symbol.iterator]())
   );
 });

@@ -182,6 +182,15 @@ describe('flatMap', () => {
       },
     })
   );
+
+  bench_flatMap(
+    'native',
+    <a, b>(xs: Iterable<a>, f: (a: a, i: number) => Iterable<b>): Iterable<b> =>
+      Iterator.prototype.flatMap.call<Iterator<a>, [typeof f], Iterable<b>>(
+        xs[Symbol.iterator](),
+        f
+      )
+  );
 });
 
 describe('map', () => {
@@ -226,4 +235,13 @@ describe('map', () => {
       };
     },
   }));
+
+  bench_map(
+    'native',
+    <a, b>(xs: Iterable<a>, f: (a: a, i: number) => b): Iterable<b> =>
+      Iterator.prototype.map.call<Iterator<a>, [typeof f], Iterable<b>>(
+        xs[Symbol.iterator](),
+        f
+      )
+  );
 });
