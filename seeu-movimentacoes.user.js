@@ -2,7 +2,7 @@
 // @name         seeu-movimentacoes
 // @name:pt-BR   SEEU - Movimentações
 // @namespace    nadameu.com.br
-// @version      2.6.0
+// @version      2.9.0
 // @author       nadameu
 // @description  Melhoria na apresentação das movimentações do processo
 // @match        https://seeu.pje.jus.br/*
@@ -42,7 +42,6 @@
     for (let i = 0; i < fns.length; i++) x = fns[i](x);
     return x;
   };
-  const tag = _type => _tag => props => Object.assign(props, { _type, _tag });
   const apply = (f, ...args) => f(...args);
   const identity = x => x;
   const foldLeftIterable = (seed, f) => xs => {
@@ -122,10 +121,8 @@
     (...fns) =>
     value =>
       fns.map(f => f(value));
-  const tagSeq = tag('Seq');
-  tagSeq('Zero')({});
-  function h(tag2, props = null, ...children) {
-    const element = document.createElement(tag2);
+  function h(tag, props = null, ...children) {
+    const element = document.createElement(tag);
     for (const [key, value] of Object.entries(props ?? {})) {
       if (key === 'style' || key === 'dataset') {
         for (const [k, v] of Object.entries(value)) {
