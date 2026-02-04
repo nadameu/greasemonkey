@@ -400,6 +400,9 @@ importers:
       '@nadameu/enderecos-eproc':
         specifier: workspace:^
         version: link:../../lib/enderecos-eproc
+      '@nadameu/predicates':
+        specifier: workspace:^
+        version: link:../../lib/predicates
 
 packages:
 
