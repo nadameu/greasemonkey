@@ -237,6 +237,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0
 
+  userscripts/bnmp-destacar-alertas: {}
+
   userscripts/eproc-cartas-precatorias-externas:
     dependencies:
       '@nadameu/create-broadcast-service':

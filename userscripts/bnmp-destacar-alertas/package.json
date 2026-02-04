@@ -1,0 +1,16 @@
+{
+  "name": "bnmp-destacar-alertas",
+  "gm_name": "BNMP - Destacar alertas com conteúdo",
+  "description": "Destaca as categorias de alerta do BNMP que possuem conteúdo",
+  "author": "nadameu",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "run-p watch preview",
+    "build": "tsc && vite build",
+    "format": "prettier --write ../../bnmp-destacar-alertas.user.js",
+    "preview": "vite preview",
+    "watch": "vite build --watch"
+  }
+}
