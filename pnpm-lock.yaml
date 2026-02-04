@@ -237,31 +237,6 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0
 
-  userscripts/dados-cnis:
-    dependencies:
-      '@nadameu/create-element':
-        specifier: workspace:^
-        version: link:../../lib/create-element
-      '@nadameu/create-store':
-        specifier: workspace:^
-        version: link:../../lib/create-store
-      '@nadameu/either':
-        specifier: workspace:^
-        version: link:../../lib/either
-      '@nadameu/expect-unreachable':
-        specifier: workspace:^
-        version: link:../../lib/expect-unreachable
-      '@nadameu/match':
-        specifier: workspace:^
-        version: link:../../lib/match
-      '@nadameu/predicates':
-        specifier: workspace:^
-        version: link:../../lib/predicates
-    devDependencies:
-      '@nadameu/enderecos-eproc':
-        specifier: workspace:^
-        version: link:../../lib/enderecos-eproc
-
   userscripts/eproc-cartas-precatorias-externas:
     dependencies:
       '@nadameu/create-broadcast-service':
