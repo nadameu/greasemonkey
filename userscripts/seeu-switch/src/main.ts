@@ -8,7 +8,7 @@ import {
   isNotNull,
   isNotNullish,
 } from '@nadameu/predicates';
-import classes from './estilos.module.scss';
+import classes from './estilos.module.css';
 import { Info } from './Info';
 import { XHR } from './XHR';
 
@@ -36,7 +36,9 @@ export function main(): Info | void {
     isNotNull(informacoesProcessuais),
     `Informações processuais não encontradas.`
   );
-  const linhaJuizo = Array.from(informacoesProcessuais.querySelectorAll('tr'))
+  const linhaJuizo = informacoesProcessuais
+    .querySelectorAll('tr')
+    .values()
     .filter(
       (
         x: HTMLTableRowElement
@@ -45,6 +47,8 @@ export function main(): Info | void {
       } => arrayHasLength(2)(x.cells)
     )
     .filter(x => (x.cells[0].textContent.trim() ?? '') === 'Juízo:')
+    .take(1)
+    .toArray()
     .at(0);
   assert(isDefined(linhaJuizo), `Informações de juízo não encontradas.`);
   const juizo = linhaJuizo.cells[1].textContent.trim();
@@ -55,9 +59,11 @@ export function main(): Info | void {
 
   const aba = document.querySelector('li[name="tabDadosProcesso"].currentTab');
   if (!aba) return;
-  const labels = Array.from(
-    document.querySelectorAll('#includeContent td.labelRadio > label')
-  ).filter(x => x.textContent === 'Juízo:');
+  const labels = document
+    .querySelectorAll('#includeContent td.labelRadio > label')
+    .values()
+    .filter(x => x.textContent === 'Juízo:')
+    .toArray();
   assert(
     arrayHasLength(1)(labels),
     `Encontrado(s) ${labels.length} elemento(s) com texto "Juízo:".`
@@ -109,9 +115,11 @@ function criarBotao(urlAlterar: string, juizoProcesso: string) {
 
 async function alternar(url: string, area: string) {
   const doc = await XHR(url);
-  const links = Array.from(
-    doc.querySelectorAll<HTMLAnchorElement>('a[href][target="mainFrame"]')
-  ).filter(x => x.textContent.trim() === area);
+  const links = doc
+    .querySelectorAll<HTMLAnchorElement>('a[href][target="mainFrame"]')
+    .values()
+    .filter(x => x.textContent.trim() === area)
+    .toArray();
   assert(
     arrayHasLength(1)(links),
     `Encontrado(s) ${links.length} link(s) para a área selecionada.`
