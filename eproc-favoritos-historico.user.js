@@ -2,7 +2,7 @@
 // @name         eproc-favoritos-historico
 // @name:pt-BR   eproc - favoritos e histórico
 // @namespace    http://nadameu.com.br
-// @version      1.3.0
+// @version      1.3.1
 // @author       nadameu
 // @description  Permite definir processos favoritos e visualizar o histórico de processos acessados
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=*
@@ -754,7 +754,7 @@
       isNotNullish(elemento_numero),
       'Erro ao obter o número do processo.'
     );
-    const numero_formatado = elemento_numero.textContent?.trim();
+    const numero_formatado = elemento_numero.textContent.trim();
     assert(
       isNonEmptyString(numero_formatado),
       'Erro ao obter o número do processo.'
