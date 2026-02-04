@@ -395,6 +395,12 @@ importers:
 
   userscripts/tempo-minutas: {}
 
+  userscripts/verificar-agendamento:
+    devDependencies:
+      '@nadameu/enderecos-eproc':
+        specifier: workspace:^
+        version: link:../../lib/enderecos-eproc
+
 packages:
 
   '@ampproject/remapping@2.3.0':

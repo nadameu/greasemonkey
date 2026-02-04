@@ -1,17 +1,3 @@
-// ==UserScript==
-// @name        verificar-agendamento
-// @name:pt-BR  Verificar agendamento
-// @namespace   http://nadameu.com.br
-// @match       https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=minuta_verificar_agendamento&*
-// @match       https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=minuta_verificar_agendamento&*
-// @match       https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=minuta_verificar_agendamento&*
-// @match       https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=minuta_verificar_agendamento&*
-// @grant       none
-// @version     1.1.0
-// @author      Paulo R. Maurici Jr.
-// @description Fecha a tela de alteração de agendamento quando a minuta foi criada em bloco
-// ==/UserScript==
-
 main().catch(error => {
   console.error(error);
 });

@@ -1,0 +1,19 @@
+{
+  "name": "verificar-agendamento",
+  "gm_name": "Verificar agendamento",
+  "description": "Fecha a tela de alteração de agendamento quando a minuta foi criada em bloco",
+  "author": "Paulo R. Maurici Jr.",
+  "private": true,
+  "version": "1.1.1",
+  "type": "module",
+  "scripts": {
+    "dev": "run-p watch preview",
+    "build": "tsc && vite build",
+    "format": "prettier --write ../../verificar-agendamento.user.js",
+    "preview": "vite preview --open ../../verificar-agendamento.user.js",
+    "watch": "vite build --watch"
+  },
+  "devDependencies": {
+    "@nadameu/enderecos-eproc": "workspace:^"
+  }
+}
