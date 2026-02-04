@@ -2,7 +2,7 @@
 // @name        seeu-reabrir-ultimo-processo
 // @name:pt-BR  SEEU - Reabrir último processo
 // @namespace   nadameu.com.br
-// @version     1.2.1
+// @version     1.2.2
 // @author      nadameu
 // @match       https://seeu.pje.jus.br/seeu/usuario/areaAtuacao.do?*
 // @match       https://seeu.pje.jus.br/seeu/historicoProcessosRecursos.do?actionType=listar
@@ -14,7 +14,26 @@
   function h(tag, props = null, ...children) {
     const element = document.createElement(tag);
     for (const [key, value] of Object.entries(props ?? {})) {
-      element[key] = value;
+      if (key === 'style' || key === 'dataset') {
+        for (const [k, v] of Object.entries(value)) {
+          element[key][k] = v;
+        }
+      } else if (key === 'classList') {
+        let classes;
+        if (Array.isArray(value)) {
+          classes = value.filter(x => x !== null);
+        } else {
+          classes = Object.entries(value).flatMap(([k, v]) => {
+            if (!v) return [];
+            return [k];
+          });
+        }
+        for (const className of classes) {
+          element.classList.add(className);
+        }
+      } else {
+        element[key] = value;
+      }
     }
     element.append(...children);
     return element;
@@ -22,7 +41,7 @@
   const name = 'seeu-reabrir-ultimo-processo';
   const gm_name = 'SEEU - Reabrir último processo';
   const styles =
-    '#gm-seeu-reabrir__button{background:hsl(333,30%,60%);border-radius:50%;padding:.4rem;margin:auto 8px}\n';
+    '#gm-seeu-reabrir__button{background:#b87a96;border-radius:50%;padding:.4rem;margin:auto 8px}';
   const LOG_PREFIX = `<${gm_name}>`;
   const LOCAL_STORAGE_VALUE = 'REABRIR_ULTIMO';
   const resultado = main();
