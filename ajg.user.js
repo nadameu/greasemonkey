@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Solicitações de pagamento em bloco
 // @namespace    http://nadameu.com.br/ajg
-// @version      4.1.0
+// @version      4.1.1
 // @author       nadameu
 // @description  Permite a criação de solicitações de pagamento em bloco
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=nomeacoes_ajg_listar&*
@@ -22,7 +22,26 @@
   function h(tag, props = null, ...children) {
     const element = document.createElement(tag);
     for (const [key, value] of Object.entries(props ?? {})) {
-      element[key] = value;
+      if (key === 'style' || key === 'dataset') {
+        for (const [k, v] of Object.entries(value)) {
+          element[key][k] = v;
+        }
+      } else if (key === 'classList') {
+        let classes;
+        if (Array.isArray(value)) {
+          classes = value.filter(x => x !== null);
+        } else {
+          classes = Object.entries(value).flatMap(([k, v]) => {
+            if (!v) return [];
+            return [k];
+          });
+        }
+        for (const className of classes) {
+          element.classList.add(className);
+        }
+      } else {
+        element[key] = value;
+      }
     }
     element.append(...children);
     return element;
@@ -164,13 +183,11 @@
       'Houve um erro ao tentar criar a solicitação!',
       '',
     ]);
-    excecoes.forEach(excecao =>
-      msgsErro.add(excecao.textContent?.trim() ?? '')
-    );
+    excecoes.forEach(excecao => msgsErro.add(excecao.textContent.trim()));
     if (tabelaErros) {
       const tBodyRows = Array.from(tabelaErros.rows).slice(1);
       tBodyRows
-        .map(linha => linha.cells[1]?.textContent?.trim())
+        .map(linha => linha.cells[1]?.textContent.trim())
         .forEach(msg => msgsErro.add(msg ?? ''));
     }
     if (excecoes.length === 0 && !tabelaErros) {
@@ -210,7 +227,7 @@
     const parametros = new URL(linkCriar.href).searchParams;
     const idUnica = parametros.get('id_unica') || null;
     const numProcesso = idUnica?.split('|')[1] || null;
-    const numeroNomeacao = linha.cells[2]?.textContent?.trim() || null;
+    const numeroNomeacao = linha.cells[2]?.textContent.trim() || null;
     if (idUnica && numProcesso && numeroNomeacao)
       return { idUnica, numProcesso, numeroNomeacao };
     throw new ErroNomeacaoLinha(linha);
