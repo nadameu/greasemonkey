@@ -8,7 +8,7 @@
 // @match       http://www.planalto.gov.br/CCIVIL_03/*
 // @match       https://www.planalto.gov.br/CCIVIL_03/*
 // @grant       GM_addStyle
-// @version     1.3.0
+// @version     1.4.0
 // @author      nadameu
 // @description Melhora a aparência da legislação disponível no site do Planalto
 // @run-at      document-start
@@ -49,6 +49,7 @@ body::before {
 i.fas {
   text-indent: 0;
 }
+del,
 strike,
 [style*="line-through"] {
   opacity: .5;
