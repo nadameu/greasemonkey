@@ -2,51 +2,49 @@
 // @name         seeu-ir-para-topo
 // @name:pt-BR   SEEU - Ir para o topo
 // @namespace    nadameu.com.br
-// @version      1.2.2
+// @version      1.2.3
 // @author       nadameu
 // @description  Acrescenta botão para facilitar ir para o início da página
 // @match        https://seeu.pje.jus.br/*
 // @grant        GM_addStyle
+// @grant        GM_info
 // ==/UserScript==
 
-main();
+try {
+  main();
+} catch (err) {
+  console.group(`<${GM_info.script.name}>`);
+  console.error(err);
+  console.groupEnd();
+}
 
 function main() {
   if (window.frameElement?.id !== 'userMainFrame') return;
+  const win = window;
+  const debounce = make_debounce(window.top);
   const button = h(
     'div',
     { id: `gm-${GM_info.script.name}` },
     icon('chevron-up')
   );
-  const estado = (() => {
-    let _mostrar = false;
-    return {
-      get mostrar() {
-        return _mostrar;
-      },
-      set mostrar(valor) {
-        if (valor === _mostrar) return;
-        button.style.opacity = valor ? '1' : '0';
-        _mostrar = valor;
-      },
-    };
-  })();
-  let timer = null;
-  window.addEventListener('scroll', () => {
-    if (timer) {
-      window.clearTimeout(timer);
-    }
-    timer = window.setTimeout(() => {
-      window.clearTimeout(timer);
-      timer = null;
-      estado.mostrar = window.scrollY !== 0;
-    }, 100);
+  const { pub: set_mostrar, sub: on_mostrar_change } = pub_sub(false);
+  const subscription = on_mostrar_change(valor => {
+    button.style.opacity = valor ? '1' : '0';
   });
+  win.addEventListener('beforeunload', () => {
+    subscription.unsubscribe();
+  });
+  win.addEventListener(
+    'scroll',
+    debounce(() => {
+      set_mostrar(win.scrollY !== 0);
+    })
+  );
   button.addEventListener('click', () => {
-    estado.mostrar = false;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    set_mostrar(false);
+    win.scrollTo({ top: 0, behavior: 'smooth' });
   });
-  document.body.insertAdjacentElement('beforeend', button);
+  document.body.append(button);
   GM_addStyle(/* css */ `
 #container::after {
   content: '';
@@ -96,7 +94,7 @@ function main() {
  * @template {keyof HTMLElementTagNameMap} K
  * @param {K} tag
  * @param {Partial<HTMLElementTagNameMap[K]>} props
- * @param  {...Array<string|Node>} children
+ * @param  {Array<string|Node>} children
  * @returns {HTMLElementTagNameMap[K]}
  */
 function h(tag, props = {}, ...children) {
@@ -113,4 +111,60 @@ function h(tag, props = {}, ...children) {
  */
 function icon(name) {
   return h('i', { className: `icon icon-mdi:${name}` });
+}
+
+/**
+ * @param {Window} win
+ */
+function make_debounce(win) {
+  return debounce;
+  /**
+   * @param {() => void} fn
+   * @param {number} ms
+   * @returns {() => void}
+   */
+  function debounce(fn, ms = 100) {
+    /** @type {number} */
+    let timer;
+    return () => {
+      win.clearTimeout(timer);
+      timer = win.setTimeout(fn, ms);
+    };
+  }
+}
+
+/**
+ * @template T
+ * @param {T} initial_value
+ * @returns
+ */
+function pub_sub(initial_value) {
+  let current_value = initial_value;
+  /** @type {Set<(_: T) => void>} */
+  const subscribers = new Set();
+  return {
+    /**
+     * @param {T} value
+     * @returns {void}
+     */
+    pub(value) {
+      if (value === current_value) return;
+      current_value = value;
+      for (const fn of subscribers) {
+        fn(value);
+      }
+    },
+    /**
+     * @param {(_: T) => void} fn
+     * @returns {{ unsubscribe(): void }}
+     */
+    sub(fn) {
+      subscribers.add(fn);
+      return {
+        unsubscribe() {
+          subscribers.delete(fn);
+        },
+      };
+    },
+  };
 }
