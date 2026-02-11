@@ -1,55 +1,62 @@
-import { GM_addStyle, GM_info } from '$';
+import * as pkg from '../package.json';
+import classes from './index.module.css';
 
-try_catch(main);
+wrap_error(main)();
 
-function try_catch(fn: () => void) {
-  try {
-    fn();
-  } catch (err) {
-    console.group(`<${GM_info.script.name}>`);
-    console.error(err);
-    console.groupEnd();
-  }
+function wrap_error<A extends unknown[]>(fn: (...args: A) => void) {
+  return (...args: A) => {
+    try {
+      fn(...args);
+    } catch (err) {
+      console.group(`<${pkg.name}>`);
+      console.error(err);
+      console.groupEnd();
+    }
+  };
 }
 
 function main() {
-  const mut = new MutationObserver(mutation_list => {
-    try_catch(() => {
+  const observer = new MutationObserver(
+    wrap_error(mutation_list => {
       if (document.location.pathname !== '/alertas') return;
-      mutation_list
-        .values()
-        .flatMap(m => m.addedNodes)
-        .filter(eh_alerta_vazio)
-        .forEach(alerta_vazio => {
-          alerta_vazio.classList.add('gm-bnmp-destacar-alertas__vazio');
-        });
-    });
-  });
-  mut.observe(document.body, { childList: true, subtree: true });
+      for (const mutation of mutation_list) {
+        for (const node of mutation.addedNodes) {
+          if (eh_alerta_vazio(node)) {
+            node.classList.add(classes.vazio!);
+          }
+        }
+      }
+    })
+  );
+  observer.observe(document.body, { childList: true, subtree: true });
   window.addEventListener('beforeunload', () => {
-    mut.disconnect();
+    observer.disconnect();
   });
-  document.body.classList.add('gm-bnmp-destacar-alertas');
-  GM_addStyle(`
-.gm-bnmp-destacar-alertas {
-  .gm-bnmp-destacar-alertas__vazio {
-    opacity: 0.25;
-    transform: scale(0.75);
-  }
-}
-`);
+  document.body.classList.add(classes.body!);
 }
 
 function eh_alerta_vazio(node: Node): node is HTMLElement {
-  if (!(node instanceof HTMLElement)) return false;
-  if (!node.matches('mat-chip')) return false;
-  const elt_quantidade = node.querySelector('.component-total-box');
-  if (elt_quantidade === null) throw new QuantidadeNaoEncontradaError(node);
-  return elt_quantidade.textContent.trim() === '0';
+  if (!(node instanceof HTMLElement) || !node.matches('mat-chip')) return false;
+  return (
+    query_or_throw('.component-total-box', node).textContent.trim() === '0'
+  );
 }
 
-class QuantidadeNaoEncontradaError extends Error {
-  constructor(public origem: HTMLElement) {
-    super('Erro ao obter a quantidade de alertas.');
+function query_or_throw<T extends Element>(
+  selector: string,
+  parentNode: ParentNode
+): T {
+  const elt = parentNode.querySelector<T>(selector);
+  if (elt === null) throw new QuerySelectorError(selector, parentNode);
+  return elt;
+}
+
+class QuerySelectorError extends Error {
+  public name = 'QuerySelectorError';
+  constructor(
+    selector: string,
+    public parentNode: ParentNode
+  ) {
+    super(`Elemento não encontrado: \`${selector}\`.`);
   }
 }

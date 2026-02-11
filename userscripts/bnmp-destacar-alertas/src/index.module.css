@@ -1,0 +1,4 @@
+.body .vazio {
+  opacity: 0.25;
+  transform: scale(0.75);
+}

@@ -2,70 +2,81 @@
 // @name         bnmp-destacar-alertas
 // @name:pt-BR   BNMP - Destacar alertas com conteúdo
 // @namespace    http://nadameu.com.br
-// @version      1.1.0
+// @version      1.1.1
 // @author       nadameu
 // @description  Destaca as categorias de alerta do BNMP que possuem conteúdo
 // @match        https://bnmp.pdpj.jus.br/*
 // @match        https://bnmp-preprod.pdpj.jus.br/*
 // @grant        GM_addStyle
-// @grant        GM_info
 // ==/UserScript==
+
+(t => {
+  if (typeof GM_addStyle == 'function') {
+    GM_addStyle(t);
+    return;
+  }
+  const e = document.createElement('style');
+  (e.textContent = t), document.head.append(e);
+})(' ._body_15vap_1 ._vazio_15vap_1{opacity:.25;transform:scale(.75)} ');
 
 (function () {
   'use strict';
 
-  var _GM_addStyle = /* @__PURE__ */ (() =>
-    typeof GM_addStyle != 'undefined' ? GM_addStyle : void 0)();
-  var _GM_info = /* @__PURE__ */ (() =>
-    typeof GM_info != 'undefined' ? GM_info : void 0)();
-  try_catch(main);
-  function try_catch(fn) {
-    try {
-      fn();
-    } catch (err) {
-      console.group(`<${_GM_info.script.name}>`);
-      console.error(err);
-      console.groupEnd();
-    }
+  const name = 'bnmp-destacar-alertas';
+  const body = '_body_15vap_1';
+  const vazio = '_vazio_15vap_1';
+  const classes = {
+    body,
+    vazio,
+  };
+  wrap_error(main)();
+  function wrap_error(fn) {
+    return (...args) => {
+      try {
+        fn(...args);
+      } catch (err) {
+        console.group(`<${name}>`);
+        console.error(err);
+        console.groupEnd();
+      }
+    };
   }
   function main() {
-    const mut = new MutationObserver(mutation_list => {
-      try_catch(() => {
+    const observer = new MutationObserver(
+      wrap_error(mutation_list => {
         if (document.location.pathname !== '/alertas') return;
-        mutation_list
-          .values()
-          .flatMap(m => m.addedNodes)
-          .filter(eh_alerta_vazio)
-          .forEach(alerta_vazio => {
-            alerta_vazio.classList.add('gm-bnmp-destacar-alertas__vazio');
-          });
-      });
-    });
-    mut.observe(document.body, { childList: true, subtree: true });
+        for (const mutation of mutation_list) {
+          for (const node of mutation.addedNodes) {
+            if (eh_alerta_vazio(node)) {
+              node.classList.add(classes.vazio);
+            }
+          }
+        }
+      })
+    );
+    observer.observe(document.body, { childList: true, subtree: true });
     window.addEventListener('beforeunload', () => {
-      mut.disconnect();
+      observer.disconnect();
     });
-    document.body.classList.add('gm-bnmp-destacar-alertas');
-    _GM_addStyle(`
-.gm-bnmp-destacar-alertas {
-  .gm-bnmp-destacar-alertas__vazio {
-    opacity: 0.25;
-    transform: scale(0.75);
-  }
-}
-`);
+    document.body.classList.add(classes.body);
   }
   function eh_alerta_vazio(node) {
-    if (!(node instanceof HTMLElement)) return false;
-    if (!node.matches('mat-chip')) return false;
-    const elt_quantidade = node.querySelector('.component-total-box');
-    if (elt_quantidade === null) throw new QuantidadeNaoEncontradaError(node);
-    return elt_quantidade.textContent.trim() === '0';
+    if (!(node instanceof HTMLElement) || !node.matches('mat-chip'))
+      return false;
+    return (
+      query_or_throw('.component-total-box', node).textContent.trim() === '0'
+    );
   }
-  class QuantidadeNaoEncontradaError extends Error {
-    constructor(origem) {
-      super('Erro ao obter a quantidade de alertas.');
-      this.origem = origem;
+  function query_or_throw(selector, parentNode) {
+    const elt = parentNode.querySelector(selector);
+    if (elt === null) throw new QuerySelectorError(selector, parentNode);
+    return elt;
+  }
+  class QuerySelectorError extends Error {
+    constructor(selector, parentNode) {
+      super(`Elemento não encontrado: \`${selector}\`.`);
+      this.parentNode = parentNode;
     }
+    name = 'QuerySelectorError';
   }
 })();
