@@ -2,10 +2,11 @@
 // @name         bnmp-destacar-alertas
 // @name:pt-BR   BNMP - Destacar alertas com conteúdo
 // @namespace    http://nadameu.com.br
-// @version      1.0.0
+// @version      1.1.0
 // @author       nadameu
 // @description  Destaca as categorias de alerta do BNMP que possuem conteúdo
 // @match        https://bnmp.pdpj.jus.br/*
+// @match        https://bnmp-preprod.pdpj.jus.br/*
 // @grant        GM_addStyle
 // @grant        GM_info
 // ==/UserScript==

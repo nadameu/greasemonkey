@@ -14,7 +14,9 @@ export default defineConfig({
       userscript: {
         name: { 'pt-BR': pkg.gm_name },
         namespace: 'http://nadameu.com.br',
-        match: ['https://bnmp.pdpj.jus.br/*'],
+        match: ['bnmp', 'bnmp-preprod'].map(
+          prefixo => `https://${prefixo}.pdpj.jus.br/*`
+        ),
       },
     }),
   ],
