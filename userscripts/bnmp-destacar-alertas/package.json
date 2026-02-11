@@ -10,7 +10,7 @@
     "dev": "run-p watch preview",
     "build": "tsc && vite build",
     "format": "prettier --write ../../bnmp-destacar-alertas.user.js",
-    "preview": "vite preview",
+    "preview": "vite preview --open ../../bnmp-destacar-alertas.user.js",
     "watch": "vite build --watch"
   }
 }
