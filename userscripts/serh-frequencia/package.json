@@ -1,0 +1,19 @@
+{
+  "name": "serh-frequencia",
+  "gm_name": "SERH - Validação de frequência",
+  "author": "nadameu",
+  "description": "Melhor visualização dos dias trabalhados",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "run-p watch preview",
+    "build": "tsc && vite build",
+    "format": "prettier --write ../../serh-frequencia.user.js",
+    "preview": "vite preview --open ../../serh-frequencia.user.js",
+    "watch": "vite build --watch"
+  },
+  "dependencies": {
+    "@nadameu/predicates": "workspace:^"
+  }
+}

@@ -393,6 +393,12 @@ importers:
         specifier: workspace:^
         version: link:../../lib/enderecos-eproc
 
+  userscripts/serh-frequencia:
+    dependencies:
+      '@nadameu/predicates':
+        specifier: workspace:^
+        version: link:../../lib/predicates
+
   userscripts/tempo-minutas: {}
 
   userscripts/verificar-agendamento:
