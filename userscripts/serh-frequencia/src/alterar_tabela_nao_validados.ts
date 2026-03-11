@@ -1,10 +1,11 @@
-import { Mes } from './parse_mes';
+import { IO } from './IO';
+import { Mes } from './datas';
 
 export function alterar_tabela_nao_validados(
   tabela: HTMLTableElement,
   mes_referencia: Mes
-): { (): void } {
+) {
   tabela;
   mes_referencia;
-  return () => {};
+  return IO.of(undefined as void);
 }
