@@ -261,6 +261,12 @@ importers:
         specifier: workspace:^
         version: link:../../lib/enderecos-eproc
 
+  userscripts/eproc-documentos-nao-utilizados:
+    dependencies:
+      '@nadameu/enderecos-eproc':
+        specifier: workspace:^
+        version: link:../../lib/enderecos-eproc
+
   userscripts/eproc-favoritos-historico:
     dependencies:
       '@nadameu/create-element':

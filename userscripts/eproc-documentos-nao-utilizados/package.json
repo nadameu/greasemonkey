@@ -1,0 +1,19 @@
+{
+  "name": "eproc-documentos-nao-utilizados",
+  "gm_name": "eproc - documentos não utilizados",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "author": "nadameu",
+  "description": "Alerta quando, ao abrir a tela de movimentação processual, já há documentos selecionados anteriormente e não utilizados",
+  "scripts": {
+    "dev": "run-p watch preview",
+    "build": "tsc && vite build",
+    "format": "prettier --write ../../eproc-documentos-nao-utilizados.user.js",
+    "preview": "vite preview --open ../../eproc-documentos-nao-utilizados.user.js",
+    "watch": "vite build --watch"
+  },
+  "dependencies": {
+    "@nadameu/enderecos-eproc": "workspace:^"
+  }
+}

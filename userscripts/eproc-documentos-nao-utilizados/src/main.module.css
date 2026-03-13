@@ -1,0 +1,31 @@
+:global(.bootstrap-styles).continha-documentos-ao-carregar {
+  form:has(input[name='hdnNumDocumentos'][value='0']) {
+    :global(.infraBarraComandos):before {
+      display: none;
+    }
+  }
+  form:has(input[name='hdnNumDocumentos']) {
+    :global(.infraBarraComandos)::before {
+      content: 'ATENÇÃO: Há documentos selecionados e ainda não utilizados em movimentação.';
+      display: inline-block;
+      background: hsl(55, 65%, 75%);
+      color: #000;
+      margin: 0 6px;
+      padding: 0.25rem 0.5rem;
+      border-radius: 2rem;
+      width: fit-content;
+      text-align: center;
+    }
+  }
+}
+:global(.bootstrap-styles).erro :global(.infraBarraComandos)::before {
+  content: 'ERRO ao verificar a existência de documentos selecionados e ainda não utilizados em movimentação.';
+  display: inline-block;
+  background: hsl(333, 40%, 87%);
+  color: #000;
+  margin: 0 6px;
+  padding: 0.25rem 0.5rem;
+  border-radius: 2rem;
+  width: fit-content;
+  text-align: center;
+}
