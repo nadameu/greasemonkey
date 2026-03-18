@@ -1,17 +1,10 @@
 {
-  "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "node",
-    "noEmit": true,
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "allowSyntheticDefaultImports": true
-  },
+  "extends": "./tsconfig.base.json",
   "exclude": [
     "userscripts/ajg/**/*",
     "userscripts/atualizar-saldo/**/*",
     "userscripts/dados-cnis/**/*",
+    "userscripts/renajud/**/*",
     "userscripts/separar-em-blocos/**/*"
   ]
 }
