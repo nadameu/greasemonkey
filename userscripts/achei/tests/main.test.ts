@@ -29,7 +29,7 @@ describe('main', () => {
   createTest('sem local e sem formulario', () => {
     document.getElementsByName('local')[0]?.remove();
     document.getElementsByName('formulario')[0]?.remove();
-    return (resultado, log) => {
+    return (resultado, _log) => {
       expect(resultado.status).toBe('rejected');
     };
   });
@@ -37,7 +37,7 @@ describe('main', () => {
     document.body.append('Sigla: ABC00');
     document.getElementsByName('local')[0]?.remove();
 
-    return (resultado, log) => {
+    return (resultado, _log) => {
       expect(resultado.status).toBe('rejected');
     };
   });
@@ -47,7 +47,7 @@ describe('main', () => {
     const input = document.getElementsByName('local')[0] as HTMLInputElement;
     input.value = '999';
 
-    return (resultado, log) => {
+    return (resultado, _log) => {
       expect(resultado.status).toBe('rejected');
     };
   });
@@ -55,7 +55,7 @@ describe('main', () => {
   createTest('sem formulário', () => {
     document.getElementsByName('formulario')[0]?.remove();
 
-    return (resultado, log) => {
+    return (resultado, _log) => {
       expect(resultado.status).toBe('rejected');
     };
   });
