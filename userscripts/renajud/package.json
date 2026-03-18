@@ -1,11 +1,24 @@
 {
+  "name": "renajud",
+  "version": "22.0.1",
+  "description": "Facilita a utilização do sistema RENAJUD por usuários da Justiça Federal da 4ª Região.",
+  "author": "nadameu",
+  "scripts": {
+    "build": "run-s type-check compile format",
+    "compile": "vite build",
+    "dev": "run-p watch preview",
+    "format": "prettier --write ../../renajud.user.js",
+    "preview": "vite preview --open ../../renajud.user.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest watch",
+    "type-check": "tsc",
+    "watch": "vite build --watch"
+  },
   "dependencies": {
     "@nadameu/predicates": "workspace:^",
     "@nadameu/resolvable": "workspace:^",
     "descriptive-regexp": "^0.3.0"
   },
-  "scripts": {
-    "build": "userscript build",
-    "start": "userscript serve"
-  }
+  "gm_name": "Renajud"
 }
