@@ -10,7 +10,7 @@ import {
   Right,
 } from '@nadameu/adts';
 import { createStore } from '@nadameu/create-store';
-import { makeConstructorsWith, match, matchWith } from '@nadameu/match';
+import { makeConstructorsWith, matchWith } from '@nadameu/match';
 import * as p from '@nadameu/predicates';
 import { render } from 'preact';
 import { createMsgService, Mensagem } from './Mensagem';

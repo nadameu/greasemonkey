@@ -3,21 +3,18 @@ import target from '@nadameu/esbuild-target';
 import preact from '@preact/preset-vite';
 import { defineConfig } from 'vite';
 import monkey, { cdn } from 'vite-plugin-monkey';
+import * as pkg from './package.json';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  build: {
-    outDir: '../..',
-    emptyOutDir: false,
-    target,
-  },
+  build: { outDir: '../..', emptyOutDir: false, target },
   esbuild: { charset: 'utf8' },
   plugins: [
     preact(),
     monkey({
       entry: 'src/index.ts',
       userscript: {
-        name: { 'pt-BR': 'Atualizar saldos' },
+        name: { 'pt-BR': pkg.gm_name },
         namespace: 'http://nadameu.com.br',
         match: [
           ...enderecosEproc('acao=processo_precatorio_rpv&*'),

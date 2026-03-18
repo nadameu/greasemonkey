@@ -229,7 +229,7 @@ export function paginaContas(numproc: NumProc): Either<Error, void> {
 
   function ouvirXHR(handler: Handler<Acao>) {
     $.ajaxSetup({
-      complete(xhr, resultado) {
+      complete(xhr, _resultado) {
         if (!p.hasShape({ url: p.isString })(this)) return;
         const url = new URL(this.url, document.location.href);
         if (!/\/controlador_ajax\.php$/.test(url.pathname)) return;
