@@ -17,9 +17,6 @@ importers:
       '@nadameu/esbuild-target':
         specifier: workspace:^
         version: link:lib/esbuild-target
-      '@nadameu/userscript':
-        specifier: workspace:^
-        version: link:lib/userscript
       '@preact/preset-vite':
         specifier: ^2.10.1
         version: 2.10.1(@babel/core@7.27.4)(preact@10.26.8)(vite@5.4.19(@types/node@22.15.30)(sass@1.89.1))
@@ -156,18 +153,6 @@ importers:
         version: link:../handler
 
   lib/tco: {}
-
-  lib/userscript:
-    dependencies:
-      '@nadameu/predicates':
-        specifier: workspace:^
-        version: link:../predicates
-      esbuild:
-        specifier: ^0.24.0
-        version: 0.24.0
-      esbuild-register:
-        specifier: ^3.6.0
-        version: 3.6.0(esbuild@0.24.0)
 
   userscripts/achei:
     dependencies:
