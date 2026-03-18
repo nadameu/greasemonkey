@@ -31,17 +31,22 @@ function apply<A, B>(fs: Array<(_: A) => B>, xs: A[]): B[] {
   return fs.flatMap(f => xs.map(x => f(x)));
 }
 
+function map<A, B>(f: (_: A) => B, xs: A[]): B[] {
+  return xs.map(f);
+}
+
 function zip3<A, B, C, D>(
   as: A[],
   bs: B[],
   cs: C[],
   f: (a: A, b: B, c: C) => D
 ): D[] {
-  return apply(apply(as.map(curry3(f)), bs), cs);
+  return apply(apply(map(curry3(f), as), bs), cs);
 }
 
-function curry3<A, B, C, D>(
-  f: (a: A, b: B, c: C) => D
-): (_: A) => (_: B) => (_: C) => D {
-  return a => b => c => f(a, b, c);
+function curry3<A, B, C, D>(f: (a: A, b: B, c: C) => D) {
+  return (a: A) =>
+    (b: B) =>
+    (c: C): D =>
+      f(a, b, c);
 }
