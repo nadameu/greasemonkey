@@ -6,13 +6,16 @@
   "version": "17.2.1",
   "type": "module",
   "scripts": {
-    "build": "tsc && vite build",
+    "build": "run-s type-check compile format",
+    "compile": "vite build",
     "format": "prettier --write ../../achei.user.js",
-    "dev": "vite",
-    "preview": "vite preview",
+    "dev": "run-p watch preview",
+    "preview": "vite preview --open ../../achei.user.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest watch"
+    "test:watch": "vitest watch",
+    "type-check": "tsc",
+    "watch": "vite build --watch"
   },
   "dependencies": {
     "@nadameu/opaque": "workspace:^",
