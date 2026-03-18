@@ -46,7 +46,7 @@ class _Just<a> extends _Maybe<a> implements Just<a> {
   constructor(public value: a) {
     super();
   }
-  match<b>(Nothing: () => b, Just: (value: a) => b): b {
+  match<b>(_Nothing: () => b, Just: (value: a) => b): b {
     return Just(this.value);
   }
 }
@@ -61,7 +61,7 @@ export interface Nothing<a = never> extends _Maybe<a> {
 class _Nothing<a = never> extends _Maybe<a> implements Nothing<a> {
   isJust: false = false;
   isNothing: true = true;
-  match<b>(Nothing: () => b, Just: (value: a) => b): b {
+  match<b>(Nothing: () => b, _Just: (value: a) => b): b {
     return Nothing();
   }
 }

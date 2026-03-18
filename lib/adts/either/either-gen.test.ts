@@ -4,7 +4,7 @@ import { tuple } from '../tuple';
 
 test('generators', () => {
   let done = false;
-  const iter = vitest.fn((value: 4): IteratorResult<8, 3> => {
+  const iter = vitest.fn((_value: 4): IteratorResult<8, 3> => {
     if (done) return { done, value: 3 };
     done = true;
     return { done: false, value: 8 };

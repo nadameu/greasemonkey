@@ -9,7 +9,7 @@ import {
 } from 'vitest';
 import { createStore, Store, Subscription } from '.';
 
-function createCallChecker<T>(fn: Mock<[T], void>) {
+function createCallChecker<T>(fn: Mock<(_: T) => void>) {
   return (called: T[]) => {
     expect(fn).toHaveBeenCalledTimes(called.length);
     called.forEach((c, i) => {
@@ -23,7 +23,7 @@ describe('create', () => {
   type Action = PromiseSettledResult<number>;
 
   let store: Store<State, PromiseSettledResult<number>>;
-  let fn: Mock<[State], void>;
+  let fn: Mock<(_: State) => void>;
   let wasCalledWith: (called: State[]) => void;
   let sub: Subscription;
   beforeEach(() => {
@@ -94,7 +94,7 @@ test('unsubscribe', () => {
       return state;
     }
   );
-  const fn = vitest.fn<[State], void>();
+  const fn = vitest.fn<(_: State) => void>();
   const wasCalledWith = createCallChecker(fn);
   const sub = store.subscribe(fn);
   store.dispatch('inc');

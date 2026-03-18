@@ -1,19 +1,18 @@
-import { Custom, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import {
-  MemberWith,
-  TaggedWith,
-  TaggedUnion,
-  MemberOf,
-  isTagged,
-  tag,
-  Tagged,
-  TaggedWithUnion,
-  match,
-  tagWith,
-  isTaggedWith,
-  matchWith,
-  makeConstructorsWith,
   FromConstructorsWith,
+  MemberOf,
+  MemberWith,
+  Tagged,
+  TaggedUnion,
+  TaggedWithUnion,
+  isTagged,
+  isTaggedWith,
+  makeConstructorsWith,
+  match,
+  matchWith,
+  tag,
+  tagWith,
 } from '.';
 
 test('Maybe', () => {

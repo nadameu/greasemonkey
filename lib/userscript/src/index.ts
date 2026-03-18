@@ -72,7 +72,7 @@ async function main() {
       encoding: 'utf-8',
     });
 
-    const result = await esbuild.build({
+    await esbuild.build({
       banner: { js: banner },
       bundle: true,
       charset: 'utf8',
