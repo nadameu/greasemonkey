@@ -1,12 +1,10 @@
-import { E, Either } from '@nadameu/adts';
-import * as p from '@nadameu/predicates';
+import { Either, Left, Right } from '@nadameu/adts';
 
 export function obter<T extends HTMLElement>(
   selector: string,
   msg: string
 ): Either<Error, T> {
-  return E.tryCatch(
-    () => p.check(p.isNotNull, document.querySelector<T>(selector)),
-    () => new Error(msg)
-  );
+  const element = document.querySelector<T>(selector);
+  if (element === null) return Left(new Error(msg));
+  else return Right(element);
 }
