@@ -24,9 +24,11 @@
     "@nadameu/match": "workspace:^",
     "@nadameu/opaque": "workspace:^",
     "@nadameu/predicates": "workspace:^",
-    "@nadameu/resolvable": "workspace:^"
+    "@nadameu/resolvable": "workspace:^",
+    "preact": "^10.29.0"
   },
   "devDependencies": {
-    "@nadameu/enderecos-eproc": "workspace:^"
+    "@nadameu/enderecos-eproc": "workspace:^",
+    "@preact/preset-vite": "^2.10.4"
   }
 }
