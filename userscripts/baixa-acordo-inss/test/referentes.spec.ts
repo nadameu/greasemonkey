@@ -1,20 +1,20 @@
-import { expect, it } from 'vitest';
+import { expect, test } from 'vitest';
 import { obterReferencias } from '../src/referentes';
 
-it('Zero evento', () => {
+test('Zero evento', () => {
   expect(obterReferencias('Qualquer coisaRefer.Mais coisas')).to.deep.equal([]);
 });
 
-it('Um evento', () => {
+test('Um evento', () => {
   testarExpressoes([42]);
 });
 
-it('Dois eventos', () => {
+test('Dois eventos', () => {
   testarExpressoes([27, 45]);
   testarExpressoes([45, 27], [27, 45]);
 });
 
-it('Três eventos', () => {
+test('Três eventos', () => {
   testarExpressoes([4, 8, 19]);
   testarExpressoes([4, 19, 8], [4, 8, 19]);
   testarExpressoes([8, 4, 19], [4, 8, 19]);
@@ -23,12 +23,12 @@ it('Três eventos', () => {
   testarExpressoes([19, 8, 4], [4, 8, 19]);
 });
 
-it('Quatro eventos', () => {
+test('Quatro eventos', () => {
   testarExpressoes([4, 8, 19, 26]);
   testarExpressoes([19, 8, 26, 4], [4, 8, 19, 26]);
 });
 
-it('Cinco eventos', () => {
+test('Cinco eventos', () => {
   testarExpressoes([4, 8, 14, 19, 26]);
   testarExpressoes([19, 14, 8, 26, 4], [4, 8, 14, 19, 26]);
 });

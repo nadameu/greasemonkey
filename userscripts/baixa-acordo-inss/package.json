@@ -1,12 +1,25 @@
 {
+  "name": "baixa-acordo-inss",
+  "version": "0.15.0",
+  "description": "3DIR Baixa - acordo INSS",
+  "type": "module",
+  "private": true,
   "scripts": {
-    "build": "userscript build",
+    "build": "run-s type-check compile format",
+    "compile": "vite build",
+    "dev": "run-p watch preview",
     "format": "prettier --write ../../baixa-acordo-inss.user.js",
+    "preview": "vite preview --open ../../baixa-acordo-inss.user.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest watch"
+    "test:watch": "vitest watch",
+    "type-check": "tsc",
+    "watch": "vite build --watch"
   },
   "dependencies": {
     "descriptive-regexp": "^0.3.0"
+  },
+  "devDependencies": {
+    "@nadameu/enderecos-eproc": "workspace:^"
   }
 }

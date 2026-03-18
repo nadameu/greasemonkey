@@ -576,10 +576,6 @@ function all(...bools: boolean[]) {
   return bools.every(x => x);
 }
 
-function any(...bools: boolean[]) {
-  return bools.some(x => x);
-}
-
 /*
 type Arvore = DadosEvento[];
 interface DadosEvento {

@@ -8,7 +8,7 @@ export function Ok<a>(valor: a): Ok<a> {
   return { isValido: true, valor };
 }
 
-export interface Invalido<a = never> {
+export interface Invalido<_a = never> {
   isValido: false;
   razoes: string[];
 }

@@ -30,7 +30,7 @@ export function traverse<a, b>(
   ) as Resultado<b[]>;
 }
 
-export function traverseObj<a, b>(
+export function traverseObj<a extends object, b>(
   obj: a,
   f: (_: a[keyof a]) => Resultado<b>
 ): Resultado<Record<keyof a, b>> {
