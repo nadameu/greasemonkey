@@ -10,21 +10,27 @@
 // @grant        GM_addStyle
 // ==/UserScript==
 
-(t => {
-  if (typeof GM_addStyle == 'function') {
-    GM_addStyle(t);
-    return;
-  }
-  const e = document.createElement('style');
-  (e.textContent = t), document.head.append(e);
-})(' ._body_15vap_1 ._vazio_15vap_1{opacity:.25;transform:scale(.75)} ');
-
 (function () {
   'use strict';
 
+  const d = new Set();
+  const o = async e => {
+    d.has(e) ||
+      (d.add(e),
+      (t => {
+        typeof GM_addStyle == 'function'
+          ? GM_addStyle(t)
+          : (document.head || document.documentElement)
+              .appendChild(document.createElement('style'))
+              .append(t);
+      })(e));
+  };
+
+  o(' ._body_6b3qh_1 ._vazio_6b3qh_1{opacity:.25;transform:scale(.75)} ');
+
   const name = 'bnmp-destacar-alertas';
-  const body = '_body_15vap_1';
-  const vazio = '_vazio_15vap_1';
+  const body = '_body_6b3qh_1';
+  const vazio = '_vazio_6b3qh_1';
   const classes = {
     body,
     vazio,
