@@ -8,9 +8,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "run-s type-check compile format",
+    "compile": "vite build",
     "format": "prettier --write ../../eproc-favoritos-historico.user.js",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "type-check": "tsc"
   },
   "devDependencies": {
     "@nadameu/enderecos-eproc": "workspace:^",
