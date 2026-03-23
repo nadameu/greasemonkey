@@ -7,10 +7,12 @@
   "author": "nadameu",
   "type": "module",
   "scripts": {
+    "compile": "vite build",
     "dev": "run-p watch preview",
-    "build": "tsc && vite build",
+    "build": "run-s type-check compile format",
     "format": "prettier --write ../../sei-zoom-documentos.user.js",
-    "preview": "vite preview",
+    "preview": "vite preview --open ../../sei-zoom-documentos.user.js",
+    "type-check": "tsc",
     "watch": "vite build --watch"
   },
   "dependencies": {

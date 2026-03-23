@@ -36,17 +36,17 @@ function main() {
 }
 
 function criar_controles() {
-  const divs_documento = document.querySelectorAll('#divArvoreConteudoIfr');
-  if (divs_documento.length !== 1) {
-    throw new Error('Erro ao buscar o container do documento.');
-  }
-  const div_documento = divs_documento[0];
+  const div_documento = query_one(
+    document,
+    '#divArvoreConteudoIfr',
+    'Erro ao buscar o container do documento.'
+  );
 
-  const iframes = div_documento.querySelectorAll('iframe');
-  if (iframes.length !== 1) {
-    throw new Error('Erro ao buscar a janela do documento.');
-  }
-  const iframe = iframes[0];
+  const iframe = query_one<HTMLIFrameElement>(
+    div_documento,
+    'iframe',
+    'Erro ao buscar a janela do documento.'
+  );
 
   const nivel = h('input', {
     type: 'number',
@@ -98,6 +98,16 @@ function aplicar_zoom() {
   if (!input || !input.validity.valid) return;
   const zoom = input.valueAsNumber / 100;
   document.documentElement.style.zoom = zoom.toString();
+}
+
+function query_one<T extends Element>(
+  context: ParentNode,
+  selector: string,
+  error_msg: string
+) {
+  const elements = context.querySelectorAll<T>(selector);
+  if (elements.length !== 1) throw new Error(error_msg);
+  return elements[0]!;
 }
 
 function logar_erros(fn: () => void) {

@@ -12,19 +12,25 @@
 // @grant        GM_addStyle
 // ==/UserScript==
 
-(d => {
-  if (typeof GM_addStyle == 'function') {
-    GM_addStyle(d);
-    return;
-  }
-  const e = document.createElement('style');
-  (e.textContent = d), document.head.append(e);
-})(
-  ' ._div_1sxbi_1{background-color:#dfd2d8;margin-top:10px;padding:10px;border-radius:5px;box-shadow:0 .125rem .5rem #0000004d,0 .0625rem .125rem #0003}._div_1sxbi_1 input:invalid{background-color:#dfa79f} '
-);
-
 (function () {
   'use strict';
+
+  const d = new Set();
+  const d$1 = async e => {
+    d.has(e) ||
+      (d.add(e),
+      (t => {
+        typeof GM_addStyle == 'function'
+          ? GM_addStyle(t)
+          : (document.head || document.documentElement)
+              .appendChild(document.createElement('style'))
+              .append(t);
+      })(e));
+  };
+
+  d$1(
+    ' ._div_1sxbi_1{background-color:#dfd2d8;margin-top:10px;padding:10px;border-radius:5px;box-shadow:0 .125rem .5rem #0000004d,0 .0625rem .125rem #0003}._div_1sxbi_1 input:invalid{background-color:#dfa79f} '
+  );
 
   function h(tag, props = null, ...children) {
     const element = document.createElement(tag);
@@ -83,16 +89,16 @@
     }
   }
   function criar_controles() {
-    const divs_documento = document.querySelectorAll('#divArvoreConteudoIfr');
-    if (divs_documento.length !== 1) {
-      throw new Error('Erro ao buscar o container do documento.');
-    }
-    const div_documento = divs_documento[0];
-    const iframes = div_documento.querySelectorAll('iframe');
-    if (iframes.length !== 1) {
-      throw new Error('Erro ao buscar a janela do documento.');
-    }
-    const iframe = iframes[0];
+    const div_documento = query_one(
+      document,
+      '#divArvoreConteudoIfr',
+      'Erro ao buscar o container do documento.'
+    );
+    const iframe = query_one(
+      div_documento,
+      'iframe',
+      'Erro ao buscar a janela do documento.'
+    );
     const nivel = h('input', {
       type: 'number',
       min: ZOOM_MINIMO.toString(),
@@ -141,6 +147,11 @@
     if (!input || !input.validity.valid) return;
     const zoom = input.valueAsNumber / 100;
     document.documentElement.style.zoom = zoom.toString();
+  }
+  function query_one(context, selector, error_msg) {
+    const elements = context.querySelectorAll(selector);
+    if (elements.length !== 1) throw new Error(error_msg);
+    return elements[0];
   }
   function logar_erros(fn) {
     try {
