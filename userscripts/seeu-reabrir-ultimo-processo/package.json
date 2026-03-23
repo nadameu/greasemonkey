@@ -1,17 +1,19 @@
 {
   "name": "seeu-reabrir-ultimo-processo",
-  "gm_name": "SEEU - Reabrir último processo",
-  "author": "nadameu",
-  "private": true,
   "version": "1.2.2",
+  "private": true,
+  "author": "nadameu",
   "type": "module",
   "scripts": {
+    "build": "run-s type-check compile format",
+    "compile": "vite build",
     "dev": "vite",
-    "build": "tsc && vite build",
+    "format": "prettier --write ../../seeu-reabrir-ultimo-processo.user.js",
     "preview": "vite preview",
-    "format": "prettier --write ../../seeu-reabrir-ultimo-processo.user.js"
+    "type-check": "tsc"
   },
   "dependencies": {
     "@nadameu/create-element": "workspace:^"
-  }
+  },
+  "gm_name": "SEEU - Reabrir último processo"
 }
