@@ -1,21 +1,23 @@
 {
   "name": "seeu-switch",
-  "gm_name": "SEEU - Alterar atuação",
-  "description": "SEEU - Alterar a área de atuação no SEEU a partir da aba \"Informações Gerais\" de um processo",
-  "private": true,
   "version": "2.0.1",
+  "private": true,
+  "description": "SEEU - Alterar a área de atuação no SEEU a partir da aba \"Informações Gerais\" de um processo",
   "author": "nadameu",
   "type": "module",
   "scripts": {
+    "build": "run-s type-check compile format",
+    "compile": "vite build",
     "dev": "run-p watch preview",
-    "build": "tsc && vite build",
     "format": "prettier --write ../../seeu-switch.user.js",
     "preview": "vite preview --open ../../seeu-switch.user.js",
+    "type-check": "tsc",
     "watch": "vite build --watch"
   },
   "dependencies": {
     "@nadameu/create-element": "workspace:^",
     "@nadameu/expect-unreachable": "workspace:^",
     "@nadameu/predicates": "workspace:^"
-  }
+  },
+  "gm_name": "SEEU - Alterar atuação"
 }
