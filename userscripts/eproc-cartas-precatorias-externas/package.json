@@ -7,10 +7,12 @@
   "type": "module",
   "author": "nadameu",
   "scripts": {
-    "dev": "run-p watch preview",
-    "build": "tsc && vite build",
+    "build": "run-s type-check compile format",
+    "compile": "vite build",
     "format": "prettier --write ../../eproc-cartas-precatorias-externas.user.js",
+    "dev": "run-p watch preview",
     "preview": "vite preview --open ../../eproc-cartas-precatorias-externas.user.js",
+    "type-check": "tsc",
     "watch": "vite build --watch"
   },
   "devDependencies": {
