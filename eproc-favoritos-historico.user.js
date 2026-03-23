@@ -13,22 +13,27 @@
 // @grant        GM_info
 // ==/UserScript==
 
-(o => {
-  if (typeof GM_addStyle == 'function') {
-    GM_addStyle(o);
-    return;
-  }
-  const t = document.createElement('style');
-  (t.textContent = o), document.head.append(t);
-})(
-  ' .bootstrap-styles #divCapaProcesso .row{align-items:center}.bootstrap-styles #divCapaProcesso ._div_ecv0l_4 a._link_ecv0l_4{--cor: hsl(333, 75%, 25%)}.bootstrap-styles #divCapaProcesso ._div_ecv0l_4 a._link_ecv0l_4._added_ecv0l_7{--cor: hsl(333, 75%, 35%)}.bootstrap-styles #divCapaProcesso ._div_ecv0l_4 a._link_ecv0l_4._wait_ecv0l_10{--cor: hsl(332, 15%, 35%)}.bootstrap-styles #divCapaProcesso ._div_ecv0l_4 a._link_ecv0l_4 ._icon_ecv0l_13{color:var(--cor)}.bootstrap-styles .navbar ._link_ecv0l_4 .navbar-icons._icon_ecv0l_13{color:#eed8e2}.bootstrap-styles .navbar ._link_ecv0l_4 .navbar-icons._icon_ecv0l_13:hover{background-color:#ff80b980!important}.bootstrap-styles ._dialogo_ecv0l_22{min-width:35%;height:90%;border-radius:7px;box-shadow:10px 20px 30px #2c212680;background:#fbf4f7}.bootstrap-styles ._dialogo_ecv0l_22::backdrop{background-color:#2c2126cc}.bootstrap-styles ._dialogo_ecv0l_22 h1{text-align:center}.bootstrap-styles ._dialogo_ecv0l_22 q{font-style:italic}.bootstrap-styles ._dialogo_ecv0l_22 button{border:1px outset hsl(333,50%,75%);padding:.1em 1ch;border-radius:4px;color:#290012;background:#e2cfd8}.bootstrap-styles ._dialogo_ecv0l_22 table thead tr,.bootstrap-styles ._dialogo_ecv0l_22 table tbody tr:nth-child(2n){background:#ebe0e5}.bootstrap-styles ._dialogo_ecv0l_22 table th,.bootstrap-styles ._dialogo_ecv0l_22 table td{border:0 solid black;text-align:center;padding:2px 6px}.bootstrap-styles ._dialogo_ecv0l_22 table th{border-bottom-width:2px}.bootstrap-styles ._dialogo_ecv0l_22 table th+th,.bootstrap-styles ._dialogo_ecv0l_22 table td+td{border-left-width:1px}.bootstrap-styles ._dialogo_ecv0l_22 ._div_download_ecv0l_62,.bootstrap-styles ._dialogo_ecv0l_22 ._div_upload_ecv0l_63{background:transparent;transition:1s background 2s;padding:1em 3ch}.bootstrap-styles ._dialogo_ecv0l_22 ._div_download_ecv0l_62._hidden_ecv0l_68,.bootstrap-styles ._dialogo_ecv0l_22 ._div_upload_ecv0l_63._hidden_ecv0l_68{position:absolute;width:1px;height:1px;overflow:hidden;top:-3em;left:-7ch;background:#ffeedb;transition:none}.bootstrap-styles ._dialogo_ecv0l_22 ._barra_ecv0l_79{text-align:right}.bootstrap-styles ._dialogo_ecv0l_22 ._aviso_ecv0l_82{background:#ffeedb;border:1px solid hsl(31,25%,75%);font-size:90%;margin-block:1em;padding-inline:2ex}.bootstrap-styles ._dialogo_ecv0l_22 ._aviso_ecv0l_82 p{margin-block:.5em} '
-);
-
 (function () {
   'use strict';
 
-  var _GM_info = /* @__PURE__ */ (() =>
-    typeof GM_info != 'undefined' ? GM_info : void 0)();
+  const d = new Set();
+  const o = async e => {
+    d.has(e) ||
+      (d.add(e),
+      (t => {
+        typeof GM_addStyle == 'function'
+          ? GM_addStyle(t)
+          : (document.head || document.documentElement)
+              .appendChild(document.createElement('style'))
+              .append(t);
+      })(e));
+  };
+
+  o(
+    ' .bootstrap-styles #divCapaProcesso .row{align-items:center}.bootstrap-styles #divCapaProcesso ._div_ecv0l_4 a._link_ecv0l_4{--cor: hsl(333, 75%, 25%)}.bootstrap-styles #divCapaProcesso ._div_ecv0l_4 a._link_ecv0l_4._added_ecv0l_7{--cor: hsl(333, 75%, 35%)}.bootstrap-styles #divCapaProcesso ._div_ecv0l_4 a._link_ecv0l_4._wait_ecv0l_10{--cor: hsl(332, 15%, 35%)}.bootstrap-styles #divCapaProcesso ._div_ecv0l_4 a._link_ecv0l_4 ._icon_ecv0l_13{color:var(--cor)}.bootstrap-styles .navbar ._link_ecv0l_4 .navbar-icons._icon_ecv0l_13{color:#eed8e2}.bootstrap-styles .navbar ._link_ecv0l_4 .navbar-icons._icon_ecv0l_13:hover{background-color:#ff80b980!important}.bootstrap-styles ._dialogo_ecv0l_22{min-width:35%;height:90%;border-radius:7px;box-shadow:10px 20px 30px #2c212680;background:#fbf4f7}.bootstrap-styles ._dialogo_ecv0l_22::backdrop{background-color:#2c2126cc}.bootstrap-styles ._dialogo_ecv0l_22 h1{text-align:center}.bootstrap-styles ._dialogo_ecv0l_22 q{font-style:italic}.bootstrap-styles ._dialogo_ecv0l_22 button{border:1px outset hsl(333,50%,75%);padding:.1em 1ch;border-radius:4px;color:#290012;background:#e2cfd8}.bootstrap-styles ._dialogo_ecv0l_22 table thead tr,.bootstrap-styles ._dialogo_ecv0l_22 table tbody tr:nth-child(2n){background:#ebe0e5}.bootstrap-styles ._dialogo_ecv0l_22 table th,.bootstrap-styles ._dialogo_ecv0l_22 table td{border:0 solid black;text-align:center;padding:2px 6px}.bootstrap-styles ._dialogo_ecv0l_22 table th{border-bottom-width:2px}.bootstrap-styles ._dialogo_ecv0l_22 table th+th,.bootstrap-styles ._dialogo_ecv0l_22 table td+td{border-left-width:1px}.bootstrap-styles ._dialogo_ecv0l_22 ._div_download_ecv0l_62,.bootstrap-styles ._dialogo_ecv0l_22 ._div_upload_ecv0l_63{background:transparent;transition:1s background 2s;padding:1em 3ch}.bootstrap-styles ._dialogo_ecv0l_22 ._div_download_ecv0l_62._hidden_ecv0l_68,.bootstrap-styles ._dialogo_ecv0l_22 ._div_upload_ecv0l_63._hidden_ecv0l_68{position:absolute;width:1px;height:1px;overflow:hidden;top:-3em;left:-7ch;background:#ffeedb;transition:none}.bootstrap-styles ._dialogo_ecv0l_22 ._barra_ecv0l_79{text-align:right}.bootstrap-styles ._dialogo_ecv0l_22 ._aviso_ecv0l_82{background:#ffeedb;border:1px solid hsl(31,25%,75%);font-size:90%;margin-block:1em;padding-inline:2ex}.bootstrap-styles ._dialogo_ecv0l_22 ._aviso_ecv0l_82 p{margin-block:.5em} '
+  );
+
+  var _GM_info = (() => (typeof GM_info != 'undefined' ? GM_info : void 0))();
   function log_error(error) {
     console.group(_GM_info.script.name);
     console.error(error);
@@ -50,33 +55,30 @@
   function isOfType(typeRepresentation) {
     return value => typeof value === typeRepresentation;
   }
-  const isOfTypeObject = /* @__PURE__ */ isOfType('object');
-  const isString = /* @__PURE__ */ isOfType('string');
+  const isOfTypeObject = isOfType('object');
+  const isString = isOfType('string');
   function isLiteral(literal) {
     return value => value === literal;
   }
-  const isUndefined = /* @__PURE__ */ isLiteral(void 0);
-  const isNull = /* @__PURE__ */ isLiteral(null);
+  const isUndefined = isLiteral(void 0);
+  const isNull = isLiteral(null);
   function negate(predicate) {
     return value => !predicate(value);
   }
-  const isNotNull = /* @__PURE__ */ negate(isNull);
-  const isDefined = /* @__PURE__ */ negate(isUndefined);
+  const isNotNull = negate(isNull);
+  const isDefined = negate(isUndefined);
   function refine(...predicates) {
     return value => predicates.every(p => p(value));
   }
-  const isObject = /* @__PURE__ */ refine(isOfTypeObject, isNotNull);
+  const isObject = refine(isOfTypeObject, isNotNull);
   const isInteger = x => Number.isInteger(x);
-  const isNonNegativeInteger = /* @__PURE__ */ refine(isInteger, x => x > -1);
-  const isNonEmptyString = /* @__PURE__ */ refine(
-    isString,
-    x => x.trim().length > 0
-  );
+  const isNonNegativeInteger = refine(isInteger, x => x > -1);
+  const isNonEmptyString = refine(isString, x => x.trim().length > 0);
   function isAnyOf(...predicates) {
     return value => predicates.some(p => p(value));
   }
   const isNullish = x => x == null;
-  const isNotNullish = /* @__PURE__ */ negate(isNullish);
+  const isNotNullish = negate(isNullish);
   const isArray = x => Array.isArray(x);
   function isTypedArray(predicate) {
     return refine(isArray, xs => xs.every(predicate));
@@ -123,9 +125,6 @@
     return customStore(
       'readwrite',
       store =>
-        // Need to create the promise manually.
-        // If I try to chain promises, the transaction closes in browsers
-        // that use a promise polyfill (IE10/11).
         new Promise((resolve, reject) => {
           store.get(key).onsuccess = function () {
             try {
@@ -189,7 +188,7 @@
     return item?.favorito;
   }
   async function salvar_favorito({ motivo, numproc, prioridade }) {
-    const timestamp = /* @__PURE__ */ new Date().getTime();
+    const timestamp = new Date().getTime();
     await Store.getInstance().set(numproc, {
       favorito: { motivo, prioridade, timestamp },
       acesso: timestamp,
@@ -204,13 +203,13 @@
   async function remover_favorito(numproc) {
     await Store.getInstance().set(numproc, {
       favorito: void 0,
-      acesso: /* @__PURE__ */ new Date().getTime(),
+      acesso: new Date().getTime(),
     });
   }
   async function acrescentar_historico(numproc) {
     await Store.getInstance().update(numproc, dados => {
       const { favorito } = dados ?? {};
-      return { favorito, acesso: /* @__PURE__ */ new Date().getTime() };
+      return { favorito, acesso: new Date().getTime() };
     });
   }
   async function obter_historico() {
@@ -496,7 +495,7 @@
           return;
         }
         output.textContent = '';
-        const data_agora = /* @__PURE__ */ new Date();
+        const data_agora = new Date();
         output.append(
           criar_tabela(
             ['Favorito?', 'Processo', 'Último acesso'],
@@ -729,7 +728,7 @@
     };
   }
   function createStore(getInitialState, reducer) {
-    const listeners = /* @__PURE__ */ new Set();
+    const listeners = new Set();
     let state = getInitialState();
     return { dispatch, getState, subscribe };
     function dispatch(action) {

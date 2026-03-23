@@ -40,10 +40,8 @@ function modificarPaginaProcesso({
     status: K;
   }
   interface EstadoAguardaAtualizacao
-    extends EstadoBase<'AguardaAtualizacao'>,
-      TipoContas {}
-  interface EstadoAguardaVerificacaoInicial
-    extends EstadoBase<'AguardaVerificacaoInicial'> {}
+    extends EstadoBase<'AguardaAtualizacao'>, TipoContas {}
+  interface EstadoAguardaVerificacaoInicial extends EstadoBase<'AguardaVerificacaoInicial'> {}
   interface EstadoErro extends EstadoBase<'Erro'> {}
   interface EstadoOcioso extends EstadoBase<'Ocioso'>, TipoContas {}
   type Estado =
@@ -68,8 +66,7 @@ function modificarPaginaProcesso({
     type: K;
   }
   interface AcaoAtualizacaoDepositos
-    extends AcaoBase<'AtualizacaoDepositos'>,
-      InfoTipo {}
+    extends AcaoBase<'AtualizacaoDepositos'>, InfoTipo {}
   interface AcaoAtualizacaoRPV extends AcaoBase<'AtualizacaoRPV'>, InfoTipo {}
   interface AcaoClique extends AcaoBase<'Clique'> {
     alvo: 'BOTAO_RPV' | 'LINK_RPV' | 'BOTAO_DEP' | 'LINK_DEP';
@@ -77,8 +74,7 @@ function modificarPaginaProcesso({
   interface AcaoErro extends AcaoBase<'Erro'> {}
   interface AcaoPaginaContasAberta extends AcaoBase<'PaginaContasAberta'> {}
   interface AcaoVerificacaoTerminada
-    extends AcaoBase<'VerificacaoTerminada'>,
-      TipoContas {}
+    extends AcaoBase<'VerificacaoTerminada'>, TipoContas {}
   type Acao =
     | AcaoAtualizacaoDepositos
     | AcaoAtualizacaoRPV

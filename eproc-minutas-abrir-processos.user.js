@@ -23,12 +23,19 @@ CustomError.prototype.name = 'CustomError';
 try_catch(main);
 
 function main() {
-  document.body.addEventListener('click', evt => {
-    console.log('body clicked')
-    if (evt.target instanceof HTMLElement && evt.target.matches('a[onclick^="abreProcessosSelecionadosEmAbas"]')) {
-      return on_click(evt);
-    }
-  }, { capture: true });
+  document.body.addEventListener(
+    'click',
+    evt => {
+      console.log('body clicked');
+      if (
+        evt.target instanceof HTMLElement &&
+        evt.target.matches('a[onclick^="abreProcessosSelecionadosEmAbas"]')
+      ) {
+        return on_click(evt);
+      }
+    },
+    { capture: true }
+  );
 }
 
 function on_click(evt) {
@@ -37,7 +44,9 @@ function on_click(evt) {
   const rollback = [];
   const urls = new Set();
   for (const linha of document.querySelectorAll('.infraTrMarcada')) {
-    for (const link of linha.querySelectorAll('a[href*="controlador.php?acao=processo_selecionar&"], a[href*="processo_selecionar_siapro&"]')) {
+    for (const link of linha.querySelectorAll(
+      'a[href*="controlador.php?acao=processo_selecionar&"], a[href*="processo_selecionar_siapro&"]'
+    )) {
       const { href } = link;
       if (urls.has(href)) {
         link.href = 'javascript:false';
@@ -60,7 +69,7 @@ function on_click(evt) {
 function try_catch(fn) {
   try {
     fn();
-  } catch(err) {
+  } catch (err) {
     console.group(`<${GM_info.script.name}>`);
     console.error(err);
     if (err instanceof CustomError) {

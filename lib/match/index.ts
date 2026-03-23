@@ -154,8 +154,10 @@ interface MatchTaggedWith<
     action: (obj: Extract<T, Tag<TN, K>>) => R2
   ): MatchWithResult<TN, Exclude<T, Tag<TN, K>>, R | R2>;
 }
-interface MatchTagged<T extends Tag<typeof _tag, ValidTag>, R>
-  extends MatchPending<T, R> {
+interface MatchTagged<
+  T extends Tag<typeof _tag, ValidTag>,
+  R,
+> extends MatchPending<T, R> {
   case<K extends T[typeof _tag], R2>(
     tag: K,
     action: (obj: Extract<T, Tag<typeof _tag, K>>) => R2

@@ -20,10 +20,9 @@
 (function () {
   'use strict';
 
-  var _GM_addStyle = /* @__PURE__ */ (() =>
+  var _GM_addStyle = (() =>
     typeof GM_addStyle != 'undefined' ? GM_addStyle : void 0)();
-  var _GM_info = /* @__PURE__ */ (() =>
-    typeof GM_info != 'undefined' ? GM_info : void 0)();
+  var _GM_info = (() => (typeof GM_info != 'undefined' ? GM_info : void 0))();
   function h(tag, props = null, ...children) {
     const element = document.createElement(tag);
     for (const [key, value] of Object.entries(props ?? {})) {
@@ -53,7 +52,6 @@
   }
   function adicionarEstilos() {
     _GM_addStyle(
-      /* css */
       `
 .bootstrap-styles .${_GM_info.script.name}__div {
   position: relative;
@@ -67,7 +65,7 @@
   }
   const compare = new Intl.Collator('pt-BR', { sensitivity: 'base' }).compare;
   class StringMap {
-    _internal = /* @__PURE__ */ new Map();
+    _internal = new Map();
     constructor(values = []) {
       for (const [key, value] of values) {
         this.set(key, value);
@@ -162,18 +160,16 @@
         ];
       })
     );
-    const cidades = new StringMap([
-      ['', new StringMap([['', /* @__PURE__ */ new Set()]])],
-    ]);
+    const cidades = new StringMap([['', new StringMap([['', new Set()]])]]);
     for (const [cidade, bairro, linha] of info) {
       cidades.get('').get('').add(linha);
       if (!cidades.has(cidade)) {
-        cidades.set(cidade, new StringMap([['', /* @__PURE__ */ new Set()]]));
+        cidades.set(cidade, new StringMap([['', new Set()]]));
       }
       const bairros = cidades.get(cidade);
       bairros.get('').add(linha);
       if (!bairros.has(bairro)) {
-        bairros.set(bairro, /* @__PURE__ */ new Set());
+        bairros.set(bairro, new Set());
       }
       bairros.get(bairro).add(linha);
     }

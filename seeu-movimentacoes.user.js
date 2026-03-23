@@ -13,29 +13,34 @@
 // @grant        GM_setValue
 // ==/UserScript==
 
-(t => {
-  if (typeof GM_addStyle == 'function') {
-    GM_addStyle(t);
-    return;
-  }
-  const e = document.createElement('style');
-  (e.textContent = t), document.head.append(e);
-})(
-  ' td a._struck_14zo8_1{cursor:not-allowed}td a._struck_14zo8_1,td a._struck_14zo8_1:hover{text-decoration:line-through}._avisoCarregando_14zo8_8{font-size:1.2em;font-style:italic}._divConfigurarAbertura_14zo8_13{text-align:right;--cor-secundaria: hsl(333, 20%, 35%)}html #container .extendedinfo td a.link{padding:0 1px!important;border:1px solid transparent}html #container .extendedinfo td a.link._ultimoClicado_14zo8_22{background:#f0e0e7!important;border:1px dotted hsl(333,75%,8%)} '
-);
-
 (function () {
   'use strict';
 
-  var _GM_addStyle = /* @__PURE__ */ (() =>
+  const d = new Set();
+  const t = async e => {
+    d.has(e) ||
+      (d.add(e),
+      (t => {
+        typeof GM_addStyle == 'function'
+          ? GM_addStyle(t)
+          : (document.head || document.documentElement)
+              .appendChild(document.createElement('style'))
+              .append(t);
+      })(e));
+  };
+
+  t(
+    ' td a._struck_14zo8_1{cursor:not-allowed}td a._struck_14zo8_1,td a._struck_14zo8_1:hover{text-decoration:line-through}._avisoCarregando_14zo8_8{font-size:1.2em;font-style:italic}._divConfigurarAbertura_14zo8_13{text-align:right;--cor-secundaria: hsl(333, 20%, 35%)}html #container .extendedinfo td a.link{padding:0 1px!important;border:1px solid transparent}html #container .extendedinfo td a.link._ultimoClicado_14zo8_22{background:#f0e0e7!important;border:1px dotted hsl(333,75%,8%)} '
+  );
+
+  var _GM_addStyle = (() =>
     typeof GM_addStyle != 'undefined' ? GM_addStyle : void 0)();
-  var _GM_deleteValue = /* @__PURE__ */ (() =>
+  var _GM_deleteValue = (() =>
     typeof GM_deleteValue != 'undefined' ? GM_deleteValue : void 0)();
-  var _GM_getValue = /* @__PURE__ */ (() =>
+  var _GM_getValue = (() =>
     typeof GM_getValue != 'undefined' ? GM_getValue : void 0)();
-  var _GM_info = /* @__PURE__ */ (() =>
-    typeof GM_info != 'undefined' ? GM_info : void 0)();
-  var _GM_setValue = /* @__PURE__ */ (() =>
+  var _GM_info = (() => (typeof GM_info != 'undefined' ? GM_info : void 0))();
+  var _GM_setValue = (() =>
     typeof GM_setValue != 'undefined' ? GM_setValue : void 0)();
   const flow = (value, ...fns) => {
     let x = value;
@@ -164,27 +169,24 @@
   function isOfType(typeRepresentation) {
     return value => typeof value === typeRepresentation;
   }
-  const isFunction = /* @__PURE__ */ isOfType('function');
-  const isOfTypeObject = /* @__PURE__ */ isOfType('object');
-  const isString = /* @__PURE__ */ isOfType('string');
+  const isFunction = isOfType('function');
+  const isOfTypeObject = isOfType('object');
+  const isString = isOfType('string');
   function isLiteral(literal) {
     return value => value === literal;
   }
-  const isNull = /* @__PURE__ */ isLiteral(null);
+  const isNull = isLiteral(null);
   function negate(predicate) {
     return value => !predicate(value);
   }
-  const isNotNull = /* @__PURE__ */ negate(isNull);
+  const isNotNull = negate(isNull);
   function refine(...predicates) {
     return value => predicates.every(p2 => p2(value));
   }
-  const isObject = /* @__PURE__ */ refine(isOfTypeObject, isNotNull);
+  const isObject = refine(isOfTypeObject, isNotNull);
   const isInteger = x => Number.isInteger(x);
-  const isNonNegativeInteger = /* @__PURE__ */ refine(isInteger, x => x > -1);
-  const isNonEmptyString = /* @__PURE__ */ refine(
-    isString,
-    x => x.trim().length > 0
-  );
+  const isNonNegativeInteger = refine(isInteger, x => x > -1);
+  const isNonEmptyString = refine(isString, x => x.trim().length > 0);
   const arrayHasLength = num => obj => obj.length === num;
   function hasShape(predicates) {
     return refine(isObject, obj =>
@@ -194,12 +196,12 @@
     );
   }
   const createObserver = nativeObserver => {
-    const callbacks = /* @__PURE__ */ new Map();
+    const callbacks = new Map();
     const obs = nativeObserver(callbacks);
     return {
       observe(key, callback) {
         if (!callbacks.has(key)) {
-          callbacks.set(key, /* @__PURE__ */ new Set());
+          callbacks.set(key, new Set());
         }
         callbacks.get(key).add(callback);
         obs.observe(key);
@@ -279,7 +281,7 @@
   const TIPO_ABERTURA = 'tipo_abertura';
   const PARAMETROS_JANELA = 'parametros_janela';
   const FECHAR_AUTOMATICAMENTE = 'fechar_automaticamente';
-  const isPosicao = /* @__PURE__ */ hasShape({
+  const isPosicao = hasShape({
     top: isInteger,
     left: isInteger,
     width: isNonNegativeInteger,
@@ -622,7 +624,7 @@
         }
       });
     }
-    const janelasAbertas = /* @__PURE__ */ new Map();
+    const janelasAbertas = new Map();
     const { exibirBotaoFechar } = criarBotaoJanelasAbertas(janelasAbertas);
     const onDocumentClick = createOnDocumentClick({
       janelasAbertas,
@@ -980,8 +982,8 @@ ${sigilo}`;
       .map(x => parseInt(x, 16))
       .reduce((acc, x) => acc * 4294967296n + BigInt(x), 0n);
   }
-  const alteracoes = /* @__PURE__ */ Object.freeze(
-    /* @__PURE__ */ Object.defineProperty(
+  const alteracoes = Object.freeze(
+    Object.defineProperty(
       {
         __proto__: null,
         telaMovimentacoes,

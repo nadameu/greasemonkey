@@ -11,22 +11,27 @@
 // @grant        GM_info
 // ==/UserScript==
 
-(t => {
-  if (typeof GM_addStyle == 'function') {
-    GM_addStyle(t);
-    return;
-  }
-  const n = document.createElement('style');
-  (n.textContent = t), document.head.append(n);
-})(
-  ' html input[type=button]._btn_2b3z5_1{background:#674c58;box-shadow:0 2px 4px #00000040;transform:translateY(-2px);transition:transform 60ms;margin:0}html input[type=button]._btn_2b3z5_1:hover{background:#704357}html input[type=button]._btn_2b3z5_1:is(:active,:disabled){box-shadow:0 0 #00000040;transform:translateY(0)}html input[type=button]._btn_2b3z5_1:disabled{background:#5e5559;color:#bbb} '
-);
-
 (function () {
   'use strict';
 
-  var _GM_info = /* @__PURE__ */ (() =>
-    typeof GM_info != 'undefined' ? GM_info : void 0)();
+  const d = new Set();
+  const t = async e => {
+    d.has(e) ||
+      (d.add(e),
+      (t => {
+        typeof GM_addStyle == 'function'
+          ? GM_addStyle(t)
+          : (document.head || document.documentElement)
+              .appendChild(document.createElement('style'))
+              .append(t);
+      })(e));
+  };
+
+  t(
+    ' html input[type=button]._btn_2b3z5_1{background:#674c58;box-shadow:0 2px 4px #00000040;transform:translateY(-2px);transition:transform 60ms;margin:0}html input[type=button]._btn_2b3z5_1:hover{background:#704357}html input[type=button]._btn_2b3z5_1:active,html input[type=button]._btn_2b3z5_1:disabled{box-shadow:0 0 #00000040;transform:translateY(0)}html input[type=button]._btn_2b3z5_1:disabled{background:#5e5559;color:#bbb} '
+  );
+
+  var _GM_info = (() => (typeof GM_info != 'undefined' ? GM_info : void 0))();
   class Info {
     constructor(message) {
       this.message = message;
@@ -71,26 +76,23 @@
   function isOfType(typeRepresentation) {
     return value => typeof value === typeRepresentation;
   }
-  const isString = /* @__PURE__ */ isOfType('string');
+  const isString = isOfType('string');
   function isLiteral(literal) {
     return value => value === literal;
   }
-  const isUndefined = /* @__PURE__ */ isLiteral(void 0);
-  const isNull = /* @__PURE__ */ isLiteral(null);
+  const isUndefined = isLiteral(void 0);
+  const isNull = isLiteral(null);
   function negate(predicate) {
     return value => !predicate(value);
   }
-  const isNotNull = /* @__PURE__ */ negate(isNull);
-  const isDefined = /* @__PURE__ */ negate(isUndefined);
+  const isNotNull = negate(isNull);
+  const isDefined = negate(isUndefined);
   function refine(...predicates) {
     return value => predicates.every(p => p(value));
   }
-  const isNonEmptyString = /* @__PURE__ */ refine(
-    isString,
-    x => x.trim().length > 0
-  );
+  const isNonEmptyString = refine(isString, x => x.trim().length > 0);
   const isNullish = x => x == null;
-  const isNotNullish = /* @__PURE__ */ negate(isNullish);
+  const isNotNullish = negate(isNullish);
   const arrayHasLength = num => obj => obj.length === num;
   const arrayHasAtLeastLength = num => array => array.length >= num;
   const btn = '_btn_2b3z5_1';

@@ -21,19 +21,25 @@
 // @grant        GM_info
 // ==/UserScript==
 
-(e => {
-  if (typeof GM_addStyle == 'function') {
-    GM_addStyle(e);
-    return;
-  }
-  const o = document.createElement('style');
-  (o.textContent = e), document.head.append(o);
-})(
-  ' .bootstrap-styles._continha-documentos-ao-carregar_yiwzj_1 form:has(input[name=hdnNumDocumentos][value="0"]) .infraBarraComandos:before{display:none}.bootstrap-styles._continha-documentos-ao-carregar_yiwzj_1 form:has(input[name=hdnNumDocumentos]) .infraBarraComandos:before{content:"ATEN\xC7\xC3O: H\xE1 documentos selecionados e ainda n\xE3o utilizados em movimenta\xE7\xE3o.";display:inline-block;background:#e9e296;color:#000;margin:0 6px;padding:.25rem .5rem;border-radius:2rem;width:fit-content;text-align:center}.bootstrap-styles._erro_yiwzj_21 .infraBarraComandos:before{content:"ERRO ao verificar a exist\xEAncia de documentos selecionados e ainda n\xE3o utilizados em movimenta\xE7\xE3o.";display:inline-block;background:#ebd1dd;color:#000;margin:0 6px;padding:.25rem .5rem;border-radius:2rem;width:fit-content;text-align:center} '
-);
-
 (function () {
   'use strict';
+
+  const d = new Set();
+  const o = async e => {
+    d.has(e) ||
+      (d.add(e),
+      (t => {
+        typeof GM_addStyle == 'function'
+          ? GM_addStyle(t)
+          : (document.head || document.documentElement)
+              .appendChild(document.createElement('style'))
+              .append(t);
+      })(e));
+  };
+
+  o(
+    ' .bootstrap-styles._continha-documentos-ao-carregar_yiwzj_1 form:has(input[name=hdnNumDocumentos][value="0"]) .infraBarraComandos:before{display:none}.bootstrap-styles._continha-documentos-ao-carregar_yiwzj_1 form:has(input[name=hdnNumDocumentos]) .infraBarraComandos:before{content:"ATEN\xC7\xC3O: H\xE1 documentos selecionados e ainda n\xE3o utilizados em movimenta\xE7\xE3o.";display:inline-block;background:#e9e296;color:#000;margin:0 6px;padding:.25rem .5rem;border-radius:2rem;width:fit-content;text-align:center}.bootstrap-styles._erro_yiwzj_21 .infraBarraComandos:before{content:"ERRO ao verificar a exist\xEAncia de documentos selecionados e ainda n\xE3o utilizados em movimenta\xE7\xE3o.";display:inline-block;background:#ebd1dd;color:#000;margin:0 6px;padding:.25rem .5rem;border-radius:2rem;width:fit-content;text-align:center} '
+  );
 
   class CustomError extends Error {
     constructor(message, payload = {}) {
@@ -64,8 +70,7 @@
       document.body.classList.add(classes['continha-documentos-ao-carregar']);
     }
   }
-  var _GM_info = /* @__PURE__ */ (() =>
-    typeof GM_info != 'undefined' ? GM_info : void 0)();
+  var _GM_info = (() => (typeof GM_info != 'undefined' ? GM_info : void 0))();
   function try_catch(fn) {
     try {
       fn();

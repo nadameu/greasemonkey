@@ -20,10 +20,16 @@ test('Maybe', () => {
     '__my_custom_tag',
     { Just: { value: a }; Nothing: {} }
   >;
-  interface Just<a>
-    extends MemberWith<Internal<a>, '__my_custom_tag', 'Just'> {}
-  interface Nothing
-    extends MemberWith<Internal<never>, '__my_custom_tag', 'Nothing'> {}
+  interface Just<a> extends MemberWith<
+    Internal<a>,
+    '__my_custom_tag',
+    'Just'
+  > {}
+  interface Nothing extends MemberWith<
+    Internal<never>,
+    '__my_custom_tag',
+    'Nothing'
+  > {}
   const tag = tagWith('__my_custom_tag');
   const Just = <a>(value: a): Just<a> => tag('Just')({ value });
   const Nothing: Nothing = tag('Nothing')();
@@ -37,11 +43,10 @@ test('Maybe', () => {
 });
 
 describe('FingerTree', () => {
-  interface Digit<a>
-    extends Tagged<
-      'Digit',
-      { values: [a] | [a, a] | [a, a, a] | [a, a, a, a] }
-    > {}
+  interface Digit<a> extends Tagged<
+    'Digit',
+    { values: [a] | [a, a] | [a, a, a] | [a, a, a, a] }
+  > {}
   const Digit = <a>(
     ...values: [a] | [a, a] | [a, a, a] | [a, a, a, a]
   ): Digit<a> => tag('Digit')({ values });

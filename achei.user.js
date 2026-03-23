@@ -29,11 +29,11 @@
   function isLiteral(literal) {
     return value => value === literal;
   }
-  const isNull = /* @__PURE__ */ isLiteral(null);
+  const isNull = isLiteral(null);
   function negate(predicate) {
     return value => !predicate(value);
   }
-  const isNotNull = /* @__PURE__ */ negate(isNull);
+  const isNotNull = negate(isNull);
   const arrayHasLength = num => obj => obj.length === num;
   const arrayHasAtLeastLength = num => array => array.length >= num;
   const dominios = {
