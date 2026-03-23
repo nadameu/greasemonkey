@@ -1,16 +1,17 @@
 {
   "name": "seeu-movimentacoes",
-  "gm_name": "SEEU - Movimentações",
-  "author": "nadameu",
-  "description": "Melhoria na apresentação das movimentações do processo",
-  "private": true,
   "version": "2.10.0",
+  "private": true,
+  "description": "Melhoria na apresentação das movimentações do processo",
+  "author": "nadameu",
   "type": "module",
   "scripts": {
+    "build": "run-s type-check compile format",
+    "compile": "vite build",
     "dev": "run-p watch preview",
-    "build": "tsc && vite build",
     "format": "prettier --write ../../seeu-movimentacoes.user.js",
     "preview": "vite preview --open ../../seeu-movimentacoes.user.js",
+    "type-check": "tsc",
     "watch": "vite build --watch"
   },
   "dependencies": {
@@ -20,5 +21,6 @@
     "@nadameu/handler": "workspace:^",
     "@nadameu/match": "workspace:^",
     "@nadameu/predicates": "workspace:^"
-  }
+  },
+  "gm_name": "SEEU - Movimentações"
 }
