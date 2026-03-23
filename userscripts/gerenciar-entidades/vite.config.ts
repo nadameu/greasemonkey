@@ -10,6 +10,7 @@ export default defineConfig({
   plugins: [
     monkey({
       entry: 'src/index.ts',
+      server: { prefix: name => `dev:${name}` },
       userscript: {
         name: { 'pt-BR': pkg.gm_name },
         namespace: 'http://nadameu.com.br',

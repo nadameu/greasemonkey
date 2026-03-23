@@ -1,6 +1,5 @@
-import { GM_info } from '$';
 import { h } from '@nadameu/create-element';
-import { adicionarEstilos } from './adicionarEstilos';
+import classes from './index.module.css';
 import { StringMap } from './StringMap';
 
 export async function main() {
@@ -98,13 +97,12 @@ export async function main() {
   selBairro.addEventListener('change', onBairroChange);
   const div = h(
     'div',
-    { className: `${GM_info.script.name}__div` },
+    { className: classes.div! },
     'Cidade: ',
     selCidade,
     ' Bairro: ',
     selBairro
   );
-  adicionarEstilos();
   barra.insertAdjacentElement('afterend', div);
 
   caption.replaceChildren(...captionNewContent);

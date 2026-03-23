@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         gerenciar-entidades
-// @name:pt-BR   Gerenciar entidades
+// @name:pt-BR   eproc - gerenciar entidades
 // @namespace    http://nadameu.com.br
-// @version      1.2.0
+// @version      1.2.1
 // @author       nadameu
 // @description  Permite filtrar entidades assistenciais
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=entidade_assistencial_listar&*
@@ -20,8 +20,23 @@
 (function () {
   'use strict';
 
-  var _GM_addStyle = (() =>
-    typeof GM_addStyle != 'undefined' ? GM_addStyle : void 0)();
+  const d = new Set();
+  const i = async e => {
+    d.has(e) ||
+      (d.add(e),
+      (t => {
+        typeof GM_addStyle == 'function'
+          ? GM_addStyle(t)
+          : (document.head || document.documentElement)
+              .appendChild(document.createElement('style'))
+              .append(t);
+      })(e));
+  };
+
+  i(
+    ' .bootstrap-styles ._div_1ufve_1{position:relative;background:#cd98b0;display:inline-block;padding:1em 2ch;border-radius:4px} '
+  );
+
   var _GM_info = (() => (typeof GM_info != 'undefined' ? GM_info : void 0))();
   function h(tag, props = null, ...children) {
     const element = document.createElement(tag);
@@ -31,16 +46,16 @@
           element[key][k] = v;
         }
       } else if (key === 'classList') {
-        let classes;
+        let classes2;
         if (Array.isArray(value)) {
-          classes = value.filter(x => x !== null);
+          classes2 = value.filter(x => x !== null);
         } else {
-          classes = Object.entries(value).flatMap(([k, v]) => {
+          classes2 = Object.entries(value).flatMap(([k, v]) => {
             if (!v) return [];
             return [k];
           });
         }
-        for (const className of classes) {
+        for (const className of classes2) {
           element.classList.add(className);
         }
       } else {
@@ -50,19 +65,10 @@
     element.append(...children);
     return element;
   }
-  function adicionarEstilos() {
-    _GM_addStyle(
-      `
-.bootstrap-styles .${_GM_info.script.name}__div {
-  position: relative;
-  background: hsl(333deg 35% 70%);
-  display: inline-block;
-  padding: 1em 2ch;
-  border-radius: 4px;
-}
-    `
-    );
-  }
+  const div = '_div_1ufve_1';
+  const classes = {
+    div,
+  };
   const compare = new Intl.Collator('pt-BR', { sensitivity: 'base' }).compare;
   class StringMap {
     _internal = new Map();
@@ -192,16 +198,15 @@
       h('option', { value: '' }, 'TODOS')
     );
     selBairro.addEventListener('change', onBairroChange);
-    const div = h(
+    const div2 = h(
       'div',
-      { className: `${_GM_info.script.name}__div` },
+      { className: classes.div },
       'Cidade: ',
       selCidade,
       ' Bairro: ',
       selBairro
     );
-    adicionarEstilos();
-    barra.insertAdjacentElement('afterend', div);
+    barra.insertAdjacentElement('afterend', div2);
     caption.replaceChildren(...captionNewContent);
     updateLinhas('', '');
     function onCidadeChange() {
