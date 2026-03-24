@@ -252,25 +252,3 @@ describe('Types of tagName and tag', () => {
     });
   });
 });
-
-describe.skip('tuples', () => {
-  const sym = Symbol();
-  describe.each<[string, unknown[]]>([
-    ['[]', [] as []],
-    ['[string]', ['hello']],
-    ['[number, string]', [39, 'hello']],
-  ])('%s', (_, arr) => {
-    test.each([
-      ['string', '_tag' as const],
-      ['number', 21 as const],
-      ['symbol', sym as typeof sym],
-    ])('%s', (_, _tag) => {
-      const tuple = tagWith(_tag)('Type0')(arr);
-      expect(tuple).toHaveProperty('_tag', 'Type0');
-      expect(tuple).toHaveProperty('length', arr.length);
-      expect(Array.isArray(tuple)).toBe(true);
-      const [...values] = tuple;
-      expect(values).toEqual(arr);
-    });
-  });
-});
