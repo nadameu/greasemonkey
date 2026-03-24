@@ -385,8 +385,6 @@ importers:
         specifier: workspace:^
         version: link:../../lib/predicates
 
-  userscripts/tempo-minutas: {}
-
   userscripts/verificar-agendamento:
     devDependencies:
       '@nadameu/enderecos-eproc':
