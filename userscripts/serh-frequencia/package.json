@@ -8,9 +8,11 @@
   "type": "module",
   "scripts": {
     "dev": "run-p watch preview",
-    "build": "tsc && vite build",
+    "build": "run-s type-check compile format",
+    "compile": "vite build",
     "format": "prettier --write ../../serh-frequencia.user.js",
     "preview": "vite preview --open ../../serh-frequencia.user.js",
+    "type-check": "tsc",
     "watch": "vite build --watch"
   },
   "dependencies": {
