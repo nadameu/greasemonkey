@@ -220,6 +220,21 @@ importers:
         specifier: workspace:^
         version: link:../../lib/enderecos-eproc
 
+  userscripts/eproc-documentos-sigilosos:
+    dependencies:
+      '@nadameu/create-element':
+        specifier: workspace:^
+        version: link:../../lib/create-element
+      '@nadameu/enderecos-eproc':
+        specifier: workspace:^
+        version: link:../../lib/enderecos-eproc
+      '@nadameu/opaque':
+        specifier: workspace:^
+        version: link:../../lib/opaque
+      '@nadameu/predicates':
+        specifier: workspace:^
+        version: link:../../lib/predicates
+
   userscripts/eproc-favoritos-historico:
     dependencies:
       '@nadameu/create-element':
