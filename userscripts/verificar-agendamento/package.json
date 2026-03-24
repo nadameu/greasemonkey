@@ -8,9 +8,11 @@
   "type": "module",
   "scripts": {
     "dev": "run-p watch preview",
-    "build": "tsc && vite build",
+    "build": "run-s type-check compile format",
+    "compile": "vite build",
     "format": "prettier --write ../../verificar-agendamento.user.js",
     "preview": "vite preview --open ../../verificar-agendamento.user.js",
+    "type-check": "tsc",
     "watch": "vite build --watch"
   },
   "devDependencies": {
