@@ -23,6 +23,7 @@ export default defineConfig({
         description:
           'Permite a separação de processos em blocos para movimentação separada',
       },
+      server: { prefix: name => `dev:${name}` },
       build: {
         externalGlobals: {
           'preact': [

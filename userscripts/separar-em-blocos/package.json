@@ -7,9 +7,11 @@
   "author": "nadameu",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "run-s type-check compile format",
+    "compile": "vite build",
     "format": "prettier --write ../../separar-em-blocos.user.js",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "type-check": "tsc"
   },
   "dependencies": {
     "@nadameu/create-broadcast-service": "workspace:^",
@@ -20,9 +22,11 @@
     "@nadameu/handler": "workspace:^",
     "@nadameu/match": "workspace:^",
     "@nadameu/opaque": "workspace:^",
-    "@nadameu/predicates": "workspace:^"
+    "@nadameu/predicates": "workspace:^",
+    "preact": "^10.29.0"
   },
   "devDependencies": {
-    "@nadameu/enderecos-eproc": "workspace:^"
+    "@nadameu/enderecos-eproc": "workspace:^",
+    "@preact/preset-vite": "^2.10.5"
   }
 }

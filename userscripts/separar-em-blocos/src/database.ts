@@ -93,7 +93,7 @@ async function makeTransaction<T>(
   const tx = db.transaction('blocos', mode);
   const store = tx.objectStore('blocos');
   const requests = createRequests(store);
-  const [results, done] = await Promise.all([
+  const [results, _done] = await Promise.all([
     Promise.all(requests.map(promisifyRequest)),
     promisifyTransaction(tx),
   ]);
@@ -164,7 +164,7 @@ export async function getBloco(id: NonNegativeInteger) {
 export const createBloco = /* #__PURE__*/ writeBloco('add');
 
 export async function deleteBloco(id: Bloco['id']) {
-  const [done, blocos] = await makeTransaction(
+  const [_done, blocos] = await makeTransaction(
     'readwrite',
     store => [store.delete(id), store.getAll()] as const
   );

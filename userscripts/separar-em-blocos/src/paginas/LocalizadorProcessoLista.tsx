@@ -3,7 +3,11 @@ import { h } from '@nadameu/create-element';
 import { createStore, Store } from '@nadameu/create-store';
 import { Either, Left, Right, traverse } from '@nadameu/either';
 import { Handler } from '@nadameu/handler';
-import { createTaggedUnion } from '@nadameu/match';
+import {
+  FromConstructorsWith,
+  makeConstructorsWith,
+  matchWith,
+} from '@nadameu/match';
 import * as p from '@nadameu/predicates';
 import { createRef, JSX, render } from 'preact';
 import { useCallback, useEffect, useState } from 'preact/hooks';
@@ -81,7 +85,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
       const checkbox = linha.cells[0]?.querySelector<HTMLInputElement>(
         'input[type=checkbox]'
       );
-      if (p.isNull(checkbox))
+      if (p.isNullish(checkbox))
         return Left(new Error(`Caixa de seleção não encontrada: linha ${i}.`));
       return Right([
         [numproc, { linha, checkbox, checked: checkbox.checked }] as const,
@@ -126,169 +130,49 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   ) as HTMLDialogElement;
   document.body.appendChild(dialog);
 
-  const Model: {
-    init: InitModel;
-    loaded(blocos: InfoBloco[], aviso?: string): LoadedModel;
-    error(error: unknown): ErrorModel;
-    match: ReturnType<
-      typeof createTaggedUnion<
-        {
-          init: null;
-          loaded: (
-            blocos: InfoBloco[],
-            aviso?: string
-          ) => {
-            blocos: InfoBloco[];
-            aviso: string | undefined;
-          };
-          error: (error: unknown) => {
-            error: unknown;
-          };
-        },
-        'status'
-      >
-    >['match'];
-  } = createTaggedUnion(
-    {
-      init: null,
-      loaded: (blocos: InfoBloco[], aviso?: string) => ({ blocos, aviso }),
-      error: (error: unknown) => ({ error }),
-    },
-    'status'
-  );
-  type Model = InitModel | LoadedModel | ErrorModel;
-  interface InitModel {
-    status: 'init';
-  }
-  interface LoadedModel {
-    status: 'loaded';
-    blocos: InfoBloco[];
-    aviso?: string;
-  }
-  interface ErrorModel {
-    status: 'error';
-    error: unknown;
-  }
+  const Model = makeConstructorsWith('status', {
+    init: () => ({}),
+    loaded: (blocos: InfoBloco[], aviso?: string) => ({ blocos, aviso }),
+    error: (error: unknown) => ({ error }),
+  });
+  type Model = FromConstructorsWith<'status', typeof Model>;
+  const matchModel = matchWith('status')<Model>;
 
   type CheckboxState = 'checked' | 'unchecked' | 'disabled';
 
-  const Action = createTaggedUnion(
-    {
-      blocosModificados: (
-        blocos: Bloco[]
-      ): Omit<BlocosModificadosAction, 'type'> => ({ blocos }),
-      blocosObtidos: (blocos: Bloco[]): Omit<BlocosObtidosAction, 'type'> => ({
-        blocos,
-      }),
-      checkboxClicado: (
-        id: Bloco['id'] | -1,
-        estadoAnterior: CheckboxState
-      ): Omit<CheckboxClicadoAction, 'type'> => ({
-        id,
-        estadoAnterior,
-      }),
-      criarBloco: (nome: Bloco['nome']): Omit<CriarBlocoAction, 'type'> => ({
-        nome,
-      }),
-      erroCapturado: (aviso: string): Omit<ErroCapturadoAction, 'type'> => ({
-        aviso,
-      }),
-      erroDesconhecido: (
-        erro: unknown
-      ): Omit<ErroDesconhecidoAction, 'type'> => ({ erro }),
-      excluirBD: null,
-      excluirBloco: (id: Bloco['id']): Omit<ExcluirBlocoAction, 'type'> => ({
-        id,
-      }),
-      mensagemRecebida: (
-        msg: BroadcastMessage
-      ): Omit<MensagemRecebidaAction, 'type'> => ({ msg }),
-      obterBlocos: null,
-      removerProcessosAusentes: (
-        id: Bloco['id']
-      ): Omit<RemoverProcessosAusentesAction, 'type'> => ({ id }),
-      renomearBloco: (
-        id: Bloco['id'],
-        nome: Bloco['nome']
-      ): Omit<RenomearBlocoAction, 'type'> => ({
-        id,
-        nome,
-      }),
-      reset: null,
-    },
-    'type'
-  );
-  type AsyncAction =
-    | CriarBlocoAction
-    | ExcluirBDAction
-    | ExcluirBlocoAction
-    | ObterBlocosAction
-    | RemoverProcessosAusentesAction
-    | RenomearBlocoAction;
-  type SyncAction =
-    | BlocosObtidosAction
-    | CheckboxClicadoAction
-    | ErroCapturadoAction
-    | ErroDesconhecidoAction
-    | ResetAction;
-  type AliasAction = BlocosModificadosAction | MensagemRecebidaAction;
-  interface BlocosModificadosAction {
-    type: 'blocosModificados';
-    blocos: Bloco[];
-  }
-  interface BlocosObtidosAction {
-    type: 'blocosObtidos';
-    blocos: Bloco[];
-  }
-  interface CheckboxClicadoAction {
-    type: 'checkboxClicado';
-    id: Bloco['id'] | -1;
-    estadoAnterior: CheckboxState;
-  }
-  interface CriarBlocoAction {
-    type: 'criarBloco';
-    nome: Bloco['nome'];
-  }
-  interface ErroCapturadoAction {
-    type: 'erroCapturado';
-    aviso: string;
-  }
-  interface ErroDesconhecidoAction {
-    type: 'erroDesconhecido';
-    erro: unknown;
-  }
-  interface ExcluirBDAction {
-    type: 'excluirBD';
-  }
-  interface ExcluirBlocoAction {
-    type: 'excluirBloco';
-    id: Bloco['id'];
-  }
-  interface MensagemRecebidaAction {
-    type: 'mensagemRecebida';
-    msg: BroadcastMessage;
-  }
-  interface ObterBlocosAction {
-    type: 'obterBlocos';
-  }
-  interface RemoverProcessosAusentesAction {
-    type: 'removerProcessosAusentes';
-    id: Bloco['id'];
-  }
-  interface RenomearBlocoAction {
-    type: 'renomearBloco';
-    id: Bloco['id'];
-    nome: Bloco['nome'];
-  }
-  interface ResetAction {
-    type: 'reset';
-  }
+  const AsyncAction = makeConstructorsWith('type', {
+    criarBloco: (nome: Bloco['nome']) => ({ nome }),
+    excluirBD: () => ({}),
+    excluirBloco: (id: Bloco['id']) => ({ id }),
+    obterBlocos: () => ({}),
+    removerProcessosAusentes: (id: Bloco['id']) => ({ id }),
+    renomearBloco: (id: Bloco['id'], nome: Bloco['nome']) => ({ id, nome }),
+  });
+  type AsyncAction = FromConstructorsWith<'type', typeof AsyncAction>;
+  const SyncAction = makeConstructorsWith('type', {
+    blocosObtidos: (blocos: Bloco[]) => ({ blocos }),
+    checkboxClicado: (id: Bloco['id'] | -1, estadoAnterior: CheckboxState) => ({
+      id,
+      estadoAnterior,
+    }),
+    erroCapturado: (aviso: string) => ({ aviso }),
+    erroDesconhecido: (erro: unknown) => ({ erro }),
+    reset: () => ({}),
+  });
+  type SyncAction = FromConstructorsWith<'type', typeof SyncAction>;
+  const AliasAction = makeConstructorsWith('type', {
+    blocosModificados: (blocos: Bloco[]) => ({ blocos }),
+    mensagemRecebida: (msg: BroadcastMessage) => ({ msg }),
+  });
+  type AliasAction = FromConstructorsWith<'type', typeof AliasAction>;
+
+  const Action = { ...AsyncAction, ...SyncAction, ...AliasAction };
   type Action = AsyncAction | SyncAction | AliasAction;
 
   const bc = createBroadcastService('gm-blocos', isBroadcastMessage);
   const store: Store<Model, Action> = Object.assign(
     {},
-    createStore<Model, SyncAction>(() => Model.init, reducer)
+    createStore<Model, SyncAction>(() => Model.init(), reducer)
   );
   store.dispatch = handleAliasAction(store)(store.dispatch);
   store.dispatch = handleAsyncAction(store)(store.dispatch);
@@ -318,7 +202,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     tabela.addEventListener('click', onCliqueTabela);
   }
   store.subscribe(update);
-  store.dispatch(Action.obterBlocos);
+  store.dispatch(Action.obterBlocos());
   return Right(undefined);
 
   function update(state: Model) {
@@ -326,16 +210,13 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   }
 
   function reducer(state: Model, action: SyncAction): Model {
-    return Action.match(
-      action,
-      {
-        blocosObtidos: ({ blocos }) =>
-          Model.match(
-            state,
-            {
-              error: state => state,
-            },
-            (): Model => {
+    return matchWith('type')<SyncAction>(action)
+      .case(
+        'blocosObtidos',
+        ({ blocos }): Model =>
+          matchModel(state)
+            .case('error', state => state)
+            .otherwise((): Model => {
               const info = blocos.map(
                 (bloco): InfoBloco => ({
                   ...bloco,
@@ -346,65 +227,71 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
                 })
               );
               return Model.loaded(info);
-            }
-          ),
-        checkboxClicado: ({ id, estadoAnterior }) =>
-          Model.match(
-            state,
-            {
-              loaded: (state): Model => {
-                if (estadoAnterior === 'disabled') return state;
-                desmarcarTodosProcessos();
-                const processos = (() => {
-                  if (id === -1) {
-                    const processosComBloco = new Set(
-                      Array.from(
-                        state.blocos.flatMap(({ processos }) =>
-                          processos.filter(p => mapa.has(p))
-                        )
+            })
+            .get()
+      )
+      .case(
+        'checkboxClicado',
+        ({ id, estadoAnterior }): Model =>
+          matchModel(state)
+            .case('loaded', (state): Model => {
+              if (estadoAnterior === 'disabled') return state;
+              desmarcarTodosProcessos();
+              const processos = (() => {
+                if (id === -1) {
+                  const processosComBloco = new Set(
+                    Array.from(
+                      state.blocos.flatMap(({ processos }) =>
+                        processos.filter(p => mapa.has(p))
                       )
-                    );
-                    return new Set(
-                      Array.from(mapa)
-                        .filter(([x]) => !processosComBloco.has(x))
-                        .map(([numproc]) => numproc)
-                    );
-                  } else {
-                    return new Set(
-                      state.blocos
-                        .filter(x => x.id === id)
-                        .flatMap(x => x.processos.filter(x => mapa.has(x)))
-                    );
-                  }
-                })();
-                for (const [numproc, info] of mapa) {
-                  const checked = processos.has(numproc);
-                  info.checked = checked;
-                  info.checkbox.disabled = !checked;
+                    )
+                  );
+                  return new Set(
+                    Array.from(mapa)
+                      .filter(([x]) => !processosComBloco.has(x))
+                      .map(([numproc]) => numproc)
+                  );
+                } else {
+                  return new Set(
+                    state.blocos
+                      .filter(x => x.id === id)
+                      .flatMap(x => x.processos.filter(x => mapa.has(x)))
+                  );
                 }
-                marcarTodosProcessos();
-                for (const info of mapa.values()) {
-                  info.checkbox.disabled = false;
-                }
-                return { ...state };
-              },
-            },
-            state => state
-          ),
-        erroCapturado: ({ aviso }) =>
-          Model.match(state, {
-            init: () => Model.error(aviso),
-            error: state => state,
-            loaded: state => ({ ...state, aviso }),
-          }),
-        erroDesconhecido: ({ erro }) =>
-          Model.match(state, { error: state => state }, () =>
-            Model.error(erro)
-          ),
-        reset: () => Model.init,
-      },
-      other => other
-    );
+              })();
+              for (const [numproc, info] of mapa) {
+                const checked = processos.has(numproc);
+                info.checked = checked;
+                info.checkbox.disabled = !checked;
+              }
+              marcarTodosProcessos();
+              for (const info of mapa.values()) {
+                info.checkbox.disabled = false;
+              }
+              return { ...state };
+            })
+            .otherwise(state => state)
+            .get()
+      )
+      .case(
+        'erroCapturado',
+        ({ aviso }): Model =>
+          matchModel(state)
+            .case('init', () => Model.error(aviso))
+            .case('error', state => state)
+            .case('loaded', state => ({ ...state, aviso }))
+            .get()
+      )
+      .case(
+        'erroDesconhecido',
+        ({ erro }): Model =>
+          matchModel(state)
+            .case('error', state => state)
+            .otherwise(() => Model.error(erro))
+            .get()
+      )
+      .case('reset', (): Model => Model.init())
+      .get();
   }
 
   function handleAsyncAction(
@@ -412,96 +299,94 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
   ) {
     return (next: Store<Model, Exclude<Action, AsyncAction>>['dispatch']) => {
       return (action: Action): void => {
-        const promise = Action.match<
-          Action,
-          AsyncAction['type'],
-          Promise<Action> | Exclude<Action, AsyncAction>
-        >(
-          action,
-          {
-            criarBloco: async ({ nome }) => {
-              const blocos = await Database.getBlocos();
-              if (blocos.some(x => x.nome === nome))
-                return Action.erroCapturado(
-                  `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
-                );
-              const bloco: Bloco = {
-                id: (Math.max(-1, ...blocos.map(x => x.id)) +
-                  1) as p.NonNegativeInteger,
-                nome,
-                processos: [],
-              };
-              return Action.blocosModificados(
-                await Database.createBloco(bloco)
+        const isAsyncAction = (action: Action): action is AsyncAction =>
+          Object.keys(AsyncAction).includes(action.type);
+        if (!isAsyncAction(action)) return next(action);
+
+        const promise = matchWith('type')<AsyncAction>(action)
+
+          .case('criarBloco', async ({ nome }) => {
+            const blocos = await Database.getBlocos();
+            if (blocos.some(x => x.nome === nome))
+              return Action.erroCapturado(
+                `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
               );
-            },
-            excluirBD: async () => {
-              await Database.deleteBlocos();
-              return Action.obterBlocos;
-            },
-            excluirBloco: async ({ id }) =>
-              Action.blocosModificados(await Database.deleteBloco(id)),
-            obterBlocos: async () =>
-              Action.blocosModificados(await Database.getBlocos()),
-            removerProcessosAusentes: async ({ id }) => {
-              const bloco = await Database.getBloco(id);
-              if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
-              const processos = bloco.processos.filter(x => mapa.has(x));
-              return Action.blocosModificados(
-                await Database.updateBloco({ ...bloco, processos })
+            const bloco: Bloco = {
+              id: (Math.max(-1, ...blocos.map(x => x.id)) +
+                1) as p.NonNegativeInteger,
+              nome,
+              processos: [],
+            };
+            return Action.blocosModificados(await Database.createBloco(bloco));
+          })
+          .case('excluirBD', async (): Promise<Action> => {
+            await Database.deleteBlocos();
+            return Action.obterBlocos();
+          })
+          .case(
+            'excluirBloco',
+            async ({ id }): Promise<Action> =>
+              Action.blocosModificados(await Database.deleteBloco(id))
+          )
+          .case(
+            'obterBlocos',
+            async (): Promise<Action> =>
+              Action.blocosModificados(await Database.getBlocos())
+          )
+          .case('removerProcessosAusentes', async ({ id }): Promise<Action> => {
+            const bloco = await Database.getBloco(id);
+            if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
+            const processos = bloco.processos.filter(x => mapa.has(x));
+            return Action.blocosModificados(
+              await Database.updateBloco({ ...bloco, processos })
+            );
+          })
+          .case('renomearBloco', async ({ id, nome }): Promise<Action> => {
+            const blocos = await Database.getBlocos();
+            const bloco = blocos.find(x => x.id === id);
+            if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
+            const others = blocos.filter(x => x.id !== id);
+            if (others.some(x => x.nome === nome))
+              return Action.erroCapturado(
+                `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
               );
-            },
-            renomearBloco: async ({ id, nome }) => {
-              const blocos = await Database.getBlocos();
-              const bloco = blocos.find(x => x.id === id);
-              if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
-              const others = blocos.filter(x => x.id !== id);
-              if (others.some(x => x.nome === nome))
-                return Action.erroCapturado(
-                  `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
-                );
-              return Action.blocosModificados(
-                await Database.updateBloco({ ...bloco, nome })
-              );
-            },
-          },
-          a => a
-        );
-        if (!('then' in promise)) return next(promise);
+            return Action.blocosModificados(
+              await Database.updateBloco({ ...bloco, nome })
+            );
+          })
+          .get();
         promise.catch(Action.erroDesconhecido).then(store.dispatch);
-        if (action.type === 'obterBlocos') return next(Action.reset);
+        if (action.type === 'obterBlocos') return next(Action.reset());
       };
     };
   }
 
   function handleAliasAction(
-    store: Pick<Store<Model, Action>, 'dispatch' | 'getState'>
+    _store: Pick<Store<Model, Action>, 'dispatch' | 'getState'>
   ) {
     return (next: Store<Model, SyncAction>['dispatch']) => {
       return (action: SyncAction | AliasAction): void => {
-        const replaced = Action.match(
-          action,
-          {
-            blocosModificados: ({ blocos }) => {
-              bc.publish({ type: 'Blocos', blocos });
-              return Action.blocosObtidos(blocos);
-            },
-            mensagemRecebida: ({ msg: { blocos } }) =>
-              Action.blocosObtidos(blocos),
-          },
-          s => s
-        );
+        const replaced = matchWith('type')(action)
+          .case('blocosModificados', ({ blocos }) => {
+            bc.publish({ type: 'Blocos', blocos });
+            return Action.blocosObtidos(blocos);
+          })
+          .case('mensagemRecebida', ({ msg: { blocos } }) =>
+            Action.blocosObtidos(blocos)
+          )
+          .otherwise(s => s)
+          .get();
         return next(replaced);
       };
     };
   }
 
   function Main({ state }: { state: Model }) {
-    return Model.match(state, {
-      error: state => <ShowError reason={state.error} />,
-      loaded: state => <Blocos state={state} />,
-      init: () => <Loading />,
-    });
+    return matchModel(state)
+      .case('error', state => <ShowError reason={state.error} />)
+      .case('loaded', state => <Blocos state={state} />)
+      .case('init', () => <Loading />)
+      .get();
   }
 
   function Loading() {
@@ -514,10 +399,10 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
     return (
       <>
         <div class="gm-erro">{message}</div>
-        <button onClick={() => store.dispatch(Action.obterBlocos)}>
+        <button onClick={() => store.dispatch(Action.obterBlocos())}>
           Tentar carregar dados salvos
         </button>{' '}
-        <button onClick={() => store.dispatch(Action.excluirBD)}>
+        <button onClick={() => store.dispatch(Action.excluirBD())}>
           Apagar os dados locais
         </button>
       </>
@@ -651,7 +536,7 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
         <div class="gm-aviso">{props.children}</div>
         <button
           type="button"
-          onClick={() => store.dispatch(Action.obterBlocos)}
+          onClick={() => store.dispatch(Action.obterBlocos())}
         >
           Recarregar dados
         </button>

@@ -5,49 +5,51 @@
 // @version      4.2.0
 // @author       nadameu
 // @description  Permite a separação de processos em blocos para movimentação separada
+// @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
+// @match        https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=processo_selecionar&*
+// @match        https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=processo_selecionar&*
+// @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=localizador_processos_lista&*
+// @match        https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=localizador_processos_lista&*
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=localizador_processos_lista&*
+// @match        https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=localizador_processos_lista&*
+// @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=relatorio_geral_consultar&*
+// @match        https://eproc.jfrs.jus.br/eprocV2/controlador.php?acao=relatorio_geral_consultar&*
 // @match        https://eproc.jfsc.jus.br/eprocV2/controlador.php?acao=relatorio_geral_consultar&*
-// @require      https://cdn.jsdelivr.net/combine/npm/preact@10.16.0,npm/preact@10.16.0/hooks/dist/hooks.umd.js
+// @match        https://eproc.trf4.jus.br/eproc2trf4/controlador.php?acao=relatorio_geral_consultar&*
+// @require      https://cdn.jsdelivr.net/combine/npm/preact@10.29.0,npm/preact@10.29.0/hooks/dist/hooks.umd.js
+// @grant        GM_addStyle
 // @grant        window.close
 // ==/UserScript==
-
-(s => {
-  const o = document.createElement('style');
-  ((o.dataset.source = 'vite-plugin-monkey'),
-    (o.textContent = s),
-    document.head.append(o));
-})(
-  ' .gm-blocos__lista,.gm-blocos__dialog,.gm-blocos__processo{--accent: hsl(333, 40%, 25%);--bg: hsl(333, 10%, 30%);--border: hsl(333, 15%, 60%);--disabled: hsl(333, 5%, 37.5%);--disabled-text: hsl(333, 0%, 80%);--shadow: hsl(333, 12.5%, 17.5%);--muted-accent: hsl(333, 25%, 25%);--text: hsl(333, 0%, 100%)}.bootstrap-styles .gm-blocos__lista{margin:4px;padding:4px 8px;border-radius:4px;width:max-content;background:var(--bg);color:var(--text);box-shadow:0 3px 3px var(--shadow)}.bootstrap-styles .gm-blocos__lista h4{margin:3px 0;font-size:1.25rem;font-weight:300}.bootstrap-styles .gm-blocos__lista input[type=image]{border:none}.bootstrap-styles .gm-blocos__lista table{margin:6px 0 12px;border-collapse:collapse}.bootstrap-styles .gm-blocos__lista td{margin:0;padding:3px .5ch;vertical-align:middle}.bootstrap-styles .gm-blocos__lista td a[href]{color:#fff}.bootstrap-styles .gm-blocos__lista td label{font-size:.92rem;margin:0}.bootstrap-styles .gm-blocos__lista td small{font-size:.75rem}.bootstrap-styles .gm-blocos__lista tr{border:1px solid var(--disabled);border-width:1px 0}.bootstrap-styles .gm-blocos__lista tfoot td{padding-top:.75em;padding-bottom:.75em}.bootstrap-styles .gm-blocos__lista input.rename{font-size:1em}.bootstrap-styles .gm-blocos__lista .gm-erro,.bootstrap-styles .gm-blocos__lista .gm-aviso{padding:.1em .5ex;font-size:.9rem;background:hsl(0,10%,95%);color:#c00;margin:2px auto 6px;width:fit-content}.bootstrap-styles .gm-blocos__processo button,.bootstrap-styles .gm-blocos__lista button,.gm-blocos__dialog button{display:block;margin:0 auto 7px;padding:2px 20px;font-size:.86rem;border:none;border-radius:3px;box-shadow:0 2px 4px var(--shadow);background:var(--muted-accent);color:var(--text)}.bootstrap-styles .gm-blocos__processo button:hover,.bootstrap-styles .gm-blocos__lista button:hover,.gm-blocos__dialog button:hover{transition:background-color .1s ease-in;background:var(--accent)}.bootstrap-styles .gm-blocos__processo button:disabled,.bootstrap-styles .gm-blocos__lista button:disabled,.gm-blocos__dialog button:disabled{background:var(--disabled);color:var(--disabled-text);box-shadow:none}.bootstrap-styles .gm-blocos__dialog{background:var(--bg);color:var(--text);font-family:var(--font-family-sans-serif);font-size:1rem;min-width:25vw;border:3px ridge var(--border);box-shadow:0 4px 8px 4px #0c0a1080;border-radius:12px}.bootstrap-styles .gm-blocos__dialog::backdrop{background:hsla(333,25%,5%,.75)}.bootstrap-styles .gm-blocos__dialog form{display:grid;grid-template-rows:1fr 10fr 1fr;justify-items:center;align-items:center}.bootstrap-styles .gm-blocos__dialog form div{font-weight:700}.bootstrap-styles .gm-blocos__nome{all:unset}.bootstrap-styles .gm-blocos__processos{all:unset;border:1px inset var(--border);padding:.5em .5ch}.bootstrap-styles .gm-blocos__processo{margin:2px 3px 4px;padding:4px;border-radius:4px;background:var(--bg);color:var(--text);box-shadow:0 3px 3px var(--shadow)}.bootstrap-styles .gm-blocos__processo h4{margin:3px 0;font-size:1.25rem;font-weight:300}.bootstrap-styles .gm-blocos__processo ul{list-style-type:none;margin:3px 0 7px;padding:0}.bootstrap-styles .gm-blocos__processo li{position:relative;display:grid;grid-template-columns:auto 1fr auto;grid-gap:5px;align-items:center;margin:4px 0;padding:5px;border-radius:2px}.bootstrap-styles .gm-blocos__processo li:before{content:"";position:absolute;top:2px;width:100%;height:100%;border-bottom:1px solid #888;pointer-events:none}.bootstrap-styles .gm-blocos__processo li:last-of-type:before{content:none}.bootstrap-styles .gm-blocos__processo li:hover{background:var(--accent)}.bootstrap-styles .gm-blocos__processo label{margin:0;font-size:.92rem}.bootstrap-styles .gm-blocos__processo .placeholder span{height:1.38rem;animation:pulse 1s ease-in-out infinite alternate;border-radius:4px}.bootstrap-styles .gm-blocos__processo .placeholder span:first-of-type,.bootstrap-styles .gm-blocos__processo .placeholder span:last-of-type{width:1.38rem}@keyframes pulse{0%{background-color:var(--disabled)}to{background-color:var(--bg)}}.bootstrap-styles .gm-blocos__processo .error{margin:10px 5%;padding:4px 5%;border-radius:4px;font-weight:500;background:white;color:red} '
-);
 
 (function (preact, hooks) {
   'use strict';
 
+  const d = new Set();
+  const importCSS = async e => {
+    d.has(e) ||
+      (d.add(e),
+      (t => {
+        typeof GM_addStyle == 'function'
+          ? GM_addStyle(t)
+          : (document.head || document.documentElement)
+              .appendChild(document.createElement('style'))
+              .append(t);
+      })(e));
+  };
+
   class _Either {
-    catch(f) {
-      return this.match({
-        Left: f,
-        Right: () => this,
-      });
+    catch(f2) {
+      return this.match({ Left: f2, Right: () => this });
     }
-    chain(f) {
-      return this.match({
-        Left: () => this,
-        Right: f,
-      });
+    chain(f2) {
+      return this.match({ Left: () => this, Right: f2 });
     }
-    mapLeft(f) {
-      return this.match({
-        Left: x => Left(f(x)),
-        Right: () => this,
-      });
+    mapLeft(f2) {
+      return this.match({ Left: x => Left(f2(x)), Right: () => this });
     }
-    map(f) {
-      return this.match({
-        Left: () => this,
-        Right: x => Right(f(x)),
-      });
+    map(f2) {
+      return this.match({ Left: () => this, Right: x => Right(f2(x)) });
     }
   }
   class _Left extends _Either {
@@ -80,23 +82,50 @@
   }
   function traverse(collection, transform) {
     const results = [];
-    let i = 0;
-    for (const value of collection) {
-      const either = transform(value, i++);
+    for (const [index, value] of Array.from(collection).entries()) {
+      const either = transform(value, index);
       if (either.isLeft) return either;
       results.push(either.rightValue);
     }
     return Right(results);
   }
+  const estilosScss =
+    '.gm-blocos__lista,.gm-blocos__dialog,.gm-blocos__processo{--accent: hsl(333, 40%, 25%);--bg: hsl(333, 10%, 30%);--border: hsl(333, 15%, 60%);--disabled: hsl(333, 5%, 37.5%);--disabled-text: hsl(333, 0%, 80%);--shadow: hsl(333, 12.5%, 17.5%);--muted-accent: hsl(333, 25%, 25%);--text: hsl(333, 0%, 100%)}.bootstrap-styles .gm-blocos__lista{margin:4px;padding:4px 8px;border-radius:4px;width:max-content;background:var(--bg);color:var(--text);box-shadow:0 3px 3px var(--shadow)}.bootstrap-styles .gm-blocos__lista h4{margin:3px 0;font-size:1.25rem;font-weight:300}.bootstrap-styles .gm-blocos__lista input[type=image]{border:none}.bootstrap-styles .gm-blocos__lista table{margin:6px 0 12px;border-collapse:collapse}.bootstrap-styles .gm-blocos__lista td{margin:0;padding:3px .5ch;vertical-align:middle}.bootstrap-styles .gm-blocos__lista td a[href]{color:#fff}.bootstrap-styles .gm-blocos__lista td label{font-size:.92rem;margin:0}.bootstrap-styles .gm-blocos__lista td small{font-size:.75rem}.bootstrap-styles .gm-blocos__lista tr{border:1px solid var(--disabled);border-width:1px 0}.bootstrap-styles .gm-blocos__lista tfoot td{padding-top:.75em;padding-bottom:.75em}.bootstrap-styles .gm-blocos__lista input.rename{font-size:1em}.bootstrap-styles .gm-blocos__lista .gm-erro,.bootstrap-styles .gm-blocos__lista .gm-aviso{padding:.1em .5ex;font-size:.9rem;background:#f4f1f1;color:#c00;margin:2px auto 6px;width:fit-content}.bootstrap-styles .gm-blocos__processo button,.bootstrap-styles .gm-blocos__lista button,.gm-blocos__dialog button{display:block;margin:0 auto 7px;padding:2px 20px;font-size:.86rem;border:none;border-radius:3px;box-shadow:0 2px 4px var(--shadow);background:var(--muted-accent);color:var(--text)}.bootstrap-styles .gm-blocos__processo button:hover,.bootstrap-styles .gm-blocos__lista button:hover,.gm-blocos__dialog button:hover{transition:background-color .1s ease-in;background:var(--accent)}.bootstrap-styles .gm-blocos__processo button:disabled,.bootstrap-styles .gm-blocos__lista button:disabled,.gm-blocos__dialog button:disabled{background:var(--disabled);color:var(--disabled-text);box-shadow:none}.bootstrap-styles .gm-blocos__dialog{background:var(--bg);color:var(--text);font-family:var(--font-family-sans-serif);font-size:1rem;min-width:25vw;border:3px ridge var(--border);box-shadow:0 4px 8px 4px #100a0c80;border-radius:12px}.bootstrap-styles .gm-blocos__dialog::backdrop{background:#100a0cbf}.bootstrap-styles .gm-blocos__dialog form{display:grid;grid-template-rows:1fr 10fr 1fr;justify-items:center;align-items:center}.bootstrap-styles .gm-blocos__dialog form div{font-weight:700}.bootstrap-styles .gm-blocos__nome{all:unset}.bootstrap-styles .gm-blocos__processos{all:unset;border:1px inset var(--border);padding:.5em .5ch}.bootstrap-styles .gm-blocos__processo{margin:2px 3px 4px;padding:4px;border-radius:4px;background:var(--bg);color:var(--text);box-shadow:0 3px 3px var(--shadow)}.bootstrap-styles .gm-blocos__processo h4{margin:3px 0;font-size:1.25rem;font-weight:300}.bootstrap-styles .gm-blocos__processo ul{list-style-type:none;margin:3px 0 7px;padding:0}.bootstrap-styles .gm-blocos__processo li{position:relative;display:grid;grid-template-columns:auto 1fr auto;grid-gap:5px;align-items:center;margin:4px 0;padding:5px;border-radius:2px}.bootstrap-styles .gm-blocos__processo li:before{content:"";position:absolute;top:2px;width:100%;height:100%;border-bottom:1px solid #888;pointer-events:none}.bootstrap-styles .gm-blocos__processo li:last-of-type:before{content:none}.bootstrap-styles .gm-blocos__processo li:hover{background:var(--accent)}.bootstrap-styles .gm-blocos__processo label{margin:0;font-size:.92rem}.bootstrap-styles .gm-blocos__processo .placeholder span{height:1.38rem;animation:pulse 1s ease-in-out infinite alternate;border-radius:4px}.bootstrap-styles .gm-blocos__processo .placeholder span:first-of-type,.bootstrap-styles .gm-blocos__processo .placeholder span:last-of-type{width:1.38rem}@keyframes pulse{0%{background-color:var(--disabled)}to{background-color:var(--bg)}}.bootstrap-styles .gm-blocos__processo .error{margin:10px 5%;padding:4px 5%;border-radius:4px;font-weight:500;background:#fff;color:red}';
+  importCSS(estilosScss);
+  var f = 0;
+  function u(e, t, n, o, i, u2) {
+    t || (t = {});
+    var a,
+      c,
+      p = t;
+    if ('ref' in p)
+      for (c in ((p = {}), t)) 'ref' == c ? (a = t[c]) : (p[c] = t[c]);
+    var l = {
+      type: e,
+      props: p,
+      key: n,
+      ref: a,
+      __k: null,
+      __: null,
+      __b: 0,
+      __e: null,
+      __c: null,
+      constructor: void 0,
+      __v: --f,
+      __i: -1,
+      __u: 0,
+      __source: i,
+      __self: u2,
+    };
+    if ('function' == typeof e && (a = e.defaultProps))
+      for (c in a) void 0 === p[c] && (p[c] = a[c]);
+    return (preact.options.vnode && preact.options.vnode(l), l);
+  }
   function createBroadcastService(id, validate) {
-    const listeners = /* @__PURE__ */ new Set();
+    const listeners = new Set();
     const bc = new BroadcastChannel(id);
     bc.addEventListener('message', onMessage);
-    return {
-      destroy,
-      publish,
-      subscribe,
-    };
+    return { destroy, publish, subscribe };
     function onMessage(evt) {
       if (validate(evt.data))
         for (const listener of listeners) listener(evt.data);
@@ -118,14 +147,37 @@
       };
     }
   }
+  function h(tag, props = null, ...children) {
+    const element = document.createElement(tag);
+    for (const [key, value] of Object.entries(props ?? {})) {
+      if (key === 'style' || key === 'dataset') {
+        for (const [k, v] of Object.entries(value)) {
+          element[key][k] = v;
+        }
+      } else if (key === 'classList') {
+        let classes;
+        if (Array.isArray(value)) {
+          classes = value.filter(x => x !== null);
+        } else {
+          classes = Object.entries(value).flatMap(([k, v]) => {
+            if (!v) return [];
+            return [k];
+          });
+        }
+        for (const className of classes) {
+          element.classList.add(className);
+        }
+      } else {
+        element[key] = value;
+      }
+    }
+    element.append(...children);
+    return element;
+  }
   function createStore(getInitialState, reducer) {
-    const listeners = /* @__PURE__ */ new Set();
+    const listeners = new Set();
     let state = getInitialState();
-    return {
-      dispatch,
-      getState,
-      subscribe,
-    };
+    return { dispatch, getState, subscribe };
     function dispatch(action) {
       state = reducer(state, action);
       for (const l of listeners) l(state);
@@ -136,60 +188,58 @@
     function subscribe(listener) {
       listeners.add(listener);
       listener(state);
-      return {
-        unsubscribe,
-      };
+      return { unsubscribe };
       function unsubscribe() {
         listeners.delete(listener);
       }
     }
   }
-  function createTaggedUnion(definitions, tagName = 'tag') {
-    const ctors = {};
-    for (const tag of Object.getOwnPropertyNames(definitions).concat(
-      Object.getOwnPropertySymbols(definitions)
-    )) {
-      if (tag === 'match') throw new Error('Invalid tag: "match".');
-      const f = definitions[tag];
-      if (f === null) {
-        ctors[tag] = {
-          [tagName]: tag,
-        };
-      } else {
-        ctors[tag] = (...args) => {
-          const obj = f(...args);
-          obj[tagName] = tag;
-          return obj;
-        };
-      }
-    }
-    ctors.match = matchBy(tagName);
-    return ctors;
-  }
-  function matchBy(tagName) {
-    return (obj, matchers, otherwise) => {
-      if (
-        (typeof obj !== 'object' && typeof obj !== 'function') ||
-        obj === null
-      )
-        throw new Error(
-          `${Object.prototype.toString
-            .call(obj)
-            .slice('[object '.length, -1)
-            .toLowerCase()} is not a valid object.`
-        );
-      const tag = obj[tagName];
-      if (tag === void 0)
-        throw new Error(
-          `Object does not have a valid "${String(tagName)}" property.`
-        );
-      const fn = matchers[tag] ?? otherwise ?? matchNotFound;
-      return fn(obj);
+  const makeConstructorsWith = (tagName, constructors) =>
+    Object.fromEntries(
+      Object.entries(constructors).map(([k, v]) => [
+        k,
+        (...args) => tagWith(tagName)(k)(v(...args)),
+      ])
+    );
+  const tagWith =
+    tagName =>
+    tag2 =>
+    (obj = {}) => {
+      obj[tagName] = tag2;
+      return obj;
     };
-    function matchNotFound(obj) {
-      throw new Error(`Not matched: "${obj[tagName]}".`);
-    }
-  }
+  const isTaggedWith = tagName => tag2 => obj =>
+    typeof obj === 'object' &&
+    obj !== null &&
+    tagName in obj &&
+    obj[tagName] === tag2;
+  const Matching = { NOT_FOUND: 'NOT_FOUND', FOUND: 'FOUND' };
+  const matchWith = tagName => obj => {
+    let status = tagWith('tag')(Matching.NOT_FOUND)();
+    const isTagged2 = isTaggedWith(tagName);
+    const ret = {
+      case(tag2, action) {
+        return ret.when(isTagged2(tag2), action);
+      },
+      get() {
+        if (status.tag === Matching.FOUND) return status.result;
+        else throw new Error('Match not exhaustive.');
+      },
+      otherwise(action) {
+        return ret.when(() => true, action);
+      },
+      unsafeGet() {
+        return ret.get();
+      },
+      when(predicate, action) {
+        if (status.tag === Matching.NOT_FOUND && predicate(obj)) {
+          status = tagWith('tag')(Matching.FOUND)({ result: action(obj) });
+        }
+        return ret;
+      },
+    };
+    return ret;
+  };
   class AssertionError extends Error {
     name = 'AssertionError';
     constructor(message) {
@@ -202,29 +252,24 @@
   function isOfType(typeRepresentation) {
     return value => typeof value === typeRepresentation;
   }
-  const isNumber = /* @__PURE__ */ isOfType('number');
-  const isOfTypeObject = /* @__PURE__ */ isOfType('object');
-  const isString = /* @__PURE__ */ isOfType('string');
+  const isOfTypeObject = isOfType('object');
+  const isString = isOfType('string');
   function isLiteral(literal) {
     return value => value === literal;
   }
-  const isUndefined = /* @__PURE__ */ isLiteral(void 0);
-  const isNull = /* @__PURE__ */ isLiteral(null);
+  const isUndefined = isLiteral(void 0);
+  const isNull = isLiteral(null);
   function negate(predicate) {
     return value => !predicate(value);
   }
-  const isNotNull = /* @__PURE__ */ negate(isNull);
+  const isNotNull = negate(isNull);
   function refine(...predicates) {
     return value => predicates.every(p => p(value));
   }
-  const isObject = /* @__PURE__ */ refine(isOfTypeObject, isNotNull);
-  const isInteger = /* @__PURE__ */ refine(isNumber, x => Number.isInteger(x));
-  const isNatural = /* @__PURE__ */ refine(isInteger, x => x > 0);
-  const isNonNegativeInteger = /* @__PURE__ */ isAnyOf(isLiteral(0), isNatural);
-  const isNonEmptyString = /* @__PURE__ */ refine(
-    isString,
-    x => x.trim().length > 0
-  );
+  const isObject = refine(isOfTypeObject, isNotNull);
+  const isInteger = x => Number.isInteger(x);
+  const isNonNegativeInteger = refine(isInteger, x => x > -1);
+  const isNonEmptyString = refine(isString, x => x.trim().length > 0);
   function isAnyOf(...predicates) {
     return value => predicates.some(p => p(value));
   }
@@ -241,10 +286,10 @@
     );
   }
   const numprocRE = /^5\d{8}20\d{2}404(?:00|7(?:0|1|2)|99)\d{2}$/;
-  const isNumProc = /* @__PURE__ */ refine(isString, x => numprocRE.test(x));
+  const isNumProc = refine(isString, x => numprocRE.test(x));
   const isIdBloco = isNonNegativeInteger;
   const isNomeBloco = isNonEmptyString;
-  const isBloco = /* @__PURE__ */ hasShape({
+  const isBloco = hasShape({
     id: isIdBloco,
     nome: isNomeBloco,
     processos: isTypedArray(isNumProc),
@@ -252,12 +297,8 @@
   function promisify(eventName) {
     return obj =>
       new Promise((res, rej) => {
-        obj.addEventListener('error', onReject, {
-          once: true,
-        });
-        obj.addEventListener(eventName, onResolve, {
-          once: true,
-        });
+        obj.addEventListener('error', onReject, { once: true });
+        obj.addEventListener(eventName, onResolve, { once: true });
         function onReject() {
           rej(obj.error);
           obj.removeEventListener(eventName, onResolve);
@@ -269,40 +310,30 @@
         }
       });
   }
-  const promisifyRequest = /* @__PURE__ */ promisify('success');
-  const promisifyTransaction = /* @__PURE__ */ promisify('complete');
+  const promisifyRequest = promisify('success');
+  const promisifyTransaction = promisify('complete');
   function open() {
     const req = indexedDB.open('gm-blocos', 4);
-    req.addEventListener('upgradeneeded', onUpgradeNeeded, {
-      once: true,
-    });
+    req.addEventListener('upgradeneeded', onUpgradeNeeded, { once: true });
     return promisifyRequest(req);
     function onUpgradeNeeded({ oldVersion }) {
       const db = req.result;
       const transaction = req.transaction;
       let store;
       if (oldVersion < 1) {
-        store = db.createObjectStore('blocos', {
-          keyPath: 'id',
-        });
+        store = db.createObjectStore('blocos', { keyPath: 'id' });
       } else {
         store = transaction.objectStore('blocos');
       }
       if (oldVersion < 2) {
-        store.createIndex('nome', ['nome'], {
-          unique: true,
-        });
+        store.createIndex('nome', ['nome'], { unique: true });
       }
       if (oldVersion < 3) {
         store.deleteIndex('nome');
-        store.createIndex('nome', 'nome', {
-          unique: true,
-        });
+        store.createIndex('nome', 'nome', { unique: true });
       }
       if (oldVersion < 4) {
-        store.createIndex('processos', 'processos', {
-          multiEntry: true,
-        });
+        store.createIndex('processos', 'processos', { multiEntry: true });
       }
     }
   }
@@ -311,7 +342,7 @@
     const tx = db.transaction('blocos', mode);
     const store = tx.objectStore('blocos');
     const requests = createRequests(store);
-    const [results, done] = await Promise.all([
+    const [results, _done] = await Promise.all([
       Promise.all(requests.map(promisifyRequest)),
       promisifyTransaction(tx),
     ]);
@@ -330,7 +361,7 @@
     assert(blocos.every(isBloco), 'Formato do banco de dados desconhecido.');
     return blocos.sort(compararBlocos);
   }
-  const compararBlocos = /* @__PURE__ */ compareUsing(
+  const compararBlocos = compareUsing(
     bloco => bloco.nome,
     alt(
       compareUsing(x => x.toLowerCase()),
@@ -356,23 +387,23 @@
     if (a > b) return 1;
     return 0;
   }
-  function compareUsing(f, compareFn = compareDefault) {
-    return (a, b) => compareFn(f(a), f(b));
+  function compareUsing(f2, compareFn = compareDefault) {
+    return (a, b) => compareFn(f2(a), f2(b));
   }
   async function getBloco(id) {
     const [bloco] = await makeTransaction('readonly', store => [store.get(id)]);
     assert(isAnyOf(isBloco, isUndefined)(bloco));
     return bloco;
   }
-  const createBloco = /* @__PURE__ */ writeBloco('add');
+  const createBloco = writeBloco('add');
   async function deleteBloco(id) {
-    const [done, blocos] = await makeTransaction('readwrite', store => [
+    const [_done, blocos] = await makeTransaction('readwrite', store => [
       store.delete(id),
       store.getAll(),
     ]);
     return validarBlocos(blocos);
   }
-  const updateBloco = /* @__PURE__ */ writeBloco('put');
+  const updateBloco = writeBloco('put');
   function writeBloco(method) {
     return async bloco => {
       const [id, blocos] = await makeTransaction('readwrite', store => [
@@ -383,63 +414,39 @@
       return validarBlocos(blocos);
     };
   }
-  const isBroadcastMessage = /* @__PURE__ */ hasShape({
+  const isBroadcastMessage = hasShape({
     type: isLiteral('Blocos'),
     blocos: isTypedArray(isBloco),
   });
-  var _ = 0;
-  function o(o2, e, n, t, f, l) {
-    var s,
-      u,
-      a = {};
-    for (u in e) 'ref' == u ? (s = e[u]) : (a[u] = e[u]);
-    var i = {
-      type: o2,
-      props: a,
-      key: n,
-      ref: s,
-      __k: null,
-      __: null,
-      __b: 0,
-      __e: null,
-      __d: void 0,
-      __c: null,
-      __h: null,
-      constructor: void 0,
-      __v: --_,
-      __source: f,
-      __self: l,
-    };
-    if ('function' == typeof o2 && (s = o2.defaultProps))
-      for (u in s) void 0 === a[u] && (a[u] = s[u]);
-    return (preact.options.vnode && preact.options.vnode(i), i);
-  }
   function LocalizadorProcessoLista() {
     const tabela = document.querySelector('table#tabelaLocalizadores');
-    const [desmarcarTodosProcessos, marcarTodosProcessos] = (() => {
-      const def = [() => {}, () => {}];
-      if (!tabela) return def;
+    const { desmarcarTodosProcessos, marcarTodosProcessos } = (() => {
+      const ret = {
+        desmarcarTodosProcessos: () => {},
+        marcarTodosProcessos: () => {},
+      };
+      if (!tabela) return ret;
       const imgInfraCheck = document.getElementById('imgInfraCheck');
-      if (!imgInfraCheck) return def;
+      if (!imgInfraCheck) return ret;
       const lnkInfraCheck = document.getElementById('lnkInfraCheck');
-      if (!lnkInfraCheck) return def;
-      const desmarcarTodosProcessos2 = () => {
+      if (!lnkInfraCheck) return ret;
+      ret.desmarcarTodosProcessos = () => {
         imgInfraCheck.title = imgInfraCheck.alt = 'Remover Seleção';
         lnkInfraCheck.click();
       };
-      const marcarTodosProcessos2 = () => {
+      ret.marcarTodosProcessos = () => {
         lnkInfraCheck.click();
       };
-      return [desmarcarTodosProcessos2, marcarTodosProcessos2];
+      return ret;
     })();
     const linhas = tabela?.rows ?? [];
     const eitherMapa = traverse(linhas, (linha, i) => {
       if (i === 0) return Right([]);
       const endereco = linha.cells[1]?.querySelector('a[href]')?.href;
-      if (isNullish(endereco))
+      if (isUndefined(endereco))
         return Left(new Error(`Link do processo não encontrado: linha ${i}.`));
       const numproc = new URL(endereco).searchParams.get('num_processo');
-      if (isNullish(numproc))
+      if (isNull(numproc))
         return Left(
           new Error(`Número do processo não encontrado: linha ${i}.`)
         );
@@ -452,21 +459,12 @@
       const checkbox = linha.cells[0]?.querySelector('input[type=checkbox]');
       if (isNullish(checkbox))
         return Left(new Error(`Caixa de seleção não encontrada: linha ${i}.`));
-      return Right([
-        [
-          numproc,
-          {
-            linha,
-            checkbox,
-            checked: checkbox.checked,
-          },
-        ],
-      ]);
+      return Right([[numproc, { linha, checkbox, checked: checkbox.checked }]]);
     }).map(entriess => new Map(entriess.flat(1)));
     if (eitherMapa.isLeft) return eitherMapa;
     const mapa = eitherMapa.rightValue;
-    const processosMarcados = /* @__PURE__ */ new Set();
-    const processosNaoMarcados = /* @__PURE__ */ new Set();
+    const processosMarcados = new Set();
+    const processosNaoMarcados = new Set();
     for (const [numproc, { checked }] of mapa) {
       if (checked) {
         processosMarcados.add(numproc);
@@ -474,82 +472,62 @@
         processosNaoMarcados.add(numproc);
       }
     }
-    let acoes = document.getElementById('fldAcoes');
-    if (isNullish(acoes)) {
-      acoes = document.getElementById('divInfraAreaTabela');
-      if (isNullish(acoes))
-        return Left(new Error('Não foi possível inserir os blocos na página.'));
-    }
+    const acoes =
+      document.getElementById('fldAcoes') ??
+      document.getElementById('divInfraAreaTabela');
+    if (isNull(acoes))
+      return Left(new Error('Não foi possível inserir os blocos na página.'));
     const div = acoes.insertAdjacentElement(
       'beforebegin',
-      document.createElement('div')
+      h('div', { className: 'gm-blocos__lista' })
     );
-    div.className = 'gm-blocos__lista';
-    document.body.insertAdjacentHTML(
-      'beforeend',
-      /*html*/
-      `<dialog class="gm-blocos__dialog"><form method="dialog"><div>Processos do bloco "<output class="gm-blocos__nome"></output>":</div><output class="gm-blocos__processos"></output><button>Fechar</button></form></dialog>`
+    const dialogNomeBloco = h('output', { className: 'gm-blocos__nome' });
+    const dialogProcessos = h('output', { className: 'gm-blocos__processos' });
+    const dialog = h(
+      'dialog',
+      { className: 'gm-blocos__dialog' },
+      h(
+        'form',
+        { method: 'dialog' },
+        h('div', null, 'Processos do bloco "', dialogNomeBloco, '":'),
+        dialogProcessos,
+        h('button', null, 'Fechar')
+      )
     );
-    const dialog = document.querySelector('.gm-blocos__dialog');
-    const dialogNomeBloco = dialog.querySelector('.gm-blocos__nome');
-    const dialogProcessos = dialog.querySelector('.gm-blocos__processos');
-    const Model = createTaggedUnion(
-      {
-        init: null,
-        loaded: (blocos, aviso) => ({
-          blocos,
-          aviso,
-        }),
-        error: error => ({
-          error,
-        }),
-      },
-      'status'
-    );
-    const Action2 = createTaggedUnion(
-      {
-        blocosModificados: blocos => ({
-          blocos,
-        }),
-        blocosObtidos: blocos => ({
-          blocos,
-        }),
-        checkboxClicado: (id, estadoAnterior) => ({
-          id,
-          estadoAnterior,
-        }),
-        criarBloco: nome => ({
-          nome,
-        }),
-        erroCapturado: aviso => ({
-          aviso,
-        }),
-        erroDesconhecido: erro => ({
-          erro,
-        }),
-        excluirBD: null,
-        excluirBloco: id => ({
-          id,
-        }),
-        mensagemRecebida: msg => ({
-          msg,
-        }),
-        obterBlocos: null,
-        removerProcessosAusentes: id => ({
-          id,
-        }),
-        renomearBloco: (id, nome) => ({
-          id,
-          nome,
-        }),
-        reset: null,
-      },
-      'type'
-    );
+    document.body.appendChild(dialog);
+    const Model = makeConstructorsWith('status', {
+      init: () => ({}),
+      loaded: (blocos, aviso) => ({ blocos, aviso }),
+      error: error => ({ error }),
+    });
+    const matchModel = matchWith('status');
+    const AsyncAction = makeConstructorsWith('type', {
+      criarBloco: nome => ({ nome }),
+      excluirBD: () => ({}),
+      excluirBloco: id => ({ id }),
+      obterBlocos: () => ({}),
+      removerProcessosAusentes: id => ({ id }),
+      renomearBloco: (id, nome) => ({ id, nome }),
+    });
+    const SyncAction = makeConstructorsWith('type', {
+      blocosObtidos: blocos => ({ blocos }),
+      checkboxClicado: (id, estadoAnterior) => ({
+        id,
+        estadoAnterior,
+      }),
+      erroCapturado: aviso => ({ aviso }),
+      erroDesconhecido: erro => ({ erro }),
+      reset: () => ({}),
+    });
+    const AliasAction = makeConstructorsWith('type', {
+      blocosModificados: blocos => ({ blocos }),
+      mensagemRecebida: msg => ({ msg }),
+    });
+    const Action2 = { ...AsyncAction, ...SyncAction, ...AliasAction };
     const bc = createBroadcastService('gm-blocos', isBroadcastMessage);
     const store = Object.assign(
       {},
-      createStore(() => Model.init, reducer)
+      createStore(() => Model.init(), reducer)
     );
     store.dispatch = handleAliasAction()(store.dispatch);
     store.dispatch = handleAsyncAction(store)(store.dispatch);
@@ -579,222 +557,181 @@
       tabela.addEventListener('click', onCliqueTabela);
     }
     store.subscribe(update);
-    store.dispatch(Action2.obterBlocos);
+    store.dispatch(Action2.obterBlocos());
     return Right(void 0);
     function update(state) {
-      return preact.render(
-        o(Main2, {
-          state,
-        }),
-        div
-      );
+      return preact.render(u(Main2, { state }), div);
     }
     function reducer(state, action) {
-      return Action2.match(
-        action,
-        {
-          blocosObtidos: ({ blocos }) =>
-            Model.match(
-              state,
-              {
-                error: state2 => state2,
-              },
-              () => {
-                const info = blocos.map(bloco => ({
-                  ...bloco,
-                  nestaPagina: bloco.processos.filter(numproc =>
-                    mapa.has(numproc)
-                  ).length,
-                  total: bloco.processos.length,
-                }));
-                return Model.loaded(info);
+      return matchWith('type')(action)
+        .case('blocosObtidos', ({ blocos }) =>
+          matchModel(state)
+            .case('error', state2 => state2)
+            .otherwise(() => {
+              const info = blocos.map(bloco => ({
+                ...bloco,
+                nestaPagina: bloco.processos.filter(numproc =>
+                  mapa.has(numproc)
+                ).length,
+                total: bloco.processos.length,
+              }));
+              return Model.loaded(info);
+            })
+            .get()
+        )
+        .case('checkboxClicado', ({ id, estadoAnterior }) =>
+          matchModel(state)
+            .case('loaded', state2 => {
+              if (estadoAnterior === 'disabled') return state2;
+              desmarcarTodosProcessos();
+              const processos = (() => {
+                if (id === -1) {
+                  const processosComBloco = new Set(
+                    Array.from(
+                      state2.blocos.flatMap(({ processos: processos2 }) =>
+                        processos2.filter(p2 => mapa.has(p2))
+                      )
+                    )
+                  );
+                  return new Set(
+                    Array.from(mapa)
+                      .filter(([x]) => !processosComBloco.has(x))
+                      .map(([numproc]) => numproc)
+                  );
+                } else {
+                  return new Set(
+                    state2.blocos
+                      .filter(x => x.id === id)
+                      .flatMap(x => x.processos.filter(x2 => mapa.has(x2)))
+                  );
+                }
+              })();
+              for (const [numproc, info] of mapa) {
+                const checked = processos.has(numproc);
+                info.checked = checked;
+                info.checkbox.disabled = !checked;
               }
-            ),
-          checkboxClicado: ({ id, estadoAnterior }) =>
-            Model.match(
-              state,
-              {
-                loaded: state2 => {
-                  if (estadoAnterior === 'disabled') return state2;
-                  desmarcarTodosProcessos();
-                  const processos = (() => {
-                    if (id === -1) {
-                      const processosComBloco = new Set(
-                        Array.from(
-                          state2.blocos.flatMap(({ processos: processos2 }) =>
-                            processos2.filter(p2 => mapa.has(p2))
-                          )
-                        )
-                      );
-                      return new Set(
-                        Array.from(mapa)
-                          .filter(([x]) => !processosComBloco.has(x))
-                          .map(([numproc]) => numproc)
-                      );
-                    } else {
-                      return new Set(
-                        state2.blocos
-                          .filter(x => x.id === id)
-                          .flatMap(x => x.processos.filter(x2 => mapa.has(x2)))
-                      );
-                    }
-                  })();
-                  for (const [numproc, info] of mapa) {
-                    const checked = processos.has(numproc);
-                    info.checked = checked;
-                    info.checkbox.disabled = !checked;
-                  }
-                  marcarTodosProcessos();
-                  for (const info of mapa.values()) {
-                    info.checkbox.disabled = false;
-                  }
-                  return {
-                    ...state2,
-                  };
-                },
-              },
-              state2 => state2
-            ),
-          erroCapturado: ({ aviso }) =>
-            Model.match(state, {
-              init: () => Model.error(aviso),
-              error: state2 => state2,
-              loaded: state2 => ({
-                ...state2,
-                aviso,
-              }),
-            }),
-          erroDesconhecido: ({ erro }) =>
-            Model.match(
-              state,
-              {
-                error: state2 => state2,
-              },
-              () => Model.error(erro)
-            ),
-          reset: () => Model.init,
-        },
-        other => other
-      );
+              marcarTodosProcessos();
+              for (const info of mapa.values()) {
+                info.checkbox.disabled = false;
+              }
+              return { ...state2 };
+            })
+            .otherwise(state2 => state2)
+            .get()
+        )
+        .case('erroCapturado', ({ aviso }) =>
+          matchModel(state)
+            .case('init', () => Model.error(aviso))
+            .case('error', state2 => state2)
+            .case('loaded', state2 => ({ ...state2, aviso }))
+            .get()
+        )
+        .case('erroDesconhecido', ({ erro }) =>
+          matchModel(state)
+            .case('error', state2 => state2)
+            .otherwise(() => Model.error(erro))
+            .get()
+        )
+        .case('reset', () => Model.init())
+        .get();
     }
     function handleAsyncAction(store2) {
       return next => {
         return action => {
-          const promise = Action2.match(
-            action,
-            {
-              criarBloco: async ({ nome }) => {
-                const blocos = await getBlocos();
-                if (blocos.some(x => x.nome === nome))
-                  return Action2.erroCapturado(
-                    `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
-                  );
-                const bloco = {
-                  id: Math.max(-1, ...blocos.map(x => x.id)) + 1,
-                  nome,
-                  processos: [],
-                };
-                return Action2.blocosModificados(await createBloco(bloco));
-              },
-              excluirBD: async () => {
-                await deleteBlocos();
-                return Action2.obterBlocos;
-              },
-              excluirBloco: async ({ id }) =>
-                Action2.blocosModificados(await deleteBloco(id)),
-              obterBlocos: async () =>
-                Action2.blocosModificados(await getBlocos()),
-              removerProcessosAusentes: async ({ id }) => {
-                const bloco = await getBloco(id);
-                if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
-                const processos = bloco.processos.filter(x => mapa.has(x));
-                return Action2.blocosModificados(
-                  await updateBloco({
-                    ...bloco,
-                    processos,
-                  })
+          const isAsyncAction = action2 =>
+            Object.keys(AsyncAction).includes(action2.type);
+          if (!isAsyncAction(action)) return next(action);
+          const promise = matchWith('type')(action)
+            .case('criarBloco', async ({ nome }) => {
+              const blocos = await getBlocos();
+              if (blocos.some(x => x.nome === nome))
+                return Action2.erroCapturado(
+                  `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
                 );
-              },
-              renomearBloco: async ({ id, nome }) => {
-                const blocos = await getBlocos();
-                const bloco = blocos.find(x => x.id === id);
-                if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
-                const others = blocos.filter(x => x.id !== id);
-                if (others.some(x => x.nome === nome))
-                  return Action2.erroCapturado(
-                    `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
-                  );
-                return Action2.blocosModificados(
-                  await updateBloco({
-                    ...bloco,
-                    nome,
-                  })
+              const bloco = {
+                id: Math.max(-1, ...blocos.map(x => x.id)) + 1,
+                nome,
+                processos: [],
+              };
+              return Action2.blocosModificados(await createBloco(bloco));
+            })
+            .case('excluirBD', async () => {
+              await deleteBlocos();
+              return Action2.obterBlocos();
+            })
+            .case('excluirBloco', async ({ id }) =>
+              Action2.blocosModificados(await deleteBloco(id))
+            )
+            .case('obterBlocos', async () =>
+              Action2.blocosModificados(await getBlocos())
+            )
+            .case('removerProcessosAusentes', async ({ id }) => {
+              const bloco = await getBloco(id);
+              if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
+              const processos = bloco.processos.filter(x => mapa.has(x));
+              return Action2.blocosModificados(
+                await updateBloco({ ...bloco, processos })
+              );
+            })
+            .case('renomearBloco', async ({ id, nome }) => {
+              const blocos = await getBlocos();
+              const bloco = blocos.find(x => x.id === id);
+              if (!bloco) throw new Error(`Bloco não encontrado: ${id}.`);
+              const others = blocos.filter(x => x.id !== id);
+              if (others.some(x => x.nome === nome))
+                return Action2.erroCapturado(
+                  `Já existe um bloco com o nome ${JSON.stringify(nome)}.`
                 );
-              },
-            },
-            a => a
-          );
-          if (!('then' in promise)) return next(promise);
+              return Action2.blocosModificados(
+                await updateBloco({ ...bloco, nome })
+              );
+            })
+            .get();
           promise.catch(Action2.erroDesconhecido).then(store2.dispatch);
-          if (action.type === 'obterBlocos') return next(Action2.reset);
+          if (action.type === 'obterBlocos') return next(Action2.reset());
         };
       };
     }
-    function handleAliasAction(store2) {
+    function handleAliasAction(_store) {
       return next => {
         return action => {
-          const replaced = Action2.match(
-            action,
-            {
-              blocosModificados: ({ blocos }) => {
-                bc.publish({
-                  type: 'Blocos',
-                  blocos,
-                });
-                return Action2.blocosObtidos(blocos);
-              },
-              mensagemRecebida: ({ msg: { blocos } }) =>
-                Action2.blocosObtidos(blocos),
-            },
-            s => s
-          );
+          const replaced = matchWith('type')(action)
+            .case('blocosModificados', ({ blocos }) => {
+              bc.publish({ type: 'Blocos', blocos });
+              return Action2.blocosObtidos(blocos);
+            })
+            .case('mensagemRecebida', ({ msg: { blocos } }) =>
+              Action2.blocosObtidos(blocos)
+            )
+            .otherwise(s => s)
+            .get();
           return next(replaced);
         };
       };
     }
     function Main2({ state }) {
-      return Model.match(state, {
-        error: state2 =>
-          o(ShowError2, {
-            reason: state2.error,
-          }),
-        loaded: state2 =>
-          o(Blocos2, {
-            state: state2,
-          }),
-        init: () => o(Loading, {}),
-      });
+      return matchModel(state)
+        .case('error', state2 => u(ShowError2, { reason: state2.error }))
+        .case('loaded', state2 => u(Blocos2, { state: state2 }))
+        .case('init', () => u(Loading, {}))
+        .get();
     }
     function Loading() {
-      return o(preact.Fragment, {
-        children: 'Carregando...',
-      });
+      return u(preact.Fragment, { children: 'Carregando...' });
     }
     function ShowError2({ reason }) {
       const message = messageFromReason2(reason);
-      return o(preact.Fragment, {
+      return u(preact.Fragment, {
         children: [
-          o('div', {
-            class: 'gm-erro',
-            children: message,
-          }),
-          o('button', {
-            onClick: () => store.dispatch(Action2.obterBlocos),
+          u('div', { class: 'gm-erro', children: message }),
+          u('button', {
+            onClick: () => store.dispatch(Action2.obterBlocos()),
             children: 'Tentar carregar dados salvos',
           }),
           ' ',
-          o('button', {
-            onClick: () => store.dispatch(Action2.excluirBD),
+          u('button', {
+            onClick: () => store.dispatch(Action2.excluirBD()),
             children: 'Apagar os dados locais',
           }),
         ],
@@ -823,11 +760,7 @@
         },
         [nome]
       );
-      let aviso = state.aviso
-        ? o(Aviso, {
-            children: state.aviso,
-          })
-        : null;
+      let aviso = state.aviso ? u(Aviso, { children: state.aviso }) : null;
       const processosComBlocoNestaPagina = new Set(
         state.blocos.flatMap(({ processos }) =>
           processos.filter(p2 => mapa.has(p2))
@@ -848,31 +781,23 @@
         }
         return 'checked';
       })();
-      return o(preact.Fragment, {
+      return u(preact.Fragment, {
         children: [
-          o('h4', {
-            children: 'Blocos',
-          }),
-          o('table', {
+          u('h4', { children: 'Blocos' }),
+          u('table', {
             children: [
-              o('tbody', {
+              u('tbody', {
                 children: state.blocos.map(bloco =>
-                  o(
-                    BlocoPaginaLista,
-                    {
-                      ...bloco,
-                    },
-                    bloco.id
-                  )
+                  u(BlocoPaginaLista, { ...bloco }, bloco.id)
                 ),
               }),
-              o('tfoot', {
+              u('tfoot', {
                 children:
                   semBloco !== 'disabled' &&
-                  o('tr', {
+                  u('tr', {
                     children: [
-                      o('td', {
-                        children: o('input', {
+                      u('td', {
+                        children: u('input', {
                           type: 'radio',
                           checked: semBloco === 'checked',
                           onClick: () =>
@@ -881,8 +806,8 @@
                             ),
                         }),
                       }),
-                      o('td', {
-                        children: o('label', {
+                      u('td', {
+                        children: u('label', {
                           onClick: () =>
                             store.dispatch(
                               Action2.checkboxClicado(-1, semBloco)
@@ -890,8 +815,8 @@
                           children: '(processos sem bloco)',
                         }),
                       }),
-                      o('td', {
-                        children: o('small', {
+                      u('td', {
+                        children: u('small', {
                           children: [
                             '(',
                             (s => `${s} processo${s > 1 ? 's' : ''}`)(
@@ -906,15 +831,15 @@
               }),
             ],
           }),
-          o('form', {
+          u('form', {
             onSubmit,
-            children: o('button', {
+            children: u('button', {
               type: 'button',
               onClick: onNovoClicked,
               children: 'Criar bloco',
             }),
           }),
-          aviso !== null ? o('br', {}) : null,
+          aviso !== null ? u('br', {}) : null,
           aviso,
         ],
       });
@@ -932,15 +857,12 @@
       }
     }
     function Aviso(props) {
-      return o(preact.Fragment, {
+      return u(preact.Fragment, {
         children: [
-          o('div', {
-            class: 'gm-aviso',
-            children: props.children,
-          }),
-          o('button', {
+          u('div', { class: 'gm-aviso', children: props.children }),
+          u('button', {
             type: 'button',
-            onClick: () => store.dispatch(Action2.obterBlocos),
+            onClick: () => store.dispatch(Action2.obterBlocos()),
             children: 'Recarregar dados',
           }),
         ],
@@ -956,21 +878,21 @@
         }
       }, [editing, input]);
       let displayNome = props.nome;
-      let botaoRenomear = o(BotaoAcao, {
+      let botaoRenomear = u(BotaoAcao, {
         src: 'imagens/minuta_editar.gif',
         label: 'Renomear',
         onClick: onRenomearClicked,
       });
-      let removerAusentes = o(BotaoAcao, {
+      let removerAusentes = u(BotaoAcao, {
         src: 'imagens/minuta_transferir.png',
         label: 'Remover processos ausentes',
         onClick: () =>
           store.dispatch(Action2.removerProcessosAusentes(props.id)),
       });
       if (editing) {
-        displayNome = o(preact.Fragment, {
+        displayNome = u(preact.Fragment, {
           children: [
-            o('input', {
+            u('input', {
               class: 'rename',
               ref: input,
               onKeyPress,
@@ -981,8 +903,8 @@
               },
               value: props.nome,
             }),
-            o('br', {}),
-            o('small', {
+            u('br', {}),
+            u('small', {
               children: '(Enter para confirmar, Esc para cancelar)',
             }),
           ],
@@ -1005,13 +927,13 @@
         }
         return 'checked';
       })();
-      const qtdProcessos = o('small', {
+      const qtdProcessos = u('small', {
         children: ['(', createAbbr(props.nestaPagina, props.total), ')'],
       });
-      return o('tr', {
+      return u('tr', {
         children: [
-          o('td', {
-            children: o('input', {
+          u('td', {
+            children: u('input', {
               type: 'radio',
               checked: chkState === 'checked',
               disabled: chkState === 'disabled',
@@ -1022,17 +944,17 @@
                 store.dispatch(Action2.checkboxClicado(props.id, chkState)),
             }),
           }),
-          o('td', {
-            children: o('label', {
+          u('td', {
+            children: u('label', {
               onClick: () =>
                 store.dispatch(Action2.checkboxClicado(props.id, chkState)),
               children: displayNome,
             }),
           }),
-          o('td', {
+          u('td', {
             children:
               props.total > 0
-                ? o('a', {
+                ? u('a', {
                     href: '#',
                     onClick: e => {
                       e.preventDefault();
@@ -1049,32 +971,24 @@
                   })
                 : qtdProcessos,
           }),
-          o('td', {
-            children: botaoRenomear,
-          }),
-          o('td', {
-            children: o(BotaoAcao, {
+          u('td', { children: botaoRenomear }),
+          u('td', {
+            children: u(BotaoAcao, {
               src: 'imagens/minuta_excluir.gif',
               label: 'Excluir',
               onClick: onExcluirClicked,
             }),
           }),
-          o('td', {
-            children: removerAusentes,
-          }),
+          u('td', { children: removerAusentes }),
         ],
       });
       function createAbbr(nestaPagina, total) {
         if (nestaPagina === total)
           return `${total} processo${total > 1 ? 's' : ''}`;
         const textoTotal = `${total} processo${total > 1 ? 's' : ''} no bloco`;
-        const textoPagina = `${
-          nestaPagina === 0 ? 'nenhum' : nestaPagina
-        } nesta página`;
-        const textoResumido = `${nestaPagina}/${total} processo${
-          total > 1 ? 's' : ''
-        }`;
-        return o('abbr', {
+        const textoPagina = `${nestaPagina === 0 ? 'nenhum' : nestaPagina} nesta página`;
+        const textoResumido = `${nestaPagina}/${total} processo${total > 1 ? 's' : ''}`;
+        return u('abbr', {
           title: `${textoTotal}, ${textoPagina}.`,
           children: textoResumido,
         });
@@ -1101,15 +1015,13 @@
         const len = props.total;
         if (len > 0)
           confirmed = window.confirm(
-            `Este bloco possui ${len} processo${
-              len > 1 ? 's' : ''
-            }. Deseja excluí-lo?`
+            `Este bloco possui ${len} processo${len > 1 ? 's' : ''}. Deseja excluí-lo?`
           );
         if (confirmed) store.dispatch(Action2.excluirBloco(props.id));
       }
     }
     function BotaoAcao({ onClick, label, src }) {
-      return o('img', {
+      return u('img', {
         'style': 'cursor: pointer;',
         src,
         'onMouseOver': () => infraTooltipMostrar(label),
@@ -1124,46 +1036,27 @@
       });
     }
   }
-  const Action = /* @__PURE__ */ createTaggedUnion(
-    {
-      blocosModificados: (blocos, { fecharJanela = false } = {}) => ({
-        blocos,
-        fecharJanela,
-      }),
-      criarBloco: nome => ({
-        nome,
-      }),
-      erro: reason => ({
-        reason,
-      }),
-      inserir: (id, { fecharJanela = false } = {}) => ({
-        id,
-        fecharJanela,
-      }),
-      mensagemRecebida: msg => ({
-        msg,
-      }),
-      obterBlocos: null,
-      remover: id => ({
-        id,
-      }),
-    },
-    'type'
-  );
-  const State = /* @__PURE__ */ createTaggedUnion(
-    {
-      Loading: blocos => ({
-        blocos,
-      }),
-      Success: blocos => ({
-        blocos,
-      }),
-      Error: reason => ({
-        reason,
-      }),
-    },
-    'status'
-  );
+  const Action = makeConstructorsWith('type', {
+    blocosModificados: (blocos, { fecharJanela = false } = {}) => ({
+      blocos,
+      fecharJanela,
+    }),
+    criarBloco: nome => ({ nome }),
+    erro: reason => ({ reason }),
+    inserir: (id, { fecharJanela = false } = {}) => ({
+      id,
+      fecharJanela,
+    }),
+    mensagemRecebida: msg => ({ msg }),
+    obterBlocos: () => ({}),
+    remover: id => ({ id }),
+  });
+  const matchAction = matchWith('type');
+  const State = makeConstructorsWith('status', {
+    Loading: blocos => ({ blocos }),
+    Success: blocos => ({ blocos }),
+    Error: reason => ({ reason }),
+  });
   function ProcessoSelecionar(numproc) {
     const mainMenu = document.getElementById('main-menu');
     if (isNull(mainMenu)) return Left(new Error('Menu não encontrado'));
@@ -1172,12 +1065,7 @@
       document.createElement('div')
     );
     div.className = 'gm-blocos__processo';
-    preact.render(
-      o(Main, {
-        numproc,
-      }),
-      div
-    );
+    preact.render(u(Main, { ...{ numproc } }), div);
     return Right(void 0);
   }
   function createReducer({ bc, numproc }) {
@@ -1196,22 +1084,17 @@
           ...bloco,
           processos: [...processos],
         });
-        return Action.blocosModificados(blocos, {
-          fecharJanela,
-        });
+        return Action.blocosModificados(blocos, { fecharJanela });
       });
     }
     function reducer(state, action) {
-      return Action.match(action, {
-        blocosModificados: ({ blocos, fecharJanela }) => {
-          bc.publish({
-            type: 'Blocos',
-            blocos,
-          });
+      return matchAction(action)
+        .case('blocosModificados', ({ blocos, fecharJanela }) => {
+          bc.publish({ type: 'Blocos', blocos });
           if (fecharJanela) window.close();
           return State.Success(blocos);
-        },
-        criarBloco: ({ nome }) =>
+        })
+        .case('criarBloco', ({ nome }) =>
           asyncAction(state, async () => {
             const blocos = await getBlocos();
             if (blocos.some(x => x.nome === nome))
@@ -1224,30 +1107,36 @@
               processos: [],
             };
             return Action.blocosModificados(await createBloco(bloco));
-          }),
-        erro: ({ reason }) => State.Error(reason),
-        inserir: ({ id, fecharJanela }) =>
+          })
+        )
+        .case('erro', ({ reason }) => State.Error(reason))
+        .case('inserir', ({ id, fecharJanela }) =>
           modificarProcessos(state, {
             id,
             fn: (processos, numproc2) => {
               processos.add(numproc2);
             },
             fecharJanela,
-          }),
-        mensagemRecebida: ({ msg: { blocos } }) => State.Success(blocos),
-        obterBlocos: () =>
+          })
+        )
+        .case('mensagemRecebida', ({ msg: { blocos } }) =>
+          State.Success(blocos)
+        )
+        .case('obterBlocos', () =>
           asyncAction(state, async () =>
             Action.blocosModificados(await getBlocos())
-          ),
-        remover: ({ id }) =>
+          )
+        )
+        .case('remover', ({ id }) =>
           modificarProcessos(state, {
             id,
             fn: (processos, numproc2) => {
               processos.delete(numproc2);
             },
             fecharJanela: false,
-          }),
-      });
+          })
+        )
+        .get();
     }
   }
   function Main({ numproc }) {
@@ -1255,10 +1144,7 @@
       return createBroadcastService('gm-blocos', isBroadcastMessage);
     }, []);
     const handleStateAction = hooks.useMemo(() => {
-      return createReducer({
-        bc,
-        numproc,
-      });
+      return createReducer({ bc, numproc });
     }, []);
     const [state, dispatch] = hooks.useReducer((state2, action) => {
       const result = handleStateAction(state2, action);
@@ -1274,7 +1160,7 @@
       };
     }, []);
     hooks.useEffect(() => {
-      dispatch(Action.obterBlocos);
+      dispatch(Action.obterBlocos());
     }, []);
     const criarBloco = hooks.useCallback(
       nome => dispatch(Action.criarBloco(nome)),
@@ -1282,23 +1168,19 @@
     );
     const toggleBloco = hooks.useCallback((id, operacao, fecharJanela) => {
       if (operacao === 'inserir') {
-        dispatch(
-          Action.inserir(id, {
-            fecharJanela,
-          })
-        );
+        dispatch(Action.inserir(id, { fecharJanela }));
       } else {
         dispatch(Action.remover(id));
       }
     }, []);
     if (state.status === 'Error')
-      return o(ShowError, {
+      return u(ShowError, {
         reason: state.reason,
-        onRecarregarClick: () => dispatch(Action.obterBlocos),
+        onRecarregarClick: () => dispatch(Action.obterBlocos()),
       });
     if (state.status === 'Loading' && state.blocos.length === 0)
-      return o(Placeholder, {});
-    return o(Blocos, {
+      return u(Placeholder, {});
+    return u(Blocos, {
       state,
       numproc,
       criarBloco,
@@ -1307,16 +1189,11 @@
   }
   function ShowError({ reason, onRecarregarClick }) {
     const message = messageFromReason(reason);
-    return o(preact.Fragment, {
+    return u(preact.Fragment, {
       children: [
-        o('h4', {
-          children: 'Blocos',
-        }),
-        o('div', {
-          class: 'error',
-          children: message,
-        }),
-        o('button', {
+        u('h4', { children: 'Blocos' }),
+        u('div', { class: 'error', children: message }),
+        u('button', {
           type: 'button',
           onClick: onRecarregarClick,
           children: 'Recarregar',
@@ -1334,23 +1211,15 @@
     return `Ocorreu um erro: ${String(reason)}`;
   }
   function Placeholder() {
-    const li = o('li', {
+    const li = u('li', {
       class: 'placeholder',
-      children: [o('span', {}), o('span', {}), o('span', {})],
+      children: [u('span', {}), u('span', {}), u('span', {})],
     });
-    return o(preact.Fragment, {
+    return u(preact.Fragment, {
       children: [
-        o('h4', {
-          children: 'Blocos',
-        }),
-        o('ul', {
-          children: [li, li, li],
-        }),
-        o('button', {
-          type: 'button',
-          disabled: true,
-          children: 'Novo',
-        }),
+        u('h4', { children: 'Blocos' }),
+        u('ul', { children: [li, li, li] }),
+        u('button', { type: 'button', disabled: true, children: 'Novo' }),
       ],
     });
   }
@@ -1376,14 +1245,12 @@
         props.criarBloco(nome);
       }
     }, []);
-    return o(preact.Fragment, {
+    return u(preact.Fragment, {
       children: [
-        o('h4', {
-          children: 'Blocos',
-        }),
-        o('ul', {
+        u('h4', { children: 'Blocos' }),
+        u('ul', {
           children: infoBlocos.map(info =>
-            o(
+            u(
               BlocoPaginaProcesso,
               {
                 ...info,
@@ -1394,7 +1261,7 @@
             )
           ),
         }),
-        o('button', {
+        u('button', {
           type: 'button',
           onClick: onNovoClicked,
           disabled,
@@ -1419,11 +1286,11 @@
       props.toggleBloco(props.id, 'inserir', true);
     }, [props.id]);
     const transportar = hooks.useMemo(() => {
-      if (props.inserido) return o('span', {});
-      return o(preact.Fragment, {
+      if (props.inserido) return u('span', {});
+      return u(preact.Fragment, {
         children: [
           ' ',
-          o('input', {
+          u('input', {
             type: 'image',
             src: 'infra_css/imagens/transportar.gif',
             onMouseOver: () =>
@@ -1438,9 +1305,9 @@
       });
     }, [props.inserido, props.disabled, props.id]);
     const id = hooks.useMemo(() => `gm-bloco-${props.id}`, [props.id]);
-    return o('li', {
+    return u('li', {
       children: [
-        o('input', {
+        u('input', {
           id,
           type: 'checkbox',
           checked: props.inserido,
@@ -1448,10 +1315,7 @@
           disabled: props.disabled,
         }),
         ' ',
-        o('label', {
-          for: `gm-bloco-${props.id}`,
-          children: props.nome,
-        }),
+        u('label', { for: `gm-bloco-${props.id}`, children: props.nome }),
         transportar,
       ],
     });

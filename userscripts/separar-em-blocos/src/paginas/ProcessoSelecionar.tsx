@@ -3,7 +3,6 @@ import {
   createBroadcastService,
 } from '@nadameu/create-broadcast-service';
 import { Either, Left, Right } from '@nadameu/either';
-import { matchBy } from '@nadameu/match';
 import * as p from '@nadameu/predicates';
 import { JSX, render } from 'preact';
 import { useCallback, useEffect, useMemo, useReducer } from 'preact/hooks';
@@ -14,12 +13,8 @@ import {
   isBroadcastMessage,
 } from '../types/BroadcastMessage';
 import { NumProc } from '../types/NumProc';
-import { Action } from '../types/ProcessoSelecionarAction';
-import {
-  LoadingState,
-  State,
-  SuccessState,
-} from '../types/ProcessoSelecionarState';
+import { Action, matchAction } from '../types/ProcessoSelecionarAction';
+import { State } from '../types/ProcessoSelecionarState';
 
 export function ProcessoSelecionar(numproc: NumProc): Either<Error, void> {
   const mainMenu = document.getElementById('main-menu');
@@ -79,13 +74,13 @@ function createReducer({
     state: State,
     action: Action
   ): State | readonly [State, Promise<Action>] {
-    return Action.match(action, {
-      blocosModificados: ({ blocos, fecharJanela }) => {
+    return matchAction(action)
+      .case('blocosModificados', ({ blocos, fecharJanela }) => {
         bc.publish({ type: 'Blocos', blocos });
         if (fecharJanela) window.close();
         return State.Success(blocos);
-      },
-      criarBloco: ({ nome }) =>
+      })
+      .case('criarBloco', ({ nome }) =>
         asyncAction(state, async () => {
           const blocos = await DB.getBlocos();
           if (blocos.some(x => x.nome === nome))
@@ -99,30 +94,34 @@ function createReducer({
             processos: [],
           };
           return Action.blocosModificados(await DB.createBloco(bloco));
-        }),
-      erro: ({ reason }) => State.Error(reason),
-      inserir: ({ id, fecharJanela }) =>
+        })
+      )
+      .case('erro', ({ reason }) => State.Error(reason))
+      .case('inserir', ({ id, fecharJanela }) =>
         modificarProcessos(state, {
           id,
           fn: (processos, numproc) => {
             processos.add(numproc);
           },
           fecharJanela,
-        }),
-      mensagemRecebida: ({ msg: { blocos } }) => State.Success(blocos),
-      obterBlocos: () =>
+        })
+      )
+      .case('mensagemRecebida', ({ msg: { blocos } }) => State.Success(blocos))
+      .case('obterBlocos', () =>
         asyncAction(state, async () =>
           Action.blocosModificados(await DB.getBlocos())
-        ),
-      remover: ({ id }) =>
+        )
+      )
+      .case('remover', ({ id }) =>
         modificarProcessos(state, {
           id,
           fn: (processos, numproc) => {
             processos.delete(numproc);
           },
           fecharJanela: false,
-        }),
-    });
+        })
+      )
+      .get();
   }
 }
 
@@ -147,7 +146,7 @@ function Main({ numproc }: { numproc: NumProc }): JSX.Element {
     };
   }, []);
   useEffect(() => {
-    dispatch(Action.obterBlocos);
+    dispatch(Action.obterBlocos());
   }, []);
   const criarBloco = useCallback(
     (nome: Bloco['nome']) => dispatch(Action.criarBloco(nome)),
@@ -171,7 +170,7 @@ function Main({ numproc }: { numproc: NumProc }): JSX.Element {
     return (
       <ShowError
         reason={state.reason}
-        onRecarregarClick={() => dispatch(Action.obterBlocos)}
+        onRecarregarClick={() => dispatch(Action.obterBlocos())}
       />
     );
   if (state.status === 'Loading' && state.blocos.length === 0)
@@ -238,7 +237,7 @@ function Placeholder() {
 }
 
 function Blocos(props: {
-  state: LoadingState | SuccessState;
+  state: Extract<State, { status: 'Loading' | 'Success' }>;
   numproc: NumProc;
   criarBloco: (nome: Bloco['nome']) => void;
   toggleBloco: (
