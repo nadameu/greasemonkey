@@ -7,14 +7,14 @@ export function tela_alteracao_em_bloco() {
     .values()
     .filter(input => /^chkInfraItem\d+$/.test(input.id))
     .flatMap(input => {
-      const next = input.nextSibling;
-      if (next.nodeType === Node.TEXT_NODE) {
-        return [{ input, texto: next.nodeValue.trim() }];
+      const text_node = input.nextSibling;
+      if (text_node !== null && text_node.nodeType === Node.TEXT_NODE) {
+        return [{ input, text_node, texto: text_node.nodeValue?.trim() ?? '' }];
       } else {
         return [];
       }
     })
-    .map(({ input, texto }) => {
+    .map(({ input, texto, text_node }) => {
       const sigilo = (() => {
         if (/^Sem Sigilo \(Nível 0\)$/.test(texto)) return 0;
         if (/^Segredo de Justiça \(Nível 1\)$/.test(texto)) return 1;
@@ -26,13 +26,12 @@ export function tela_alteracao_em_bloco() {
       if (sigilo === -1) {
         throw new CustomError('Sigilo desconhecido.', { texto });
       }
-      return { sigilo, input, texto };
+      return { sigilo, input, text_node };
     })
     .toArray() // necessário para verificar todos os erros antes de proceder a alterações
-    .forEach(({ sigilo, input, texto }) => {
+    .forEach(({ sigilo, input, text_node }) => {
       const label = document.createElement('label');
       label.className = `gm-${GM_info.script.name} gm-${GM_info.script.name}-nivel${sigilo}`;
-      const text_node = input.nextSibling;
       input.replaceWith(label);
       label.append(input, text_node);
     });
