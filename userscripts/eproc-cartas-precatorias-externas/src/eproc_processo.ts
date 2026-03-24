@@ -18,7 +18,7 @@ export function eproc_processo() {
       'Não foi possível obter link único para carregamento de processos relacionados.'
     );
   if (outros.length === 1) {
-    const $ = unsafeWindow.jQuery;
+    const $ = unsafeWindow.jQuery as typeof import('jquery');
     $(document).on('ajaxComplete', function (_evt, _xhr, opts) {
       const params = new URL(opts.url, document.location.href).searchParams;
       if (params.get('acao_ajax') === 'carregar_processos_relacionados') {
