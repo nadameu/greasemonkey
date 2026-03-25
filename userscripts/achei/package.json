@@ -22,6 +22,6 @@
     "@nadameu/predicates": "workspace:^"
   },
   "devDependencies": {
-    "jsdom": "^25.0.1"
+    "@nadameu/create-element": "workspace:^"
   }
 }

@@ -18,7 +18,7 @@ export function main({
     return modificarPagina({ ...resultado, doc });
   })();
   const s = linksCriados > 1 ? 's' : '';
-  log(`${linksCriados} link${s} criado${s}`);
+  log(`${linksCriados} link${s} criado${s}.`);
 }
 
 function parsePagina(doc: typeof document):

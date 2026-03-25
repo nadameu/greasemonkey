@@ -1,17 +1,13 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`main > com tabela 1`] = `
+exports[`com tabela 1`] = `
 <body>
-  
-
   <input
     checked=""
     name="local"
     type="radio"
     value="1"
   />
-  
-
   <form
     name="formulario"
   />
@@ -22,14 +18,11 @@ exports[`main > com tabela 1`] = `
           <br />
         </td>
         <td>
-          
-nonononon
+          nonononon
           <br />
-          
-nonononon
+          nonononon
           <br />
-          
-Sigla: ABC00
+          Sigla: ABC00
            [ 
           <a
             href="https://intra.trf4.jus.br/membros/abc00trf4-jus-br"
@@ -39,14 +32,11 @@ Sigla: ABC00
           </a>
            ]
           <br />
-          
-nonononon
+          nonononon
           <br />
-          
-nonononon
+          nonononon
           <br />
-          
-Sigla: bcd00 (antiga: bcd)
+          Sigla: bcd00 (antiga: bcd)
            [ 
           <a
             href="https://intra.trf4.jus.br/membros/bcd00trf4-jus-br"
@@ -56,35 +46,25 @@ Sigla: bcd00 (antiga: bcd)
           </a>
            ]
           <br />
-          
-nonononon
+          nonononon
           <br />
-          
-nonononon
+          nonononon
           <br />
         </td>
       </tr>
     </tbody>
   </table>
-  
-
-  
-
 </body>
 `;
 
-exports[`main > com tabela vazia 1`] = `
+exports[`com tabela vazia 1`] = `
 <body>
-  
-
   <input
     checked=""
     name="local"
     type="radio"
     value="1"
   />
-  
-
   <form
     name="formulario"
   />
@@ -97,307 +77,17 @@ exports[`main > com tabela vazia 1`] = `
       </tr>
     </tbody>
   </table>
-  
-
-  
-
 </body>
 `;
 
-exports[`main > dois nomes 1`] = `
+exports[`dois nomes 1`] = `
 <body>
-  
-
   <input
     checked=""
     name="local"
     type="radio"
     value="1"
   />
-  
-
-  <form
-    name="formulario"
-  />
-  <br />
-  
-nonononon
-  <br />
-  
-nonononon
-  <br />
-  
-Sigla: ABC00
-   [ 
-  <a
-    href="https://intra.trf4.jus.br/membros/abc00trf4-jus-br"
-    target="_blank"
-  >
-    Abrir na Intra
-  </a>
-   ]
-  <br />
-  
-nonononon
-  <br />
-  
-nonononon
-  <br />
-  
-Sigla: bcd00 (antiga: bcd)
-   [ 
-  <a
-    href="https://intra.trf4.jus.br/membros/bcd00trf4-jus-br"
-    target="_blank"
-  >
-    Abrir na Intra
-  </a>
-   ]
-  <br />
-  
-nonononon
-  <br />
-  
-nonononon
-  <br />
-  
-
-  
-
-</body>
-`;
-
-exports[`main > dominios > JFPR 1`] = `
-<body>
-  
-
-  <input
-    checked=""
-    name="local"
-    type="radio"
-    value="4"
-  />
-  
-
-  <form
-    name="formulario"
-  />
-  <table>
-    <tbody>
-      <tr>
-        <td>
-          <br />
-        </td>
-        <td>
-          
-nonononon
-          <br />
-          
-nonononon
-          <br />
-          
-Sigla: ABC00
-           [ 
-          <a
-            href="https://intra.trf4.jus.br/membros/abc00jfpr-jus-br"
-            target="_blank"
-          >
-            Abrir na Intra
-          </a>
-           ]
-          <br />
-          
-nonononon
-          <br />
-          
-nonononon
-          <br />
-          
-Sigla: bcd00 (antiga: bcd)
-           [ 
-          <a
-            href="https://intra.trf4.jus.br/membros/bcd00jfpr-jus-br"
-            target="_blank"
-          >
-            Abrir na Intra
-          </a>
-           ]
-          <br />
-          
-nonononon
-          <br />
-          
-nonononon
-          <br />
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  
-
-  
-
-</body>
-`;
-
-exports[`main > dominios > JFRS 1`] = `
-<body>
-  
-
-  <input
-    checked=""
-    name="local"
-    type="radio"
-    value="2"
-  />
-  
-
-  <form
-    name="formulario"
-  />
-  <table>
-    <tbody>
-      <tr>
-        <td>
-          <br />
-        </td>
-        <td>
-          
-nonononon
-          <br />
-          
-nonononon
-          <br />
-          
-Sigla: ABC00
-           [ 
-          <a
-            href="https://intra.trf4.jus.br/membros/abc00jfrs-jus-br"
-            target="_blank"
-          >
-            Abrir na Intra
-          </a>
-           ]
-          <br />
-          
-nonononon
-          <br />
-          
-nonononon
-          <br />
-          
-Sigla: bcd00 (antiga: bcd)
-           [ 
-          <a
-            href="https://intra.trf4.jus.br/membros/bcd00jfrs-jus-br"
-            target="_blank"
-          >
-            Abrir na Intra
-          </a>
-           ]
-          <br />
-          
-nonononon
-          <br />
-          
-nonononon
-          <br />
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  
-
-  
-
-</body>
-`;
-
-exports[`main > dominios > JFSC 1`] = `
-<body>
-  
-
-  <input
-    checked=""
-    name="local"
-    type="radio"
-    value="3"
-  />
-  
-
-  <form
-    name="formulario"
-  />
-  <table>
-    <tbody>
-      <tr>
-        <td>
-          <br />
-        </td>
-        <td>
-          
-nonononon
-          <br />
-          
-nonononon
-          <br />
-          
-Sigla: ABC00
-           [ 
-          <a
-            href="https://intra.trf4.jus.br/membros/abc00jfsc-jus-br"
-            target="_blank"
-          >
-            Abrir na Intra
-          </a>
-           ]
-          <br />
-          
-nonononon
-          <br />
-          
-nonononon
-          <br />
-          
-Sigla: bcd00 (antiga: bcd)
-           [ 
-          <a
-            href="https://intra.trf4.jus.br/membros/bcd00jfsc-jus-br"
-            target="_blank"
-          >
-            Abrir na Intra
-          </a>
-           ]
-          <br />
-          
-nonononon
-          <br />
-          
-nonononon
-          <br />
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  
-
-  
-
-</body>
-`;
-
-exports[`main > um nome 1`] = `
-<body>
-  
-
-  <input
-    checked=""
-    name="local"
-    type="radio"
-    value="1"
-  />
-  
-
   <form
     name="formulario"
   />
@@ -420,7 +110,223 @@ exports[`main > um nome 1`] = `
   <br />
   nonononon
   <br />
-  
+  Sigla: bcd00 (antiga: bcd)
+   [ 
+  <a
+    href="https://intra.trf4.jus.br/membros/bcd00trf4-jus-br"
+    target="_blank"
+  >
+    Abrir na Intra
+  </a>
+   ]
+  <br />
+  nonononon
+  <br />
+  nonononon
+  <br />
+</body>
+`;
 
+exports[`dominios > JFPR 1`] = `
+<body>
+  <input
+    checked=""
+    name="local"
+    type="radio"
+    value="4"
+  />
+  <form
+    name="formulario"
+  />
+  <table>
+    <tbody>
+      <tr>
+        <td>
+          <br />
+        </td>
+        <td>
+          nonononon
+          <br />
+          nonononon
+          <br />
+          Sigla: ABC00
+           [ 
+          <a
+            href="https://intra.trf4.jus.br/membros/abc00jfpr-jus-br"
+            target="_blank"
+          >
+            Abrir na Intra
+          </a>
+           ]
+          <br />
+          nonononon
+          <br />
+          nonononon
+          <br />
+          Sigla: bcd00 (antiga: bcd)
+           [ 
+          <a
+            href="https://intra.trf4.jus.br/membros/bcd00jfpr-jus-br"
+            target="_blank"
+          >
+            Abrir na Intra
+          </a>
+           ]
+          <br />
+          nonononon
+          <br />
+          nonononon
+          <br />
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+`;
+
+exports[`dominios > JFRS 1`] = `
+<body>
+  <input
+    checked=""
+    name="local"
+    type="radio"
+    value="2"
+  />
+  <form
+    name="formulario"
+  />
+  <table>
+    <tbody>
+      <tr>
+        <td>
+          <br />
+        </td>
+        <td>
+          nonononon
+          <br />
+          nonononon
+          <br />
+          Sigla: ABC00
+           [ 
+          <a
+            href="https://intra.trf4.jus.br/membros/abc00jfrs-jus-br"
+            target="_blank"
+          >
+            Abrir na Intra
+          </a>
+           ]
+          <br />
+          nonononon
+          <br />
+          nonononon
+          <br />
+          Sigla: bcd00 (antiga: bcd)
+           [ 
+          <a
+            href="https://intra.trf4.jus.br/membros/bcd00jfrs-jus-br"
+            target="_blank"
+          >
+            Abrir na Intra
+          </a>
+           ]
+          <br />
+          nonononon
+          <br />
+          nonononon
+          <br />
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+`;
+
+exports[`dominios > JFSC 1`] = `
+<body>
+  <input
+    checked=""
+    name="local"
+    type="radio"
+    value="3"
+  />
+  <form
+    name="formulario"
+  />
+  <table>
+    <tbody>
+      <tr>
+        <td>
+          <br />
+        </td>
+        <td>
+          nonononon
+          <br />
+          nonononon
+          <br />
+          Sigla: ABC00
+           [ 
+          <a
+            href="https://intra.trf4.jus.br/membros/abc00jfsc-jus-br"
+            target="_blank"
+          >
+            Abrir na Intra
+          </a>
+           ]
+          <br />
+          nonononon
+          <br />
+          nonononon
+          <br />
+          Sigla: bcd00 (antiga: bcd)
+           [ 
+          <a
+            href="https://intra.trf4.jus.br/membros/bcd00jfsc-jus-br"
+            target="_blank"
+          >
+            Abrir na Intra
+          </a>
+           ]
+          <br />
+          nonononon
+          <br />
+          nonononon
+          <br />
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+`;
+
+exports[`um nome 1`] = `
+<body>
+  <input
+    checked=""
+    name="local"
+    type="radio"
+    value="1"
+  />
+  <form
+    name="formulario"
+  />
+  <br />
+  nonononon
+  <br />
+  nonononon
+  <br />
+  Sigla: ABC00
+   [ 
+  <a
+    href="https://intra.trf4.jus.br/membros/abc00trf4-jus-br"
+    target="_blank"
+  >
+    Abrir na Intra
+  </a>
+   ]
+  <br />
+  nonononon
+  <br />
+  nonononon
+  <br />
 </body>
 `;
