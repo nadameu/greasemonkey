@@ -35,7 +35,6 @@
   }
   const isNotNull = negate(isNull);
   const arrayHasLength = num => obj => obj.length === num;
-  const arrayHasAtLeastLength = num => array => array.length >= num;
   const dominios = {
     1: 'trf4',
     2: 'jfrs',
@@ -45,7 +44,7 @@
   function getDominio(doc) {
     const value = doc.querySelector('input[name="local"]:checked')?.value;
     assert(
-      !!value && isInDominios(value),
+      value !== void 0 && isInDominios(value),
       'Não foi possível verificar o domínio.'
     );
     return dominios[value];
@@ -117,23 +116,24 @@
       return modificarPagina({ ...resultado, doc });
     })();
     const s = linksCriados > 1 ? 's' : '';
-    log(`${linksCriados} link${s} criado${s}`);
+    log(`${linksCriados} link${s} criado${s}.`);
   }
   function parsePagina(doc) {
     const formulario = getFormulario(doc);
     const nodeSiglas = Array.from(getNodeInfo(formulario));
-    if (!arrayHasAtLeastLength(1)(nodeSiglas)) return 0;
+    if (!isNonEmptyArray(nodeSiglas)) return 0;
     const dominio = getDominio(doc);
     return { nodeSiglas, dominio };
   }
   function modificarPagina({ doc, nodeSiglas, dominio }) {
     const criarLink = makeCriarLinks(doc, dominio);
-    let linksCriados = 0;
     for (const nodeSigla of nodeSiglas) {
       criarLink(nodeSigla);
-      linksCriados += 1;
     }
-    return { linksCriados };
+    return { linksCriados: nodeSiglas.length };
+  }
+  function isNonEmptyArray(array) {
+    return array.length > 0;
   }
   try {
     main({ doc: document, log: console.log.bind(console, '[achei]') });

@@ -15,7 +15,7 @@ export function getDominio(doc: typeof document) {
     'input[name="local"]:checked'
   )?.value;
   assert(
-    !!value && isInDominios(value),
+    value !== undefined && isInDominios(value),
     'Não foi possível verificar o domínio.'
   );
   return dominios[value];

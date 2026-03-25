@@ -1,4 +1,3 @@
-import { arrayHasAtLeastLength } from '@nadameu/predicates';
 import { Dominio, getDominio } from './getDominio';
 import { getFormulario } from './getFormulario';
 import { getNodeInfo } from './getNodeInfo';
@@ -29,7 +28,7 @@ function parsePagina(doc: typeof document):
     } {
   const formulario = getFormulario(doc);
   const nodeSiglas = Array.from(getNodeInfo(formulario));
-  if (!arrayHasAtLeastLength(1)(nodeSiglas)) return 0;
+  if (!isNonEmptyArray(nodeSiglas)) return 0;
   const dominio = getDominio(doc);
   return { nodeSiglas, dominio };
 }
@@ -44,12 +43,13 @@ function modificarPagina({
   dominio: Dominio;
 }) {
   const criarLink = makeCriarLinks(doc, dominio);
-  let linksCriados = 0;
   for (const nodeSigla of nodeSiglas) {
     criarLink(nodeSigla);
-    linksCriados += 1;
   }
-  return { linksCriados };
+  return { linksCriados: nodeSiglas.length };
 }
 
-type NonEmptyArray<T> = T[] & Record<'0', T>;
+type NonEmptyArray<T> = [T, ...T[]];
+function isNonEmptyArray<T>(array: T[]): array is NonEmptyArray<T> {
+  return array.length > 0;
+}
