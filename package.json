@@ -1,7 +1,7 @@
 {
   "scripts": {
     "format": "prettier --write .",
-    "serve": "http-server -c-1 -o ."
+    "serve": "vite serve"
   },
   "devDependencies": {
     "@nadameu/esbuild-target": "workspace:^",
