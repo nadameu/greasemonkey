@@ -302,6 +302,7 @@ function criar_dialogo_favoritos(
   return {
     dialogo,
     update(dados: ({ numproc: NumProc } & db.Favorito)[]) {
+      link_download.href = `data:application/json,${window.encodeURIComponent(JSON.stringify(dados, undefined, 2))}`;
       if (dados.length === 0) {
         output.textContent = 'Não há favoritos cadastrados.';
         return;
