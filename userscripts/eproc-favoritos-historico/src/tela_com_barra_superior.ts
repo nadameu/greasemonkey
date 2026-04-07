@@ -14,13 +14,19 @@ import { isPrioridade, Prioridade } from './Prioridade';
 import { query_first } from './query_first';
 
 export async function tela_com_barra_superior() {
-  const icones_casa = Array.from(
-    document.querySelectorAll<HTMLElement>('#navbar i.navbar-icons')
-  ).filter(x => x.textContent === 'home');
+  const icones_casa = document
+    .querySelectorAll<HTMLElement>('#navbar i.navbar-icons')
+    .values()
+    .filter(x => x.textContent === 'home')
+    .toArray();
   if (icones_casa.length > 1) throw new Error('Mais de um ícone encontrado.');
-  if (icones_casa.length === 0) return;
-  const link_casa = icones_casa[0]!.closest('a[href]');
-  P.assert(P.isNotNull(link_casa), 'Erro ao definir localização dos ícones.');
+  const [icone_casa] = icones_casa;
+  if (!icone_casa) return;
+  const link_casa = P.check(
+    P.isNotNull,
+    icone_casa.closest('a[href]'),
+    'Erro ao definir localização dos ícones.'
+  );
 
   const pesquisa_rapida = await query_first<HTMLInputElement>(
     'input[id="txtNumProcessoPesquisaRapida"]'
@@ -135,16 +141,20 @@ function criar_dialogo_historico(
       const data_agora = new Date();
       output.append(
         criar_tabela(
-          ['Favorito?', 'Processo', 'Último acesso'],
+          [
+            ['favorito', 'Favorito?'],
+            ['processo', 'Processo'],
+            ['acesso', 'Último acesso'],
+          ],
           dados.map(({ numproc, favorito, acesso }) => {
-            const c0 =
+            const icone_favorito =
               favorito === undefined
                 ? ''
                 : criar_icone_material('star', favorito.motivo);
-            const c1 = criar_links_numproc(numproc);
+            const processo = criar_links_numproc(numproc);
             const data_acesso = new Date(acesso);
 
-            const c2 = h(
+            const texto_acesso = h(
               'time',
               {
                 dateTime: data_acesso.toISOString(),
@@ -152,7 +162,7 @@ function criar_dialogo_historico(
               },
               formatar_intervalo(data_acesso, data_agora)
             );
-            return [c0, c1, c2];
+            return { favorito: icone_favorito, processo, acesso: texto_acesso };
           })
         )
       );
@@ -250,10 +260,10 @@ function criar_dialogo_favoritos(
   const arquivo = h('input', {
     type: 'file',
     accept: 'application/json',
-    onchange(evt) {
-      evt.preventDefault();
-      if ((arquivo.files?.length ?? 0) === 1) {
-        (async () => {
+    async onchange(evt) {
+      try {
+        evt.preventDefault();
+        if (arquivo.files?.length === 1) {
           const file = arquivo.files!.item(0)!;
           console.log({ file });
           const text = await file.text();
@@ -283,12 +293,11 @@ function criar_dialogo_favoritos(
             );
             div_upload.classList.add(classes.hidden!);
             dialogo.close();
-          } else {
           }
-        })().catch(err => {
-          log_error(err);
-          window.alert('Erro ao abrir arquivo.');
-        });
+        }
+      } catch (err) {
+        log_error(err);
+        window.alert('Erro ao abrir arquivo.');
       }
     },
   });
@@ -309,16 +318,19 @@ function criar_dialogo_favoritos(
       }
       output.textContent = '';
       const tabela = criar_tabela(
-        ['Prioridade', 'Processo', 'Motivo'],
+        [
+          ['prioridade', 'Prioridade'],
+          ['processo', 'Processo'],
+          ['motivo', 'Motivo'],
+        ],
         dados.map(({ numproc, motivo, prioridade }) => {
-          const c0 = {
+          const descricao_prioridade = {
             [Prioridade.ALTA]: 'Alta',
             [Prioridade.MEDIA]: 'Média',
             [Prioridade.BAIXA]: 'Baixa',
           }[prioridade];
-          const c1 = criar_links_numproc(numproc);
-          const c2 = motivo;
-          return [c0, c1, c2];
+          const processo = criar_links_numproc(numproc);
+          return { prioridade: descricao_prioridade, processo, motivo };
         })
       );
       const linhas = P.check(P.isDefined, tabela.tBodies[0]?.rows);
@@ -356,14 +368,8 @@ function criar_links_dialogo(
       h(
         'a',
         { href: '#', onclick: criar_onclick('NOVA_ABA') },
-        h(
-          'i',
-          {
-            classList: ['material-icons'],
-            title: 'Abrir em nova aba',
-            style: { fontSize: '17px' },
-          },
-          'open_in_new'
+        (x => ((x.style.fontSize = '17px'), x))(
+          criar_icone_material('open_in_new', 'Abrir em nova aba')
         )
       )
     );

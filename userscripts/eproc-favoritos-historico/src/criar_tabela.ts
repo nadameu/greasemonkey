@@ -1,18 +1,23 @@
 import { h } from '@nadameu/create-element';
 
-export function criar_tabela(
-  cabecalhos: Array<Node | string>,
-  linhas: Array<Array<Node | string>>
+export function criar_tabela<T extends string>(
+  cabecalhos: Array<[T, Node | string]>,
+  linhas: Array<Record<T, Node | string>>
 ) {
+  const campos = cabecalhos.map(([nome]) => nome);
   return h(
     'table',
-    {},
-    h('thead', {}, h('tr', {}, ...cabecalhos.map(child => h('th', {}, child)))),
+    null,
+    h(
+      'thead',
+      null,
+      h('tr', null, ...cabecalhos.map(([, child]) => h('th', null, child)))
+    ),
     h(
       'tbody',
-      {},
-      ...linhas.map(celulas =>
-        h('tr', {}, ...celulas.map(conteudo => h('td', {}, conteudo)))
+      null,
+      ...linhas.map(linha =>
+        h('tr', null, ...campos.map(campo => h('td', null, linha[campo])))
       )
     )
   );

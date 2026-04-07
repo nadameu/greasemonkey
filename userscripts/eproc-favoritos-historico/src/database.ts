@@ -104,10 +104,14 @@ export async function obter_historico() {
 
 export async function obter_favoritos() {
   return (await Store.getInstance().getAll())
-    .flatMap(([numproc, { favorito }]) => {
-      if (favorito === undefined) return [];
-      return { numproc, ...favorito };
-    })
+    .filter(
+      (dados): dados is [NumProc, Item & { favorito: {} }] =>
+        dados[1].favorito !== undefined
+    )
+    .map(([numproc, { favorito }]): { numproc: NumProc } & Favorito => ({
+      numproc,
+      ...favorito,
+    }))
     .sort((a, b) => {
       if (a.prioridade !== b.prioridade) return b.prioridade - a.prioridade;
       return b.timestamp - a.timestamp;

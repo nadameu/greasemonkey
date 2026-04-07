@@ -5,16 +5,19 @@ import { tela_com_barra_superior } from './tela_com_barra_superior';
 import { tela_processo } from './tela_processo';
 
 export async function main() {
+  const actions: Array<() => Promise<void>> = [];
   const url = new URL(document.location.href);
   if (url.searchParams.get('acao') === 'processo_selecionar') {
-    const numproc = url.searchParams.get('num_processo');
-    P.assert(
-      P.isNotNull(numproc) && isNumProc(numproc),
+    const numproc = P.check(
+      P.refine(P.isString, isNumProc),
+      url.searchParams.get('num_processo'),
       'Erro ao obter o número do processo.'
     );
     await db.acrescentar_historico(numproc);
-    await tela_processo();
+    actions.push(tela_processo);
   }
 
-  await tela_com_barra_superior();
+  actions.push(tela_com_barra_superior);
+
+  await Promise.all(actions.map(action => action()));
 }

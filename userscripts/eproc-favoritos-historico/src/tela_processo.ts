@@ -17,14 +17,14 @@ type Status =
   | { status: 'ERROR' };
 
 export async function tela_processo() {
-  const elemento_numero = document.getElementById('txtNumProcesso');
-  P.assert(
-    P.isNotNullish(elemento_numero),
+  const elemento_numero = P.check(
+    P.isNotNull,
+    document.getElementById('txtNumProcesso'),
     'Erro ao obter o número do processo.'
   );
-  const numero_formatado = elemento_numero.textContent.trim();
-  P.assert(
-    P.isNonEmptyString(numero_formatado),
+  const numero_formatado = P.check(
+    P.isNonEmptyString,
+    elemento_numero.textContent.trim(),
     'Erro ao obter o número do processo.'
   );
   const numero = P.check(
@@ -55,9 +55,9 @@ export async function tela_processo() {
     classes
   );
   aviso.append(...mensagem_aviso_favoritos.map(x => h('p', {}, x)));
-  const salvar_e_fechar = (evt: Event) => {
-    evt.preventDefault();
-    (async () => {
+  const salvar_e_fechar = async (evt: Event) => {
+    try {
+      evt.preventDefault();
       const motivo = input.value;
       const valor_prioridade = Number(select.value);
       const prioridade = P.check(
@@ -69,15 +69,15 @@ export async function tela_processo() {
       await db.salvar_favorito({ numproc: numero, motivo, prioridade });
       estado.dispatch({ status: 'ACTIVE', motivo });
       dialogo.close();
-    })().catch(err => {
+    } catch (err) {
       estado.dispatch({ status: 'ERROR' });
       log_error(err);
       window.alert('Erro ao salvar favorito.');
-    });
+    }
   };
-  const fechar_sem_salvar = (evt: Event) => {
-    evt.preventDefault();
-    (async () => {
+  const fechar_sem_salvar = async (evt: Event) => {
+    try {
+      evt.preventDefault();
       dialogo.close();
       const favorito = await db.verificar_favorito(numero);
       if (favorito !== undefined) {
@@ -85,14 +85,14 @@ export async function tela_processo() {
       } else {
         estado.dispatch({ status: 'INACTIVE' });
       }
-    })().catch(err => {
+    } catch (err) {
       estado.dispatch({ status: 'ERROR' });
       log_error(err);
-    });
+    }
   };
-  const remover_clicado = (evt: Event) => {
-    evt.preventDefault();
-    (async () => {
+  const remover_clicado = async (evt: Event) => {
+    try {
+      evt.preventDefault();
       const resposta = window.confirm(
         `Remover processo ${formatar_numproc(numero)} dos favoritos?`
       );
@@ -101,11 +101,11 @@ export async function tela_processo() {
         dialogo.close();
         estado.dispatch({ status: 'INACTIVE' });
       }
-    })().catch(err => {
+    } catch (err) {
       estado.dispatch({ status: 'ERROR' });
       log_error(err);
       window.alert('Erro ao remover dos favoritos.');
-    });
+    }
   };
   const remover = barras.map(barra => {
     const fechar = barra.firstChild as HTMLButtonElement;
@@ -163,12 +163,11 @@ export async function tela_processo() {
 
   const estrela = render_estrela(elemento_numero);
   estado.subscribe(estrela.update);
-  estrela.link.addEventListener('click', evt => {
-    evt.preventDefault();
-
-    const current = estado.getState();
-    if (current.status === 'ERROR' || current.status === 'PENDING') return;
-    (async () => {
+  estrela.link.addEventListener('click', async evt => {
+    try {
+      evt.preventDefault();
+      const current = estado.getState();
+      if (current.status === 'ERROR' || current.status === 'PENDING') return;
       estado.dispatch({ status: 'PENDING' });
       const dados = await db.verificar_favorito(numero);
       if (current.status === 'ACTIVE' && dados === undefined) {
@@ -180,11 +179,11 @@ export async function tela_processo() {
         update_dialogo(dados);
         dialogo.showModal();
       }
-    })().catch(err => {
+    } catch (err) {
       estado.dispatch({ status: 'ERROR' });
       log_error(err);
       window.alert('Erro ao realizar a operação.');
-    });
+    }
   });
 }
 
@@ -226,19 +225,16 @@ function render_estrela(elemento_numero: HTMLElement) {
 
       if (estado.status === 'ACTIVE') {
         link.classList.add(classes.added!);
-        link.classList.remove(classes.wait!);
-      } else if (estado.status === 'PENDING') {
-        link.classList.remove(classes.added!);
-        link.classList.add(classes.wait!);
-      } else {
-        link.classList.remove(classes.added!);
-        link.classList.remove(classes.wait!);
-      }
-
-      if (estado.status === 'ACTIVE') {
         link.title = estado.motivo.trim() || title;
       } else {
+        link.classList.remove(classes.added!);
         link.title = title;
+      }
+
+      if (estado.status === 'PENDING') {
+        link.classList.add(classes.wait!);
+      } else {
+        link.classList.remove(classes.wait!);
       }
     },
   };
