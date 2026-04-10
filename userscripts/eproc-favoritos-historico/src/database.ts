@@ -3,6 +3,7 @@ import { NumProc } from './NumProc';
 import { Prioridade } from './Prioridade';
 
 const DB_NAME = 'eproc-favoritos-historico';
+const STORE_NAME = 'itens';
 export interface Item {
   /** Timestamp de quando foi adicionado como favorito */
   favorito: Favorito | undefined;
@@ -19,7 +20,7 @@ export interface Favorito {
 class Store {
   private _store: key_val.UseStore;
   private constructor() {
-    this._store = key_val.createStore(DB_NAME, 'itens');
+    this._store = key_val.createStore(DB_NAME, STORE_NAME);
   }
 
   get(numproc: NumProc) {
@@ -38,8 +39,9 @@ class Store {
     return key_val.update(numproc, update, this._store);
   }
 
+  private static _instance: Store;
   static getInstance() {
-    return new Store();
+    return (this._instance ??= new Store());
   }
 }
 
