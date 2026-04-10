@@ -2,7 +2,7 @@
 // @name         eproc-favoritos-historico
 // @name:pt-BR   eproc - favoritos e histórico
 // @namespace    http://nadameu.com.br
-// @version      1.3.1
+// @version      1.3.2
 // @author       nadameu
 // @description  Permite definir processos favoritos e visualizar o histórico de processos acessados
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=*
@@ -77,8 +77,6 @@
   function isAnyOf(...predicates) {
     return value => predicates.some(p => p(value));
   }
-  const isNullish = x => x == null;
-  const isNotNullish = negate(isNullish);
   const isArray = x => Array.isArray(x);
   function isTypedArray(predicate) {
     return refine(isArray, xs => xs.every(predicate));
@@ -162,10 +160,11 @@
     });
   }
   const DB_NAME = 'eproc-favoritos-historico';
+  const STORE_NAME = 'itens';
   class Store {
     _store;
     constructor() {
-      this._store = createStore$1(DB_NAME, 'itens');
+      this._store = createStore$1(DB_NAME, STORE_NAME);
     }
     get(numproc) {
       return get(numproc, this._store);
@@ -179,8 +178,9 @@
     update(numproc, update$1) {
       return update(numproc, update$1, this._store);
     }
+    static _instance;
     static getInstance() {
-      return new Store();
+      return (this._instance ??= new Store());
     }
   }
   async function verificar_favorito(numproc) {
@@ -222,10 +222,11 @@
   }
   async function obter_favoritos() {
     return (await Store.getInstance().getAll())
-      .flatMap(([numproc, { favorito }]) => {
-        if (favorito === void 0) return [];
-        return { numproc, ...favorito };
-      })
+      .filter(dados => dados[1].favorito !== void 0)
+      .map(([numproc, { favorito }]) => ({
+        numproc,
+        ...favorito,
+      }))
       .sort((a, b) => {
         if (a.prioridade !== b.prioridade) return b.prioridade - a.prioridade;
         return b.timestamp - a.timestamp;
@@ -306,19 +307,20 @@
     return h('i', { classList: ['material-icons'], title }, symbol);
   }
   function criar_tabela(cabecalhos, linhas) {
+    const campos = cabecalhos.map(([nome]) => nome);
     return h(
       'table',
-      {},
+      null,
       h(
         'thead',
-        {},
-        h('tr', {}, ...cabecalhos.map(child => h('th', {}, child)))
+        null,
+        h('tr', null, ...cabecalhos.map(([, child]) => h('th', null, child)))
       ),
       h(
         'tbody',
-        {},
-        ...linhas.map(celulas =>
-          h('tr', {}, ...celulas.map(conteudo => h('td', {}, conteudo)))
+        null,
+        ...linhas.map(linha =>
+          h('tr', null, ...campos.map(campo => h('td', null, linha[campo])))
         )
       )
     );
@@ -396,13 +398,19 @@
     return element;
   }
   async function tela_com_barra_superior() {
-    const icones_casa = Array.from(
-      document.querySelectorAll('#navbar i.navbar-icons')
-    ).filter(x => x.textContent === 'home');
+    const icones_casa = document
+      .querySelectorAll('#navbar i.navbar-icons')
+      .values()
+      .filter(x => x.textContent === 'home')
+      .toArray();
     if (icones_casa.length > 1) throw new Error('Mais de um ícone encontrado.');
-    if (icones_casa.length === 0) return;
-    const link_casa = icones_casa[0].closest('a[href]');
-    assert(isNotNull(link_casa), 'Erro ao definir localização dos ícones.');
+    const [icone_casa] = icones_casa;
+    if (!icone_casa) return;
+    const link_casa = check(
+      isNotNull,
+      icone_casa.closest('a[href]'),
+      'Erro ao definir localização dos ícones.'
+    );
     const pesquisa_rapida = await query_first(
       'input[id="txtNumProcessoPesquisaRapida"]'
     );
@@ -498,15 +506,19 @@
         const data_agora = new Date();
         output.append(
           criar_tabela(
-            ['Favorito?', 'Processo', 'Último acesso'],
+            [
+              ['favorito', 'Favorito?'],
+              ['processo', 'Processo'],
+              ['acesso', 'Último acesso'],
+            ],
             dados.map(({ numproc, favorito, acesso }) => {
-              const c0 =
+              const icone_favorito =
                 favorito === void 0
                   ? ''
                   : criar_icone_material('star', favorito.motivo);
-              const c1 = criar_links_numproc(numproc);
+              const processo = criar_links_numproc(numproc);
               const data_acesso = new Date(acesso);
-              const c2 = h(
+              const texto_acesso = h(
                 'time',
                 {
                   dateTime: data_acesso.toISOString(),
@@ -514,7 +526,11 @@
                 },
                 formatar_intervalo(data_acesso, data_agora)
               );
-              return [c0, c1, c2];
+              return {
+                favorito: icone_favorito,
+                processo,
+                acesso: texto_acesso,
+              };
             })
           )
         );
@@ -611,10 +627,10 @@
     const arquivo = h('input', {
       type: 'file',
       accept: 'application/json',
-      onchange(evt) {
-        evt.preventDefault();
-        if ((arquivo.files?.length ?? 0) === 1) {
-          (async () => {
+      async onchange(evt) {
+        try {
+          evt.preventDefault();
+          if (arquivo.files?.length === 1) {
             const file = arquivo.files.item(0);
             console.log({ file });
             const text = await file.text();
@@ -645,10 +661,10 @@
               div_upload2.classList.add(classes.hidden);
               dialogo2.close();
             }
-          })().catch(err => {
-            log_error(err);
-            window.alert('Erro ao abrir arquivo.');
-          });
+          }
+        } catch (err) {
+          log_error(err);
+          window.alert('Erro ao abrir arquivo.');
         }
       },
     });
@@ -662,22 +678,26 @@
     return {
       dialogo: dialogo2,
       update(dados) {
+        link_download.href = `data:application/json,${window.encodeURIComponent(JSON.stringify(dados, void 0, 2))}`;
         if (dados.length === 0) {
           output.textContent = 'Não há favoritos cadastrados.';
           return;
         }
         output.textContent = '';
         const tabela = criar_tabela(
-          ['Prioridade', 'Processo', 'Motivo'],
+          [
+            ['prioridade', 'Prioridade'],
+            ['processo', 'Processo'],
+            ['motivo', 'Motivo'],
+          ],
           dados.map(({ numproc, motivo, prioridade }) => {
-            const c0 = {
+            const descricao_prioridade = {
               [Prioridade.ALTA]: 'Alta',
               [Prioridade.MEDIA]: 'Média',
               [Prioridade.BAIXA]: 'Baixa',
             }[prioridade];
-            const c1 = criar_links_numproc(numproc);
-            const c2 = motivo;
-            return [c0, c1, c2];
+            const processo = criar_links_numproc(numproc);
+            return { prioridade: descricao_prioridade, processo, motivo };
           })
         );
         const linhas = check(isDefined, tabela.tBodies[0]?.rows);
@@ -711,14 +731,8 @@
         h(
           'a',
           { href: '#', onclick: criar_onclick('NOVA_ABA') },
-          h(
-            'i',
-            {
-              classList: ['material-icons'],
-              title: 'Abrir em nova aba',
-              style: { fontSize: '17px' },
-            },
-            'open_in_new'
+          (x => ((x.style.fontSize = '17px'), x))(
+            criar_icone_material('open_in_new', 'Abrir em nova aba')
           )
         )
       );
@@ -748,14 +762,14 @@
     }
   }
   async function tela_processo() {
-    const elemento_numero = document.getElementById('txtNumProcesso');
-    assert(
-      isNotNullish(elemento_numero),
+    const elemento_numero = check(
+      isNotNull,
+      document.getElementById('txtNumProcesso'),
       'Erro ao obter o número do processo.'
     );
-    const numero_formatado = elemento_numero.textContent.trim();
-    assert(
-      isNonEmptyString(numero_formatado),
+    const numero_formatado = check(
+      isNonEmptyString,
+      elemento_numero.textContent.trim(),
       'Erro ao obter o número do processo.'
     );
     const numero = check(
@@ -786,9 +800,9 @@
       titulo,
     } = criar_dialogo('TITULO_DIALOGO', classes);
     aviso2.append(...mensagem_aviso_favoritos.map(x => h('p', {}, x)));
-    const salvar_e_fechar = evt => {
-      evt.preventDefault();
-      (async () => {
+    const salvar_e_fechar = async evt => {
+      try {
+        evt.preventDefault();
         const motivo = input.value;
         const valor_prioridade = Number(select.value);
         const prioridade = check(
@@ -799,15 +813,15 @@
         await salvar_favorito({ numproc: numero, motivo, prioridade });
         estado.dispatch({ status: 'ACTIVE', motivo });
         dialogo2.close();
-      })().catch(err => {
+      } catch (err) {
         estado.dispatch({ status: 'ERROR' });
         log_error(err);
         window.alert('Erro ao salvar favorito.');
-      });
+      }
     };
-    const fechar_sem_salvar = evt => {
-      evt.preventDefault();
-      (async () => {
+    const fechar_sem_salvar = async evt => {
+      try {
+        evt.preventDefault();
         dialogo2.close();
         const favorito = await verificar_favorito(numero);
         if (favorito !== void 0) {
@@ -815,14 +829,14 @@
         } else {
           estado.dispatch({ status: 'INACTIVE' });
         }
-      })().catch(err => {
+      } catch (err) {
         estado.dispatch({ status: 'ERROR' });
         log_error(err);
-      });
+      }
     };
-    const remover_clicado = evt => {
-      evt.preventDefault();
-      (async () => {
+    const remover_clicado = async evt => {
+      try {
+        evt.preventDefault();
         const resposta = window.confirm(
           `Remover processo ${formatar_numproc(numero)} dos favoritos?`
         );
@@ -831,11 +845,11 @@
           dialogo2.close();
           estado.dispatch({ status: 'INACTIVE' });
         }
-      })().catch(err => {
+      } catch (err) {
         estado.dispatch({ status: 'ERROR' });
         log_error(err);
         window.alert('Erro ao remover dos favoritos.');
-      });
+      }
     };
     const remover = barras.map(barra2 => {
       const fechar = barra2.firstChild;
@@ -891,11 +905,11 @@
     );
     const estrela = render_estrela(elemento_numero);
     estado.subscribe(estrela.update);
-    estrela.link.addEventListener('click', evt => {
-      evt.preventDefault();
-      const current = estado.getState();
-      if (current.status === 'ERROR' || current.status === 'PENDING') return;
-      (async () => {
+    estrela.link.addEventListener('click', async evt => {
+      try {
+        evt.preventDefault();
+        const current = estado.getState();
+        if (current.status === 'ERROR' || current.status === 'PENDING') return;
         estado.dispatch({ status: 'PENDING' });
         const dados = await verificar_favorito(numero);
         if (current.status === 'ACTIVE' && dados === void 0) {
@@ -907,11 +921,11 @@
           update_dialogo(dados);
           dialogo2.showModal();
         }
-      })().catch(err => {
+      } catch (err) {
         estado.dispatch({ status: 'ERROR' });
         log_error(err);
         window.alert('Erro ao realizar a operação.');
-      });
+      }
     });
   }
   function render_estrela(elemento_numero) {
@@ -946,34 +960,33 @@
         icon2.textContent = symbol;
         if (estado.status === 'ACTIVE') {
           link2.classList.add(classes.added);
-          link2.classList.remove(classes.wait);
-        } else if (estado.status === 'PENDING') {
-          link2.classList.remove(classes.added);
-          link2.classList.add(classes.wait);
-        } else {
-          link2.classList.remove(classes.added);
-          link2.classList.remove(classes.wait);
-        }
-        if (estado.status === 'ACTIVE') {
           link2.title = estado.motivo.trim() || title;
         } else {
+          link2.classList.remove(classes.added);
           link2.title = title;
+        }
+        if (estado.status === 'PENDING') {
+          link2.classList.add(classes.wait);
+        } else {
+          link2.classList.remove(classes.wait);
         }
       },
     };
   }
   async function main() {
+    const actions = [];
     const url = new URL(document.location.href);
     if (url.searchParams.get('acao') === 'processo_selecionar') {
-      const numproc = url.searchParams.get('num_processo');
-      assert(
-        isNotNull(numproc) && isNumProc(numproc),
+      const numproc = check(
+        refine(isString, isNumProc),
+        url.searchParams.get('num_processo'),
         'Erro ao obter o número do processo.'
       );
       await acrescentar_historico(numproc);
-      await tela_processo();
+      actions.push(tela_processo);
     }
-    await tela_com_barra_superior();
+    actions.push(tela_com_barra_superior);
+    await Promise.all(actions.map(action => action()));
   }
   main().catch(log_error);
 })();
