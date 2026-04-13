@@ -4,7 +4,7 @@
   "description": "Permite definir processos favoritos e visualizar o histórico de processos acessados",
   "author": "nadameu",
   "private": true,
-  "version": "1.3.2",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

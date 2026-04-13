@@ -2,7 +2,7 @@
 // @name         eproc-favoritos-historico
 // @name:pt-BR   eproc - favoritos e histórico
 // @namespace    http://nadameu.com.br
-// @version      1.3.2
+// @version      2.0.0
 // @author       nadameu
 // @description  Permite definir processos favoritos e visualizar o histórico de processos acessados
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=*
@@ -162,21 +162,63 @@
   const DB_NAME = 'eproc-favoritos-historico';
   const STORE_NAME = 'itens';
   class Store {
-    _store;
-    constructor() {
-      this._store = createStore$1(DB_NAME, STORE_NAME);
+    _store = null;
+    constructor() {}
+    _getStore() {
+      if (this._store) return this._store;
+      const request = indexedDB.open(DB_NAME, 2);
+      request.onupgradeneeded = ({ oldVersion }) => {
+        if (oldVersion < 1) {
+          request.result.createObjectStore(STORE_NAME);
+        }
+        const store = request.transaction.objectStore(STORE_NAME);
+        if (oldVersion < 2) {
+          store.createIndex('acesso', ['acesso']);
+        }
+      };
+      const dbp = promisifyRequest(request);
+      return (this._store = (txMode, callback) =>
+        dbp.then(db =>
+          callback(db.transaction(STORE_NAME, txMode).objectStore(STORE_NAME))
+        ));
     }
     get(numproc) {
-      return get(numproc, this._store);
+      return get(numproc, this._getStore());
     }
     getAll() {
-      return entries(this._store);
+      return entries(this._getStore());
+    }
+    prune(max_records_to_keep) {
+      return this._getStore()('readwrite', async store => {
+        const results = [];
+        const index = store.index('acesso').openCursor(null, 'prev');
+        let count = 0;
+        const deletions = [];
+        index.onsuccess = () => {
+          const cursor = index.result;
+          if (cursor !== null) {
+            count += 1;
+            const numproc = cursor.primaryKey;
+            const item = cursor.value;
+            if (count <= max_records_to_keep) {
+              results.push([numproc, item]);
+            } else if (item.favorito !== void 0);
+            else {
+              deletions.push(store.delete(numproc));
+            }
+            cursor.continue();
+          }
+        };
+        await Promise.all(deletions.map(promisifyRequest));
+        await promisifyRequest(index.transaction);
+        return results;
+      });
     }
     set(numproc, item) {
-      return set(numproc, item, this._store);
+      return set(numproc, item, this._getStore());
     }
     update(numproc, update$1) {
-      return update(numproc, update$1, this._store);
+      return update(numproc, update$1, this._getStore());
     }
     static _instance;
     static getInstance() {
@@ -212,7 +254,8 @@
       return { favorito, acesso: new Date().getTime() };
     });
   }
-  async function obter_historico() {
+  async function obter_historico(max_records_to_keep) {
+    await Store.getInstance().prune(max_records_to_keep);
     return (await Store.getInstance().getAll())
       .map(([numproc, item]) => ({
         numproc,
@@ -319,7 +362,7 @@
       h(
         'tbody',
         null,
-        ...linhas.map(linha =>
+        ...Array.from(linhas, linha =>
           h('tr', null, ...campos.map(campo => h('td', null, linha[campo])))
         )
       )
@@ -468,7 +511,7 @@
       };
     link_historico.addEventListener(
       'click',
-      criar_handler_abertura(dialogo_historico, obter_historico)
+      criar_handler_abertura(dialogo_historico, () => obter_historico(250))
     );
     link_favoritos.addEventListener(
       'click',
@@ -491,6 +534,7 @@
     aviso2.append(
       ...[
         'Aparecerão aqui apenas os processos acessados neste navegador e computador.',
+        'Para cada processo é exibido apenas o acesso mais recente. Serão exibidos apenas os 250 (duzentos e cinquenta) processos acessados mais recentemente.',
         'Usuários com perfil de Diretor de Secretaria conseguem obter a relação completa de processos acessados.',
       ].map(x => h('p', {}, x))
     );
@@ -511,27 +555,30 @@
               ['processo', 'Processo'],
               ['acesso', 'Último acesso'],
             ],
-            dados.map(({ numproc, favorito, acesso }) => {
-              const icone_favorito =
-                favorito === void 0
-                  ? ''
-                  : criar_icone_material('star', favorito.motivo);
-              const processo = criar_links_numproc(numproc);
-              const data_acesso = new Date(acesso);
-              const texto_acesso = h(
-                'time',
-                {
-                  dateTime: data_acesso.toISOString(),
-                  title: data_acesso.toLocaleString('pt-BR'),
-                },
-                formatar_intervalo(data_acesso, data_agora)
-              );
-              return {
-                favorito: icone_favorito,
-                processo,
-                acesso: texto_acesso,
-              };
-            })
+            dados
+              .values()
+              .map(({ numproc, favorito, acesso }) => {
+                const icone_favorito =
+                  favorito === void 0
+                    ? ''
+                    : criar_icone_material('star', favorito.motivo);
+                const processo = criar_links_numproc(numproc);
+                const data_acesso = new Date(acesso);
+                const texto_acesso = h(
+                  'time',
+                  {
+                    dateTime: data_acesso.toISOString(),
+                    title: data_acesso.toLocaleString('pt-BR'),
+                  },
+                  formatar_intervalo(data_acesso, data_agora)
+                );
+                return {
+                  favorito: icone_favorito,
+                  processo,
+                  acesso: texto_acesso,
+                };
+              })
+              .take(250)
           )
         );
       },
