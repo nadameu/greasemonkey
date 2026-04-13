@@ -92,7 +92,7 @@ export async function tela_com_barra_superior() {
 
   link_historico.addEventListener(
     'click',
-    criar_handler_abertura(dialogo_historico, db.obter_historico)
+    criar_handler_abertura(dialogo_historico, () => db.obter_historico(250))
   );
   link_favoritos.addEventListener(
     'click',
@@ -126,6 +126,7 @@ function criar_dialogo_historico(
   aviso.append(
     ...[
       'Aparecerão aqui apenas os processos acessados neste navegador e computador.',
+      'Para cada processo é exibido apenas o acesso mais recente. Serão exibidos apenas os 250 (duzentos e cinquenta) processos acessados mais recentemente.',
       'Usuários com perfil de Diretor de Secretaria conseguem obter a relação completa de processos acessados.',
     ].map(x => h('p', {}, x))
   );
@@ -146,24 +147,31 @@ function criar_dialogo_historico(
             ['processo', 'Processo'],
             ['acesso', 'Último acesso'],
           ],
-          dados.map(({ numproc, favorito, acesso }) => {
-            const icone_favorito =
-              favorito === undefined
-                ? ''
-                : criar_icone_material('star', favorito.motivo);
-            const processo = criar_links_numproc(numproc);
-            const data_acesso = new Date(acesso);
+          dados
+            .values()
+            .map(({ numproc, favorito, acesso }) => {
+              const icone_favorito =
+                favorito === undefined
+                  ? ''
+                  : criar_icone_material('star', favorito.motivo);
+              const processo = criar_links_numproc(numproc);
+              const data_acesso = new Date(acesso);
 
-            const texto_acesso = h(
-              'time',
-              {
-                dateTime: data_acesso.toISOString(),
-                title: data_acesso.toLocaleString('pt-BR'),
-              },
-              formatar_intervalo(data_acesso, data_agora)
-            );
-            return { favorito: icone_favorito, processo, acesso: texto_acesso };
-          })
+              const texto_acesso = h(
+                'time',
+                {
+                  dateTime: data_acesso.toISOString(),
+                  title: data_acesso.toLocaleString('pt-BR'),
+                },
+                formatar_intervalo(data_acesso, data_agora)
+              );
+              return {
+                favorito: icone_favorito,
+                processo,
+                acesso: texto_acesso,
+              };
+            })
+            .take(250)
         )
       );
     },

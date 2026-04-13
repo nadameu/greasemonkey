@@ -2,7 +2,7 @@ import { h } from '@nadameu/create-element';
 
 export function criar_tabela<T extends string>(
   cabecalhos: Array<[T, Node | string]>,
-  linhas: Array<Record<T, Node | string>>
+  linhas: Iterable<Record<T, Node | string>>
 ) {
   const campos = cabecalhos.map(([nome]) => nome);
   return h(
@@ -16,7 +16,7 @@ export function criar_tabela<T extends string>(
     h(
       'tbody',
       null,
-      ...linhas.map(linha =>
+      ...Array.from(linhas, linha =>
         h('tr', null, ...campos.map(campo => h('td', null, linha[campo])))
       )
     )
