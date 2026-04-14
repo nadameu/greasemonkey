@@ -9,34 +9,31 @@ table.resultTable > tbody > tr {
       top left / 12px 12px no-repeat;
   }
 
-  &[id*=',JUIZ,'] {
+  &[id~='JUIZ,'] {
     --hue-pessoa: 0;
-    & > td:nth-last-child(3) {
-      border: 1px solid var(--cor-pessoa);
-    }
   }
-  &[id*=',SERVIDOR,'] {
+  &[id~='SERVIDOR,'] {
     --hue-pessoa: 40;
   }
-  &[id*=',ADVOGADO,'] {
+  &[id~='ADVOGADO,'] {
     --hue-pessoa: 80;
   }
-  &[id*=',PROMOTOR,'] {
+  &[id~='PROMOTOR,'] {
     --hue-pessoa: 120;
   }
-  &[id*=',DEFENSOR,'] {
+  &[id~='DEFENSOR,'] {
     --hue-pessoa: 160;
   }
-  &[id*=',PROCURADOR,'] {
+  &[id~='PROCURADOR,'] {
     --hue-pessoa: 200;
   }
-  &[id*=',OUTROS,'] {
+  &[id~='OUTROS,'] {
     --hue-pessoa: 240;
   }
-  &[id*=',AUDIENCIA,'] {
+  &[id~='AUDIENCIA,'] {
     --hue-pessoa: 280;
   }
-  &[id*=',OFICIALJUSTICA,'] {
+  &[id~='OFICIALJUSTICA,'] {
     --hue-pessoa: 320;
   }
 }
