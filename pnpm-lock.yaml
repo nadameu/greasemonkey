@@ -282,6 +282,12 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0
 
+  userscripts/seeu-esmaecer-links:
+    devDependencies:
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1
+
   userscripts/seeu-movimentacoes:
     dependencies:
       '@nadameu/adts':
