@@ -1,0 +1,24 @@
+{
+  "name": "package-name",
+  "gm_name": "nome-pt-br",
+  "version": "1.0.0",
+  "private": true,
+  "description": "package-description",
+  "author": "nadameu",
+  "type": "module",
+  "scripts": {
+    "build": "run-s type-check compile format",
+    "compile": "vite build",
+    "dev": "vite",
+    "format": "prettier --write ../../package-name.user.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest watch",
+    "type-check": "tsc"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@nadameu/enderecos-eproc": "workspace:^",
+    "jsdom": "^25.0.1"
+  }
+}
