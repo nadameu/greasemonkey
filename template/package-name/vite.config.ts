@@ -8,6 +8,8 @@ import * as pkg from './package.json';
 export default defineConfig({
   build: { outDir: '../..', emptyOutDir: false, target },
   esbuild: { charset: 'utf8' },
+  // Para SEEU, descomentar a opção abaixo.
+  // server: { hmr: false },
 
   plugins: [
     monkey({
