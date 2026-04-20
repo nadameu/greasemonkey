@@ -20,16 +20,17 @@ export const ap =
 export const orElse =
   <b>(ifNullish: () => b) =>
   <a>(a: Nullish<a>): NonNullable<a> | b =>
-    a == null ? ifNullish() : a;
+    a ?? ifNullish();
 
 export const orThrow = (message: string) =>
   orElse(() => {
     throw new Error(message);
   });
 
-export const or = <b>(
-  defaultValue: b
-): (<a>(a: Nullish<a>) => NonNullable<a> | b) => orElse(() => defaultValue);
+export const or =
+  <b>(defaultValue: b) =>
+  <a>(a: Nullish<a>): NonNullable<a> | b =>
+    a ?? defaultValue;
 
 export const filter: {
   <a, b extends a>(pred: (a: a) => a is b): (fa: Nullish<a>) => b | nullish;
@@ -48,8 +49,10 @@ export const mapProp =
  * @template {number} N Comprimento do array de resultado
  * @param {RegExp} re Expressão regular
  */
-export const match = <N extends number = 1>(re: RegExp) =>
-  map((x: string) => x.match(re) as CustomMatchArray<N> | null);
+export const match =
+  <N extends number = 1>(re: RegExp) =>
+  (x: Nullish<string>) =>
+    x?.match(re) as CustomMatchArray<N> | nullish;
 
 type CustomMatchArray<N extends number> = CustomMatchArrayHelper<N, []>;
 type CustomMatchArrayHelper<
