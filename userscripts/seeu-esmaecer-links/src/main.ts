@@ -1,4 +1,4 @@
-import { GM_addStyle } from '$';
+import { GM_addStyle, unsafeWindow } from '$';
 import { name as pkg_name } from '../package.json' with { type: 'json' };
 import { lift_throwable } from './try_catch';
 
@@ -227,7 +227,7 @@ function common_ancestor(nodes: [Node, ...Node[]]) {
 function debounce(fn: { (): void }, timeout_ms = 200) {
   let timer: number;
   return () => {
-    window.clearTimeout(timer);
-    timer = window.setTimeout(fn, timeout_ms);
+    unsafeWindow.clearTimeout(timer);
+    timer = unsafeWindow.setTimeout(fn, timeout_ms);
   };
 }
