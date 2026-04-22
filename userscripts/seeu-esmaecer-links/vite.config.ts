@@ -14,10 +14,9 @@ export default defineConfig({
       entry: 'src/index.ts',
       server: { prefix: name => `dev:${name}` },
       userscript: {
-        'name': { 'pt-BR': pkg.gm_name },
-        'namespace': 'http://nadameu.com.br',
-        'match': ['https://seeu.pje.jus.br/seeu/usuario/mesa*'],
-        'run-at': 'document-idle',
+        name: { 'pt-BR': pkg.gm_name },
+        namespace: 'http://nadameu.com.br',
+        match: ['https://seeu.pje.jus.br/seeu/usuario/mesa*'],
       },
     }),
   ],
