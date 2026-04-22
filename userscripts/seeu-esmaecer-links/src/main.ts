@@ -1,6 +1,6 @@
 import { GM_addStyle } from '$';
 import { name as pkg_name } from '../package.json' with { type: 'json' };
-import { try_catch } from './try_catch';
+import { lift_throwable } from './try_catch';
 
 interface LinhaComContagem {
   linha: HTMLTableRowElement;
@@ -30,7 +30,7 @@ export function main() {
     const common = common_ancestor(
       celulas_com_script as Node[] as [Node, ...Node[]]
     );
-    const observer = new MutationObserver(debounce(() => try_catch(main)));
+    const observer = new MutationObserver(debounce(lift_throwable(main)));
     observer.observe(common, { childList: true, subtree: true });
     observado = true;
   }
