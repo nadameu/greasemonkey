@@ -81,7 +81,11 @@ function obter_linhas_rotulo_valor() {
     const { texto, contem_scripts } = extrair_dados_celula(celula);
     const qtd = texto.trim().match(/^\d+$/);
     if (qtd === null) {
+      if (contem_scripts) {
+        return [{ linha, celulas: [{ celula, qtd: -1, contem_scripts }] }];
+      } else {
       return [];
+      }
     } else {
       return [
         { linha, celulas: [{ celula, qtd: Number(qtd[0]), contem_scripts }] },
@@ -99,9 +103,9 @@ function extrair_dados_celula(celula: Element) {
         node =>
           !(node instanceof HTMLScriptElement) && !(node instanceof Comment)
       )
-      .map(x => x.textContent)
+      .map(x => x.textContent ?? '')
       .join('');
-    return { texto, contem_scripts: false };
+    return { texto, contem_scripts: true };
   }
 }
 
