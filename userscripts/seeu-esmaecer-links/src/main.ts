@@ -34,36 +34,19 @@ export function main() {
     observer.observe(common, { childList: true, subtree: true });
     observado = true;
   }
-  const linhas_com_celulas_vazias = linhas.flatMap(
-    (
-      l
-    ):
-      | []
-      | [
-          { linha: HTMLTableRowElement } & (
-            | { vazia: true }
-            | { vazia: false; celulas_vazias: HTMLTableCellElement[] }
-          ),
-        ] => {
-      const celulas_vazias = l.celulas.filter(c => c.qtd === 0);
-      if (celulas_vazias.length === l.celulas.length) {
-        return [{ linha: l.linha, vazia: true }];
-      } else {
-        return [
-          {
-            linha: l.linha,
-            vazia: false,
-            celulas_vazias: celulas_vazias.map(c => c.celula),
-          },
-        ];
+  for (const { linha, celulas } of linhas) {
+    linha.classList.remove(NOME_CLASSE_CONTAGEM_ZERADA);
+    const celulas_vazias: HTMLTableCellElement[] = [];
+    for (const { celula, qtd } of celulas) {
+      celula.classList.remove(NOME_CLASSE_CONTAGEM_ZERADA);
+      if (qtd === 0) {
+        celulas_vazias.push(celula);
       }
     }
-  );
-  for (const l of linhas_com_celulas_vazias) {
-    if (l.vazia) {
-      l.linha.classList.add(NOME_CLASSE_CONTAGEM_ZERADA);
+    if (celulas_vazias.length === celulas.length) {
+      linha.classList.add(NOME_CLASSE_CONTAGEM_ZERADA);
     } else {
-      for (const celula_vazia of l.celulas_vazias) {
+      for (const celula_vazia of celulas_vazias) {
         celula_vazia.classList.add(NOME_CLASSE_CONTAGEM_ZERADA);
       }
     }
@@ -84,7 +67,7 @@ function obter_linhas_rotulo_valor() {
       if (contem_scripts) {
         return [{ linha, celulas: [{ celula, qtd: -1, contem_scripts }] }];
       } else {
-      return [];
+        return [];
       }
     } else {
       return [
