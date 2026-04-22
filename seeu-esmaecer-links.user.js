@@ -2,12 +2,12 @@
 // @name         seeu-esmaecer-links
 // @name:pt-BR   SEEU - Esmaecer links
 // @namespace    http://nadameu.com.br
-// @version      1.0.0
+// @version      1.0.1
 // @author       nadameu
 // @description  Diminui o destaque para links em vermelho quando seu conteúdo é o número 0 (zero)
 // @match        https://seeu.pje.jus.br/seeu/usuario/mesa*
 // @grant        GM_addStyle
-// @run-at       document-idle
+// @grant        unsafeWindow
 // ==/UserScript==
 
 (function () {
@@ -15,6 +15,8 @@
 
   var _GM_addStyle = (() =>
     typeof GM_addStyle != 'undefined' ? GM_addStyle : void 0)();
+  var _unsafeWindow = (() =>
+    typeof unsafeWindow != 'undefined' ? unsafeWindow : void 0)();
   const name = 'seeu-esmaecer-links';
   class CustomError extends Error {
     constructor(message, payload = {}) {
@@ -23,17 +25,22 @@
     }
   }
   CustomError.prototype.name = 'CustomError';
-  function try_catch(fn) {
-    try {
-      fn();
-    } catch (err) {
-      console.group(`<${name}>`);
-      console.error(err);
-      if (err instanceof CustomError) {
-        console.debug(err.payload);
+  function lift_throwable(fn) {
+    return (...args) => {
+      try {
+        fn(...args);
+      } catch (err) {
+        console.group(`<${name}>`);
+        console.error(err);
+        if (err instanceof CustomError) {
+          console.debug(err.payload);
+        }
+        console.groupEnd();
       }
-      console.groupEnd();
-    }
+    };
+  }
+  function try_catch(fn) {
+    return lift_throwable(fn)();
   }
   const NOME_CLASSE_CONTAGEM_ZERADA = `gm-${name}-vazio`;
   let observado = false;
@@ -48,29 +55,23 @@
     );
     if (!observado && celulas_com_script.length > 0) {
       const common = common_ancestor(celulas_com_script);
-      const observer = new MutationObserver(debounce(() => try_catch(main)));
+      const observer = new MutationObserver(debounce(lift_throwable(main)));
       observer.observe(common, { childList: true, subtree: true });
       observado = true;
     }
-    const linhas_com_celulas_vazias = linhas.flatMap(l => {
-      const celulas_vazias = l.celulas.filter(c => c.qtd === 0);
-      if (celulas_vazias.length === l.celulas.length) {
-        return [{ linha: l.linha, vazia: true }];
-      } else {
-        return [
-          {
-            linha: l.linha,
-            vazia: false,
-            celulas_vazias: celulas_vazias.map(c => c.celula),
-          },
-        ];
+    for (const { linha, celulas } of linhas) {
+      linha.classList.remove(NOME_CLASSE_CONTAGEM_ZERADA);
+      const celulas_vazias = [];
+      for (const { celula, qtd } of celulas) {
+        celula.classList.remove(NOME_CLASSE_CONTAGEM_ZERADA);
+        if (qtd === 0) {
+          celulas_vazias.push(celula);
+        }
       }
-    });
-    for (const l of linhas_com_celulas_vazias) {
-      if (l.vazia) {
-        l.linha.classList.add(NOME_CLASSE_CONTAGEM_ZERADA);
+      if (celulas_vazias.length === celulas.length) {
+        linha.classList.add(NOME_CLASSE_CONTAGEM_ZERADA);
       } else {
-        for (const celula_vazia of l.celulas_vazias) {
+        for (const celula_vazia of celulas_vazias) {
           celula_vazia.classList.add(NOME_CLASSE_CONTAGEM_ZERADA);
         }
       }
@@ -87,7 +88,11 @@
       const { texto, contem_scripts } = extrair_dados_celula(celula);
       const qtd = texto.trim().match(/^\d+$/);
       if (qtd === null) {
-        return [];
+        if (contem_scripts) {
+          return [{ linha, celulas: [{ celula, qtd: -1, contem_scripts }] }];
+        } else {
+          return [];
+        }
       } else {
         return [
           { linha, celulas: [{ celula, qtd: Number(qtd[0]), contem_scripts }] },
@@ -104,9 +109,9 @@
           node =>
             !(node instanceof HTMLScriptElement) && !(node instanceof Comment)
         )
-        .map(x => x.textContent)
+        .map(x => x.textContent ?? '')
         .join('');
-      return { texto, contem_scripts: false };
+      return { texto, contem_scripts: true };
     }
   }
   function obter_tabelas_outros_cumprimentos() {
@@ -211,8 +216,8 @@
   function debounce(fn, timeout_ms = 200) {
     let timer;
     return () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(fn, timeout_ms);
+      _unsafeWindow.clearTimeout(timer);
+      timer = _unsafeWindow.setTimeout(fn, timeout_ms);
     };
   }
   try_catch(main);
