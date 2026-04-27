@@ -2,9 +2,9 @@
 // @name         seeu-esmaecer-links
 // @name:pt-BR   SEEU - Esmaecer links
 // @namespace    http://nadameu.com.br
-// @version      1.0.1
+// @version      1.0.2
 // @author       nadameu
-// @description  Diminui o destaque para links em vermelho quando seu conteúdo é o número 0 (zero)
+// @description  Diminui o destaque para links de contagem cuja quantidade é 0 (zero)
 // @match        https://seeu.pje.jus.br/seeu/usuario/mesa*
 // @grant        GM_addStyle
 // @grant        unsafeWindow

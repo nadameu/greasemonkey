@@ -1,9 +1,9 @@
 {
   "name": "seeu-esmaecer-links",
   "gm_name": "SEEU - Esmaecer links",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
-  "description": "Diminui o destaque para links em vermelho quando seu conteúdo é o número 0 (zero)",
+  "description": "Diminui o destaque para links de contagem cuja quantidade é 0 (zero)",
   "author": "nadameu",
   "type": "module",
   "scripts": {
