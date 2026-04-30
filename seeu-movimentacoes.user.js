@@ -2,7 +2,7 @@
 // @name         seeu-movimentacoes
 // @name:pt-BR   SEEU - Movimentações
 // @namespace    nadameu.com.br
-// @version      3.0.0
+// @version      3.0.1
 // @author       nadameu
 // @description  Melhoria na apresentação das movimentações do processo
 // @match        https://seeu.pje.jus.br/*
@@ -111,14 +111,14 @@
   const map = f => value => (value == null ? value : f(value));
   const lift2 = f => (a, b) => (a == null ? a : b == null ? b : f(a, b));
   const ap = fa => ff => lift2(apply)(ff, fa);
-  const orElse = ifNullish => a => (a == null ? ifNullish() : a);
+  const orElse = ifNullish => a => a ?? ifNullish();
   const orThrow = message =>
     orElse(() => {
       throw new Error(message);
     });
   const filter = pred => a => (a == null ? a : pred(a) ? a : null);
   const mapProp = prop => obj => obj?.[prop];
-  const match = re => map(x => x.match(re));
+  const match = re => x => x?.match(re);
   const test = re => filter(x => re.test(x));
   const applicativeNullish = { ap, map, of };
   const sequence = sequenceIterable;
@@ -232,6 +232,31 @@
           }
         })
     );
+  const gm_name = 'SEEU - Movimentações';
+  class CustomError extends Error {
+    constructor(message, payload = {}) {
+      super(message);
+      this.payload = payload;
+    }
+  }
+  CustomError.prototype.name = 'CustomError';
+  function lift_throwable(fn) {
+    return (...args) => {
+      try {
+        fn(...args);
+      } catch (err) {
+        console.group(`<${gm_name}>`);
+        console.error(err);
+        if (err instanceof CustomError) {
+          console.debug(err.payload);
+        }
+        console.groupEnd();
+      }
+    };
+  }
+  function try_catch(fn) {
+    return lift_throwable(fn)();
+  }
   function createFiniteStateMachine(
     initialState,
     transitions,
@@ -578,30 +603,24 @@
       }
       return oldUpdater.call(this, a, b, {
         ...c,
-        onComplete() {
-          try {
-            const resultado = c.onComplete(...arguments);
-            const div = check(
-              isNotNull,
-              document.getElementById(a),
-              `Elemento não encontrado: #${a}.`
-            );
-            const tabela2 = check(
-              arrayHasLength(1),
-              div.querySelectorAll(':scope > table'),
-              `Tabela referente a #${a} não encontrada.`
-            )[0];
-            div.parentNode
-              ?.querySelector(`.${classNames.avisoCarregando}`)
-              ?.remove();
-            onTabelaAdicionada(tabela2);
-            return resultado;
-          } catch (err) {
-            console.group('<SEEU - Movimentações>');
-            console.error(err);
-            console.groupEnd();
-          }
-        },
+        onComplete: lift_throwable(() => {
+          const resultado = c.onComplete(...arguments);
+          const div = check(
+            isNotNull,
+            document.getElementById(a),
+            `Elemento não encontrado: #${a}.`
+          );
+          const tabela2 = check(
+            arrayHasLength(1),
+            div.querySelectorAll(':scope > table'),
+            `Tabela referente a #${a} não encontrada.`
+          )[0];
+          div.parentNode
+            ?.querySelector(`.${classNames.avisoCarregando}`)
+            ?.remove();
+          onTabelaAdicionada(tabela2);
+          return resultado;
+        }),
       });
     };
     Ajax.Updater.prototype = oldUpdater.prototype;
@@ -805,13 +824,15 @@
           if (
             linha.classList.contains('linhaPeticao') &&
             arrayHasLength(1)(linha.cells) &&
-            linha.cells[0].colSpan === 8
+            linha.cells[0].colSpan === 7
           ) {
             const frag = document.createDocumentFragment();
             frag.append(...linha.cells[0].childNodes);
             return [frag];
           }
-          throw new Error(`Formato de linha desconhecido: ${l}.`);
+          throw new CustomError(`Formato de linha desconhecido: ${l}.`, {
+            linha,
+          });
         }
         const isTextoObservacoes = xs =>
           xs.length >= 1 &&
@@ -820,7 +841,6 @@
             (xs.length === 3 &&
               xs[1] instanceof HTMLAnchorElement &&
               xs[2] instanceof HTMLElement));
-        const isTipoDocumento = xs => xs.length === 1 && xs[0] instanceof Text;
         const sequencialNome = flow(
           linha.cells[0].childNodes,
           filterIterable(
@@ -850,12 +870,18 @@
             x => !(x instanceof Text) || isNonEmptyString(x.nodeValue)
           ),
           iterableToArray,
-          filter(isTipoDocumento),
-          map(([texto]) =>
+          filter(isTextoObservacoes),
+          map(([texto, ...obs]) =>
             flow(
               texto.nodeValue,
               match(/^\s*(\d+\.\d+)\s+Tipo de Documento:\s+(.*)\s*$/),
-              map(([, _seq, tipo2]) => tipo2)
+              map(([, _seq, tipo2]) => ({
+                tipo: tipo2,
+                observacao: flow(
+                  obs,
+                  filter(x => x.length === 2)
+                ),
+              }))
             )
           ),
           orThrow(`Tipo de documento não reconhecido: ${l}.`)
@@ -932,8 +958,8 @@ ${sigilo}`;
             })
           );
           const file = document.createDocumentFragment();
-          if (tipo !== nome && tipo !== 'Outros Documentos') {
-            file.append(`${tipo}:`, h('br'));
+          if (tipo.tipo !== nome && tipo.tipo !== 'Outros Documentos') {
+            file.append(`${tipo.tipo}:`, h('br'));
           }
           const span = h(
             'span',
@@ -997,11 +1023,5 @@ ${sigilo}`;
     Object.values(alteracoes).forEach(f => f(url));
     return null;
   };
-  try {
-    main();
-  } catch (err) {
-    console.group('<SEEU - Movimentações>');
-    console.error(err);
-    console.groupEnd();
-  }
+  try_catch(main);
 })();
