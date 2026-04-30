@@ -322,7 +322,7 @@ function onTabelaAdicionada(table: HTMLTableElement) {
         if (
           linha.classList.contains('linhaPeticao') &&
           P.arrayHasLength(1)(linha.cells) &&
-          linha.cells[0].colSpan === 8
+          linha.cells[0].colSpan === 7
         ) {
           const frag = document.createDocumentFragment();
           frag.append(...linha.cells[0].childNodes);
@@ -341,8 +341,6 @@ function onTabelaAdicionada(table: HTMLTableElement) {
           (xs.length === 3 &&
             xs[1] instanceof HTMLAnchorElement &&
             xs[2] instanceof HTMLElement));
-      const isTipoDocumento = (xs: ChildNode[]): xs is [Text] =>
-        xs.length === 1 && xs[0] instanceof Text;
       const sequencialNome = flow(
         linha.cells[0].childNodes,
         I.filter(x => !(x instanceof Text) || P.isNonEmptyString(x.nodeValue)),
@@ -372,12 +370,22 @@ function onTabelaAdicionada(table: HTMLTableElement) {
         linha.cells[1].childNodes,
         I.filter(x => !(x instanceof Text) || P.isNonEmptyString(x.nodeValue)),
         I.toArray,
-        N.filter(isTipoDocumento),
-        N.map(([texto]) =>
+        N.filter(isTextoObservacoes),
+        N.map(([texto, ...obs]) =>
           flow(
             texto.nodeValue,
             N.match<3>(/^\s*(\d+\.\d+)\s+Tipo de Documento:\s+(.*)\s*$/),
-            N.map(([, _seq, tipo]) => tipo)
+            N.map(([, _seq, tipo]) => ({
+              tipo,
+              observacao: flow(
+                obs,
+                N.filter(
+                  (
+                    x: [HTMLAnchorElement, HTMLElement] | []
+                  ): x is [HTMLAnchorElement, HTMLElement] => x.length === 2
+                )
+              ),
+            }))
           )
         ),
         N.orThrow(`Tipo de documento não reconhecido: ${l}.`)
@@ -463,8 +471,8 @@ function onTabelaAdicionada(table: HTMLTableElement) {
           })
         );
         const file = document.createDocumentFragment();
-        if (tipo !== nome && tipo !== 'Outros Documentos') {
-          file.append(`${tipo}:`, h('br'));
+        if (tipo.tipo !== nome && tipo.tipo !== 'Outros Documentos') {
+          file.append(`${tipo.tipo}:`, h('br'));
         }
         const span = h(
           'span',
