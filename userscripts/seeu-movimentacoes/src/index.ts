@@ -1,9 +1,4 @@
 import { main } from './main';
+import { try_catch } from './try_catch';
 
-try {
-  main();
-} catch (err) {
-  console.group('<SEEU - Movimentações>');
-  console.error(err);
-  console.groupEnd();
-}
+try_catch(main);
