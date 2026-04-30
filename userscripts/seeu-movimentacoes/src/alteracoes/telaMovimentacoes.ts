@@ -3,6 +3,7 @@ import { applicativeNullish, D, flow, I, N, T } from '@nadameu/adts';
 import { h } from '@nadameu/create-element';
 import * as P from '@nadameu/predicates';
 import { createIntersectionObserver } from '../createIntersectionObserver';
+import { CustomError, lift_throwable } from '../try_catch';
 import { configurarAbertura } from './configurarAbertura';
 import { DadosAbertura, dadosAberturaToFeatures } from './dadosAbertura';
 import css from './estilos-seeu.scss?inline';
@@ -74,35 +75,29 @@ export function telaMovimentacoes(url: URL): null {
 
     return oldUpdater.call(this, a, b, {
       ...c,
-      onComplete() {
-        try {
-          const resultado = c.onComplete(...arguments);
+      onComplete: lift_throwable(() => {
+        const resultado = c.onComplete(...arguments);
 
-          const div = P.check(
-            P.isNotNull,
-            document.getElementById(a),
-            `Elemento não encontrado: #${a}.`
-          );
+        const div = P.check(
+          P.isNotNull,
+          document.getElementById(a),
+          `Elemento não encontrado: #${a}.`
+        );
 
-          const tabela = P.check(
-            P.arrayHasLength(1),
-            div.querySelectorAll<HTMLTableElement>(':scope > table'),
-            `Tabela referente a #${a} não encontrada.`
-          )[0];
+        const tabela = P.check(
+          P.arrayHasLength(1),
+          div.querySelectorAll<HTMLTableElement>(':scope > table'),
+          `Tabela referente a #${a} não encontrada.`
+        )[0];
 
-          div.parentNode
-            ?.querySelector(`.${classNames.avisoCarregando}`)
-            ?.remove();
+        div.parentNode
+          ?.querySelector(`.${classNames.avisoCarregando}`)
+          ?.remove();
 
-          onTabelaAdicionada(tabela);
+        onTabelaAdicionada(tabela);
 
-          return resultado;
-        } catch (err) {
-          console.group('<SEEU - Movimentações>');
-          console.error(err);
-          console.groupEnd();
-        }
-      },
+        return resultado;
+      }),
     });
   };
   Ajax.Updater.prototype = oldUpdater.prototype;
@@ -333,7 +328,9 @@ function onTabelaAdicionada(table: HTMLTableElement) {
           frag.append(...linha.cells[0].childNodes);
           return [frag];
         }
-        throw new Error(`Formato de linha desconhecido: ${l}.`);
+        throw new CustomError(`Formato de linha desconhecido: ${l}.`, {
+          linha,
+        });
       }
       const isTextoObservacoes = (
         xs: ChildNode[]
