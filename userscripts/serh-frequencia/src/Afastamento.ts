@@ -21,6 +21,7 @@ export interface TipoAfastamento {
 export const TIPOS_AFASTAMENTO = {
   AFS: { descricao: 'evento', cor: '#ccf', abrev: 'E' },
   CPL: { descricao: 'compensação de plantão', cor: '#ccf', abrev: 'C' },
+  DOS: { descricao: 'doação de sangue', cor: '#ccf', abrev: 'C' },
   Férias: { descricao: 'férias', cor: '#cfc', abrev: 'F' },
   LG: { descricao: 'licença à gestante', cor: '#ffc', abrev: 'L' },
   LTPF: {
