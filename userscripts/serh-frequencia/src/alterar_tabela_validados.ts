@@ -173,16 +173,3 @@ function make_obter_intervalos(mes_referencia: Mes) {
     return r.data;
   };
 }
-function make_obter_intervalos_tele(mes_referencia: Mes) {
-  const obter_intervalos = make_obter_intervalos(mes_referencia);
-  return function obter_intervalos_tele(texto: string) {
-    return obter_intervalos(texto).tele;
-  };
-}
-
-function make_obter_intervalos_afastamento(mes_referencia: Mes) {
-  const obter_intervalos = make_obter_intervalos(mes_referencia);
-  return function obter_intervalos_afastamento(texto: string) {
-    return obter_intervalos(texto).afastamentos;
-  };
-}
