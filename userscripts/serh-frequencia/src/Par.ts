@@ -124,9 +124,6 @@ export function sep_by1<T, U>(
   return map_n([p, many(right(sep, p))], (first, rest) => [first, ...rest]);
 }
 
-export function choice<T>(...ps: [Parser<T>]): Parser<T>;
-export function choice<T, U>(...ps: [Parser<T>, Parser<U>]): Parser<T | U>;
-export function choice<T>(...ps: Parser<T>[]): Parser<T>;
 export function choice<T>(...ps: Parser<T>[]): Parser<T> {
   return input => {
     for (const p of ps) {
@@ -147,4 +144,8 @@ export function middle<A, B, C>(
 
 export function eof(): Parser<null> {
   return input => (input === '' ? Ok(null, '') : Fail);
+}
+
+export function option<T>(p: Parser<T>, thunk: () => T): Parser<T> {
+  return choice(p, input => Ok(thunk(), input));
 }
