@@ -11,6 +11,7 @@ import {
   texto_para_data,
 } from './datas';
 import { IO } from './IO';
+import * as Par from './Par';
 
 export function alterar_tabela_validados(
   tabela: HTMLTableElement,
@@ -124,51 +125,68 @@ export function alterar_tabela_validados(
     })
   );
 }
-function make_obter_intervalos_tele(mes_referencia: Mes) {
-  return function obter_intervalos_tele(texto: string): Intervalo[] {
-    const m = texto.match(
-      /Em teletrabalho ((?:em \d{2}\/\d{2}\/\d{4}|de \d{2}\/\d{2}\/\d{4} a \d{2}\/\d{2}\/\d{4})(?:, (?:em \d{2}\/\d{2}\/\d{4}|de \d{2}\/\d{2}\/\d{4} a \d{2}\/\d{2}\/\d{4}))*)/
-    );
-    if (m === null || !P.arrayHasLength(2)(m)) return [];
-    return m[1].split(', ').map(p => {
-      const m1 = p.match(/em (\d{2}\/\d{2}\/\d{4})/);
-      if (m1 !== null && P.arrayHasLength(2)(m1)) {
-        const dt = texto_para_data(m1[1]);
-        return Intervalo(dt, dt);
-      }
+function make_obter_intervalos(mes_referencia: Mes) {
+  const p_data = Par.map(Par.re(/\d{2}\/\d{2}\/\d{4}/), texto_para_data);
+  const p_em_data = Par.map(Par.right(Par.str('em '), p_data), dt =>
+    gerar_intervalo(mes_referencia, dt, dt)
+  );
+  const p_data_a_data = Par.three(
+    p_data,
+    Par.str(' a '),
+    p_data,
+    (de, _, ate) => gerar_intervalo(mes_referencia, de, ate)
+  );
+  const p_de_data_a_data = Par.right(Par.str('de '), p_data_a_data);
+  const p_intervalos_tele = Par.sep_by1(
+    Par.choice(p_em_data, p_de_data_a_data),
+    Par.str(', ')
+  );
+  const p_tele = Par.right(Par.str('Em teletrabalho '), p_intervalos_tele);
+  const p_afastamento = Par.two(
+    Par.re(/[^(]+(?= \()/),
+    Par.wrap(Par.str(' ('), p_data_a_data, Par.str(')')),
+    (motivo, intervalo) => Afastamento(intervalo, motivo)
+  );
+  const p_afastamentos = Par.sep_by1(p_afastamento, Par.str(' '));
 
-      const m2 = p.match(/de (\d{2}\/\d{2}\/\d{4}) a (\d{2}\/\d{2}\/\d{4})/);
-      if (m2 !== null && P.arrayHasLength(3)(m2)) {
-        const inicio = texto_para_data(m2[1]);
-        const fim = texto_para_data(m2[2]);
-        return gerar_intervalo(mes_referencia, inicio, fim);
-      } else {
-        throw new CustomError('Intervalo de datas desconhecido.', {
-          texto: p,
-        });
-      }
-    });
+  const p_tudo: Par.Parser<{ afastamentos: Afastamento[]; tele: Intervalo[] }> =
+    Par.choice(
+      Par.map(Par.eof(), () => ({ afastamentos: [], tele: [] })),
+      Par.right(
+        Par.str(' '),
+        Par.choice(
+          Par.two(
+            p_afastamentos,
+            Par.choice(
+              Par.wrap(Par.str(' - '), p_tele, Par.eof()),
+              Par.map(Par.eof(), () => [] as Intervalo[])
+            ),
+            (afastamentos, tele) => ({ afastamentos, tele })
+          ),
+          Par.map(Par.left(p_tele, Par.eof()), tele => ({
+            afastamentos: [] as Afastamento[],
+            tele,
+          }))
+        )
+      )
+    );
+
+  return function obter_intervalos(texto: string) {
+    const r = p_tudo(texto);
+    if (!r.success) throw new CustomError('Texto desconhecido.', { texto });
+    return r.data;
+  };
+}
+function make_obter_intervalos_tele(mes_referencia: Mes) {
+  const obter_intervalos = make_obter_intervalos(mes_referencia);
+  return function obter_intervalos_tele(texto: string) {
+    return obter_intervalos(texto).tele;
   };
 }
 
 function make_obter_intervalos_afastamento(mes_referencia: Mes) {
-  return function obter_intervalos_afastamento(texto: string): Afastamento[] {
-    const m = texto.match(
-      /\s*[^(]+ \(\d{2}\/\d{2}\/\d{4} a \d{2}\/\d{2}\/\d{4}\)/g
-    );
-    if (m === null) return [];
-    return m.map(p => {
-      const m1 = p.match(
-        /\s*([^(]+?)\s*\((\d{2}\/\d{2}\/\d{4}) a (\d{2}\/\d{2}\/\d{4})\)/
-      );
-      if (m1 === null || !P.arrayHasLength(4)(m1)) {
-        throw new CustomError('Intervalo de datas desconhecido.', {
-          texto: p,
-        });
-      }
-      const inicio = texto_para_data(m1[2]);
-      const fim = texto_para_data(m1[3]);
-      return Afastamento(gerar_intervalo(mes_referencia, inicio, fim), m1[1]);
-    });
+  const obter_intervalos = make_obter_intervalos(mes_referencia);
+  return function obter_intervalos_afastamento(texto: string) {
+    return obter_intervalos(texto).afastamentos;
   };
 }
