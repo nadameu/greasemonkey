@@ -1,15 +1,16 @@
 import { Opaque } from '@nadameu/opaque';
 import { CustomError } from './CustomError';
 
-export const enum DiaDaSemana {
-  DOMINGO = 0,
-  SEGUNDA = 1,
-  TERCA = 2,
-  QUARTA = 3,
-  QUINTA = 4,
-  SEXTA = 5,
-  SABADO = 6,
-}
+export const DiaDaSemana = {
+  DOMINGO: 0,
+  SEGUNDA: 1,
+  TERCA: 2,
+  QUARTA: 3,
+  QUINTA: 4,
+  SEXTA: 5,
+  SABADO: 6,
+} as const;
+export type DiaDaSemana = (typeof DiaDaSemana)[keyof typeof DiaDaSemana];
 export type Data = Opaque<
   {
     readonly dia: number;
