@@ -126,11 +126,8 @@ function make_obter_intervalos(mes_referencia: Mes) {
   const p_em_data = Par.map(Par.right(Par.str('em '), p_data), dt =>
     gerar_intervalo(mes_referencia, dt, dt)
   );
-  const p_data_a_data = Par.three(
-    p_data,
-    Par.str(' a '),
-    p_data,
-    (de, _, ate) => gerar_intervalo(mes_referencia, de, ate)
+  const p_data_a_data = Par.map3(p_data, Par.str(' a '), p_data, (de, _, ate) =>
+    gerar_intervalo(mes_referencia, de, ate)
   );
   const p_de_data_a_data = Par.right(Par.str('de '), p_data_a_data);
   const p_intervalos_tele = Par.sep_by1(
@@ -138,9 +135,9 @@ function make_obter_intervalos(mes_referencia: Mes) {
     Par.str(', ')
   );
   const p_tele = Par.right(Par.str('Em teletrabalho '), p_intervalos_tele);
-  const p_afastamento = Par.two(
+  const p_afastamento = Par.map2(
     Par.re(/[^(]+(?= \()/),
-    Par.wrap(Par.str(' ('), p_data_a_data, Par.str(')')),
+    Par.middle(Par.str(' ('), p_data_a_data, Par.str(')')),
     (motivo, intervalo) => Afastamento(intervalo, motivo)
   );
   const p_afastamentos = Par.sep_by1(p_afastamento, Par.str(' '));
@@ -151,10 +148,10 @@ function make_obter_intervalos(mes_referencia: Mes) {
       Par.right(
         Par.str(' '),
         Par.choice(
-          Par.two(
+          Par.map2(
             p_afastamentos,
             Par.choice(
-              Par.wrap(Par.str(' - '), p_tele, Par.eof()),
+              Par.middle(Par.str(' - '), p_tele, Par.eof()),
               Par.map(Par.eof(), () => [] as Intervalo[])
             ),
             (afastamentos, tele) => ({ afastamentos, tele })

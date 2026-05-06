@@ -31,54 +31,89 @@ export function re(re: RegExp): Parser<string> {
 }
 
 export function map<T, U>(p: Parser<T>, f: (_: T) => U): Parser<U> {
+  return (input, result = p(input)) =>
+    result.success ? Ok(f(result.data), result.rest) : result;
+}
+
+export function map2<A, B, C = [A, B]>(
+  pa: Parser<A>,
+  pb: Parser<B>,
+  f: (a: A, b: B) => C = (a, b) => [a, b] as C
+): Parser<C> {
+  return map_n([pa, pb], f);
+}
+
+export function left<A, B>(pa: Parser<A>, pb: Parser<B>): Parser<A> {
+  return map_n([pa, pb], (a, _) => a);
+}
+
+export function right<A, B>(pa: Parser<A>, pb: Parser<B>): Parser<B> {
+  return map_n([pa, pb], (_, b) => b);
+}
+
+export function map3<A, B, C, D = [A, B, C]>(
+  pa: Parser<A>,
+  pb: Parser<B>,
+  pc: Parser<C>,
+  f: (a: A, b: B, c: C) => D = (a, b, c) => [a, b, c] as D
+): Parser<D> {
+  return map_n([pa, pb, pc], f);
+}
+
+export function map_n<A, B = [A]>(ps: [Parser<A>], f?: (a: A) => B): Parser<B>;
+export function map_n<A, B, C = [A, B]>(
+  ps: [Parser<A>, Parser<B>],
+  f?: (a: A, b: B) => C
+): Parser<C>;
+export function map_n<A, B, C, D = [A, B, C]>(
+  ps: [Parser<A>, Parser<B>, Parser<C>],
+  f?: (a: A, b: B, c: C) => D
+): Parser<D>;
+export function map_n<A, B, C, D, E = [A, B, C, D]>(
+  ps: [Parser<A>, Parser<B>, Parser<C>, Parser<D>],
+  f?: (a: A, b: B, c: C, d: D) => E
+): Parser<E>;
+export function map_n<T, U>(
+  ps: Iterable<Parser<T>>,
+  f?: (...values: T[]) => U
+): Parser<U>;
+export function map_n<T, U = T[]>(
+  ps: Iterable<Parser<T>>,
+  f: (...values: T[]) => U = (...values: T[]) => values as U
+): Parser<U> {
   return input => {
-    const result = p(input);
-    if (result.success) return Ok(f(result.data), result.rest);
-    return result;
+    let result: Result<U> | null = null;
+    const values = [
+      ...(function* () {
+        for (const p of ps) {
+          const r = p(input);
+          if (!r.success) {
+            result = r;
+            break;
+          }
+          yield r.data;
+          input = r.rest;
+        }
+      })(),
+    ];
+    if (result) return result;
+    return Ok(f(...values), input);
   };
-}
-
-export function two<T, U, V = [T, U]>(
-  pa: Parser<T>,
-  pb: Parser<U>,
-  f: (a: T, b: U) => V = (a, b) => [a, b] as V
-): Parser<V> {
-  return input => {
-    const ra = pa(input);
-    if (!ra.success) return ra;
-    const rb = pb(ra.rest);
-    if (!rb.success) return rb;
-    return Ok(f(ra.data, rb.data), rb.rest);
-  };
-}
-
-export function left<T, U>(pa: Parser<T>, pb: Parser<U>): Parser<T> {
-  return two(pa, pb, a => a);
-}
-
-export function right<T, U>(pa: Parser<T>, pb: Parser<U>): Parser<U> {
-  return two(pa, pb, (_, b) => b);
-}
-
-export function three<T, U, V, W = [T, U, V]>(
-  pa: Parser<T>,
-  pb: Parser<U>,
-  pc: Parser<V>,
-  f: (a: T, b: U, c: V) => W = (a, b, c) => [a, b, c] as W
-): Parser<W> {
-  return two(two(pa, pb), pc, ([a, b], c) => f(a, b, c));
 }
 
 export function many<T>(p: Parser<T>): Parser<T[]> {
   return input => {
-    const acc: T[] = [];
-    let rest = input;
-    while (true) {
-      const r = p(rest);
-      if (!r.success) return Ok(acc, rest);
-      acc.push(r.data);
-      rest = r.rest;
-    }
+    const values = [
+      ...(function* () {
+        while (true) {
+          const r = p(input);
+          if (!r.success) break;
+          yield r.data;
+          input = r.rest;
+        }
+      })(),
+    ];
+    return Ok(values, input);
   };
 }
 
@@ -86,7 +121,7 @@ export function sep_by1<T, U>(
   p: Parser<T>,
   sep: Parser<U>
 ): Parser<[T, ...T[]]> {
-  return two(p, many(right(sep, p)), (first, rest) => [first, ...rest]);
+  return map_n([p, many(right(sep, p))], (first, rest) => [first, ...rest]);
 }
 
 export function choice<T>(...ps: [Parser<T>]): Parser<T>;
@@ -98,16 +133,16 @@ export function choice<T>(...ps: Parser<T>[]): Parser<T> {
       const r = p(input);
       if (r.success) return r;
     }
-    return Fail();
+    return Fail;
   };
 }
 
-export function wrap<T, U, V>(
-  left: Parser<T>,
-  middle: Parser<U>,
-  right: Parser<V>
-): Parser<U> {
-  return three(left, middle, right, (_, x) => x);
+export function middle<A, B, C>(
+  left: Parser<A>,
+  middle: Parser<B>,
+  right: Parser<C>
+): Parser<B> {
+  return map_n([left, middle, right], (_, x) => x);
 }
 
 export function eof(): Parser<null> {
