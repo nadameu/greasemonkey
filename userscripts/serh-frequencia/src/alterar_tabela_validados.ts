@@ -122,12 +122,13 @@ export function alterar_tabela_validados(
   );
 }
 function make_obter_intervalos(mes_referencia: Mes) {
-  const p_data = Par.map(Par.re(/\d{2}\/\d{2}\/\d{4}/), texto_para_data);
-  const p_em_data = Par.map(Par.right(Par.str('em '), p_data), dt =>
+  const p_data = Par.map([Par.re(/\d{2}\/\d{2}\/\d{4}/)], texto_para_data);
+  const p_em_data = Par.map([Par.right(Par.str('em '), p_data)], dt =>
     gerar_intervalo(mes_referencia, dt, dt)
   );
-  const p_data_a_data = Par.map3(p_data, Par.str(' a '), p_data, (de, _, ate) =>
-    gerar_intervalo(mes_referencia, de, ate)
+  const p_data_a_data = Par.map(
+    [p_data, Par.str(' a '), p_data],
+    (de, _, ate) => gerar_intervalo(mes_referencia, de, ate)
   );
   const p_de_data_a_data = Par.right(Par.str('de '), p_data_a_data);
   const p_intervalos_tele: Par.Parser<Intervalo[]> = Par.sep_by1(
@@ -135,9 +136,11 @@ function make_obter_intervalos(mes_referencia: Mes) {
     Par.str(', ')
   );
   const p_tele = Par.right(Par.str('Em teletrabalho '), p_intervalos_tele);
-  const p_afastamento = Par.map2(
-    Par.re(/[^(]+(?= \()/),
-    Par.middle(Par.str(' ('), p_data_a_data, Par.str(')')),
+  const p_afastamento = Par.map(
+    [
+      Par.map([Par.take_until_p(Par.any(), Par.str(' ('))], x => x.join('')),
+      Par.middle(Par.str(' ('), p_data_a_data, Par.str(')')),
+    ],
     (motivo, intervalo) => Afastamento(intervalo, motivo)
   );
   const p_afastamentos: Par.Parser<Afastamento[]> = Par.sep_by1(
@@ -149,19 +152,21 @@ function make_obter_intervalos(mes_referencia: Mes) {
     Par.right(
       Par.str(' '),
       Par.choice(
-        Par.map3(
-          p_afastamentos,
-          Par.option(Par.right(Par.str(' - '), p_tele), () => []),
-          Par.eof(),
+        Par.map(
+          [
+            p_afastamentos,
+            Par.option(Par.right(Par.str(' - '), p_tele), () => []),
+            Par.eof(),
+          ],
           (afastamentos, tele) => ({ afastamentos, tele })
         ),
-        Par.map2(p_tele, Par.eof(), tele => ({
+        Par.map([p_tele, Par.eof()], tele => ({
           afastamentos: [],
           tele,
         }))
       )
     ),
-    Par.map(Par.eof(), () => ({ afastamentos: [], tele: [] }))
+    Par.map([Par.eof()], () => ({ afastamentos: [], tele: [] }))
   );
 
   return function obter_intervalos(texto: string) {
