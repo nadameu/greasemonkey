@@ -13,14 +13,12 @@ export function Ok<T>(data: T, rest: string): Result<T> {
 export interface Fail {
   success: false;
 }
-export function Fail<T = []>(): Result<T> {
-  return { success: false };
-}
+export const Fail: Result<never> = { success: false };
 
 export function str<T extends string>(str: T): Parser<T> {
   return input => {
     if (input.startsWith(str)) return Ok(str, input.slice(str.length));
-    return Fail();
+    return Fail;
   };
 }
 
@@ -28,7 +26,7 @@ export function re(re: RegExp): Parser<string> {
   return input => {
     const match = input.match(re);
     if (match?.index === 0) return Ok(match[0], input.slice(match[0].length));
-    return Fail();
+    return Fail;
   };
 }
 
@@ -113,5 +111,5 @@ export function wrap<T, U, V>(
 }
 
 export function eof(): Parser<null> {
-  return input => (input === '' ? Ok(null, '') : Fail());
+  return input => (input === '' ? Ok(null, '') : Fail);
 }
