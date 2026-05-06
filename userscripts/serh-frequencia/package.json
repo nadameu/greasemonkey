@@ -7,13 +7,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "run-p watch preview",
     "build": "run-s type-check compile format",
     "compile": "vite build",
+    "dev": "vite",
     "format": "prettier --write ../../serh-frequencia.user.js",
-    "preview": "vite preview --open ../../serh-frequencia.user.js",
-    "type-check": "tsc",
-    "watch": "vite build --watch"
+    "type-check": "tsc"
   },
   "dependencies": {
     "@nadameu/create-element": "workspace:^",
