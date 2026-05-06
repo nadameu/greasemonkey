@@ -17,9 +17,7 @@ export function alterar_tabela_validados(
   tabela: HTMLTableElement,
   mes_referencia: Mes
 ) {
-  const obter_intervalos_tele = make_obter_intervalos_tele(mes_referencia);
-  const obter_intervalos_afastamento =
-    make_obter_intervalos_afastamento(mes_referencia);
+  const obter_intervalos = make_obter_intervalos(mes_referencia);
   return IO.sequence(
     ...Array.from(tabela.rows).map((linha, r) => {
       if (!P.arrayHasLength(8)(linha.cells)) {
@@ -45,10 +43,8 @@ export function alterar_tabela_validados(
       const inicio = texto_para_data(linha.cells[3].textContent.trim());
       const fim = texto_para_data(linha.cells[4].textContent.trim());
       const intervalo_servidor = gerar_intervalo(mes_referencia, inicio, fim);
-      const intervalos_afastamento = obter_intervalos_afastamento(
-        linha.cells[5].textContent
-      );
-      const intervalos_tele = obter_intervalos_tele(linha.cells[5].textContent);
+      const { afastamentos: intervalos_afastamento, tele: intervalos_tele } =
+        obter_intervalos(linha.cells[5].textContent);
       return new IO(() => {
         Array.from(linha.cells).forEach((celula, c) => {
           if (c !== 5) {
