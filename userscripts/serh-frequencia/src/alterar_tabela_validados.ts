@@ -170,8 +170,8 @@ function make_obter_intervalos(mes_referencia: Mes) {
   );
 
   return function obter_intervalos(texto: string) {
-    const r = p_tudo(texto);
-    if (!r.success) throw new CustomError('Texto desconhecido.', { texto });
+    const r = p_tudo.match(texto, 0);
+    if (!r.matched) throw new CustomError('Texto desconhecido.', { texto });
     return r.data;
   };
 }
