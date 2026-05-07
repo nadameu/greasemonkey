@@ -1,48 +1,54 @@
 import * as P from '@nadameu/predicates';
 import { CustomError } from './CustomError';
 
+const ParserSym = Symbol();
 export interface Parser<T> {
   constructor: typeof Parser;
+  [ParserSym]: true;
   match(input: string, start: number): Result<T>;
 }
-interface InternalParser<T> extends Parser<T> {
-  _match: Parser<T>['match'];
-}
-export function Parser<T>(
+export const Parser: ParserConstructor = function <T>(
   match: (input: string, start: number) => Result<T>
 ): Parser<T> {
-  const p = Object.create(Parser.prototype) as InternalParser<T>;
-  p._match = match;
-  return p;
-}
-export declare namespace Parser {
-  export let prototype: Parser<unknown>;
-}
+  P.assert(P.isFunction(match));
+  return Object.assign(Object.create(Parser.prototype) as Parser<T>, {
+    match(input: string, start: number) {
+      P.assert(
+        P.isString(input) &&
+          P.isNonNegativeInteger(start) &&
+          start <= input.length
+      );
+      const result = match(input, start);
+      P.assert(isResult(result));
+      return result;
+    },
+  });
+};
 Parser.prototype = {
   constructor: Parser,
-  match<T>(this: InternalParser<T>, input: any, start: any) {
-    P.assert(
-      P.isString(input) &&
-        P.isNonNegativeInteger(start) &&
-        start <= input.length
-    );
-    const result = this._match(input, start);
-    P.assert;
-    if (result.matched) {
-      P.assert(
-        result.input === input &&
-          P.isNonNegativeInteger(result.start) &&
-          P.isNonNegativeInteger(result.end) &&
-          result.start <= result.end &&
-          result.end <= input.length
-      );
-    }
-    return result;
+  [ParserSym]: true,
+  match() {
+    throw new Error('Unimplemented.');
   },
 };
+export interface ParserConstructor {
+  <T>(match: (input: string, start: number) => Result<T>): Parser<T>;
+  prototype: Parser<unknown>;
+}
 
-export type Result<T> = Ok<T> | Fail;
+const ResultSym = Symbol();
+export type Result<T> = { [ResultSym]: true } & (Ok<T> | Fail);
+type ResultBase<T> = { [K in keyof Result<T>]: Result<T>[K] };
+function isResultBase(obj: unknown): obj is ResultBase<unknown> {
+  return typeof obj === 'object' && obj !== null && ResultSym in obj;
+}
+export function isResult(obj: unknown): obj is Result<unknown> {
+  return isResultBase(obj) && (isOk(obj) || isFail(obj));
+}
+const OkSym = Symbol();
 export interface Ok<T> {
+  [ResultSym]: true;
+  [OkSym]: true;
   matched: true;
   data: T;
   input: string;
@@ -62,9 +68,23 @@ export function Ok<T>(
       start <= end &&
       end <= input.length
   );
-  return { matched: true, data, input, start, end };
+  return {
+    [ResultSym]: true,
+    [OkSym]: true,
+    matched: true,
+    data,
+    input,
+    start,
+    end,
+  };
 }
+export function isOk(result: ResultBase<unknown>): result is Ok<unknown> {
+  return OkSym in result;
+}
+const FailSym = Symbol();
 export interface Fail {
+  [ResultSym]: true;
+  [FailSym]: true;
   matched: false;
   input: string;
   start: number;
@@ -73,7 +93,10 @@ export function Fail<T = never>(input: string, start: number): Result<T> {
   P.assert(
     P.isString(input) && P.isNonNegativeInteger(start) && start <= input.length
   );
-  return { matched: false, input, start };
+  return { [ResultSym]: true, [FailSym]: true, matched: false, input, start };
+}
+export function isFail(result: ResultBase<unknown>): result is Fail {
+  return FailSym in result;
 }
 
 export function str<T extends string>(str: T): Parser<T> {

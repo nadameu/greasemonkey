@@ -2,14 +2,35 @@ import { describe, expect, test, vitest } from 'vitest';
 import * as Par from '../src/Par';
 
 describe('Parser', () => {
+  test('constructor must be function', () => {
+    expect(() => Par.Parser(null as any)).toThrow();
+    expect(() => Par.Parser({} as any)).toThrow();
+  });
+
   const p = Par.Parser(Par.Fail);
   test('input must be string', () => {
     expect(() => p.match('', 0)).not.toThrow();
-    expect(() => p.match({ length: 32 } as unknown as string, 0)).toThrow();
+    expect(() => p.match({ length: 32 } as string, 0)).toThrow();
   });
   test('start must be within input', () => {
     expect(() => p.match('', 0)).not.toThrow();
     expect(() => p.match('', 1)).toThrow();
+  });
+  test('must return valid `Result`', () => {
+    expect(() =>
+      Par.Parser(
+        (input, start) =>
+          JSON.parse(
+            JSON.stringify(Par.Ok(null, input, start, start))
+          ) as Par.Result<any>
+      ).match('', 0)
+    ).toThrow();
+    expect(() =>
+      Par.Parser(
+        (...args) =>
+          JSON.parse(JSON.stringify(Par.Fail(...args))) as Par.Result<any>
+      ).match('', 0)
+    ).toThrow();
   });
 });
 
