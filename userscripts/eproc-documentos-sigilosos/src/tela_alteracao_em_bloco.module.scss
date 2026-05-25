@@ -1,0 +1,48 @@
+:global(.infra-styles) {
+  .gm:is(label) {
+    --uniform-spacing: 4px;
+    --border-color: black;
+    border: 1px solid transparent;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    padding-right: var(--uniform-spacing);
+    border-radius: var(--uniform-spacing);
+    font-size: 1em;
+
+    input {
+      margin: var(--uniform-spacing);
+    }
+  }
+  .gm:is(td) > span {
+    display: inline-flex;
+    border: 1px solid transparent;
+    display: inline-flex;
+    padding: 1px;
+    border-radius: 4px;
+  }
+  tr[data-gm_eproc_documentos_sigilosos]:has(input:checked) .gm:is(td) > span,
+  .gm:has(input:checked) {
+    opacity: 1;
+    border-color: var(--border-color);
+  }
+  .gm-nivel0 {
+    opacity: 0.5;
+  }
+  .gm-nivel1,
+  .gm-nivel2,
+  .gm-nivel3,
+  .gm-nivel4,
+  .gm-nivel5 {
+    color: #602;
+    --border-color: #602;
+  }
+  .gm-nivel2 {
+    background: #ffd;
+  }
+  .gm-nivel3,
+  .gm-nivel4,
+  .gm-nivel5 {
+    background: #fda;
+  }
+}

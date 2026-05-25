@@ -4,7 +4,7 @@
   "author": "nadameu",
   "description": "Facilita a identificação de documentos sigilosos, de acordo com seu nível, nas telas de alteração em bloco",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "run-p watch preview",
