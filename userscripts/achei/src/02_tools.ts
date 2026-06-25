@@ -1,4 +1,5 @@
 import {
+  box,
   err,
   just,
   Maybe,
@@ -43,3 +44,18 @@ export const iterate =
     }
     return values;
   };
+
+const hasLength1 = <T extends ArrayLike<unknown>>(
+  xs: T
+): xs is T & { 0: T[0]; length: 1 } => xs.length === 1;
+
+export const queryOne =
+  <T extends Element>(selector: string) =>
+  (context: ParentNode): Result<T, string> =>
+    box(context.querySelectorAll<T>(selector))
+      .chain(eitherBool(hasLength1))
+      .map(x => x[0])
+      .mapErr(
+        ({ length: n }) =>
+          `Expected 1 element to match \`${selector}\`, found ${n}.`
+      );
