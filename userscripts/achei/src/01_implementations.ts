@@ -88,7 +88,7 @@ class Reader<r, v> {
     this: Parser<r, a, e>,
     f: (_: a) => Parser<s, b, g>
   ): Parser<r & s, b, e | g> {
-    return this._compose((env, res) => res.chain(x => f(x).run(env)));
+    return this._compose((env, res) => res.chain(x => f(x)._run(env)));
   }
   chainReader<s, w>(f: (_: v) => Reader<s, w>): Reader<r & s, w> {
     return this._compose((r, v) => f(v)._run(r));
