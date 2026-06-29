@@ -1,4 +1,7 @@
+import { NodeWithParent } from './02_tools';
+import { Sigla } from './parseSigla';
+
 export interface NodeSigla {
-  node: Node;
-  sigla: string;
+  node: NodeWithParent<Text>;
+  sigla: Sigla;
 }

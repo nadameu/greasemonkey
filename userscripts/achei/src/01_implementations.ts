@@ -1,45 +1,20 @@
-export type Data<a, e> = Box<a> | Maybe<a> | Result<a, e>;
+export type Data<a, e> = Result<a, e>;
 
-export type Result<a, e> = Ok<a, e> | Err<e, a>;
+export type Result<a, e> = Ok<a> | Err<e>;
 
-abstract class ResultBase<a, e> {
-  abstract readonly ok: boolean;
-
-  abstract catch<b>(f: (_: e) => Result<b, never>): Box<a | b>;
-  abstract catch<b>(f: (_: e) => Result<b, undefined>): Maybe<a | b>;
-  abstract catch<b, e2>(f: (_: e) => Result<b, e2>): Result<a | b, e2>;
-
-  abstract chain<b>(
-    this: Result<a, never>,
-    f: (_: a) => Result<b, never>
-  ): Box<b>;
-  abstract chain<b>(
-    this: Result<a, undefined>,
-    f: (_: a) => Result<b, undefined>
-  ): Maybe<b>;
-  abstract chain<b, e2, e>(
-    this: Result<a, e>,
-    f: (_: a) => Result<b, e2>
-  ): Result<b, e | e2>;
-  abstract chain<b, e2>(f: (_: a) => Result<b, e2>): Result<b, e | e2>;
-
-  map<b>(this: Result<a, never>, f: (_: a) => b): Box<b>;
-  map<b>(this: Result<a, undefined>, f: (_: a) => b): Maybe<b>;
-  map<b>(this: Result<a, e>, f: (_: a) => b): Result<b, e>;
-  map<b>(f: (_: a) => b): Box<b> | Maybe<b> | Result<b, e> {
-    return this.chain(a => new Ok(f(a)));
+abstract class ResultCommon<a, e> {
+  abstract catch<b, g>(f: (_: e) => Result<b, g>): Result<a | b, g>;
+  abstract chain<b, g>(f: (_: a) => Result<b, g>): Result<b, e | g>;
+  map<b>(f: (_: a) => b): Result<b, e> {
+    return this.chain(x => new Ok(f(x)));
   }
-
-  mapErr(f: (_: e) => never): Box<a>;
-  mapErr(f: (_: e) => undefined): Maybe<a>;
-  mapErr<e2>(f: (_: e) => e2): Result<a, e2>;
-  mapErr<e2>(f: (_: e) => e2): Box<a> | Maybe<a> | Result<a, e2> {
-    return this.catch(e => new Err(f(e)));
+  mapErr<g>(f: (_: e) => g): Result<a, g> {
+    return this.catch(x => new Err(f(x)));
   }
 }
 
 export type { Ok };
-class Ok<a, e = never> extends ResultBase<a, e> {
+class Ok<a> extends ResultCommon<a, never> {
   readonly ok: true;
   readonly value: a;
   constructor(value: a) {
@@ -47,125 +22,102 @@ class Ok<a, e = never> extends ResultBase<a, e> {
     this.ok = true;
     this.value = value;
   }
-
-  catch<b>(f: (_: e) => Result<b, never>): Box<a | b>;
-  catch<b>(f: (_: e) => Result<b, undefined>): Maybe<a | b>;
-  catch<b, e2>(f: (_: e) => Result<b, e2>): Result<a | b, e2>;
-  catch<b, e2>(_: (_: e) => Result<b, e2>): Ok<a> {
-    return this as Ok<a, unknown> as Ok<a>;
+  *[Symbol.iterator](this: Just<a>) {
+    yield this.value;
   }
-
-  chain<b>(this: Result<a, never>, f: (_: a) => Result<b, never>): Box<b>;
-  chain<b>(
-    this: Result<a, undefined>,
-    f: (_: a) => Result<b, undefined>
-  ): Maybe<b>;
-  chain<b, e2, e>(
-    this: Result<a, e>,
-    f: (_: a) => Result<b, e2>
-  ): Result<b, e2 | e>;
-  chain<b, e2>(f: (_: a) => Result<b, e2>): Result<b, e | e2>;
-  chain<b, e2>(
-    f: (_: a) => Result<b, e2>
-  ): Box<b> | Maybe<b> | Result<b, e2 | e> | Result<b, e | e2> {
+  catch<b, g>(_: (_: never) => Result<b, g>): Result<a | b, g> {
+    return this;
+  }
+  chain<b, g>(f: (_: a) => Result<b, g>): Result<b, g> {
     return f(this.value);
   }
 }
 export const ok = <a, e = never>(value: a): Result<a, e> => new Ok(value);
 
 export type { Err };
-class Err<e, a = never> extends ResultBase<a, e> {
-  readonly ok: false = false;
+class Err<e> extends ResultCommon<never, e> {
+  readonly ok: false;
   readonly reason: e;
   constructor(reason: e) {
     super();
     this.ok = false;
     this.reason = reason;
   }
-
-  catch<b>(f: (_: e) => Result<b, never>): Box<a | b>;
-  catch<b>(f: (_: e) => Result<b, undefined>): Maybe<a | b>;
-  catch<b, e2>(f: (_: e) => Result<b, e2>): Result<a | b, e2>;
-  catch<b, e2>(f: (_: e) => Result<b, e2>): Result<a | b, e2> {
+  *[Symbol.iterator]<a>(this: Maybe<a>) {}
+  catch<b, g>(f: (_: e) => Result<b, g>): Result<b, g> {
     return f(this.reason);
   }
-
-  chain<b>(this: Result<a, never>, f: (_: a) => Result<b, never>): Box<b>;
-  chain<b>(
-    this: Result<a, undefined>,
-    f: (_: a) => Result<b, undefined>
-  ): Maybe<b>;
-  chain<b, e2>(f: (_: a) => Result<b, e2>): Result<b, e | e2>;
-  chain<b, e2>(_: (_: a) => Result<b, e2>): Result<b, e | e2> {
-    return this as Err<e, unknown> as Err<e>;
+  chain<b, g>(_: (_: never) => Result<b, g>): Result<b, e | g> {
+    return this;
   }
 }
 export const err = <e, a = never>(reason: e): Result<a, e> => new Err(reason);
 
-export type Maybe<a> = Just<a> | Nothing<a>;
+export type Maybe<a> = Just<a> | Nothing;
 
-interface MaybeBase<a> extends ResultBase<a, undefined> {
-  readonly value?: a;
-}
+export interface Just<a> extends Ok<a> {}
+export const just = ok as <a>(value: a) => Maybe<a>;
 
-export interface Just<a> extends MaybeBase<a> {
-  readonly ok: true;
-  readonly value: a;
-}
-export const just = <a>(value: a): Maybe<a> => new Ok(value);
-
-export interface Nothing<a = never> extends MaybeBase<a> {
-  readonly ok: false;
-  readonly value?: a;
-  readonly reason: undefined;
-}
-let _nothing: Nothing | null = null;
+export interface Nothing extends Err<undefined> {}
+let Nothing: Nothing | null = null;
 export const nothing = <a = never>(): Maybe<a> =>
-  (_nothing ??= new Err(undefined));
+  (Nothing ??= err(undefined) as Err<undefined>);
 
-export interface Box<a> extends ResultBase<a, never> {
-  readonly ok: true;
-  readonly value: a;
-}
-export const box = <a>(value: a): Box<a> => new Ok(value);
+export interface Box<a> extends Ok<a> {}
+export const box = ok as <a>(value: a) => Box<a>;
 
 export type { Reader };
-class Reader<r, a> {
-  private _run: (_: r) => a;
-  constructor(run: (_: r) => a) {
+class Reader<r, v> {
+  private _run: (env: r) => v;
+  constructor(run: (env: r) => v) {
     this._run = run;
   }
-  asParser<a, e>(this: Reader<r, Result<a, e>>): Parser<r, a, e> {
-    return this;
+  catch<a, e, b, g>(
+    this: Parser<r, a, e>,
+    f: (_: e) => Result<b, g>
+  ): Parser<r, a | b, g> {
+    return this._compose((_, r) => r.catch(f));
   }
-  catch<b, e, c, e2>(
-    this: Parser<r, b, e>,
-    f: (_: e) => Result<c, e2>
-  ): Parser<r, b | c, e2> {
-    return this.mapReader(r => r.catch(f));
+  chain<a, e, b, g>(
+    this: Parser<r, a, e>,
+    f: (_: a) => Result<b, g>
+  ): Parser<r, b, e | g> {
+    return this._compose((_, r) => r.chain(f));
   }
-  chain<b, e, c, e2>(
-    this: Parser<r, b, e>,
-    f: (_: b) => Result<c, e2>
-  ): Parser<r, c, e | e2> {
-    return this.mapReader(r => r.chain(f));
+  chainParser<a, e, s, b, g>(
+    this: Parser<r, a, e>,
+    f: (_: a) => Parser<s, b, g>
+  ): Parser<r & s, b, e | g> {
+    return this._compose((env, res) => res.chain(x => f(x).run(env)));
   }
-  chainReader<s, b>(f: (_: a) => Reader<s, b>): Reader<r & s, b> {
-    return new Reader(a => f(this.run(a)).run(a));
+  chainReader<s, w>(f: (_: v) => Reader<s, w>): Reader<r & s, w> {
+    return this._compose((r, v) => f(v)._run(r));
   }
-  map<b, e, c>(this: Parser<r, b, e>, f: (_: b) => c): Parser<r, c, e> {
-    return this.mapReader(r => r.map(f));
+  map<a, e, b>(this: Parser<r, a, e>, f: (_: a) => b): Parser<r, b, e> {
+    return this._compose((_, r) => r.map(f));
   }
-  mapErr<b, e, e2>(this: Parser<r, b, e>, f: (_: e) => e2): Parser<r, b, e2> {
-    return this.mapReader(r => r.mapErr(f));
+  mapErr<a, e, g>(this: Parser<r, a, e>, f: (_: e) => g): Parser<r, a, g> {
+    return this._compose((_, r) => r.mapErr(f));
   }
-  mapReader<b>(f: (_: a) => b): Reader<r, b> {
-    return new Reader(a => f(this.run(a)));
+  mapReader<w>(f: (_: v) => w): Reader<r, w> {
+    return this._compose((_, v) => f(v));
   }
-  run(input: r): a {
-    return this._run(input);
+  private _compose<a, e, s, b, g>(
+    this: Parser<r, a, e>,
+    f: (env: r & s, result: v) => Result<b, g>
+  ): Parser<r & s, b, g>;
+  private _compose<s, w>(f: (env: r & s, v: v) => w): Reader<r & s, w>;
+  private _compose<s, w>(f: (env: r & s, v: v) => w): Reader<r & s, w> {
+    return new Reader(env => f(env, this._run(env)));
+  }
+  run(env: r) {
+    return this._run(env);
   }
 }
-export const reader = <r, a>(f: (_: r) => a): Reader<r, a> => new Reader(f);
+export const reader = <r, v>(run: (env: r) => v): Reader<r, v> =>
+  new Reader(run);
 
 export interface Parser<r, a, e> extends Reader<r, Result<a, e>> {}
+export const parser = reader as <r, a, e>(
+  run: (env: r) => Result<a, e>
+) => Parser<r, a, e>;

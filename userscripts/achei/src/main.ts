@@ -1,55 +1,25 @@
-import { Dominio, getDominio } from './getDominio';
-import { getFormulario } from './getFormulario';
-import { getNodeInfo } from './getNodeInfo';
-import { makeCriarLinks } from './makeCriarLinks';
-import { NodeSigla } from './NodeSigla';
+import { ok } from './01_implementations';
+import { askConsole } from './02_tools';
+import { makeCriarLink } from './makeCriarLink';
+import { parseDominio } from './parseDominio';
+import { parseFormulario } from './parseFormulario';
+import { parseNodeSiglas } from './parseNodeSiglas';
 
-export function main({
-  doc,
-  log,
-}: {
-  doc: typeof document;
-  log: typeof console.log;
-}) {
-  const resultado = parsePagina(doc);
-  const { linksCriados } = (() => {
-    if (resultado === 0) return { linksCriados: 0 };
-    return modificarPagina({ ...resultado, doc });
-  })();
-  const s = linksCriados > 1 ? 's' : '';
-  log(`${linksCriados} link${s} criado${s}.`);
-}
-
-function parsePagina(doc: typeof document):
-  | 0
-  | {
-      nodeSiglas: NonEmptyArray<NodeSigla>;
-      dominio: Dominio;
-    } {
-  const formulario = getFormulario(doc);
-  const nodeSiglas = Array.from(getNodeInfo(formulario));
-  if (!isNonEmptyArray(nodeSiglas)) return 0;
-  const dominio = getDominio(doc);
-  return { nodeSiglas, dominio };
-}
-
-function modificarPagina({
-  doc,
-  nodeSiglas,
-  dominio,
-}: {
-  doc: typeof document;
-  nodeSiglas: NonEmptyArray<NodeSigla>;
-  dominio: Dominio;
-}) {
-  const criarLink = makeCriarLinks(doc, dominio);
-  for (const nodeSigla of nodeSiglas) {
-    criarLink(nodeSigla);
-  }
-  return { linksCriados: nodeSiglas.length };
-}
-
-type NonEmptyArray<T> = [T, ...T[]];
-function isNonEmptyArray<T>(array: T[]): array is NonEmptyArray<T> {
-  return array.length > 0;
-}
+export const program = () => {
+  const criarLink = parseDominio.chainParser(dom =>
+    makeCriarLink(dom).mapReader(ok)
+  );
+  const nodeSiglas = parseFormulario.map(parseNodeSiglas);
+  return nodeSiglas.chainParser(nodeSiglas =>
+    criarLink.chainParser(criarLink => {
+      for (const nodeSigla of nodeSiglas) {
+        criarLink(nodeSigla);
+      }
+      const linksCriados = nodeSiglas.length;
+      const s = linksCriados > 1 ? 's' : '';
+      return askConsole
+        .mapReader(c => c.log(`${linksCriados} link${s} criado${s}.`))
+        .mapReader(ok);
+    })
+  );
+};
