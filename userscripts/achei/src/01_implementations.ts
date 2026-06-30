@@ -1,5 +1,3 @@
-export type Data<a, e> = Result<a, e>;
-
 export type Result<a, e> = Ok<a> | Err<e>;
 
 abstract class ResultCommon<a, e> {
@@ -11,6 +9,7 @@ abstract class ResultCommon<a, e> {
   mapErr<g>(f: (_: e) => g): Result<a, g> {
     return this.catch(x => new Err(f(x)));
   }
+  abstract toMaybe(): Maybe<a>;
 }
 
 export type { Ok };
@@ -31,6 +30,9 @@ class Ok<a> extends ResultCommon<a, never> {
   chain<b, g>(f: (_: a) => Result<b, g>): Result<b, g> {
     return f(this.value);
   }
+  toMaybe(): Maybe<a> {
+    return this;
+  }
 }
 export const ok = <a, e = never>(value: a): Result<a, e> => new Ok(value);
 
@@ -49,6 +51,9 @@ class Err<e> extends ResultCommon<never, e> {
   }
   chain<b, g>(_: (_: never) => Result<b, g>): Result<b, e | g> {
     return this;
+  }
+  toMaybe(): Maybe<never> {
+    return nothing();
   }
 }
 export const err = <e, a = never>(reason: e): Result<a, e> => new Err(reason);
@@ -88,7 +93,7 @@ class Reader<r, v> {
     this: Parser<r, a, e>,
     f: (_: a) => Parser<s, b, g>
   ): Parser<r & s, b, e | g> {
-    return this._compose((env, res) => res.chain(x => f(x).run(env)));
+    return this._compose((env, res) => res.chain(x => f(x)._run(env)));
   }
   chainReader<s, w>(f: (_: v) => Reader<s, w>): Reader<r & s, w> {
     return this._compose((r, v) => f(v)._run(r));
@@ -112,6 +117,9 @@ class Reader<r, v> {
   }
   run(env: r) {
     return this._run(env);
+  }
+  toParser(): Parser<r, v, never> {
+    return this.mapReader(ok);
   }
 }
 export const reader = <r, v>(run: (env: r) => v): Reader<r, v> =>

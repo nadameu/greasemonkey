@@ -1,5 +1,5 @@
 import { describe, expect, MockedFunction, test, vitest } from 'vitest';
-import { main } from '../src/main';
+import { program } from '../src/main';
 import { h } from '@nadameu/create-element';
 
 function reset_body() {
@@ -19,12 +19,18 @@ function createTest(
     const after = fn();
     const log = vitest.fn();
     let result: PromiseSettledResult<void>;
-    try {
-      result = { status: 'fulfilled', value: main({ doc: document, log }) };
-    } catch (reason) {
-      result = { status: 'rejected', reason };
-    }
-    return after(result, log);
+    program()
+      .run({
+        document,
+        console: { log } as unknown as Console,
+      })
+      .map(value => {
+        result = { status: 'fulfilled', value };
+      })
+      .mapErr(reason => {
+        result = { status: 'rejected', reason };
+      });
+    return after(result!, log);
   });
 }
 

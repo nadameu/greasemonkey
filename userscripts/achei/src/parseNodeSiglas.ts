@@ -1,12 +1,12 @@
-import { Maybe, nothing } from './01_implementations';
+import { Maybe } from './01_implementations';
 import {
   maybe,
-  NodeWithDocument,
   NodeWithParent,
   parseNodeWithParent,
   queryAllX,
 } from './02_tools';
 import { NodeSigla } from './NodeSigla';
+import { parseFormulario } from './parseFormulario';
 import { parseSigla } from './parseSigla';
 
 const selectors = /* #__PURE__ */ ['', 'table//td[2]/'].map(
@@ -14,13 +14,12 @@ const selectors = /* #__PURE__ */ ['', 'table//td[2]/'].map(
 );
 const selector = /* #__PURE__ */ selectors.join('|');
 
-export const parseNodeSiglas = (
-  formulario: NodeWithDocument<HTMLFormElement>
-) =>
+export const parseNodeSiglas = parseFormulario.map(formulario =>
   queryAllX<Text>(selector)(formulario)
     .values()
     .flatMap(text => parseNodeWithParent(text).chain(parseNodeSigla))
-    .toArray();
+    .toArray()
+);
 
 const parseNodeSigla = (node: NodeWithParent<Text>): Maybe<NodeSigla> =>
   maybe(node.nodeValue)

@@ -4,6 +4,8 @@ import {
   Maybe,
   nothing,
   ok,
+  parser,
+  Parser,
   reader,
   Reader,
   Result,
@@ -170,3 +172,40 @@ const fromXPathResult = iterate(<T extends Node>(iter: XPathResult) => {
   const node = iter.iterateNext();
   return node ? [node as T, iter] : null;
 });
+
+export const combineParsers: {
+  <const P extends Parsers>(parsers: P): CombineParsers<P>;
+  <r, a, e>(parsers: Parser<r, a, e>[]): Parser<r, a[], e[]>;
+} = <r, a, e>(parsers: Parser<r, a, e>[]): Parser<r, a[], e[]> =>
+  parser(env => {
+    const lefts: e[] = [];
+    const rights: a[] = [];
+    for (const parser of parsers) {
+      const result = parser.run(env);
+      if (result.ok) rights.push(result.value);
+      else lefts.push(result.reason);
+    }
+    if (lefts.length > 0) return err(lefts);
+    else return ok(rights);
+  });
+
+type Parsers<r = never, a = unknown, e = unknown> = Parser<r, a, e>[];
+type ConsParser<r, a, e, rest extends Parsers> = [Parser<r, a, e>, ...rest];
+type CombineParsers<P extends Parsers> = CombineParsersHelper<
+  P,
+  unknown,
+  [],
+  never
+>;
+type CombineParsersHelper<
+  P extends Parsers,
+  R,
+  As extends unknown[],
+  E,
+> = P extends []
+  ? Parser<R, As, E[]>
+  : P extends ConsParser<infer r, infer a, infer e, infer Rest>
+    ? CombineParsersHelper<Rest, R & r, [...As, a], E | e>
+    : P extends Parsers<infer r, infer a, infer e>
+      ? CombineParsersHelper<[], R & r, [...As, ...a[]], E | e>
+      : never;
