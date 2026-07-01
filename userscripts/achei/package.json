@@ -3,7 +3,7 @@
   "description": "Link para informações da Intra na página do Achei!",
   "private": true,
   "author": "nadameu",
-  "version": "17.2.1",
+  "version": "18.0.0",
   "type": "module",
   "scripts": {
     "build": "run-s type-check compile format",
