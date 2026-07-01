@@ -5,23 +5,6 @@ type Union<r, v> = Pure<r, v> | Chain<r, v>;
 export type { Reader };
 abstract class Reader<r, v> {
   abstract apReader<w>(ff: Reader<r, (_: v) => w>): Reader<r, w>;
-  chainReader<s, a, e>(
-    f: (_: v) => Reader<s, Result<a, e>>
-  ): Parser<r & s, a, e>;
-  chainReader<s, w>(f: (_: v) => Reader<s, w>): Reader<r & s, w>;
-  chainReader<s, w>(
-    this: Union<r, v>,
-    f: (_: v) => Union<s, w>
-  ): Reader<r & s, w> {
-    return new Chain<r & s, w>(this, f);
-  }
-  mapReader<a, e>(f: (_: v) => Result<a, e>): Parser<r, a, e>;
-  mapReader<w>(f: (_: v) => w): Reader<r, w>;
-  mapReader<w>(this: Union<r, v>, f: (_: v) => w): Reader<r, w> {
-    return new Chain(this, v => new Pure(_ => f(v)));
-  }
-  abstract run(env: r): v;
-
   catch<a, e, b, g>(
     this: Parser<r, a, e>,
     f: (_: e) => Result<b, g>
@@ -52,21 +35,34 @@ abstract class Reader<r, v> {
       res => new Pure((env: r & s) => res.chain(a => f(a).run(env)))
     );
   }
+  chainReader<s, a, e>(
+    f: (_: v) => Reader<s, Result<a, e>>
+  ): Parser<r & s, a, e>;
+  chainReader<s, w>(f: (_: v) => Reader<s, w>): Reader<r & s, w>;
+  chainReader<s, w>(
+    this: Union<r, v>,
+    f: (_: v) => Union<s, w>
+  ): Reader<r & s, w> {
+    return new Chain<r & s, w>(this, f);
+  }
   map<a, e, b>(this: Parser<r, a, e>, f: (_: a) => b): Parser<r, b, e> {
     return this.mapReader(res => res.map(f));
   }
   mapErr<a, e, g>(this: Parser<r, a, e>, f: (_: e) => g): Parser<r, a, g> {
     return this.mapReader(res => res.mapErr(f));
   }
+  mapReader<a, e>(f: (_: v) => Result<a, e>): Parser<r, a, e>;
+  mapReader<w>(f: (_: v) => w): Reader<r, w>;
+  mapReader<w>(this: Union<r, v>, f: (_: v) => w): Reader<r, w> {
+    return new Chain(this, v => new Pure(_ => f(v)));
+  }
+  abstract run(env: r): v;
 }
 
 class Pure<r, v> extends Reader<r, v> {
-  readonly pure: true;
-  readonly run: (_: r) => v;
-  constructor(run: (_: r) => v) {
+  readonly pure: true = true;
+  constructor(readonly run: (_: r) => v) {
     super();
-    this.pure = true;
-    this.run = run;
   }
   apReader<w>(ff: Reader<r, (_: v) => w>): Reader<r, w>;
   apReader<w>(ff: Union<r, (_: v) => w>): Reader<r, w> {
@@ -77,16 +73,12 @@ class Pure<r, v> extends Reader<r, v> {
 export const reader = <r, v>(run: (_: r) => v): Reader<r, v> => new Pure(run);
 
 class Chain<r, v, u = any> extends Reader<r, v> {
-  readonly pure: false;
-  readonly fa: Union<r, u>;
-  readonly f: (_: u) => Union<r, v>;
-  private readonly _depth: number;
-  constructor(fa: Union<r, u>, f: (_: u) => Union<r, v>) {
+  readonly pure: false = false;
+  constructor(
+    readonly fa: Union<r, u>,
+    readonly f: (_: u) => Union<r, v>
+  ) {
     super();
-    this.pure = false;
-    this.fa = fa;
-    this.f = f;
-    this._depth = fa.pure ? 1 : fa._depth + 1;
   }
   apReader<w>(ff: Reader<r, (_: v) => w>): Reader<r, w>;
   apReader<w>(ff: Union<r, (_: v) => w>): Reader<r, w> {
