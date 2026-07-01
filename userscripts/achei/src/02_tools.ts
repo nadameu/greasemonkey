@@ -1,6 +1,6 @@
 import { err, just, Maybe, nothing, ok, Result } from './01_implementations';
 import { ConsoleContext, DocumentContext } from './03_contexts';
-import { reader, Reader } from './04_reader';
+import { parser, Parser, reader, Reader } from './04_reader';
 
 export const TaggedError = <Tag extends string>(tag: Tag) =>
   class<Cause = never> extends Error {
@@ -54,8 +54,9 @@ export const eitherBool =
 
 export const asks = <a, b>(f: (_: a) => b): Reader<a, b> => reader(f);
 
-export const askContext = <T extends {}>(key: keyof T) =>
-  asks((env: T) => env[key]);
+export const askContext = <T extends {}>(
+  key: keyof T
+): Parser<T, T[keyof T], never> => asks((env: T) => ok(env[key]));
 
 export const askDocument =
   /* #__PURE__ */ askContext<DocumentContext>('document');

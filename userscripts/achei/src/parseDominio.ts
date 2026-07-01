@@ -15,7 +15,7 @@ const dominios = {
 export type Dominio = Opaque<string, { Dominio: Dominio }>;
 
 export const parseDominio = askDocument
-  .mapReader(queryUnique<HTMLInputElement>('input[name="local"]:checked'))
+  .chain(queryUnique<HTMLInputElement>('input[name="local"]:checked'))
   .map(i => i.value)
   .chain(eitherBool(isInDominios, local => new LocalDesconhecido(local)))
   .map(d => dominios[d]);

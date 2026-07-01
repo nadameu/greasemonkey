@@ -118,3 +118,6 @@ export const lift2 =
     fa.apReader(fb.mapReader(b => (a: a) => f(a, b)));
 
 export interface Parser<r, a, e> extends Reader<r, Result<a, e>> {}
+export const parser: {
+  <r, e, a>(run: (env: r) => Result<a, e>): Parser<r, a, e>;
+} = reader;

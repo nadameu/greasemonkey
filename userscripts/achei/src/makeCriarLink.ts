@@ -3,7 +3,7 @@ import { NodeSigla } from './NodeSigla';
 import { Dominio, parseDominio } from './parseDominio';
 
 export const makeCriarLink = parseDominio.chainParser((dominio: Dominio) =>
-  askDocument.toParser().map(doc => {
+  askDocument.map(doc => {
     const template = doc.createElement('template');
     const link = Object.assign(doc.createElement('a'), {
       href: '',
