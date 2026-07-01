@@ -14,12 +14,9 @@ abstract class ResultCommon<a, e> {
 
 export type { Ok };
 class Ok<a> extends ResultCommon<a, never> {
-  readonly ok: true;
-  readonly value: a;
-  constructor(value: a) {
+  readonly ok: true = true;
+  constructor(readonly value: a) {
     super();
-    this.ok = true;
-    this.value = value;
   }
   *[Symbol.iterator](this: Just<a>) {
     yield this.value;
@@ -38,12 +35,9 @@ export const ok = <a, e = never>(value: a): Result<a, e> => new Ok(value);
 
 export type { Err };
 class Err<e> extends ResultCommon<never, e> {
-  readonly ok: false;
-  readonly reason: e;
-  constructor(reason: e) {
+  readonly ok: false = false;
+  constructor(readonly reason: e) {
     super();
-    this.ok = false;
-    this.reason = reason;
   }
   *[Symbol.iterator]<a>(this: Maybe<a>) {}
   catch<b, g>(f: (_: e) => Result<b, g>): Result<b, g> {
@@ -61,7 +55,7 @@ export const err = <e, a = never>(reason: e): Result<a, e> => new Err(reason);
 export type Maybe<a> = Just<a> | Nothing;
 
 export interface Just<a> extends Ok<a> {}
-export const just = ok as <a>(value: a) => Maybe<a>;
+export const just: <a>(value: a) => Maybe<a> = ok;
 
 export interface Nothing extends Err<undefined> {}
 let Nothing: Nothing | null = null;
