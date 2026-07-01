@@ -1,16 +1,6 @@
-import {
-  err,
-  just,
-  Maybe,
-  nothing,
-  ok,
-  parser,
-  Parser,
-  reader,
-  Reader,
-  Result,
-} from './01_implementations';
+import { err, just, Maybe, nothing, ok, Result } from './01_implementations';
 import { ConsoleContext, DocumentContext } from './03_contexts';
+import { reader, Reader } from './04_reader';
 
 export const TaggedError = <Tag extends string>(tag: Tag) =>
   class<Cause = never> extends Error {
