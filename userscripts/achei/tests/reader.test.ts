@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { FreeReader, lift2, reader } from '../src/04_reader';
+import { Reader, lift2, reader } from '../src/04_reader';
 
 test('Stack safety', () => {
   /** Careful when pow > 20 */
@@ -26,26 +26,22 @@ test('Stack safety', () => {
 
 describe('Fibonacci', () => {
   const fib = (n: number): number => {
-    const memo = new Map<number, number>();
-    const store_and_return = (n: number, r: number) => {
-      memo.set(n, r);
-      return r;
-    };
-    const go = (n: number): FreeReader<undefined, number> => {
-      return reader((_: undefined) => n).chain(n => {
-        if (memo.has(n)) {
-          return reader(_ => memo.get(n)!);
+    const memo: number[] = Array(n + 1).fill(-1);
+    const go = (n: number): Reader<unknown, number> => {
+      return reader(() => n).chain(n => {
+        if (memo[n] !== -1) {
+          return reader(_ => memo[n]!);
         }
 
-        if (n < 2) return reader((_: undefined) => store_and_return(n, n));
-        return lift2((n2: number, n1: number) => store_and_return(n, n2 + n1))(
+        if (n < 2) return reader(() => (memo[n] = n));
+        return lift2((n2: number, n1: number) => (memo[n] = n2 + n1))(
           go(n - 2),
           go(n - 1)
         );
       });
     };
 
-    return go(n).run(undefined);
+    return go(n).run(null);
   };
   function test_fib(n: number) {
     const arr = new Array(n);
