@@ -1,65 +1,71 @@
-export type FreeReader<In, Out> = Pure<In, Out> | Chain<In, Out>;
+type Union<r, v> = Pure<r, v> | Chain<r, v>;
 
-abstract class FreeReaderCommon<In, Out> {
-  abstract readonly pure: boolean;
-  abstract ap<Next>(ff: FreeReader<In, (_: Out) => Next>): FreeReader<In, Next>;
-  chain<Next>(f: (_: Out) => FreeReader<In, Next>): FreeReader<In, Next> {
-    return new Chain(this as unknown as FreeReader<In, Out>, f);
+export type { Reader };
+abstract class Reader<r, v> {
+  abstract ap<w>(ff: Reader<r, (_: v) => w>): Reader<r, w>;
+  chain<w>(f: (_: v) => Reader<r, w>): Reader<r, w>;
+  chain<w>(this: Union<r, v>, f: (_: v) => Union<r, w>): Reader<r, w> {
+    return new Chain(this, f);
   }
-  map<Next>(f: (_: Out) => Next): FreeReader<In, Next> {
-    return this.chain(x => new Pure(_ => f(x)));
+  map<w>(f: (_: v) => w): Reader<r, w>;
+  map<w>(this: Union<r, v>, f: (_: v) => w): Reader<r, w> {
+    return new Chain(this, v => new Pure(_ => f(v)));
   }
-  abstract run(env: In): Out;
+  abstract run(env: r): v;
 }
 
-export type { Pure };
-class Pure<In, Out> extends FreeReaderCommon<In, Out> {
+class Pure<r, v> extends Reader<r, v> {
   readonly pure: true;
-  readonly run: (_: In) => Out;
-  constructor(run: Pure<In, Out>['run']) {
+  readonly run: (_: r) => v;
+  constructor(run: (_: r) => v) {
     super();
     this.pure = true;
     this.run = run;
   }
-  ap<Next>(ff: FreeReader<In, (_: Out) => Next>): FreeReader<In, Next> {
+  ap<w>(ff: Reader<r, (_: v) => w>): Reader<r, w>;
+  ap<w>(ff: Union<r, (_: v) => w>): Reader<r, w> {
     if (ff.pure) return new Pure(env => ff.run(env)(this.run(env)));
-    return ff.fa.chain(f0 => this.ap(ff.f(f0)));
+    return new Chain(ff.fa, f0 => this.ap(ff.f(f0)) as Union<r, w>);
   }
 }
-export const reader = <In, Out>(run: (_: In) => Out): FreeReader<In, Out> =>
-  new Pure(run);
+export const reader = <r, v>(run: (_: r) => v): Reader<r, v> => new Pure(run);
 
-export type { Chain };
-class Chain<In, Out, Temp = any> extends FreeReaderCommon<In, Out> {
+class Chain<r, v, u = any> extends Reader<r, v> {
   readonly pure: false;
-  readonly fa: FreeReader<In, Temp>;
-  readonly f: (_: Temp) => FreeReader<In, Out>;
-  constructor(fa: Chain<In, Out, Temp>['fa'], f: Chain<In, Out, Temp>['f']) {
+  readonly fa: Union<r, u>;
+  readonly f: (_: u) => Union<r, v>;
+  private readonly _depth: number;
+  constructor(fa: Union<r, u>, f: (_: u) => Union<r, v>) {
     super();
     this.pure = false;
     this.fa = fa;
     this.f = f;
+    this._depth = fa.pure ? 1 : fa._depth + 1;
   }
-  ap<Next>(ff: FreeReader<In, (_: Out) => Next>): FreeReader<In, Next> {
-    if (ff.pure) return this.fa.chain(a0 => this.f(a0).ap(ff));
-    return this.fa.chain(a0 => ff.fa.chain(f0 => this.f(a0).ap(ff.f(f0))));
-  }
-  step(env: In): FreeReader<In, Out> {
-    if (this.fa.pure) {
-      return this.f(this.fa.run(env));
+  ap<w>(ff: Reader<r, (_: v) => w>): Reader<r, w>;
+  ap<w>(ff: Union<r, (_: v) => w>): Reader<r, w> {
+    if (ff.pure) {
+      return new Chain(this.fa, a0 => this.f(a0).ap(ff) as Union<r, w>);
     } else {
-      const { fa: prev, f: next } = this.fa;
-      return prev.chain(v => next(v).chain(this.f));
+      return new Chain(
+        this.fa,
+        a0 => new Chain(ff.fa, f0 => this.f(a0).ap(ff.f(f0)) as Union<r, w>)
+      );
     }
   }
-  run(env: In): Out {
-    let curr: FreeReader<In, Out> = this;
-    while (!curr.pure) curr = curr.step(env);
+  private _step(env: r): Union<r, v> {
+    const prev = this.fa;
+    if (prev.pure) return this.f(prev.run(env));
+    else return new Chain(prev.fa, v => new Chain(prev.f(v), this.f));
+  }
+  run(env: r): v {
+    let curr: Union<r, v> = this;
+    while (!curr.pure) curr = curr._step(env);
     return curr.run(env);
   }
 }
 
 export const lift2 =
   <a, b, c>(f: (a: a, b: b) => c) =>
-  <r>(fa: FreeReader<r, a>, fb: FreeReader<r, b>): FreeReader<r, c> =>
+  <r>(fa: Reader<r, a>, fb: Reader<r, b>): Reader<r, c> =>
     fa.ap(fb.map(b => a => f(a, b)));
