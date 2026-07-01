@@ -94,14 +94,11 @@ export const queryUnique =
   <T extends Element>(selector: string) =>
   (context: ParentNode): Result<T, ElementNotFound | ElementNotUnique> => {
     const elements = context.querySelectorAll<T>(selector);
-    switch (elements.length) {
-      case 0:
-        return err(new ElementNotFound({ selector, context }));
-      case 1:
-        return ok((elements as ArrayLike<T> as [T])[0]);
-      default:
-        return err(new ElementNotUnique({ selector, context }));
-    }
+    if (elements.length === 1) return ok((elements as ArrayLike<T> as [T])[0]);
+
+    const ErrorClass =
+      elements.length === 0 ? ElementNotFound : ElementNotUnique;
+    return err(new ErrorClass({ selector, context }));
   };
 
 export class OrphanNode extends TaggedError('OrphanNode')<Node> {}
@@ -149,14 +146,10 @@ export const queryUniqueX =
   <T extends Node>(selector: string) =>
   (context: NodeWithDocument): Result<T, NodeNotFound | NodeNotUnique> => {
     const nodes = queryAllX<T>(selector)(context);
-    switch (nodes.length) {
-      case 0:
-        return err(new NodeNotFound({ selector, context }));
-      case 1:
-        return ok((nodes as ArrayLike<T> as [T])[0]);
-      default:
-        return err(new NodeNotUnique({ selector, context }));
-    }
+    if (nodes.length === 1) return ok((nodes as ArrayLike<T> as [T])[0]);
+
+    const ErrorClass = nodes.length === 0 ? NodeNotFound : NodeNotUnique;
+    return err(new ErrorClass({ selector, context }));
   };
 
 const fromXPathResult = iterate(<T extends Node>(iter: XPathResult) => {
