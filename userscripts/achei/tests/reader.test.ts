@@ -13,7 +13,9 @@ test('Stack safety', () => {
 
     let test0 = reader((x: number) => x);
     for (let i = 0; i < iterations; i += 1) {
-      test0 = test0.chain(x => reader(y => x + y / (1 << div) + 1));
+      test0 = test0.chainReader(x =>
+        reader((y: number) => x + y / (1 << div) + 1)
+      );
     }
     const expected = (1 << pow) | (1 << (pow - div)) | 1;
 
@@ -28,7 +30,7 @@ describe('Fibonacci', () => {
   const fib = (n: number): number => {
     const memo: number[] = Array(n + 1).fill(-1);
     const go = (n: number): Reader<unknown, number> => {
-      return reader(() => n).chain(n => {
+      return reader(() => n).chainReader(n => {
         if (memo[n] !== -1) {
           return reader(_ => memo[n]!);
         }
