@@ -100,17 +100,21 @@ class Chain<r, v, u = any> extends Reader<r, v> {
       );
     }
   }
-  run(env: r): v {
-    let curr = this.fa;
-    let result: Array<(_: any) => Union<r, any>> = [this.f];
-    while (!curr.pure) {
-      result.push(curr.f);
-      curr = curr.fa;
+  
+  private _step(env: r): Union<r, v> {
+    const { fa: prev, f: next } = this;
+    if (prev.pure) {
+      return next(prev.run(env));
+    } else {
+      return new Chain(prev.fa, a0 => new Chain(prev.f(a0), next));
     }
-    return result.reduceRight(
-      (u, f) => f(u).run(env),
-      curr.run(env)
-    ) as unknown as v;
+  }
+  run(env: r): v {
+    let curr = this._step(env);
+    while (!curr.pure) {
+            curr = curr._step(env);
+    }
+    return curr.run(env);
   }
 }
 
