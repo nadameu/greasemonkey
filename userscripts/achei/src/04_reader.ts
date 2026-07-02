@@ -5,36 +5,31 @@ type Union<r, v> = Pure<r, v> | Chain<r, v>;
 export type { Reader };
 abstract class Reader<r, v> {
   abstract apReader<w>(ff: Reader<r, (_: v) => w>): Reader<r, w>;
-  catch<a, e, b, g>(
-    this: Parser<r, a, e>,
-    f: (_: e) => Result<b, g>
-  ): Parser<r, a | b, g> {
-    return this.mapReader(res => res.catch(f));
-  }
-  catchParser<a, e, s, b, g>(
-    this: Parser<r, a, e>,
-    f: (_: e) => Parser<s, b, g>
-  ): Parser<r & s, a | b, g> {
-    return new Chain(
-      this as Union<r, Result<a, e>>,
-      res => new Pure((env: r & s) => res.catch(e => f(e).run(env)))
-    );
-  }
-  chain<a, e, b, g>(
-    this: Parser<r, a, e>,
-    f: (_: a) => Result<b, g>
-  ): Parser<r, b, e | g> {
-    return this.mapReader(res => res.chain(f));
-  }
-  chainParser<a, e, s, b, g>(
-    this: Parser<r, a, e>,
-    f: (_: a) => Parser<s, b, g>
-  ): Parser<r & s, b, e | g> {
-    return new Chain(
-      this as Union<r, Result<a, e>>,
-      res => new Pure((env: r & s) => res.chain(a => f(a).run(env)))
-    );
-  }
+
+  declare catch: {
+    <a, e, b, g>(
+      this: Parser<r, a, e>,
+      f: (_: e) => Result<b, g>
+    ): Parser<r, a | b, g>;
+  };
+  declare catchParser: {
+    <a, e, s, b, g>(
+      this: Parser<r, a, e>,
+      f: (_: e) => Parser<s, b, g>
+    ): Parser<r & s, a | b, g>;
+  };
+  declare chain: {
+    <a, e, b, g>(
+      this: Parser<r, a, e>,
+      f: (_: a) => Result<b, g>
+    ): Parser<r, b, e | g>;
+  };
+  declare chainParser: {
+    <a, e, s, b, g>(
+      this: Parser<r, a, e>,
+      f: (_: a) => Parser<s, b, g>
+    ): Parser<r & s, b, e | g>;
+  };
   chainReader<s, a, e>(
     f: (_: v) => Reader<s, Result<a, e>>
   ): Parser<r & s, a, e>;
@@ -45,18 +40,31 @@ abstract class Reader<r, v> {
   ): Reader<r & s, w> {
     return new Chain<r & s, w>(this, f);
   }
-  map<a, e, b>(this: Parser<r, a, e>, f: (_: a) => b): Parser<r, b, e> {
-    return this.mapReader(res => res.map(f));
-  }
-  mapErr<a, e, g>(this: Parser<r, a, e>, f: (_: e) => g): Parser<r, a, g> {
-    return this.mapReader(res => res.mapErr(f));
-  }
+  declare map: {
+    <a, e, b>(this: Parser<r, a, e>, f: (_: a) => b): Parser<r, b, e>;
+  };
+  declare mapErr: {
+    <a, e, g>(this: Parser<r, a, e>, f: (_: e) => g): Parser<r, a, g>;
+  };
   mapReader<a, e>(f: (_: v) => Result<a, e>): Parser<r, a, e>;
   mapReader<w>(f: (_: v) => w): Reader<r, w>;
   mapReader<w>(this: Union<r, v>, f: (_: v) => w): Reader<r, w> {
     return new Chain(this, v => new Pure(_ => f(v)));
   }
   abstract run(env: r): v;
+}
+for (const method of ['catch', 'chain', 'map', 'mapErr'] as const) {
+  Reader.prototype[method] = function (f: Function) {
+    return this.mapReader(res => res[method](f));
+  };
+}
+for (const prefix of ['catch', 'chain'] as const) {
+  Reader.prototype[`${prefix}Parser`] = function (f: Function) {
+    return new Chain(
+      this as Union<any, Result<any, any>>,
+      res => new Pure(env => res[prefix](x => f(x).run(env)))
+    );
+  };
 }
 
 class Pure<r, v> extends Reader<r, v> {
