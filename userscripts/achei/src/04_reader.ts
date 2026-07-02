@@ -4,7 +4,9 @@ type Union<r, v> = Pure<r, v> | Chain<r, v>;
 
 export type { Reader };
 abstract class Reader<r, v> {
-  abstract apReader<w>(ff: Reader<r, (_: v) => w>): Reader<r, w>;
+  apReader<w>(ff: Reader<r, (_: v) => w>): Reader<r, w> {
+    return new Pure(env => ff.run(env)(this.run(env)));
+  }
 
   declare catch: {
     <a, e, b, g>(
@@ -72,11 +74,6 @@ class Pure<r, v> extends Reader<r, v> {
   constructor(readonly run: (_: r) => v) {
     super();
   }
-  apReader<w>(ff: Reader<r, (_: v) => w>): Reader<r, w>;
-  apReader<w>(ff: Union<r, (_: v) => w>): Reader<r, w> {
-    if (ff.pure) return new Pure(env => ff.run(env)(this.run(env)));
-    return new Chain(ff.fa, f0 => this.apReader(ff.f(f0)) as Union<r, w>);
-  }
 }
 export const reader = <r, v>(run: (_: r) => v): Reader<r, v> => new Pure(run);
 
@@ -88,19 +85,7 @@ class Chain<r, v, u = any> extends Reader<r, v> {
   ) {
     super();
   }
-  apReader<w>(ff: Reader<r, (_: v) => w>): Reader<r, w>;
-  apReader<w>(ff: Union<r, (_: v) => w>): Reader<r, w> {
-    if (ff.pure) {
-      return new Chain(this.fa, a0 => this.f(a0).apReader(ff) as Union<r, w>);
-    } else {
-      return new Chain(
-        this.fa,
-        a0 =>
-          new Chain(ff.fa, f0 => this.f(a0).apReader(ff.f(f0)) as Union<r, w>)
-      );
-    }
-  }
-  
+
   private _step(env: r): Union<r, v> {
     const { fa: prev, f: next } = this;
     if (prev.pure) {
@@ -112,7 +97,7 @@ class Chain<r, v, u = any> extends Reader<r, v> {
   run(env: r): v {
     let curr = this._step(env);
     while (!curr.pure) {
-            curr = curr._step(env);
+      curr = curr._step(env);
     }
     return curr.run(env);
   }
