@@ -341,7 +341,8 @@ describe('map', () => {
   ) => {
     bench(description, () => {
       let sum = 0;
-      map(list, x => (sum += x));
+      let curr = map(list, x => (sum += x));
+      while (curr._tag !== 'Nil') curr = curr.tail;
       assert.equal(sum, SUM);
     });
   };
