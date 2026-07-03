@@ -350,18 +350,16 @@ describe('map', () => {
   bench_map(
     'mutable',
     <a, b>(xs: List<a>, f: (a: a, i: number) => b): List<b> => {
-      let first: List<b> = Nil;
-      let last: Cons<b>;
-      let push = (b: b) => {
-        first = last = Cons(b, Nil);
-        push = b => {
-          last.tail = last = Cons(b, Nil);
-        };
-      };
-      for (let i = 0, curr = xs; curr._tag === 'Cons'; curr = curr.tail) {
-        push(f(curr.head, i++));
+      if (xs._tag === 'Nil') return Nil;
+      let i = 0;
+      const result = Cons(f(xs.head, i++), Nil);
+      let tail = result;
+      xs = xs.tail;
+      while (xs._tag === 'Cons') {
+        tail = tail.tail = Cons(f(xs.head, i++), Nil);
+        xs = xs.tail;
       }
-      return first;
+      return result;
     }
   );
 
