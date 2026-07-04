@@ -4,7 +4,7 @@
   "description": "Facilita a utilização do sistema RENAJUD por usuários da Justiça Federal da 4ª Região.",
   "author": "nadameu",
   "scripts": {
-    "build": "run-s type-check compile format",
+    ".build": "run-s type-check compile format",
     "compile": "vite build",
     "dev": "run-p watch preview",
     "format": "prettier --write ../../renajud.user.js",
