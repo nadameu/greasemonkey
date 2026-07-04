@@ -78,7 +78,7 @@ function main() {
 function try_catch(fn) {
   try {
     fn();
-  } catch(err) {
+  } catch (err) {
     console.group(`<${GM_info.script.name}>`);
     console.error(err);
     if (err instanceof CustomError) {

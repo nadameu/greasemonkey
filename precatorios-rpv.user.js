@@ -20,18 +20,18 @@
   function n(r) {
     if (e[r]) return e[r].exports;
     var o = (e[r] = { i: r, l: !1, exports: {} });
-    return t[r].call(o.exports, o, o.exports, n), (o.l = !0), o.exports;
+    return (t[r].call(o.exports, o, o.exports, n), (o.l = !0), o.exports);
   }
-  (n.m = t),
+  ((n.m = t),
     (n.c = e),
     (n.d = function (t, e, r) {
       n.o(t, e) || Object.defineProperty(t, e, { enumerable: !0, get: r });
     }),
     (n.r = function (t) {
-      'undefined' != typeof Symbol &&
+      ('undefined' != typeof Symbol &&
         Symbol.toStringTag &&
         Object.defineProperty(t, Symbol.toStringTag, { value: 'Module' }),
-        Object.defineProperty(t, '__esModule', { value: !0 });
+        Object.defineProperty(t, '__esModule', { value: !0 }));
     }),
     (n.t = function (t, e) {
       if ((1 & e && (t = n(t)), 8 & e)) return t;
@@ -61,13 +61,13 @@
           : function () {
               return t;
             };
-      return n.d(e, 'a', e), e;
+      return (n.d(e, 'a', e), e);
     }),
     (n.o = function (t, e) {
       return Object.prototype.hasOwnProperty.call(t, e);
     }),
     (n.p = ''),
-    n((n.s = 0));
+    n((n.s = 0)));
 })([
   function (t, e, n) {
     'use strict';
@@ -78,7 +78,8 @@
     (function () {
       return r.a(this, void 0, void 0, function* () {
         return (
-          GM_addStyle(a), (yield Object(o.a)(document)).adicionarAlteracoes()
+          GM_addStyle(a),
+          (yield Object(o.a)(document)).adicionarAlteracoes()
         );
       });
     })().then(
@@ -153,7 +154,7 @@
       }
       if (null !== e) {
         const n = new e(t);
-        return u.set(t, n), Promise.resolve(n);
+        return (u.set(t, n), Promise.resolve(n));
       }
       return Promise.reject(new Error(`Página desconhecida: ${n.href}`));
     }
@@ -171,11 +172,11 @@
       c = n(15);
     class u extends Error {
       constructor(t) {
-        super(t),
+        (super(t),
           (this.name = this.constructor.name),
           'function' == typeof Error.captureStackTrace
             ? Error.captureStackTrace(this, this.constructor)
-            : (this.stack = new Error(t).stack);
+            : (this.stack = new Error(t).stack));
       }
     }
     class l extends u {}
@@ -226,9 +227,9 @@
               r.a(this, void 0, void 0, function* () {
                 const n = yield p(e.linha, 2),
                   r = a.a.criar('Verificar dados', n => {
-                    n.preventDefault(),
+                    (n.preventDefault(),
                       n.stopPropagation(),
-                      this.solicitarAberturaRequisicao(t, e);
+                      this.solicitarAberturaRequisicao(t, e));
                   });
                 return (
                   n.appendChild(this.doc.createTextNode(' ')),
@@ -269,9 +270,9 @@
           return (
             Object(c.a)(t).then(t => {
               t.filter(t => !(t instanceof l)).forEach(t => {
-                console.log('instanceof Error', t instanceof Error),
+                (console.log('instanceof Error', t instanceof Error),
                   console.log('instanceof LinkNotFound', t instanceof l),
-                  console.warn(t);
+                  console.warn(t));
               });
             }),
             Object(c.b)(t)
@@ -300,7 +301,7 @@
                 if (n === this.getLocation().origin) {
                   const { acao: n } = JSON.parse(a);
                   if (n === o.a.RESPOSTA_JANELA_ABERTA)
-                    return t.removeEventListener('message', r), e(!0);
+                    return (t.removeEventListener('message', r), e(!0));
                 }
               };
               t.addEventListener('message', r);
@@ -317,8 +318,8 @@
   function (t, e, n) {
     'use strict';
     var r;
-    !(function (t) {
-      (t.ABRIR_DOCUMENTO = 'abrirDocumento'),
+    (!(function (t) {
+      ((t.ABRIR_DOCUMENTO = 'abrirDocumento'),
         (t.ABRIR_REQUISICAO = 'abrirRequisicao'),
         (t.BUSCAR_DADOS = 'buscarDados'),
         (t.EDITAR_REQUISICAO_ANTIGA = 'editarRequisicaoAntiga'),
@@ -328,9 +329,9 @@
         (t.REQUISICAO_ANTIGA_PREPARADA = 'requisicaoAntigaPreparada'),
         (t.RESPOSTA_DADOS = 'respostaDados'),
         (t.RESPOSTA_JANELA_ABERTA = 'respostaJanelaAberta'),
-        (t.VERIFICAR_JANELA = 'verificarJanela');
+        (t.VERIFICAR_JANELA = 'verificarJanela'));
     })(r || (r = {})),
-      (e.a = r);
+      (e.a = r));
   },
   function (t, e, n) {
     'use strict';
@@ -395,12 +396,12 @@
       ) {
         const a = this.doc.querySelector(t);
         if (!a) throw new Error(`Elemento não encontrado: ${t}`);
-        a.classList.add('gm-resposta'),
+        (a.classList.add('gm-resposta'),
           !0 === e
             ? a.classList.add(n)
             : !1 === e
               ? a.classList.add(r)
-              : void 0 === e && a.classList.add(o);
+              : void 0 === e && a.classList.add(o));
       }
     }
   },
@@ -498,10 +499,10 @@
         t
       );
     })();
-    (e.None = i), (e.none = i.value);
+    ((e.None = i), (e.none = i.value));
     var s = (function () {
       function t(t) {
-        (this.value = t), (this._tag = 'Some');
+        ((this.value = t), (this._tag = 'Some'));
       }
       return (
         (t.prototype.map = function (e) {
@@ -576,7 +577,7 @@
         t
       );
     })();
-    (e.Some = s),
+    ((e.Some = s),
       (e.getSetoid = function (t) {
         return {
           equals: function (e, n) {
@@ -598,7 +599,7 @@
                 : 0;
           },
         });
-      });
+      }));
     var c = function (t) {
         return new s(t);
       },
@@ -608,7 +609,7 @@
       l = function (t, e) {
         return t.alt(e);
       };
-    (e.getApplySemigroup = function (t) {
+    ((e.getApplySemigroup = function (t) {
       return {
         concat: function (n, r) {
           return n.isSome() && r.isSome()
@@ -672,7 +673,7 @@
         return function (e) {
           return t(e).isSome();
         };
-      });
+      }));
     var d = function (t) {
         if (t.isNone()) return { left: e.none, right: e.none };
         var n = t.value;
@@ -759,7 +760,7 @@
         return 0 === n ? t.apply(this, i) : r(t, n - 1, i);
       };
     }
-    Object.defineProperty(e, '__esModule', { value: !0 }),
+    (Object.defineProperty(e, '__esModule', { value: !0 }),
       (e.identity = function (t) {
         return t;
       }),
@@ -837,8 +838,8 @@
       (e.curried = r),
       (e.curry = function (t) {
         return r(t, t.length - 1, []);
-      });
-    (e.toString = function (t) {
+      }));
+    ((e.toString = function (t) {
       if ('string' == typeof t) return JSON.stringify(t);
       if (t instanceof Date) return "new Date('" + t.toISOString() + "')";
       if (Array.isArray(t)) return '[' + t.map(e.toString).join(', ') + ']';
@@ -884,7 +885,7 @@
       }),
       (e.decrement = function (t) {
         return t - 1;
-      });
+      }));
   },
   function (t, e, n) {
     'use strict';
@@ -903,7 +904,7 @@
     Object.defineProperty(e, '__esModule', { value: !0 });
     var o = n(8),
       a = n(10);
-    (e.fold = function (t) {
+    ((e.fold = function (t) {
       return a.fold(t)(t.empty);
     }),
       (e.getProductMonoid = function (t, e) {
@@ -915,13 +916,13 @@
         return r({}, a.getDualSemigroup(t), { empty: t.empty });
       }),
       (e.monoidAll = r({}, a.semigroupAll, { empty: !0 })),
-      (e.monoidAny = r({}, a.semigroupAny, { empty: !1 }));
-    (e.unsafeMonoidArray = r({}, a.getArraySemigroup(), { empty: [] })),
+      (e.monoidAny = r({}, a.semigroupAny, { empty: !1 })));
+    ((e.unsafeMonoidArray = r({}, a.getArraySemigroup(), { empty: [] })),
       (e.getArrayMonoid = function () {
         return e.unsafeMonoidArray;
-      });
+      }));
     var i = {};
-    (e.getDictionaryMonoid = function (t) {
+    ((e.getDictionaryMonoid = function (t) {
       return r({}, a.getDictionarySemigroup(t), { empty: i });
     }),
       (e.monoidSum = r({}, a.semigroupSum, { empty: 0 })),
@@ -952,7 +953,7 @@
       }),
       (e.getJoinMonoid = function (t) {
         return r({}, a.getJoinSemigroup(t), { empty: t.bottom });
-      });
+      }));
   },
   function (t, e, n) {
     'use strict';
@@ -971,7 +972,7 @@
     Object.defineProperty(e, '__esModule', { value: !0 });
     var o = n(11),
       a = n(8);
-    (e.fold = function (t) {
+    ((e.fold = function (t) {
       return function (e) {
         return function (n) {
           return n.reduce(t.concat, e);
@@ -1065,9 +1066,9 @@
             return o;
           },
         };
-      });
+      }));
     var i = e.getDictionarySemigroup(e.getLastSemigroup());
-    (e.getObjectSemigroup = function () {
+    ((e.getObjectSemigroup = function () {
       return i;
     }),
       (e.semigroupSum = {
@@ -1085,7 +1086,7 @@
           return t + e;
         },
       }),
-      (e.semigroupVoid = { concat: function () {} });
+      (e.semigroupVoid = { concat: function () {} }));
   },
   function (t, e, n) {
     'use strict';
@@ -1105,7 +1106,7 @@
     var o = n(12),
       a = n(13),
       i = n(8);
-    (e.unsafeCompare = function (t, e) {
+    ((e.unsafeCompare = function (t, e) {
       return t < e ? -1 : t > e ? 1 : 0;
     }),
       (e.ordString = r({}, a.setoidString, { compare: e.unsafeCompare })),
@@ -1202,11 +1203,11 @@
       }),
       (e.ordDate = e.contramap(function (t) {
         return t.valueOf();
-      }, e.ordNumber));
+      }, e.ordNumber)));
   },
   function (t, e, n) {
     'use strict';
-    Object.defineProperty(e, '__esModule', { value: !0 }),
+    (Object.defineProperty(e, '__esModule', { value: !0 }),
       (e.sign = function (t) {
         return t <= -1 ? -1 : t >= 1 ? 1 : 0;
       }),
@@ -1229,7 +1230,7 @@
           default:
             return 0;
         }
-      });
+      }));
   },
   function (t, e, n) {
     'use strict';
@@ -1239,7 +1240,7 @@
       return t === e;
     };
     var o = { equals: e.strictEqual };
-    (e.setoidString = o),
+    ((e.setoidString = o),
       (e.setoidNumber = o),
       (e.setoidBoolean = o),
       (e.getArraySetoid = function (t) {
@@ -1278,7 +1279,7 @@
       }),
       (e.setoidDate = e.contramap(function (t) {
         return t.valueOf();
-      }, e.setoidNumber));
+      }, e.setoidNumber)));
   },
   function (t, e, n) {
     'use strict';
@@ -1311,12 +1312,12 @@
         )
       ).then(t => t.reduce((t, e) => t.concat(e), []));
     }
-    n.d(e, 'a', function () {
+    (n.d(e, 'a', function () {
       return r;
     }),
       n.d(e, 'b', function () {
         return o;
-      });
+      }));
   },
   function (t, e, n) {
     'use strict';
@@ -1337,9 +1338,9 @@
     const m = n(39);
     class h extends l.a {
       constructor() {
-        super(...arguments),
+        (super(...arguments),
           (this.janelasDependentes = new Map()),
-          (this.urlEditarRequisicoes = new Map());
+          (this.urlEditarRequisicoes = new Map()));
       }
       obterAssuntos() {
         const t = this.queryOption('table[summary="Assuntos"]'),
@@ -1549,10 +1550,10 @@
                       .exists(e => e === t.numero)
                   );
                 if (r.length > 0) {
-                  r[0].classList.add('gmEventoDestacado'),
+                  (r[0].classList.add('gmEventoDestacado'),
                     t.descricao.match(e)
                       ? (d.dataDecurso = t.data)
-                      : (d.dataFechamento = t.data);
+                      : (d.dataFechamento = t.data));
                 }
               }
             }
@@ -1593,7 +1594,7 @@
         return r.a(this, void 0, void 0, function* () {
           GM_addStyle(m);
           const t = this.getWindow();
-          t.addEventListener('pagehide', () => {
+          (t.addEventListener('pagehide', () => {
             this.fecharJanelasDependentes();
           }),
             t.addEventListener('message', this.onMensagemRecebida.bind(this)),
@@ -1601,7 +1602,7 @@
             (yield this.obterLinkListar()).addEventListener(
               'click',
               this.onLinkListarClicado.bind(this)
-            );
+            ));
         });
       }
       consultarRequisicoesFinalizadas() {
@@ -1634,16 +1635,16 @@
           })
           .then(t => {
             const e = c.a.criar('Conferir ofício requisitório', t => {
-                t.preventDefault(),
+                (t.preventDefault(),
                   t.stopPropagation(),
                   (() =>
                     r.a(this, void 0, void 0, function* () {
-                      (e.textContent = 'Aguarde, carregando...'),
+                      ((e.textContent = 'Aguarde, carregando...'),
                         yield this.consultarRequisicoesFinalizadas(),
-                        (e.textContent = 'Conferir ofício requisitório');
+                        (e.textContent = 'Conferir ofício requisitório'));
                     }))().catch(t => {
                     console.error(t);
-                  });
+                  }));
               }),
               n = this.doc.createDocumentFragment();
             return (
@@ -1786,7 +1787,7 @@
       }
       fecharJanela(t) {
         const e = this.janelasDependentes.get(t);
-        e && this.fecharObjetoJanela(e), this.janelasDependentes.delete(t);
+        (e && this.fecharObjetoJanela(e), this.janelasDependentes.delete(t));
       }
       fecharJanelasDependentes() {
         Array.from(this.janelasDependentes.keys()).forEach(t => {
@@ -1813,9 +1814,9 @@
         } catch (t) {}
       }
       onLinkListarClicado(t) {
-        t.preventDefault(), t.stopPropagation();
+        (t.preventDefault(), t.stopPropagation());
         let e = !1;
-        t.shiftKey && (e = !0), this.abrirJanelaListar(e);
+        (t.shiftKey && (e = !0), this.abrirJanelaListar(e));
       }
       onMensagemRecebida(t) {
         if (
@@ -1826,11 +1827,11 @@
           if (e.acao === s.a.VERIFICAR_JANELA)
             t.source && this.enviarRespostaJanelaAberta(t.source, t.origin);
           else if (e.acao === s.a.ABRIR_REQUISICAO)
-            console.log('Pediram-me para abrir uma requisicao', e.requisicao),
+            (console.log('Pediram-me para abrir uma requisicao', e.requisicao),
               this.abrirJanelaRequisicao(
                 e.requisicao.urlConsultar,
                 e.requisicao.numero
-              );
+              ));
           else if (e.acao === s.a.EDITAR_REQUISICAO) {
             const t = e.requisicao;
             this.fecharJanelaRequisicao(t);
@@ -1874,7 +1875,7 @@
         };
       };
     }
-    (e.applyFirst = function (t) {
+    ((e.applyFirst = function (t) {
       return function (e, n) {
         return t.ap(t.map(e, r.constant), n);
       };
@@ -1929,7 +1930,7 @@
             },
           };
         };
-      });
+      }));
     var a = {};
     e.sequenceT = function (t) {
       return function () {
@@ -1971,7 +1972,7 @@
       a = n(7),
       i = n(11),
       s = n(13);
-    (e.URI = 'Array'),
+    ((e.URI = 'Array'),
       (e.getMonoid = function () {
         return { concat: o.concat, empty: e.empty };
       }),
@@ -1990,7 +1991,7 @@
             return i.ordNumber.compare(r, o);
           },
         });
-      });
+      }));
     var c = function (t, e) {
         for (var n = t.length, r = new Array(n), o = 0; o < n; o++)
           r[o] = e(t[o]);
@@ -1998,7 +1999,7 @@
       },
       u = function (t, e) {
         for (var n = 0, r = t.length, o = new Array(r), a = 0; a < r; a++) {
-          (n += (c = e(t[a])).length), (o[a] = c);
+          ((n += (c = e(t[a])).length), (o[a] = c));
         }
         var i = Array(n),
           s = 0;
@@ -2032,7 +2033,7 @@
         return e.empty;
       },
       f = o.concat;
-    (e.makeBy = function (t, e) {
+    ((e.makeBy = function (t, e) {
       for (var n = [], r = 0; r < t; r++) n.push(e(r));
       return n;
     }),
@@ -2045,8 +2046,8 @@
         return e.makeBy(t, function () {
           return n;
         });
-      });
-    (e.flatten = function (t) {
+      }));
+    ((e.flatten = function (t) {
       for (var e = 0, n = t.length, r = 0; r < n; r++) e += t[r].length;
       var o = Array(e),
         a = 0;
@@ -2096,11 +2097,11 @@
       (e.cons = function (t, e) {
         for (var n = e.length, r = Array(n + 1), o = 0; o < n; o++)
           r[o + 1] = e[o];
-        return (r[0] = t), r;
+        return ((r[0] = t), r);
       }),
       (e.snoc = function (t, e) {
         for (var n = t.length, r = Array(n + 1), o = 0; o < n; o++) r[o] = t[o];
-        return (r[n] = e), r;
+        return ((r[n] = e), r);
       }),
       (e.head = function (t) {
         return e.isEmpty(t) ? a.none : a.some(t[0]);
@@ -2124,12 +2125,12 @@
       (e.takeWhile = function (t, e) {
         for (var n = m(t, e), r = Array(n), o = 0; o < n; o++) r[o] = t[o];
         return r;
-      });
+      }));
     var m = function (t, e) {
       for (var n = t.length, r = 0; r < n && e(t[r]); r++);
       return r;
     };
-    (e.span = function (t, e) {
+    ((e.span = function (t, e) {
       for (var n = m(t, e), r = Array(n), o = 0; o < n; o++) r[o] = t[o];
       var a = t.length,
         i = Array(a - n);
@@ -2174,7 +2175,7 @@
       }),
       (e.unsafeInsertAt = function (t, n, r) {
         var o = e.copy(r);
-        return o.splice(t, 0, n), o;
+        return (o.splice(t, 0, n), o);
       }),
       (e.insertAt = function (t, n, r) {
         return t < 0 || t > r.length
@@ -2183,7 +2184,7 @@
       }),
       (e.unsafeUpdateAt = function (t, n, r) {
         var o = e.copy(r);
-        return (o[t] = n), o;
+        return ((o[t] = n), o);
       }),
       (e.updateAt = function (t, n, r) {
         return e.isOutOfBound(t, r)
@@ -2192,7 +2193,7 @@
       }),
       (e.unsafeDeleteAt = function (t, n) {
         var r = e.copy(n);
-        return r.splice(t, 1), r;
+        return (r.splice(t, 1), r);
       }),
       (e.deleteAt = function (t, n) {
         return e.isOutOfBound(t, n) ? a.none : a.some(e.unsafeDeleteAt(t, n));
@@ -2282,7 +2283,7 @@
       }),
       (e.filter = function (t, e) {
         return t.filter(e);
-      });
+      }));
     var h = e.catOptions,
       g = function (t) {
         for (var e = [], n = [], r = 0, o = t; r < o.length; r++) {
@@ -2292,12 +2293,12 @@
         return { left: e, right: n };
       },
       v = e.mapOption;
-    (e.chop = function (t, e) {
+    ((e.chop = function (t, e) {
       for (var n = [], r = t; r.length > 0; ) {
         var o = e(r),
           a = o[0],
           i = o[1];
-        n.push(a), (r = i);
+        (n.push(a), (r = i));
       }
       return n;
     }),
@@ -2369,7 +2370,7 @@
             var a = o.value,
               i = a[0],
               s = a[1];
-            n.push(i), (r = s);
+            (n.push(i), (r = s));
           }
           return n;
         },
@@ -2407,7 +2408,7 @@
             return t.map(e(n, r), g);
           };
         },
-      });
+      }));
   },
   function (t, e, n) {
     'use strict';
@@ -2579,7 +2580,7 @@
           [, o, a] = n.match(/^(-?)(\d+)$/),
           i = '';
         for (; a.length > 3; )
-          (i = `.${a.substr(-3)}` + i), (a = a.substr(0, a.length - 3));
+          ((i = `.${a.substr(-3)}` + i), (a = a.substr(0, a.length - 3)));
         return `${o || ''}${a}${i},${r}`;
       },
     };
@@ -2640,7 +2641,7 @@
   },
   function (t, e, n) {
     'use strict';
-    n(1), n(6), n(32);
+    (n(1), n(6), n(32));
   },
   function (t, e, n) {
     'use strict';
@@ -2657,7 +2658,7 @@
     n.d(e, 'a', function () {
       return r.a;
     });
-    n(34), n(23);
+    (n(34), n(23));
     var o = n(35);
     n.d(e, 'b', function () {
       return o.a;
@@ -2690,13 +2691,13 @@
     function r(t) {
       return new Promise((e, n) => {
         const r = new XMLHttpRequest();
-        r.open('GET', t),
+        (r.open('GET', t),
           (r.responseType = 'document'),
           r.addEventListener('load', () => {
             e(r.response);
           }),
           r.addEventListener('error', n),
-          r.send(null);
+          r.send(null));
       });
     }
     n.d(e, 'a', function () {
@@ -2740,8 +2741,8 @@
         return r.a(this, void 0, void 0, function* () {
           GM_addStyle(f);
           const t = this.getWindow();
-          t.addEventListener('message', this.onMensagemRecebida.bind(this)),
-            this.enviarSolicitacaoDados(t.opener);
+          (t.addEventListener('message', this.onMensagemRecebida.bind(this)),
+            this.enviarSolicitacaoDados(t.opener));
         });
       }
       adicionarAreaDocumentosProcesso() {
@@ -2758,17 +2759,17 @@
             'Ir para tela de intimação',
             this.onBotaoTelaIntimacaoClicado.bind(this)
           );
-          (yield this.query('#divInfraAreaTabela')).insertAdjacentHTML(
+          ((yield this.query('#divInfraAreaTabela')).insertAdjacentHTML(
             'beforeend',
             '<div class="gm-botoes"></div>'
           ),
-            (yield this.query('.gm-botoes')).appendChild(t);
+            (yield this.query('.gm-botoes')).appendChild(t));
         });
       }
       analisarDadosProcesso(t) {
-        console.log('Dados do processo:', t),
+        (console.log('Dados do processo:', t),
           this.validarDadosProcesso(t),
-          this.exibirDocumentosProcesso(t);
+          this.exibirDocumentosProcesso(t));
       }
       analisarDadosRequisicao() {
         return r.a(this, void 0, void 0, function* () {
@@ -2825,7 +2826,7 @@
               'dataTransitoSentenca'
             )
           );
-          t.definirConversores({
+          (t.definirConversores({
             originarioJEF: c.b,
             extraorcamentaria: c.b,
             processoEletronico: c.b,
@@ -2833,7 +2834,7 @@
             dataAjuizamento: c.c,
             dataTransitoSentenca: c.c,
           }),
-            (t.prefixo = 'gm-requisicao__dados');
+            (t.prefixo = 'gm-requisicao__dados'));
           const e = new d.a(),
             n = (yield this.queryTexto('.titReq')).trim(),
             r = yield Promise.resolve(
@@ -2848,7 +2849,7 @@
           const o = yield this.query(
             '#divInfraAreaTabela > table:nth-child(2)'
           );
-          o.classList.add('gm-requisicao__tabela'), t.analisarInto(o, e);
+          (o.classList.add('gm-requisicao__tabela'), t.analisarInto(o, e));
           let i = o.nextElementSibling,
             s = null,
             u = 0;
@@ -2856,21 +2857,21 @@
             if (i.matches('table')) {
               const t = i;
               if ('Beneficiários' === (t.textContent || '').trim())
-                (s = 'Beneficiários'), (u = 0);
+                ((s = 'Beneficiários'), (u = 0));
               else if ('Honorários' === (t.textContent || '').trim())
-                (s = 'Honorários'), (u = 0);
+                ((s = 'Honorários'), (u = 0));
               else if (
                 'Reembolsos/Deduções/Multas' === (t.textContent || '').trim()
               )
-                (s = 'Multa'), (u = 0);
+                ((s = 'Multa'), (u = 0));
               else if ('Beneficiários' === s)
                 e.beneficiarios.push(this.analisarTabelaBeneficiarios(t, u++));
               else if ('Honorários' === s)
                 e.honorarios.push(this.analisarTabelaHonorarios(t, u++));
               else if ('Multa' !== s)
                 throw (
-                  (console.error('Tabela não analisada!', t),
-                  new Error('Tabela não analisada!'))
+                  console.error('Tabela não analisada!', t),
+                  new Error('Tabela não analisada!')
                 );
             }
             i = i.nextElementSibling;
@@ -3067,8 +3068,8 @@
                 t
               );
             }, new Map());
-          Array.from(a.values()).forEach(t => {
-            (n += [
+          (Array.from(a.values()).forEach(t => {
+            ((n += [
               `<tr class="${o++ % 2 == 0 ? 'infraTrClara' : 'infraTrEscura'}">`,
               `<td>${t.evento}</td>`,
               `<td>${c.d.converter(new Date(t.data))}</td>`,
@@ -3081,7 +3082,7 @@
                 .forEach(e => {
                   n += `<tr><td><a class="infraLinkDocumento" id="gm-documento-ev${t.evento}-doc${e.ordem}" data-evento="${t.evento}" data-documento="${e.ordem}" href="#">${e.nome}</a></td></tr>`;
                 }),
-              (n += ['</tbody></table></td>', '</tr>'].join('\n'));
+              (n += ['</tbody></table></td>', '</tr>'].join('\n')));
           }),
             (n += ['</tbody>', '</table>'].join('\n')),
             e.insertAdjacentHTML('beforeend', n),
@@ -3105,7 +3106,7 @@
             e.insertAdjacentHTML(
               'beforeend',
               `<p class="gm-resposta">${t.justicaGratuita}</p>`
-            );
+            ));
         });
       }
       exibirTitulo(t, e) {
@@ -3118,7 +3119,7 @@
         return r.a(this, void 0, void 0, function* () {
           const t = yield this.obterRequisicao(),
             e = yield this.query('#divInfraAreaTabela');
-          this.exibirTitulo('Conferência dos cálculos', e),
+          (this.exibirTitulo('Conferência dos cálculos', e),
             t.beneficiarios.forEach((n, r) => {
               const o = `.gm-requisicao__beneficiario--${r}`;
               this.validarElemento(`${o}__valor`, !0);
@@ -3134,10 +3135,10 @@
                 );
               l.forEach(t => {
                 const e = `.gm-requisicao__honorario--${t.ordinal}`;
-                this.validarElemento(`${e}__tipoHonorario`, !0),
+                (this.validarElemento(`${e}__tipoHonorario`, !0),
                   (i += t.valor.principal),
                   (s += t.valor.juros),
-                  (u += t.valor.total);
+                  (u += t.valor.total));
               });
               let d = 1 - n.valor.total / u,
                 f = p.b(100 * d, 0),
@@ -3157,7 +3158,7 @@
                 this.validarElemento(`${o}__irpf`, !0);
                 let t = n.mesesAnterior,
                   r = n.valorAnterior;
-                d > 0 && (r /= 1 - d),
+                (d > 0 && (r /= 1 - d),
                   e.insertAdjacentHTML(
                     'beforeend',
                     `<p class="gm-resposta gm-dados-adicionais">IRPF &mdash; Exercício Anterior &mdash; <span class="gm-resposta--indefinida">${c.e.converter(
@@ -3167,7 +3168,7 @@
                     }</span> &mdash; <span class="gm-resposta--indefinida">${c.g.converter(
                       r
                     )}</span></p>`
-                  );
+                  ));
                 let a = n.mesesCorrente,
                   i = n.valorCorrente;
                 d > 0 && (i /= 1 - d);
@@ -3212,7 +3213,7 @@
               .filter(t => 'Honorários Contratuais' !== t.tipoHonorario)
               .forEach(t => {
                 const n = `.gm-requisicao__honorario--${t.ordinal}`;
-                this.validarElemento(`${n}__nome`, !0),
+                (this.validarElemento(`${n}__nome`, !0),
                   this.validarElemento(`${n}__tipoHonorario`, !0),
                   this.validarElemento(`${n}__valor`, !0),
                   e.insertAdjacentHTML(
@@ -3231,12 +3232,12 @@
                         t.dataBase
                       )}</span></p>`,
                     ].join('\n')
-                  );
-              });
+                  ));
+              }));
         });
       }
       onBotaoTelaIntimacaoClicado(t) {
-        t.preventDefault(), t.stopPropagation();
+        (t.preventDefault(), t.stopPropagation());
         const e = this.getWindow().opener;
         this.obterRequisicao()
           .then(t => {
@@ -3261,7 +3262,7 @@
           e.acao === o.a.RESPOSTA_DADOS &&
             (() =>
               r.a(this, void 0, void 0, function* () {
-                console.log(
+                (console.log(
                   'Dados da requisicação:',
                   yield this.obterRequisicao()
                 ),
@@ -3269,7 +3270,7 @@
                   yield this.exibirValoresCalculados(),
                   yield this.adicionarAreaDocumentosProcesso(),
                   yield this.adicionarBotaoTelaIntimacao(),
-                  this.analisarDadosProcesso(e.dados);
+                  this.analisarDadosProcesso(e.dados));
               }))().catch(t => console.error(t));
         }
       }
@@ -3281,14 +3282,14 @@
             t.assuntos.indexOf(e.codigoAssunto) > -1
           );
           const n = c.c.converter(new Date(t.autuacao));
-          this.validarElemento(
+          (this.validarElemento(
             '.gm-requisicao__dados__dataAjuizamento',
             n === c.c.converter(e.dataAjuizamento) || void 0
           ),
             this.validarElemento(
               '.gm-requisicao__dados__dataTransitoConhecimento',
               '' === e.dataTransitoConhecimento || void 0
-            );
+            ));
           let r = c.c.converter(new Date(t.transito.dataTransito || 0)),
             o = c.c.converter(new Date(t.transito.dataEvento || 0)),
             a = c.c.converter(new Date(t.transito.dataDecurso || 0)),
@@ -3296,7 +3297,7 @@
             s = c.c.converter(e.dataTransitoSentenca),
             u = r === s || a === s,
             l = o === s || i === s;
-          this.validarElemento(
+          (this.validarElemento(
             '.gm-requisicao__dados__dataTransitoSentenca',
             !!u || (!!l && void 0)
           ),
@@ -3311,7 +3312,7 @@
                   t => t.cpfCnpj === e.cpfCnpj.replace(/[.\/-]/g, '')
                 );
               this.validarElemento(`.${r}__cpfCnpj`, 1 === o.length);
-            });
+            }));
           const d = t.autores.reduce(
             (t, e) => (e.advogados.forEach(e => t.add(e.toUpperCase())), t),
             new Set()
@@ -3340,7 +3341,7 @@
       validarDadosRequisicao() {
         return r.a(this, void 0, void 0, function* () {
           const t = yield this.obterRequisicao();
-          this.validarElemento(
+          (this.validarElemento(
             '.gm-requisicao__dados__status',
             'Finalizada' === t.status
           ),
@@ -3356,7 +3357,7 @@
             this.validarElemento('.gm-requisicao__dados__juizo', !0),
             this.validarElemento('.gm-requisicao__dados__acaoDeExecucao', !0),
             this.validarElemento('.gm-requisicao__dados__acaoOriginaria', !0),
-            this.validarElemento('.gm-requisicao__dados__advogado', !0);
+            this.validarElemento('.gm-requisicao__dados__advogado', !0));
           const e = null !== t.codigoAssunto.match(/^04/),
             n = null !== t.codigoAssunto.match(/^011[012]/),
             r = null !== t.codigoAssunto.match(/^0106/),
@@ -3421,7 +3422,7 @@
             ].reduce((t, e) => t.concat(e), []),
             c = 60 * s.a,
             u = i.reduce((t, { pagamento: e }) => t + e.valor.total, 0);
-          this.validarElemento(
+          (this.validarElemento(
             '.gm-requisicao__dados__valorTotalRequisitado',
             t.valorTotalRequisitado === p.b(u, 2) &&
               (!(t.valorTotalRequisitado > c) || void 0)
@@ -3436,7 +3437,7 @@
                   'Honorários de Sucumbência',
                   'Honorários Contratuais',
                 ].some(t => t === i.pagamento.tipoHonorario);
-              this.validarElemento(`.${i.prefixo}__bloqueado`, s || void 0),
+              (this.validarElemento(`.${i.prefixo}__bloqueado`, s || void 0),
                 'tipoJuros' in i.pagamento &&
                   this.validarElemento(
                     `.${i.prefixo}__tipoJuros`,
@@ -3447,7 +3448,7 @@
                       'Não incidem' === i.pagamento.tipoJuros) ||
                       (e && 'Poupança' === i.pagamento.tipoJuros) ||
                       void 0
-                  );
+                  ));
               const u =
                 o &&
                 ('beneficiario' === i.tipo ||
@@ -3504,12 +3505,13 @@
               ) {
                 if (i.pagamento.irpf) {
                   let t = 0;
-                  i.pagamento.valorAnterior && (t += i.pagamento.valorAnterior),
+                  (i.pagamento.valorAnterior &&
+                    (t += i.pagamento.valorAnterior),
                     i.pagamento.valorCorrente &&
-                      (t += i.pagamento.valorCorrente);
+                      (t += i.pagamento.valorCorrente));
                   const e = p.b(t, 2) === i.pagamento.valor.total;
-                  this.validarElemento(`.${i.prefixo}__valorCorrente`, e),
-                    this.validarElemento(`.${i.prefixo}__valorAnterior`, e);
+                  (this.validarElemento(`.${i.prefixo}__valorCorrente`, e),
+                    this.validarElemento(`.${i.prefixo}__valorAnterior`, e));
                 }
                 const e = [i.pagamento.valor.total]
                     .concat(
@@ -3519,7 +3521,7 @@
                     )
                     .reduce((t, e) => t + e, 0),
                   n = Math.round(100 * e) - 100 * c;
-                null !== i.pagamento.especie.match(/^RPV/)
+                (null !== i.pagamento.especie.match(/^RPV/)
                   ? (this.validarElemento(
                       `.${i.prefixo}__renunciaValor`,
                       i.pagamento.renunciaValor === (0 === n)
@@ -3533,10 +3535,10 @@
                     `.${i.prefixo}__destaqueHonorariosContratuais`,
                     i.pagamento.destaqueHonorariosContratuais ===
                       i.pagamento.ordinaisContratuais.length > 0
-                  );
+                  ));
               } else if ('honorario' === i.tipo)
                 if ('Honorários Contratuais' === i.pagamento.tipoHonorario) {
-                  this.validarElemento(
+                  (this.validarElemento(
                     `.${i.prefixo}__beneficiario`,
                     1 === i.pagamento.maybeOrdinalBeneficiario.length
                   ),
@@ -3555,7 +3557,7 @@
                           `.${i.prefixo}__valor`,
                           Math.abs(a - 1) < 0.005
                         );
-                      });
+                      }));
                   const e = [i.pagamento.valor.total]
                       .concat(
                         ...i.pagamento.maybeOrdinalBeneficiario
@@ -3587,7 +3589,7 @@
                         t || void 0
                       );
                 }
-            });
+            }));
         });
       }
     }
@@ -3599,7 +3601,7 @@
     });
     class r {
       constructor(...t) {
-        (this.conversores = {}), (this.padroes = t);
+        ((this.conversores = {}), (this.padroes = t));
       }
       analisar(t) {
         return this.analisarInto(t, {});
@@ -3647,11 +3649,11 @@
     });
     class r {
       constructor(t, ...e) {
-        (this.regularExpression = t), (this.properties = e);
+        ((this.regularExpression = t), (this.properties = e));
       }
       match(t) {
         const e = {};
-        return this.matchInto(t, e), e;
+        return (this.matchInto(t, e), e);
       }
       matchInto(t, e) {
         const n = {},
@@ -3685,7 +3687,7 @@
     });
     class r {
       constructor() {
-        (this.beneficiarios = []), (this.honorarios = []);
+        ((this.beneficiarios = []), (this.honorarios = []));
       }
       get isPrecatorio() {
         if (void 0 === this.especie)
@@ -3711,9 +3713,9 @@
     const c = n(48);
     class u extends s.a {
       constructor() {
-        super(...arguments),
+        (super(...arguments),
           (this._isLoadingPages = !1),
-          (this._isLoadingDates = !1);
+          (this._isLoadingDates = !1));
       }
       adicionarAlteracoes() {
         return r.a(this, void 0, void 0, function* () {
@@ -3722,19 +3724,19 @@
             e = this.doc.createDocumentFragment();
           yield this.adicionarBotaoCarregarPaginas().then(
             t => {
-              e.appendChild(t), t.insertAdjacentHTML('afterend', '&nbsp;\n');
+              (e.appendChild(t), t.insertAdjacentHTML('afterend', '&nbsp;\n'));
             },
             t => {
               if (!(t instanceof d)) throw t;
             }
           );
           const n = this.adicionarBotaoOrdenar();
-          e.appendChild(n), n.insertAdjacentHTML('afterend', '&nbsp;\n');
+          (e.appendChild(n), n.insertAdjacentHTML('afterend', '&nbsp;\n'));
           const r = this.adicionarBotaoLimparCache();
-          e.appendChild(r),
+          (e.appendChild(r),
             r.insertAdjacentHTML('afterend', '&nbsp;\n'),
             t.insertBefore(e, t.firstChild),
-            this.observarUltimoLinkClicado();
+            this.observarUltimoLinkClicado());
         });
       }
       adicionarBotaoCarregarPaginas() {
@@ -3748,9 +3750,9 @@
       }
       adicionarBotaoLimparCache() {
         return o.a.criar('Excluir dados armazenados localmente', t => {
-          t.preventDefault(),
+          (t.preventDefault(),
             localStorage.removeItem('datas-transito'),
-            this.getWindow().alert('Dados locais excluídos.');
+            this.getWindow().alert('Dados locais excluídos.'));
         });
       }
       adicionarBotaoOrdenar() {
@@ -3876,24 +3878,24 @@
                 }, this.doc.createDocumentFragment())
             )
             .then(t => {
-              Array.from(c.rows).forEach(t => {
-                (t.onmouseover = null),
+              (Array.from(c.rows).forEach(t => {
+                ((t.onmouseover = null),
                   (t.onmouseout = null),
-                  t.classList.remove('infraTrSelecionada');
+                  t.classList.remove('infraTrSelecionada'));
               }),
                 c.classList.add('gm-conferir-rpv__tbody'),
                 c.appendChild(t),
                 (n.textContent = `Lista de ${s} registros:`),
                 [a, i, u].forEach(t => {
                   t.style.display = 'none';
-                });
+                }));
             })
             .then(
               t => console.log('Resultado:', t),
               t => console.error(t)
             )
             .then(() => {
-              (u.textContent = d), (this._isLoadingPages = !1);
+              ((u.textContent = d), (this._isLoadingPages = !1));
             })
             .then(() => this.observarUltimoLinkClicado())
         );
@@ -3948,7 +3950,7 @@
                 })(t).then(t => {
                   c += u;
                   const n = a.h.converter(Math.round(100 * c) / 100);
-                  return (e.textContent = `Carregando dados... ${n}`), t;
+                  return ((e.textContent = `Carregando dados... ${n}`), t);
                 })
               );
             },
@@ -3957,7 +3959,7 @@
             .then(t => t.map((t, e) => ({ data: t, linha: r[e] })))
             .then(t => {
               const e = this.doc.createElement('th');
-              e.classList.add('infraTh'),
+              (e.classList.add('infraTh'),
                 (e.textContent = 'Trânsito'),
                 o.rows[0].appendChild(e),
                 t.sort((t, e) => {
@@ -3978,7 +3980,7 @@
                       t
                     );
                   }, this.doc.createDocumentFragment())
-                );
+                ));
             })
             .then(() => (e.style.display = 'none'))
             .then(
@@ -3986,7 +3988,7 @@
               t => console.error(t)
             )
             .then(() => {
-              localStorage.setItem(
+              (localStorage.setItem(
                 'datas-transito',
                 JSON.stringify(
                   Array.from(m)
@@ -4004,7 +4006,7 @@
                 )
               ),
                 (e.textContent = n),
-                (this._isLoadingDates = !1);
+                (this._isLoadingDates = !1));
             });
         });
       }
@@ -4019,7 +4021,7 @@
           if (!(i || s >= t))
             if (r.length) {
               const t = r.shift();
-              a.push(
+              (a.push(
                 e(t).then(
                   t => (s--, setTimeout(c, 0), t),
                   t => {
@@ -4028,7 +4030,7 @@
                 )
               ),
                 s++,
-                setTimeout(c, 0);
+                setTimeout(c, 0));
             } else n(Promise.all(a));
         };
         c();
@@ -4046,13 +4048,13 @@
     function f(t, e, n = null, r = 'document') {
       return new Promise((o, a) => {
         const i = new XMLHttpRequest();
-        i.open(t, e),
+        (i.open(t, e),
           (i.responseType = r),
           i.addEventListener('load', () => {
             o('text' === r ? i.responseText : i.response);
           }),
           i.addEventListener('error', a),
-          i.send(n);
+          i.send(n));
       });
     }
     let m = new Map();

@@ -27,7 +27,7 @@
     return;
   }
   const o = document.createElement('style');
-  (o.textContent = a), document.head.append(o);
+  ((o.textContent = a), document.head.append(o));
 })(
   ' .gm-atualizar-saldo__contas,.gm-atualizar-saldo__processo{--button-bg: hsl(333, 25%, 40%);--fg-color: hsl(333, 80%, 15%);--border-color: hsl(333, 10%, 40%)}.gm-atualizar-saldo__contas span,.gm-atualizar-saldo__processo span{line-height:2em;color:var(--fg-color)}.gm-atualizar-saldo__contas span.zerado,.gm-atualizar-saldo__processo span.zerado{--fg-color: hsl(333, 10%, 40%)}.gm-atualizar-saldo__contas span.erro,.gm-atualizar-saldo__processo span.erro{--fg-color: hsl(0, 85%, 40%)}.gm-atualizar-saldo__contas span.saldo,.gm-atualizar-saldo__processo span.saldo{--fg-color: hsl(333, 75%, 25%)}.gm-atualizar-saldo__contas button,.gm-atualizar-saldo__processo button{border:none;border-radius:4px;padding:4px 12px;font-size:1.3em;color:#fff;box-shadow:0 2px 4px #00000080;background:var(--button-bg)}.gm-atualizar-saldo__contas button.zerado,.gm-atualizar-saldo__processo button.zerado{--button-bg: hsl(333, 5%, 50%)}.gm-atualizar-saldo__contas button:hover,.gm-atualizar-saldo__contas button:focus,.gm-atualizar-saldo__processo button:hover,.gm-atualizar-saldo__processo button:focus{--button-bg: hsl(333, 40%, 45%)}.gm-atualizar-saldo__contas button:active,.gm-atualizar-saldo__processo button:active{box-shadow:none;translate:0 2px}.gm-atualizar-saldo__processo{margin:0 2px 8px;border-left:4px solid var(--border-color);padding:0 4px}.gm-atualizar-saldo__contas{border-left:4px solid var(--border-color);padding:0 4px} '
 );
@@ -388,7 +388,7 @@
     };
     if ('function' == typeof o2 && (s = o2.defaultProps))
       for (u in s) void 0 === a[u] && (a[u] = s[u]);
-    return preact.options.vnode && preact.options.vnode(i), i;
+    return (preact.options.vnode && preact.options.vnode(i), i);
   }
   const Estado$1 = createTaggedUnion({
     Ocioso: infoContas => ({
