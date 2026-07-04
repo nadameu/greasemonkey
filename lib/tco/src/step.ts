@@ -1,6 +1,5 @@
 export type Step<a> =
-  | { done: false; step(): Step<a> }
-  | { done: true; value: a };
+  { done: false; step(): Step<a> } | { done: true; value: a };
 export const loop = <a>(step: () => Step<a>): Step<a> => ({
   done: false,
   step,

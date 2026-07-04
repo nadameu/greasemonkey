@@ -7,8 +7,7 @@ type State =
   | { status: 'REJECTED'; error: Error }
   | { status: 'TRANSITION_ERROR'; previousState: State; action: Action };
 type Action =
-  | { type: 'LOADED'; value: number }
-  | { type: 'ERROR'; error: Error };
+  { type: 'LOADED'; value: number } | { type: 'ERROR'; error: Error };
 let fsm: FiniteStateMachine<State, Action>;
 
 beforeEach(() => {

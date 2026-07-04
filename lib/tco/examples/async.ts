@@ -13,9 +13,8 @@ const memoize = <K, T>(f: (_: K) => T): ((_: K) => T) => {
     return value;
   };
 };
-export const fib = memoize(
-  async (x: number): Promise<number> =>
-    x <= 1 ? x : (await fib(x - 2)) + (await fib(x - 1))
+export const fib = memoize(async (x: number): Promise<number> =>
+  x <= 1 ? x : (await fib(x - 2)) + (await fib(x - 1))
 );
 export const collatz = (x: number): Promise<number> => {
   const set = new Set<number>();

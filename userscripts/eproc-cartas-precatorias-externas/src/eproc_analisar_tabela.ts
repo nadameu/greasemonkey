@@ -9,8 +9,7 @@ export function eproc_analisar_tabela(tabela: HTMLTableElement) {
     if (primeira_celula.querySelector('a[href]') !== null) continue; // já possui link
     const texto = primeira_celula.textContent.trim();
     const match = texto.match(/^(\d{20})(?:\/[A-Z]{2})?$/) as
-      | [string, string]
-      | null;
+      [string, string] | null;
     if (match === null) {
       throw new Error(`Formato de número de processo desconhecido: ${texto}.`);
     }

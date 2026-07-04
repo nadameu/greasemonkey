@@ -13,11 +13,10 @@ const memoize = <K, T>(f: (_: K) => T): ((_: K) => T) => {
     return value;
   };
 };
-export const fib = memoize(
-  (x: number): Promise<number> =>
-    x <= 1
-      ? Promise.resolve(x)
-      : Promise.all([fib(x - 2), fib(x - 1)]).then(([a, b]) => a + b)
+export const fib = memoize((x: number): Promise<number> =>
+  x <= 1
+    ? Promise.resolve(x)
+    : Promise.all([fib(x - 2), fib(x - 1)]).then(([a, b]) => a + b)
 );
 export const collatz = (x: number): Promise<number> => {
   const set = new Set<number>();
