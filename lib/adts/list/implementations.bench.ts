@@ -291,39 +291,33 @@ describe('toIterable', () => {
     });
   };
 
-  bench_toIterable(
-    'Generator',
-    <a>(xs: List<a>): Iterable<a> => ({
-      *[Symbol.iterator]() {
-        for (let curr = xs; curr._tag === 'Cons'; curr = curr.tail) {
-          yield curr.head;
-        }
-      },
-    })
-  );
+  bench_toIterable('Generator', <a>(xs: List<a>): Iterable<a> => ({
+    *[Symbol.iterator]() {
+      for (let curr = xs; curr._tag === 'Cons'; curr = curr.tail) {
+        yield curr.head;
+      }
+    },
+  }));
 
-  bench_toIterable(
-    'Manual',
-    <a>(xs: List<a>): Iterable<a> => ({
-      [Symbol.iterator](): Iterator<a, void> {
-        let done = false,
-          value: a | undefined,
-          next = xs;
-        return {
-          next() {
-            if (next._tag === 'Cons') {
-              value = next.head;
-              next = next.tail;
-            } else {
-              done = true;
-              value = undefined;
-            }
-            return { done, value } as IteratorResult<a, void>;
-          },
-        };
-      },
-    })
-  );
+  bench_toIterable('Manual', <a>(xs: List<a>): Iterable<a> => ({
+    [Symbol.iterator](): Iterator<a, void> {
+      let done = false,
+        value: a | undefined,
+        next = xs;
+      return {
+        next() {
+          if (next._tag === 'Cons') {
+            value = next.head;
+            next = next.tail;
+          } else {
+            done = true;
+            value = undefined;
+          }
+          return { done, value } as IteratorResult<a, void>;
+        },
+      };
+    },
+  }));
 });
 
 describe('map', () => {

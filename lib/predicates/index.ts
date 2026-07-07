@@ -225,13 +225,13 @@ export function hasShape<
 
 type Shape<T> = Simplify<
   {
-    [K in keyof T as T[K] extends { optional: true }
-      ? never
-      : K]-?: T[K] extends Predicate<infer U> ? U : never;
+    [
+      K in keyof T as T[K] extends { optional: true } ? never : K
+    ]-?: T[K] extends Predicate<infer U> ? U : never;
   } & {
-    [K in keyof T as T[K] extends { optional: true }
-      ? K
-      : never]?: T[K] extends Predicate<infer U> ? U : never;
+    [
+      K in keyof T as T[K] extends { optional: true } ? K : never
+    ]?: T[K] extends Predicate<infer U> ? U : never;
   }
 >;
 

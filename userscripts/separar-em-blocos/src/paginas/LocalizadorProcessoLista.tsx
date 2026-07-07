@@ -211,84 +211,73 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
 
   function reducer(state: Model, action: SyncAction): Model {
     return matchWith('type')<SyncAction>(action)
-      .case(
-        'blocosObtidos',
-        ({ blocos }): Model =>
-          matchModel(state)
-            .case('error', state => state)
-            .otherwise((): Model => {
-              const info = blocos.map(
-                (bloco): InfoBloco => ({
-                  ...bloco,
-                  nestaPagina: bloco.processos.filter(numproc =>
-                    mapa.has(numproc)
-                  ).length,
-                  total: bloco.processos.length,
-                })
-              );
-              return Model.loaded(info);
-            })
-            .get()
+      .case('blocosObtidos', ({ blocos }): Model =>
+        matchModel(state)
+          .case('error', state => state)
+          .otherwise((): Model => {
+            const info = blocos.map((bloco): InfoBloco => ({
+              ...bloco,
+              nestaPagina: bloco.processos.filter(numproc => mapa.has(numproc))
+                .length,
+              total: bloco.processos.length,
+            }));
+            return Model.loaded(info);
+          })
+          .get()
       )
-      .case(
-        'checkboxClicado',
-        ({ id, estadoAnterior }): Model =>
-          matchModel(state)
-            .case('loaded', (state): Model => {
-              if (estadoAnterior === 'disabled') return state;
-              desmarcarTodosProcessos();
-              const processos = (() => {
-                if (id === -1) {
-                  const processosComBloco = new Set(
-                    Array.from(
-                      state.blocos.flatMap(({ processos }) =>
-                        processos.filter(p => mapa.has(p))
-                      )
+      .case('checkboxClicado', ({ id, estadoAnterior }): Model =>
+        matchModel(state)
+          .case('loaded', (state): Model => {
+            if (estadoAnterior === 'disabled') return state;
+            desmarcarTodosProcessos();
+            const processos = (() => {
+              if (id === -1) {
+                const processosComBloco = new Set(
+                  Array.from(
+                    state.blocos.flatMap(({ processos }) =>
+                      processos.filter(p => mapa.has(p))
                     )
-                  );
-                  return new Set(
-                    Array.from(mapa)
-                      .filter(([x]) => !processosComBloco.has(x))
-                      .map(([numproc]) => numproc)
-                  );
-                } else {
-                  return new Set(
-                    state.blocos
-                      .filter(x => x.id === id)
-                      .flatMap(x => x.processos.filter(x => mapa.has(x)))
-                  );
-                }
-              })();
-              for (const [numproc, info] of mapa) {
-                const checked = processos.has(numproc);
-                info.checked = checked;
-                info.checkbox.disabled = !checked;
+                  )
+                );
+                return new Set(
+                  Array.from(mapa)
+                    .filter(([x]) => !processosComBloco.has(x))
+                    .map(([numproc]) => numproc)
+                );
+              } else {
+                return new Set(
+                  state.blocos
+                    .filter(x => x.id === id)
+                    .flatMap(x => x.processos.filter(x => mapa.has(x)))
+                );
               }
-              marcarTodosProcessos();
-              for (const info of mapa.values()) {
-                info.checkbox.disabled = false;
-              }
-              return { ...state };
-            })
-            .otherwise(state => state)
-            .get()
+            })();
+            for (const [numproc, info] of mapa) {
+              const checked = processos.has(numproc);
+              info.checked = checked;
+              info.checkbox.disabled = !checked;
+            }
+            marcarTodosProcessos();
+            for (const info of mapa.values()) {
+              info.checkbox.disabled = false;
+            }
+            return { ...state };
+          })
+          .otherwise(state => state)
+          .get()
       )
-      .case(
-        'erroCapturado',
-        ({ aviso }): Model =>
-          matchModel(state)
-            .case('init', () => Model.error(aviso))
-            .case('error', state => state)
-            .case('loaded', state => ({ ...state, aviso }))
-            .get()
+      .case('erroCapturado', ({ aviso }): Model =>
+        matchModel(state)
+          .case('init', () => Model.error(aviso))
+          .case('error', state => state)
+          .case('loaded', state => ({ ...state, aviso }))
+          .get()
       )
-      .case(
-        'erroDesconhecido',
-        ({ erro }): Model =>
-          matchModel(state)
-            .case('error', state => state)
-            .otherwise(() => Model.error(erro))
-            .get()
+      .case('erroDesconhecido', ({ erro }): Model =>
+        matchModel(state)
+          .case('error', state => state)
+          .otherwise(() => Model.error(erro))
+          .get()
       )
       .case('reset', (): Model => Model.init())
       .get();
@@ -323,15 +312,11 @@ export function LocalizadorProcessoLista(): Either<Error, void> {
             await Database.deleteBlocos();
             return Action.obterBlocos();
           })
-          .case(
-            'excluirBloco',
-            async ({ id }): Promise<Action> =>
-              Action.blocosModificados(await Database.deleteBloco(id))
+          .case('excluirBloco', async ({ id }): Promise<Action> =>
+            Action.blocosModificados(await Database.deleteBloco(id))
           )
-          .case(
-            'obterBlocos',
-            async (): Promise<Action> =>
-              Action.blocosModificados(await Database.getBlocos())
+          .case('obterBlocos', async (): Promise<Action> =>
+            Action.blocosModificados(await Database.getBlocos())
           )
           .case('removerProcessosAusentes', async ({ id }): Promise<Action> => {
             const bloco = await Database.getBloco(id);

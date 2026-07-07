@@ -1,13 +1,11 @@
 import { Result, create } from '../src/cont';
 import { List } from './List';
 
-export const count = create(
-  (x: number): Result<number, number> =>
-    x <= 0 ? count.done(0) : count.loop(x - 1, x => count.done(x + 1))
+export const count = create((x: number): Result<number, number> =>
+  x <= 0 ? count.done(0) : count.loop(x - 1, x => count.done(x + 1))
 );
-export const fac = create(
-  (x: number): Result<number, number> =>
-    x <= 1 ? fac.done(1) : fac.loop(x - 1, x1 => fac.done(x * x1))
+export const fac = create((x: number): Result<number, number> =>
+  x <= 1 ? fac.done(1) : fac.loop(x - 1, x1 => fac.done(x * x1))
 );
 export const fib = create(
   (x: number): Result<number, number> =>
@@ -25,7 +23,6 @@ export const collatz = (x: number) => {
   });
   return rec(x);
 };
-export const sum = create(
-  (xs: List<number>): Result<List<number>, number> =>
-    xs.empty ? sum.done(0) : sum.loop(xs.rest, n => sum.done(xs.first + n))
+export const sum = create((xs: List<number>): Result<List<number>, number> =>
+  xs.empty ? sum.done(0) : sum.loop(xs.rest, n => sum.done(xs.first + n))
 );

@@ -1852,7 +1852,7 @@
           return g(t, e);
         };
       let n = e.parentElement;
-      for (; null !== n && !n.matches(t); ) n = n.parentElement;
+      for (; null !== n && !n.matches(t);) n = n.parentElement;
       return null === n ? i.none : i.some(n);
     }
     function v(t) {
@@ -2294,7 +2294,7 @@
       },
       v = e.mapOption;
     ((e.chop = function (t, e) {
-      for (var n = [], r = t; r.length > 0; ) {
+      for (var n = [], r = t; r.length > 0;) {
         var o = e(r),
           a = o[0],
           i = o[1];
@@ -2364,7 +2364,7 @@
           }, e);
         },
         unfoldr: function (t, e) {
-          for (var n = [], r = t; ; ) {
+          for (var n = [], r = t; ;) {
             var o = e(r);
             if (!o.isSome()) break;
             var a = o.value,
@@ -2496,7 +2496,7 @@
     'use strict';
     function r(t, e, n) {
       let r = t;
-      for (; r.length < e; ) r = n + r;
+      for (; r.length < e;) r = n + r;
       return r;
     }
     n.d(e, 'a', function () {
@@ -2579,7 +2579,7 @@
         let [n, r] = e.toFixed(2).split('.'),
           [, o, a] = n.match(/^(-?)(\d+)$/),
           i = '';
-        for (; a.length > 3; )
+        for (; a.length > 3;)
           ((i = `.${a.substr(-3)}` + i), (a = a.substr(0, a.length - 3)));
         return `${o || ''}${a}${i},${r}`;
       },
@@ -2853,7 +2853,7 @@
           let i = o.nextElementSibling,
             s = null,
             u = 0;
-          for (; i; ) {
+          for (; i;) {
             if (i.matches('table')) {
               const t = i;
               if ('Beneficiários' === (t.textContent || '').trim())
@@ -4039,7 +4039,7 @@
     class d extends Error {}
     function p(t, e) {
       let n = t.parentElement;
-      for (; null !== n; ) {
+      for (; null !== n;) {
         if (n.matches(e)) return Promise.resolve(n);
         n = n.parentElement;
       }

@@ -33,8 +33,7 @@ export function dadosAberturaToFeatures(
 }
 
 export type DadosAbertura =
-  | { tipo: 'padrao' }
-  | { tipo: 'janela'; posicao: Posicao };
+  { tipo: 'padrao' } | { tipo: 'janela'; posicao: Posicao };
 export const DadosAbertura = {
   carregar(): DadosAbertura {
     const tipo = GM_getValue<unknown>(Parametros.TIPO_ABERTURA, 'padrao');

@@ -35,8 +35,7 @@ function obterEhLote() {
   const minuta = P.check(
     P.isNotNull,
     heading.textContent.match(/^Agendamento da Minuta .*(\d+)$/) as
-      | [string, string]
-      | null,
+      [string, string] | null,
     'Número da minuta não encontrado.'
   )[1];
 
