@@ -1,7 +1,7 @@
 import { enderecosEproc } from '@nadameu/enderecos-eproc';
 import target from '@nadameu/esbuild-target';
 import { defineConfig } from 'vite';
-import monkey from 'vite-plugin-monkey';
+import monkey, { cdn } from 'vite-plugin-monkey';
 import * as pkg from './package.json';
 import { acoes } from './src/acoes';
 
@@ -12,6 +12,11 @@ export default defineConfig({
   server: { hmr: false },
   plugins: [
     monkey({
+      build: {
+        externalGlobals: {
+          '@zip.js/zip.js': cdn.unpkg('zip', 'dist/zip.min.js'),
+        },
+      },
       entry: 'src/index.ts',
       server: { prefix: name => `dev:${name}` },
       userscript: {
