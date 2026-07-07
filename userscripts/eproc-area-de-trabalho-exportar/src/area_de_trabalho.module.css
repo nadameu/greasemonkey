@@ -1,0 +1,15 @@
+:global(.infra-styles) {
+  button:global(.infraButton).button {
+    background: hsl(333, 13%, 86%);
+    border: 1px outset #ccc;
+
+    &:hover {
+      background: hsl(333, 26%, 86%);
+      border: 1px outset #ccc;
+      box-shadow: 0 2px 4px #000a;
+    }
+    &:disabled {
+      opacity: 0.5;
+    }
+  }
+}

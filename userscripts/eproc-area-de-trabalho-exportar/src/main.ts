@@ -1,0 +1,23 @@
+import { parseAreaDeTrabalho } from './parseAreaDeTrabalho';
+import { AcaoDesconhecida, parseEndereco } from './parseEndereco';
+import { parseImprimir } from './parseImprimir';
+import { ok, Result } from './Result';
+import { NotUnique } from './Result/functions';
+
+export function main(): Result<() => void, AcaoDesconhecida | NotUnique> {
+  return parseEndereco(new URL(document.location.href)).chain(acao => {
+    switch (acao) {
+      case 'minuta_area_trabalho':
+        return parseAreaDeTrabalho();
+      case 'minuta_imprimir':
+        return parseImprimir();
+      case 'minuta_imprimir_preparar_lista':
+        return ok(() => {
+          console.log('fui chamado');
+        });
+      default:
+        const _: never = acao;
+        return _;
+    }
+  });
+}

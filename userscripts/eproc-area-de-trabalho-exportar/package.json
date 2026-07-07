@@ -1,0 +1,26 @@
+{
+  "name": "eproc-area-de-trabalho-exportar",
+  "gm_name": "eproc - área de trabalho - exportar",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Permite exportar minutas da área de trabalho",
+  "author": "nadameu",
+  "type": "module",
+  "scripts": {
+    "build": "run-s type-check compile format",
+    "compile": "vite build",
+    "dev": "vite",
+    "format": "prettier --write ../../eproc-area-de-trabalho-exportar.user.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest watch",
+    "type-check": "tsc"
+  },
+  "dependencies": {
+    "@zip.js/zip.js": "^2.8.26"
+  },
+  "devDependencies": {
+    "@nadameu/enderecos-eproc": "workspace:^",
+    "jsdom": "^25.0.1"
+  }
+}

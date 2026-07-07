@@ -200,6 +200,19 @@ importers:
 
   userscripts/bnmp-destacar-alertas: {}
 
+  userscripts/eproc-area-de-trabalho-exportar:
+    dependencies:
+      '@zip.js/zip.js':
+        specifier: ^2.8.26
+        version: 2.8.26
+    devDependencies:
+      '@nadameu/enderecos-eproc':
+        specifier: workspace:^
+        version: link:../../lib/enderecos-eproc
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1
+
   userscripts/eproc-cartas-precatorias-externas:
     dependencies:
       '@nadameu/create-broadcast-service':
@@ -1205,6 +1218,10 @@ packages:
 
   '@vitest/utils@4.1.9':
     resolution: {integrity: sha512-A51o8ymO5PpqlWNnBP9ZHPXDIpuMtTLlGSjN7la4US+LJzoUMyhwjA5QXlm39JexgwHKW4Xjs8Z2d3dLCXOeuA==}
+
+  '@zip.js/zip.js@2.8.26':
+    resolution: {integrity: sha512-RQ4h9F6DOiHxpdocUDrOl6xBM+yOtz+LkUol47AVWcfebGBDpZ7w7Xvz9PS24JgXvLGiXXzSAfdCdVy1tPlaFA==}
+    engines: {bun: '>=0.7.0', deno: '>=1.0.0', node: '>=18.0.0'}
 
   acorn-walk@8.3.5:
     resolution: {integrity: sha512-HEHNfbars9v4pgpW6SO1KSPkfoS0xVOM/9UzkJltjlsHZmJasxg8aXkuZa7SMf8vKGIBhpUsPluQSqhJFCqebw==}
@@ -3383,6 +3400,8 @@ snapshots:
       '@vitest/pretty-format': 4.1.9
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
+
+  '@zip.js/zip.js@2.8.26': {}
 
   acorn-walk@8.3.5:
     dependencies:
