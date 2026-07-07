@@ -1,7 +1,7 @@
 {
   "name": "seeu-esmaecer-links",
   "gm_name": "SEEU - Esmaecer links",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "private": true,
   "description": "Diminui o destaque para links de contagem cuja quantidade é 0 (zero)",
   "author": "nadameu",
@@ -16,7 +16,6 @@
     "test:watch": "vitest watch",
     "type-check": "tsc"
   },
-  "dependencies": {},
   "devDependencies": {
     "jsdom": "^25.0.1"
   }
