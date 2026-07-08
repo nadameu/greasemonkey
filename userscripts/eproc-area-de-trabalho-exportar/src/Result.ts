@@ -45,3 +45,11 @@ class Err<e, a = never> extends ResultImpl<a, e> {
 export function err<e, a = never>(reason: e): Result<a, e> {
   return new Err(reason);
 }
+
+export function map2<a, b, c, e, g>(
+  ra: Result<a, e>,
+  rb: Result<b, g>,
+  f: (a: a, b: b) => c
+): Result<c, e | g> {
+  return ra.chain(a => rb.map(b => f(a, b)));
+}
