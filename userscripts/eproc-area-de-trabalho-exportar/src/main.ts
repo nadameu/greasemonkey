@@ -11,10 +11,6 @@ export function main(): Result<() => void, AcaoDesconhecida | NotUnique> {
         return parseAreaDeTrabalho();
       case 'minuta_imprimir':
         return parseImprimir();
-      case 'minuta_imprimir_preparar_lista':
-        return ok(() => {
-          console.log('fui chamado');
-        });
       default:
         const _: never = acao;
         return _;
