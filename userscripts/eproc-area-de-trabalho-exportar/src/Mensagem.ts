@@ -10,7 +10,7 @@ export interface Minuta {
   html: string;
 }
 
-export function is_mensagem(value: unknown): value is Mensagem {
+export function isMensagem(value: unknown): value is Mensagem {
   return (
     typeof value === 'object' &&
     value !== null &&

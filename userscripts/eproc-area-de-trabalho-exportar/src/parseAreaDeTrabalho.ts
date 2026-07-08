@@ -1,6 +1,6 @@
 import { GM_deleteValue, GM_setValue } from '$';
 import { ZipWriter } from '@zip.js/zip.js';
-import { is_mensagem, Mensagem } from './Mensagem';
+import { isMensagem, Mensagem } from './Mensagem';
 import { map2, ok } from './Result';
 import { queryUnique } from './Result/functions';
 import classes from './area_de_trabalho.module.css';
@@ -46,7 +46,7 @@ export function parseAreaDeTrabalho() {
               onmessage: lift_throwable(async ({ data }) => {
                 window.clearTimeout(timer);
                 GM_deleteValue('salvar');
-                if (is_mensagem(data) && data.segredo === segredo) {
+                if (isMensagem(data) && data.segredo === segredo) {
                   const url = await gerar_zip(data);
                   if (window.confirm('Fazer download?')) {
                     window.open(url);
