@@ -3,7 +3,7 @@ import { Mensagem } from './Mensagem';
 import { ok } from './Result';
 
 export function parseImprimir() {
-  return ok(null).chain(() => {
+  return ok(null).map(() => {
     const segredo = GM_getValue('salvar') as string | undefined;
     GM_deleteValue('salvar');
     if (segredo !== undefined) {
@@ -44,6 +44,5 @@ export function parseImprimir() {
       window.opener?.postMessage(mensagem);
       window.close();
     }
-    return ok(() => {});
   });
 }

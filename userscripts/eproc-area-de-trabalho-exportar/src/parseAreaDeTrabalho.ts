@@ -25,7 +25,7 @@ export function parseAreaDeTrabalho() {
       queryUnique<HTMLTableElement>('table[id="tabelaMinutas"]')
     );
 
-    return map2(tabela, imprimir, (tabela, imprimir) => () => {
+    return map2(tabela, imprimir, (tabela, imprimir) => {
       const salvar = criar_botao();
       imprimir.after(' ', salvar);
 

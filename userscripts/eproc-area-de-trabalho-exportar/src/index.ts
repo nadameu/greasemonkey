@@ -2,9 +2,7 @@ import { main } from './main';
 import { try_catch } from './try_catch';
 
 try_catch(() =>
-  main()
-    .map(fn => fn())
-    .mapErr(err => {
-      throw err;
-    })
+  main().mapErr(err => {
+    throw err;
+  })
 );
