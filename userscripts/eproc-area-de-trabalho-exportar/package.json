@@ -9,12 +9,14 @@
   "scripts": {
     "build": "run-s type-check compile format",
     "compile": "vite build",
-    "dev": "vite",
+    "dev": "run-p watch preview",
     "format": "prettier --write ../../eproc-area-de-trabalho-exportar.user.js",
+    "preview": "vite preview --open ../../eproc-area-de-trabalho-exportar.user.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
-    "type-check": "tsc"
+    "type-check": "tsc",
+    "watch": "vite build --watch"
   },
   "dependencies": {
     "@zip.js/zip.js": "^2.8.26"
