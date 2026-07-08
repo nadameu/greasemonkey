@@ -14,7 +14,7 @@ export default defineConfig({
     monkey({
       build: {
         externalGlobals: {
-          '@zip.js/zip.js': cdn.unpkg('zip', 'dist/zip.min.js'),
+          '@zip.js/zip.js': cdn.jsdelivr('zip', 'dist/zip.min.js'),
         },
       },
       entry: 'src/index.ts',
