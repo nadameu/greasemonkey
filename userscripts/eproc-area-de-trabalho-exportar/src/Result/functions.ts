@@ -1,11 +1,22 @@
 import { err, ok, Result } from '../Result';
 
 export function queryUnique<T extends Element>(selector: string) {
-  return (context: ParentNode): Result<T, NotUnique> => {
+  return (context: ParentNode): Result<T, NotFound | NotUnique> => {
     const elts = context.querySelectorAll<T>(selector);
     if (elts.length === 1) return ok(elts[0]!);
-    return err(new NotUnique(context, selector));
+    return err(
+      new (elts.length === 0 ? NotFound : NotUnique)(context, selector)
+    );
   };
+}
+
+export class NotFound extends Error {
+  readonly name = 'NotFound';
+  readonly cause: { context: ParentNode; selector: string };
+  constructor(context: ParentNode, selector: string) {
+    super();
+    this.cause = { context, selector };
+  }
 }
 
 export class NotUnique extends Error {

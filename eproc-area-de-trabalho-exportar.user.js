@@ -2,7 +2,7 @@
 // @name         eproc-area-de-trabalho-exportar
 // @name:pt-BR   eproc - área de trabalho - exportar
 // @namespace    http://nadameu.com.br
-// @version      2.0.0
+// @version      2.0.1
 // @author       nadameu
 // @description  Permite exportar minutas da área de trabalho
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=minuta_area_trabalho&*
@@ -125,9 +125,22 @@
     return context => {
       const elts = context.querySelectorAll(selector);
       if (elts.length === 1) return ok(elts[0]);
-      return err(new NotUnique(context, selector));
+      return err(
+        new (elts.length === 0 ? NotFound : NotUnique)(context, selector)
+      );
     };
   }
+  var NotFound = class extends Error {
+    name = 'NotFound';
+    cause;
+    constructor(context, selector) {
+      super();
+      this.cause = {
+        context,
+        selector,
+      };
+    }
+  };
   var NotUnique = class extends Error {
     name = 'NotUnique';
     cause;
@@ -243,7 +256,9 @@
             }
           }
         );
-        if (!resultado.ok) throw resultado.reason;
+        if (!resultado.ok)
+          if (resultado.reason.name === 'NotFound') return;
+          else throw resultado.reason;
       })
     );
   }

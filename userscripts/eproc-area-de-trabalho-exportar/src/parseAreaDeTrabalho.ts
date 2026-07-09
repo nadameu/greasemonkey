@@ -93,7 +93,10 @@ export function parseAreaDeTrabalho() {
         }
       });
 
-      if (!resultado.ok) throw resultado.reason;
+      if (!resultado.ok) {
+        if (resultado.reason.name === 'NotFound') return;
+        else throw resultado.reason;
+      }
     })
   );
 }
