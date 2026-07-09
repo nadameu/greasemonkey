@@ -23,11 +23,10 @@ export function parseImprimir() {
         .map((article, index) => {
           const titulo =
             article
-              .querySelector<HTMLElement>(
-                'section[data-nome="titulo"] + section'
-              )
-              ?.dataset.nome_apresentacao?.replace(/(\/|\s|-)+/g, '_') ??
-            'Minuta';
+              .querySelector<HTMLElement>('section[data-nome="titulo"]')
+              ?.textContent.trim()
+              .replace(/ Nº \d+$/, '')
+              .replace(/(\/|\s|-)+/g, '_') ?? 'MINUTA';
           const codigo =
             article.querySelector<HTMLElement>(
               'footer span[data-codigo_documento_rodape]'
