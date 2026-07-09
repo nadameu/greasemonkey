@@ -12,7 +12,6 @@ type State =
   | {
       _tag: 'Aguarda_resposta';
       onmessage(_: { data: unknown }): void;
-      ontimeout(): void;
     };
 
 export function parseAreaDeTrabalho() {
@@ -46,7 +45,6 @@ export function parseAreaDeTrabalho() {
               state = {
                 _tag: 'Aguarda_resposta',
                 onmessage: lift_throwable(async ({ data }) => {
-                  window.clearTimeout(timer);
                   GM_deleteValue('salvar');
                   if (isMensagem(data) && data.segredo === segredo) {
                     const url = await gerar_zip(data);
@@ -65,21 +63,10 @@ export function parseAreaDeTrabalho() {
                   habilitar_botao_se_minutas_selecionadas();
                   state = ocioso;
                 }),
-                ontimeout() {
-                  window.clearTimeout(timer);
-                  GM_deleteValue('salvar');
-                  habilitar_botao_se_minutas_selecionadas();
-                  state = ocioso;
-                },
               };
               salvar.disabled = true;
               const segredo = Math.random().toString(36).slice(2);
               GM_setValue('salvar', segredo);
-              const timer = window.setTimeout(() => {
-                if (state._tag === 'Aguarda_resposta') {
-                  state.ontimeout();
-                }
-              }, 30_000);
               imprimir.click();
             },
           };
