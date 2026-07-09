@@ -20,9 +20,10 @@ export default defineConfig({
       entry: 'src/index.ts',
       server: { prefix: name => `dev:${name}` },
       userscript: {
-        name: { 'pt-BR': pkg.gm_name },
-        namespace: 'http://nadameu.com.br',
-        match: acoes.flatMap(acao => enderecosEproc(`acao=${acao}&*`)),
+        'name': { 'pt-BR': pkg.gm_name },
+        'namespace': 'http://nadameu.com.br',
+        'match': acoes.flatMap(acao => enderecosEproc(`acao=${acao}&*`)),
+        'run-at': 'document-start',
       },
     }),
   ],

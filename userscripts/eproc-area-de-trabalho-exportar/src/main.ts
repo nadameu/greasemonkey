@@ -3,7 +3,7 @@ import { parseEndereco } from './parseEndereco';
 import { parseImprimir } from './parseImprimir';
 
 export function main() {
-  return parseEndereco(new URL(document.location.href)).chain(acao => {
+  const resultado = parseEndereco(new URL(document.location.href)).map(acao => {
     switch (acao) {
       case 'minuta_area_trabalho':
         return parseAreaDeTrabalho();
@@ -14,4 +14,5 @@ export function main() {
         return _;
     }
   });
+  if (!resultado.ok) throw resultado.reason;
 }

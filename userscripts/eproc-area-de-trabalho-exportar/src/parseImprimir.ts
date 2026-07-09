@@ -1,14 +1,12 @@
-import { GM_deleteValue, GM_getValue } from '$';
+import { GM_deleteValue, GM_getValue, unsafeWindow } from '$';
 import { Mensagem } from './Mensagem';
-import { ok } from './Result';
+import { lift_throwable } from './try_catch';
 
 export function parseImprimir() {
-  return ok(null).map(() => {
-    const segredo = GM_getValue('salvar') as string | undefined;
-    GM_deleteValue('salvar');
-    if (segredo !== undefined) {
-      window.print = () => undefined;
-
+  const segredo = GM_getValue('salvar') as string | undefined;
+  GM_deleteValue('salvar');
+  if (segredo !== undefined) {
+    unsafeWindow.print = lift_throwable(() => {
       const estilos = [
         ...document.querySelectorAll<HTMLLinkElement>(
           'link[rel="stylesheet"][href^="css/estilos-editor"]'
@@ -43,6 +41,6 @@ export function parseImprimir() {
 
       window.opener?.postMessage(mensagem);
       window.close();
-    }
-  });
+    });
+  }
 }
