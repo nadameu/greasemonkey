@@ -2,7 +2,7 @@
 // @name         eproc-area-de-trabalho-exportar
 // @name:pt-BR   eproc - área de trabalho - exportar
 // @namespace    http://nadameu.com.br
-// @version      1.0.0
+// @version      2.0.0
 // @author       nadameu
 // @description  Permite exportar minutas da área de trabalho
 // @match        https://eproc.jfpr.jus.br/eprocV2/controlador.php?acao=minuta_area_trabalho&*
@@ -19,7 +19,9 @@
 // @grant        GM_getValue
 // @grant        GM_info
 // @grant        GM_setValue
+// @grant        unsafeWindow
 // @grant        window.close
+// @run-at       document-start
 // ==/UserScript==
 
 (function (_zip_js_zip_js) {
@@ -46,6 +48,8 @@
   var _GM_info = (() => (typeof GM_info != 'undefined' ? GM_info : void 0))();
   var _GM_setValue = (() =>
     typeof GM_setValue != 'undefined' ? GM_setValue : void 0)();
+  var _unsafeWindow = (() =>
+    typeof unsafeWindow != 'undefined' ? unsafeWindow : void 0)();
   function isMensagem(value) {
     return (
       typeof value === 'object' &&
@@ -166,77 +170,82 @@
     return lift_throwable(fn)();
   }
   function parseAreaDeTrabalho() {
-    return ok(null).chain(() => {
-      const imprimir = ok(document).chain(
-        queryUnique('button[id="btnImprimir"]')
-      );
-      return map2(
-        ok(document).chain(queryUnique('table[id="tabelaMinutas"]')),
-        imprimir,
-        (tabela, imprimir) => {
-          const salvar = criar_botao();
-          imprimir.after(' ', salvar);
-          let state = (() => {
-            const init = {
-              _tag: 'Init',
-              init() {
-                habilitar_botao_se_minutas_selecionadas();
-                state = ocioso;
-              },
-            };
-            const ocioso = {
-              _tag: 'Ocioso',
-              onminutasclicadas: habilitar_botao_se_minutas_selecionadas,
-              onbotaoclicado() {
-                state = {
-                  _tag: 'Aguarda_resposta',
-                  onmessage: lift_throwable(async ({ data }) => {
-                    window.clearTimeout(timer);
-                    _GM_deleteValue('salvar');
-                    if (isMensagem(data) && data.segredo === segredo) {
-                      const url = await gerar_zip(data);
-                      if (window.confirm('Fazer download?')) window.open(url);
-                    } else console.debug('Mensagem recebida:', data);
-                    habilitar_botao_se_minutas_selecionadas();
-                    state = ocioso;
-                  }),
-                  ontimeout() {
-                    window.clearTimeout(timer);
-                    _GM_deleteValue('salvar');
-                    habilitar_botao_se_minutas_selecionadas();
-                    state = ocioso;
-                  },
-                };
-                salvar.disabled = true;
-                const segredo = Math.random().toString(36).slice(2);
-                _GM_setValue('salvar', segredo);
-                const timer = window.setTimeout(() => {
-                  if (state._tag === 'Aguarda_resposta') state.ontimeout();
-                }, 3e4);
-                imprimir.click();
-              },
-            };
-            tabela.addEventListener('click', () => {
-              if (state._tag === 'Ocioso') state.onminutasclicadas();
-            });
-            salvar.addEventListener('click', () => {
-              if (state._tag === 'Ocioso') state.onbotaoclicado();
-            });
-            window.addEventListener('message', evt => {
-              if (state._tag === 'Aguarda_resposta') state.onmessage(evt);
-            });
-            return init;
-          })();
-          state.init();
-          function habilitar_botao_se_minutas_selecionadas() {
-            const selecionados = tabela.querySelectorAll(
-              'input[type="checkbox"]:checked'
-            );
-            salvar.disabled = selecionados.length === 0;
+    window.addEventListener(
+      'load',
+      lift_throwable(() => {
+        const imprimir = ok(document).chain(
+          queryUnique('button[id="btnImprimir"]')
+        );
+        const resultado = map2(
+          ok(document).chain(queryUnique('table[id="tabelaMinutas"]')),
+          imprimir,
+          (tabela, imprimir) => {
+            const salvar = criar_botao();
+            imprimir.after(' ', salvar);
+            let state = (() => {
+              const init = {
+                _tag: 'Init',
+                init() {
+                  habilitar_botao_se_minutas_selecionadas();
+                  state = ocioso;
+                },
+              };
+              const ocioso = {
+                _tag: 'Ocioso',
+                onminutasclicadas: habilitar_botao_se_minutas_selecionadas,
+                onbotaoclicado() {
+                  state = {
+                    _tag: 'Aguarda_resposta',
+                    onmessage: lift_throwable(async ({ data }) => {
+                      _GM_deleteValue('salvar');
+                      if (isMensagem(data) && data.segredo === segredo) {
+                        const url = await gerar_zip(data);
+                        if (window.confirm('Fazer download?')) {
+                          const link = Object.assign(
+                            document.createElement('a'),
+                            {
+                              href: url,
+                              download: 'minutas.zip',
+                            }
+                          );
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }
+                      } else console.debug('Mensagem recebida:', data);
+                      habilitar_botao_se_minutas_selecionadas();
+                      state = ocioso;
+                    }),
+                  };
+                  salvar.disabled = true;
+                  const segredo = Math.random().toString(36).slice(2);
+                  _GM_setValue('salvar', segredo);
+                  imprimir.click();
+                },
+              };
+              tabela.addEventListener('click', () => {
+                if (state._tag === 'Ocioso') state.onminutasclicadas();
+              });
+              salvar.addEventListener('click', () => {
+                if (state._tag === 'Ocioso') state.onbotaoclicado();
+              });
+              window.addEventListener('message', evt => {
+                if (state._tag === 'Aguarda_resposta') state.onmessage(evt);
+              });
+              return init;
+            })();
+            state.init();
+            function habilitar_botao_se_minutas_selecionadas() {
+              const selecionados = tabela.querySelectorAll(
+                'input[type="checkbox"]:checked'
+              );
+              salvar.disabled = selecionados.length === 0;
+            }
           }
-        }
-      );
-    });
+        );
+        if (!resultado.ok) throw resultado.reason;
+      })
+    );
   }
   function criar_botao() {
     return Object.assign(document.createElement('button'), {
@@ -271,7 +280,9 @@ ${minuta.html}
     );
     await zipWriter.close();
     const zipFileBlob = await zipFileBlobPromise;
-    return URL.createObjectURL(new File([zipFileBlob], 'minutas.zip'));
+    return URL.createObjectURL(
+      new File([zipFileBlob], 'minutas.zip', { type: 'application/zip' })
+    );
   }
   var acoes = ['minuta_area_trabalho', 'minuta_imprimir'];
   function parseEndereco(url) {
@@ -288,62 +299,62 @@ ${minuta.html}
     }
   };
   function parseImprimir() {
-    return ok(null).map(() => {
-      const segredo = _GM_getValue('salvar');
-      _GM_deleteValue('salvar');
-      if (segredo !== void 0) {
-        window.print = () => void 0;
+    const segredo = _GM_getValue('salvar');
+    _GM_deleteValue('salvar');
+    if (segredo !== void 0)
+      _unsafeWindow.print = lift_throwable(() => {
+        const estilos = [
+          ...document.querySelectorAll(
+            'link[rel="stylesheet"][href^="css/estilos-editor"]'
+          ),
+        ].map(e => {
+          const clone = e.cloneNode(true);
+          clone.href = new URL(clone.href, document.location.href).href;
+          return clone.outerHTML;
+        });
+        const minutas = document
+          .querySelectorAll('#toPrint > #Body > #Content > article')
+          .values()
+          .map((article, index) => {
+            return {
+              titulo:
+                article
+                  .querySelector('section[data-nome="titulo"]')
+                  ?.textContent.trim()
+                  .replace(/ Nº \d+$/, '')
+                  .replace(/(\/|\s|-)+/g, '_') ?? 'MINUTA',
+              codigo:
+                article.querySelector(
+                  'footer span[data-codigo_documento_rodape]'
+                )?.dataset.codigo_documento_rodape ??
+                (index + 1).toString().padStart(12, '0'),
+              html: article.innerHTML,
+            };
+          })
+          .toArray();
         const mensagem = {
           segredo,
-          estilos: [
-            ...document.querySelectorAll(
-              'link[rel="stylesheet"][href^="css/estilos-editor"]'
-            ),
-          ].map(e => {
-            const clone = e.cloneNode(true);
-            clone.href = new URL(clone.href, document.location.href).href;
-            return clone.outerHTML;
-          }),
-          minutas: document
-            .querySelectorAll('#toPrint > #Body > #Content > article')
-            .values()
-            .map((article, index) => {
-              return {
-                titulo:
-                  article
-                    .querySelector('section[data-nome="titulo"] + section')
-                    ?.dataset.nome_apresentacao?.replace(/(\/|\s|-)+/g, '_') ??
-                  'Minuta',
-                codigo:
-                  article.querySelector(
-                    'footer span[data-codigo_documento_rodape]'
-                  )?.dataset.codigo_documento_rodape ??
-                  (index + 1).toString().padStart(12, '0'),
-                html: article.innerHTML,
-              };
-            })
-            .toArray(),
+          estilos,
+          minutas,
         };
         window.opener?.postMessage(mensagem);
         window.close();
-      }
-    });
+      });
   }
   function main() {
-    return parseEndereco(new URL(document.location.href)).chain(acao => {
-      switch (acao) {
-        case 'minuta_area_trabalho':
-          return parseAreaDeTrabalho();
-        case 'minuta_imprimir':
-          return parseImprimir();
-        default:
-          return acao;
+    const resultado = parseEndereco(new URL(document.location.href)).map(
+      acao => {
+        switch (acao) {
+          case 'minuta_area_trabalho':
+            return parseAreaDeTrabalho();
+          case 'minuta_imprimir':
+            return parseImprimir();
+          default:
+            return acao;
+        }
       }
-    });
+    );
+    if (!resultado.ok) throw resultado.reason;
   }
-  try_catch(() =>
-    main().mapErr(err => {
-      throw err;
-    })
-  );
+  try_catch(main);
 })(zip);
