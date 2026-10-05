@@ -3,15 +3,13 @@
   "version": "3.2.1",
   "main": "./index.ts",
   "types": "./index.ts",
+  "type": "module",
   "scripts": {
     "bench": "vitest bench --run",
     "test": "vitest run",
-    "gen:flow": "tsx function/flow.gen.ts",
-    "gen:mapN": "tsx typeclasses/mapN.gen.ts",
-    "gen:pipe": "tsx function/pipe.gen.ts",
+    "gen:flow": "node function/flow.gen.ts",
+    "gen:mapN": "node typeclasses/mapN.gen.ts",
+    "gen:pipe": "node function/pipe.gen.ts",
     "postinstall": "run-p gen:flow gen:mapN gen:pipe"
-  },
-  "devDependencies": {
-    "tsx": "^4.21.0"
   }
 }
