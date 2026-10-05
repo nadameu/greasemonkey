@@ -1,7 +1,7 @@
 import target from '@nadameu/esbuild-target';
 import { defineConfig } from 'vite';
 import monkey from 'vite-plugin-monkey';
-import * as pkg from './package.json';
+import * as pkg from './package.json' with { type: 'json' };
 
 // https://vitejs.dev/config/
 export default defineConfig({

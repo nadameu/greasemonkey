@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import monkey from 'vite-plugin-monkey';
 import { enderecosEproc } from '@nadameu/enderecos-eproc';
 import target from '@nadameu/esbuild-target';
-import * as pkg from './package.json';
+import * as pkg from './package.json' with { type: 'json' };
 
 // https://vitejs.dev/config/
 export default defineConfig({
