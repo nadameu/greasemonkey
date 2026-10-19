@@ -36,10 +36,9 @@ function main() {
 }
 
 function eh_alerta_vazio(node: Node): node is HTMLElement {
-  if (!(node instanceof HTMLElement) || !node.matches('mat-chip')) return false;
-  return (
-    query_or_throw('.component-total-box', node).textContent.trim() === '0'
-  );
+  if (!(node instanceof HTMLElement) || !node.matches('bnmp-alertas-card'))
+    return false;
+  return query_or_throw('.alert-card__total', node).textContent.trim() === '0';
 }
 
 function query_or_throw<T extends Element>(
