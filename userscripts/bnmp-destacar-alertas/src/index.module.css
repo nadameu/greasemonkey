@@ -1,4 +1,25 @@
-.body .vazio {
-  opacity: 0.25;
-  transform: scale(0.75);
+.body .card.vazio {
+  opacity: 0.4;
+  --gm-border-color: transparent;
+}
+.body :global(.alert-card__description) {
+  height: 100%;
+}
+.body :global(.alert-card__tipo-baixa) {
+  margin-bottom: 0.75rem;
+  color: var(--gm-card-color);
+}
+.body .card > button {
+  border: 1px solid var(--gm-border-color);
+  padding-block: 0.75rem;
+}
+.card.manual {
+  --gm-card-color: hsl(0, 30%, 40%);
+}
+.card.automatico {
+  --gm-card-color: hsl(45, 30%, 40%);
+}
+.body .card {
+  --color-alert-count: var(--gm-card-color);
+  --gm-border-color: var(--gm-card-color);
 }
