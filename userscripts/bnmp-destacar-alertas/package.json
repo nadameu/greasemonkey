@@ -4,7 +4,7 @@
   "description": "Destaca as categorias de alerta do BNMP que possuem conteúdo",
   "author": "nadameu",
   "private": true,
-  "version": "2.1.0",
+  "version": "2.1.1",
   "type": "module",
   "scripts": {
     "dev": "run-p watch preview",

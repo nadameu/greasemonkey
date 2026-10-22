@@ -2,7 +2,7 @@
 // @name         bnmp-destacar-alertas
 // @name:pt-BR   BNMP - Destacar alertas com conteúdo
 // @namespace    http://nadameu.com.br
-// @version      2.1.0
+// @version      2.1.1
 // @author       nadameu
 // @description  Destaca as categorias de alerta do BNMP que possuem conteúdo
 // @match        https://bnmp.pdpj.jus.br/*
@@ -47,38 +47,48 @@
       }
     };
   }
-  var updated = false;
   function main() {
     const observer = new MutationObserver(mutation_list => {
-      if (updated) return;
       if (document.location.pathname !== '/alertas') return;
-      if (
-        mutation_list
-          .values()
-          .flatMap(m => m.addedNodes)
-          .filter(n => n instanceof HTMLElement)
-          .filter(n => n.matches('bnmp-alertas-card'))
-          .reduce(n => n + 1, 0) > 0
-      ) {
-        disconnect();
-        update();
+      const grid_novo = mutation_list
+        .values()
+        .reduce(
+          (prev, mut) =>
+            mut.target instanceof HTMLElement &&
+            mut.target.matches('section.alertas-dashboard') &&
+            mut.addedNodes.length === 1 &&
+            mut.addedNodes[0] instanceof HTMLElement &&
+            mut.addedNodes[0].matches('div.dashboard-grid') &&
+            mut.removedNodes.length === 0
+              ? mut.addedNodes[0]
+              : prev,
+          null
+        );
+      if (!grid_novo) return;
+      const adicionados = mutation_list
+        .values()
+        .filter(m => m.target === grid_novo)
+        .flatMap(m => m.addedNodes)
+        .filter(n => n instanceof HTMLElement)
+        .filter(n => n.matches('bnmp-alertas-card'))
+        .toArray();
+      if (isNonEmptyArray(adicionados)) {
+        console.log({ adicionados });
+        update(grid_novo, adicionados);
       }
     });
-    const disconnect = () => observer.disconnect();
-    window.addEventListener('beforeunload', disconnect);
+    window.addEventListener('beforeunload', () => observer.disconnect());
     document.body.classList.add(index_module_default.body);
     observer.observe(document.body, {
       childList: true,
       subtree: true,
     });
   }
-  var update = wrap_error(() => {
-    if (updated) return;
-    if (document.location.pathname !== '/alertas') return;
+  var update = wrap_error((grid, adicionados) => {
+    if (adicionados.some(c => c.parentElement !== grid))
+      throw new Error('Não foi possível obter o elemento pai dos cards.');
     const collator = new Intl.Collator('pt', { sensitivity: 'base' });
-    const cards = document
-      .querySelectorAll('bnmp-alertas-card')
-      .values()
+    const cards = adicionados
       .map(card => {
         const next = card.nextSibling;
         const description = card.querySelector('.alert-card__description');
@@ -110,20 +120,33 @@
           total,
         };
       })
-      .toArray()
-      .sort((a, b) => {
-        if ((a.total === 0) === (b.total === 0)) {
-          if (a.manual === b.manual) return collator.compare(a.texto, b.texto);
-          else if (a.manual) return -1;
-          else return 1;
-        } else if (a.total === 0) return 1;
-        else return -1;
-      });
-    if (cards.length === 0) return;
-    const parent = cards[0].card.parentElement;
-    if (cards.some(c => c.card.parentElement !== parent))
-      throw new Error('Não foi possível obter o elemento pai dos cards.');
-    parent.append(...cards.flatMap(c => [c.card, c.next]));
-    updated = true;
+      .sort(
+        concatCompare(
+          compareBy(c => (c.total > 0 ? -1 : 1)),
+          compareBy(c => (c.manual ? -1 : 1)),
+          compareBy(c => c.texto, collator.compare)
+        )
+      );
+    grid.append(...cards.flatMap(c => [c.card, c.next]));
   });
+  function isNonEmptyArray(arr) {
+    return arr.length > 0;
+  }
+  function defaultCompare(a, b) {
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return 0;
+  }
+  function concatCompare(...fns) {
+    return (a, b) => {
+      for (const fn of fns) {
+        const result = fn(a, b);
+        if (result !== 0) return result;
+      }
+      return 0;
+    };
+  }
+  function compareBy(keyFn, compareFn = defaultCompare) {
+    return (a, b) => compareFn(keyFn(a), keyFn(b));
+  }
 })();
