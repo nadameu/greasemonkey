@@ -248,7 +248,11 @@ importers:
 
   lib/expect-unreachable: {}
 
-  lib/finite-state-machine: {}
+  lib/finite-state-machine:
+    dependencies:
+      '@nadameu/create-store':
+        specifier: workspace:^
+        version: link:../create-store
 
   lib/handler: {}
 

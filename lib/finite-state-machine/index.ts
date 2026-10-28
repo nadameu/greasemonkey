@@ -1,3 +1,5 @@
+import { createStore } from '@nadameu/create-store';
+
 type Transitions<
   State extends { status: string },
   Action extends { type: string },
@@ -29,35 +31,14 @@ export function createFiniteStateMachine<
   transitions: Transitions<State, Action>,
   onInvalidTransition: (state: State, action: Action) => State
 ): FiniteStateMachine<State, Action> {
-  let state: State = initialState;
-  let subscribers: Array<{ (state: State): void }> = [];
-  return { getState, dispatch, subscribe };
-  function getState() {
-    return state;
-  }
-  function dispatch(action: Action) {
-    const transition =
+  return createStore<State, Action>(
+    () => initialState,
+    (state, action) =>
       transitions[state.status as State['status']][
         action.type as Action['type']
-      ];
-    if (transition) {
-      state = transition(action as any, state as any);
-    } else {
-      state = onInvalidTransition(state, action);
-    }
-    for (const subscriber of subscribers) {
-      subscriber(state);
-    }
-  }
-  function subscribe(subscriber: { (state: State): void }): {
-    unsubscribe(): void;
-  } {
-    subscribers.push(subscriber);
-    subscriber(state);
-    return {
-      unsubscribe() {
-        subscribers = subscribers.filter(s => s !== subscriber);
-      },
-    };
-  }
+      ]?.(
+        action as Extract<Action, { type: Action['type'] }>,
+        state as Extract<State, { status: State['status'] }>
+      ) ?? onInvalidTransition(state, action)
+  );
 }

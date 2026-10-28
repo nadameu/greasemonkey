@@ -1,11 +1,14 @@
 {
   "name": "@nadameu/finite-state-machine",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "main": "./index.ts",
   "types": "./index.ts",
   "scripts": {
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch"
+  },
+  "dependencies": {
+    "@nadameu/create-store": "workspace:^"
   }
 }
