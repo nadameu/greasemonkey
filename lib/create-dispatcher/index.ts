@@ -1,18 +1,11 @@
-import { Handler } from '@nadameu/handler';
-
 class Dispatcher<T> {
   private _writeIndex = 0;
   private _isDone = false;
-  private _values: Array<{
-    promise: Promise<IteratorResult<T>>;
-    resolve: Handler<IteratorResult<T>>;
-  }> = [];
+  private _values: PromiseWithResolvers<IteratorResult<T>>[] = [];
 
   private _get(index: number) {
     while (index >= this._values.length) {
-      let resolve: Handler<IteratorResult<T>> = null as any;
-      const promise = new Promise<IteratorResult<T>>(res => (resolve = res));
-      this._values.push({ promise, resolve });
+      this._values.push(Promise.withResolvers<IteratorResult<T>>());
     }
     return this._values[index]!;
   }
