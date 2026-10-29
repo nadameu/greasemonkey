@@ -1,0 +1,14 @@
+{
+  "name": "@nadameu/create-pubsub",
+  "version": "1.0.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "devDependencies": {
+    "@nadameu/handler": "workspace:^"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
+  }
+}

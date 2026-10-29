@@ -10,5 +10,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@nadameu/create-pubsub": "workspace:^"
   }
 }

@@ -226,7 +226,17 @@ importers:
 
   lib/create-element: {}
 
+  lib/create-pubsub:
+    devDependencies:
+      '@nadameu/handler':
+        specifier: workspace:^
+        version: link:../handler
+
   lib/create-store:
+    dependencies:
+      '@nadameu/create-pubsub':
+        specifier: workspace:^
+        version: link:../create-pubsub
     devDependencies:
       '@nadameu/handler':
         specifier: workspace:^
