@@ -266,12 +266,6 @@ importers:
 
   lib/reactive: {}
 
-  lib/resolvable:
-    dependencies:
-      '@nadameu/handler':
-        specifier: workspace:^
-        version: link:../handler
-
   lib/tco: {}
 
   userscripts/achei:
@@ -328,9 +322,6 @@ importers:
       '@nadameu/predicates':
         specifier: workspace:^
         version: link:../../lib/predicates
-      '@nadameu/resolvable':
-        specifier: workspace:^
-        version: link:../../lib/resolvable
       preact:
         specifier: ^10.29.0
         version: 10.29.0
@@ -444,18 +435,6 @@ importers:
       '@nadameu/enderecos-eproc':
         specifier: workspace:^
         version: link:../../lib/enderecos-eproc
-
-  userscripts/renajud:
-    dependencies:
-      '@nadameu/predicates':
-        specifier: workspace:^
-        version: link:../../lib/predicates
-      '@nadameu/resolvable':
-        specifier: workspace:^
-        version: link:../../lib/resolvable
-      descriptive-regexp:
-        specifier: ^0.3.0
-        version: 0.3.0
 
   userscripts/seeu-esmaecer-links:
     devDependencies:
