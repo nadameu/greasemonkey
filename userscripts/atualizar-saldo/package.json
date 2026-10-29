@@ -24,7 +24,6 @@
     "@nadameu/match": "workspace:^",
     "@nadameu/opaque": "workspace:^",
     "@nadameu/predicates": "workspace:^",
-    "@nadameu/resolvable": "workspace:^",
     "preact": "^10.29.0"
   },
   "devDependencies": {
